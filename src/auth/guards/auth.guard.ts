@@ -10,15 +10,20 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 
 import { jwtConstants } from '../../config/authorization/jwt';
+import { REQUEST_AUTH_PAYLOAD } from '../../shared/constants/request';
 import { IS_PUBLIC_KEY } from '../../shared/decorators/custom.decorator';
 import { IAuthPayload } from '../interfaces/auth.types';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+	//#region Constructor
+
 	constructor(
 		private _jwtService: JwtService,
 		private _reflector: Reflector,
 	) {}
+
+	//#endregion Constructor
 
 	// #region Public Methods
 
@@ -45,7 +50,7 @@ export class AuthGuard implements CanActivate {
 				secret: jwtConstants.secret(),
 			});
 
-			request['user'] = payload;
+			request[REQUEST_AUTH_PAYLOAD] = payload;
 		} catch {
 			throw new UnauthorizedException();
 		}

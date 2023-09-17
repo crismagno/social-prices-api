@@ -1,8 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
+import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { IAuthPayload } from './interfaces/auth.types';
+import CreateAuthDto from './interfaces/dto/createAuth.dto';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +32,10 @@ export class AuthService {
 		return {
 			accessToken: await this._jwtService.signAsync(payload),
 		};
+	}
+
+	public async signUp(createAuthDto: CreateAuthDto): Promise<IUser> {
+		return this._usersService.signUp(createAuthDto);
 	}
 
 	// #endregion Public Methods
