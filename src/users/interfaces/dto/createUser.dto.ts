@@ -7,7 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 
-import UserEnum from '../user.enum';
+import UsersEnum from '../users.enum';
 
 export default class CreateUserDto {
 	@IsString()
@@ -20,7 +20,7 @@ export default class CreateUserDto {
 	password: string;
 
 	@IsString()
-	@IsOptional()
+	@IsNotEmpty()
 	username: string;
 
 	@IsString()
@@ -29,8 +29,8 @@ export default class CreateUserDto {
 
 	@IsString()
 	@IsOptional()
-	@IsEnum(UserEnum.Provider)
-	authProvider: UserEnum.Provider | null;
+	@IsEnum(UsersEnum.Provider)
+	authProvider: UsersEnum.Provider | null;
 
 	@IsString()
 	@IsOptional()

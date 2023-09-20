@@ -1,6 +1,6 @@
 import { Document } from 'mongoose';
 
-import UserEnum from './user.enum';
+import UsersEnum from './users.enum';
 
 export interface IUser extends Document {
 	uid: string;
@@ -9,8 +9,8 @@ export interface IUser extends Document {
 	password: string;
 	avatar: string | null;
 	authToken: string | null;
-	authProvider: UserEnum.Provider;
+	authProvider: UsersEnum.Provider;
 	phoneNumbers: string[];
 	extraDataProvider: any | null;
-	status: UserEnum.Status;
+	status: UsersEnum.Status;
 }

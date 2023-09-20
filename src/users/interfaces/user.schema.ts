@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
-import UserEnum from './user.enum';
+import UsersEnum from './users.enum';
 
 const UserSchema = new mongoose.Schema(
 	{
@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema(
 		authProvider: {
 			type: String,
 			enum: {
-				values: Object.keys(UserEnum.Provider),
+				values: Object.keys(UsersEnum.Provider),
 				message: '{VALUE} is not supported',
 			},
 			required: true,
@@ -22,7 +22,7 @@ const UserSchema = new mongoose.Schema(
 		status: {
 			type: String,
 			enum: {
-				values: Object.keys(UserEnum.Status),
+				values: Object.keys(UsersEnum.Status),
 				message: '{VALUE} is not supported',
 			},
 			required: true,

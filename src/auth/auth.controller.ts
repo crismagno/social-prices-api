@@ -27,7 +27,7 @@ export class AuthController {
 		return this._authService.signIn(signInDto.email, signInDto.password);
 	}
 
-	@Post('/sighUp')
+	@Post('/signUp')
 	@Public()
 	@UsePipes(ValidationPipe)
 	public async sighUp(

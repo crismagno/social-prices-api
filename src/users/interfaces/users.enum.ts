@@ -1,4 +1,4 @@
-namespace UserEnum {
+namespace UsersEnum {
 	export enum Provider {
 		GOOGLE = 'GOOGLE',
 		SOCIAL_PRICES = 'SOCIAL_PRICES',
@@ -11,4 +11,4 @@ namespace UserEnum {
 	}
 }
 
-export default UserEnum;
+export default UsersEnum;

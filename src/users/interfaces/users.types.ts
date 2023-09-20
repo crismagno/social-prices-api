@@ -1,12 +1,12 @@
-import UserEnum from './user.enum';
+import UsersEnum from './users.enum';
 
 export interface IUserEntity {
 	email: string;
 	username: string;
 	avatar: string | null;
 	authToken: string | null;
-	authProvider: UserEnum.Provider;
+	authProvider: UsersEnum.Provider;
 	phoneNumbers: string[];
-	status: UserEnum.Status;
+	status: UsersEnum.Status;
 	extraDataProvider: any | null;
 }

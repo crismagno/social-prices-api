@@ -11,8 +11,8 @@ import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
-import UserEnum from './interfaces/user.enum';
 import { IUser } from './interfaces/user.interface';
+import UsersEnum from './interfaces/users.enum';
 import { IUserEntity } from './interfaces/users.types';
 
 @Injectable()
@@ -56,12 +56,12 @@ export class UsersService {
 
 		const newUser: IUser = new this._userModel({
 			email: createUserDto.email,
-			username: createUserDto.username ?? null,
+			username: createUserDto.username,
 			password: hashPassword,
 			authProvider:
-				createUserDto.authProvider ?? UserEnum.Provider.SOCIAL_PRICES,
+				createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
 			phoneNumbers: createUserDto.phoneNumbers ?? [],
-			status: UserEnum.Status.PENDING,
+			status: UsersEnum.Status.PENDING,
 			uid: createUserDto.uid,
 			avatar: createUserDto.avatar,
 			extraDataProvider: createUserDto.extraDataProvider,
