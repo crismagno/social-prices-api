@@ -1,41 +1,48 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 
+import AuthorizationToken from '../config/authorization/authorization-token';
+import HashCrypt from '../config/hash-crypt/hash-crypt';
+import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUser } from '../users/interfaces/user.interface';
+import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
-import { IAuthPayload } from './interfaces/auth.types';
-import CreateAuthDto from './interfaces/dto/createAuth.dto';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private _usersService: UsersService,
-		private _jwtService: JwtService,
+		private _authorizationToken: AuthorizationToken,
+		private _hashCrypt: HashCrypt,
 	) {}
 
 	// #region Public Methods
 
-	public async signIn(
-		username: string,
-		password: string,
-	): Promise<{
-		accessToken: string;
-	}> {
-		const user = await this._usersService.findOneByUsername(username);
+	public async signIn(email: string, password: string): Promise<IUserEntity> {
+		const user: IUser | undefined =
+			await this._usersService.findOneByEmail(email);
 
-		if (user?.password !== password) {
+		if (!user) {
+			throw new BadRequestException('User not found!');
+		}
+
+		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
+			password,
+			user?.password,
+		);
+
+		if (!isPasswordMatch) {
 			throw new UnauthorizedException();
 		}
 
-		const payload: IAuthPayload = { uid: user.uid, username: user.username };
-
-		return {
-			accessToken: await this._jwtService.signAsync(payload),
-		};
+		return this._usersService.getUserEntityFromUserSchema(user);
 	}
 
-	public async signUp(createAuthDto: CreateAuthDto): Promise<IUser> {
-		return this._usersService.signUp(createAuthDto);
+	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
+		return this._usersService.signUp(createUserDto);
 	}
 
 	// #endregion Public Methods

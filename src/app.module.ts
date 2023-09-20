@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './auth/guards/auth.guard';
+import AuthorizationToken from './config/authorization/authorization-token';
 import { JwtModuleRegister } from './config/authorization/jwt';
 import { MongooseModuleForRoot } from './config/database/mongo/mongo';
 import { UsersModule } from './users/users.module';
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
 	controllers: [AppController],
 	providers: [
 		AppService,
+		AuthorizationToken,
 		{
 			provide: APP_GUARD,
 			useClass: AuthGuard,

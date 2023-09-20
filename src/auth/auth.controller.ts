@@ -1,18 +1,17 @@
 import {
-	Body,
-	Controller,
-	Get,
-	HttpCode,
-	HttpStatus,
-	Post,
-	Request,
-	UsePipes,
-	ValidationPipe,
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 
 import { Public } from '../shared/decorators/custom.decorator';
+import CreateUserDto from '../users/interfaces/dto/createUser.dto';
+import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
-import CreateAuthDto from './interfaces/dto/createAuth.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -22,20 +21,18 @@ export class AuthController {
 	@Public()
 	@Post('/signIn')
 	@UsePipes(ValidationPipe)
-	public async signIn(@Body() signInDto: Record<string, string>): Promise<{
-		accessToken: string;
-	}> {
-		return this._authService.signIn(signInDto.username, signInDto.password);
-	}
-
-	@Get('/profile')
-	public getProfile(@Request() req) {
-		return req.user;
+	public async signIn(
+		@Body() signInDto: Record<string, string>,
+	): Promise<IUserEntity> {
+		return this._authService.signIn(signInDto.email, signInDto.password);
 	}
 
 	@Post('/sighUp')
+	@Public()
 	@UsePipes(ValidationPipe)
-	public async sighUp(@Body() createAuthDto: CreateAuthDto) {
-		return this._authService.signUp(createAuthDto);
+	public async sighUp(
+		@Body() createUserDto: CreateUserDto,
+	): Promise<IUserEntity> {
+		return this._authService.signUp(createUserDto);
 	}
 }

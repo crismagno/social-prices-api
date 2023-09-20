@@ -14,7 +14,15 @@ const UserSchema = new mongoose.Schema(
 		authProvider: {
 			type: String,
 			enum: {
-				values: Object.keys(UserEnum.provider),
+				values: Object.keys(UserEnum.Provider),
+				message: '{VALUE} is not supported',
+			},
+			required: true,
+		},
+		status: {
+			type: String,
+			enum: {
+				values: Object.keys(UserEnum.Status),
 				message: '{VALUE} is not supported',
 			},
 			required: true,

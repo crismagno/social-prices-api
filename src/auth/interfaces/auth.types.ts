@@ -1,6 +1,7 @@
 export interface IAuthPayload {
+	_id: string;
 	uid: string;
-	username: string;
+	email: string;
 	iat?: number;
 	exp?: number;
 }

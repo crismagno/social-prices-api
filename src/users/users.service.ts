@@ -1,29 +1,29 @@
 import { Model } from 'mongoose';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
+import { IAuthPayload } from '../auth/interfaces/auth.types';
+import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import UserEnum from './interfaces/user.enum';
 import { IUser } from './interfaces/user.interface';
+import { IUserEntity } from './interfaces/users.types';
 
 @Injectable()
 export class UsersService {
-	//#region Private Properties
-
-	private readonly _hashCrypt: HashCrypt;
-
-	//#endregion Private Properties
-
 	//#region Constructors
 
 	constructor(
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
-	) {
-		this._hashCrypt = new HashCrypt();
-	}
+		private readonly _hashCrypt: HashCrypt,
+		private readonly _authorizationToken: AuthorizationToken,
+	) {}
 
 	//#endregion Constructors
 
@@ -33,14 +33,20 @@ export class UsersService {
 		return this._userModel.findOne({ username });
 	}
 
-	public async signUp(createUserDto: CreateUserDto): Promise<IUser> {
+	public async findOneByEmail(email: string): Promise<IUser | undefined> {
+		return this._userModel.findOne({ email });
+	}
+
+	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
 		const findUserByEmail = await this._userModel
 			.findOne({
 				email: createUserDto.email,
 			})
 			.exec();
 
-		if (findUserByEmail) {
+		if (findUserByEmail && createUserDto.authProvider) {
+			return await this.getUserEntityFromUserSchema(findUserByEmail);
+		} else if (findUserByEmail) {
 			throw new BadRequestException('User email not allowed.');
 		}
 
@@ -50,13 +56,43 @@ export class UsersService {
 
 		const newUser: IUser = new this._userModel({
 			email: createUserDto.email,
-			username: createUserDto.username,
+			username: createUserDto.username ?? null,
 			password: hashPassword,
-			authProvider: UserEnum.provider.SOCIAL_PRICES,
-			phoneNumbers: [],
+			authProvider:
+				createUserDto.authProvider ?? UserEnum.Provider.SOCIAL_PRICES,
+			phoneNumbers: createUserDto.phoneNumbers ?? [],
+			status: UserEnum.Status.PENDING,
+			uid: createUserDto.uid,
+			avatar: createUserDto.avatar,
+			extraDataProvider: createUserDto.extraDataProvider,
 		});
 
-		return await newUser.save();
+		const user: IUser = await newUser.save();
+
+		return await this.getUserEntityFromUserSchema(user);
+	}
+
+	public async getUserEntityFromUserSchema(
+		userSchema: IUser,
+	): Promise<IUserEntity> {
+		const payload: IAuthPayload = {
+			_id: userSchema._id,
+			uid: userSchema.uid,
+			email: userSchema.email,
+		};
+
+		const userEntity: IUserEntity = {
+			authProvider: userSchema.authProvider,
+			authToken: await this._authorizationToken.generateToken(payload),
+			avatar: userSchema.avatar,
+			email: userSchema.email,
+			phoneNumbers: userSchema.phoneNumbers,
+			status: userSchema.status,
+			username: userSchema.username,
+			extraDataProvider: userSchema.extraDataProvider,
+		};
+
+		return userEntity;
 	}
 
 	//#rendegion Public Methods

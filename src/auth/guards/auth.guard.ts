@@ -7,9 +7,8 @@ import {
 	UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 
-import { jwtConstants } from '../../config/authorization/jwt';
+import AuthorizationToken from '../../config/authorization/authorization-token';
 import { REQUEST_AUTH_PAYLOAD } from '../../shared/constants/request';
 import { IS_PUBLIC_KEY } from '../../shared/decorators/custom.decorator';
 import { IAuthPayload } from '../interfaces/auth.types';
@@ -19,7 +18,7 @@ export class AuthGuard implements CanActivate {
 	//#region Constructor
 
 	constructor(
-		private _jwtService: JwtService,
+		private _authorizationToken: AuthorizationToken,
 		private _reflector: Reflector,
 	) {}
 
@@ -46,9 +45,8 @@ export class AuthGuard implements CanActivate {
 		}
 
 		try {
-			const payload: IAuthPayload = await this._jwtService.verifyAsync(token, {
-				secret: jwtConstants.secret(),
-			});
+			const payload: IAuthPayload =
+				await this._authorizationToken.getToken(token);
 
 			request[REQUEST_AUTH_PAYLOAD] = payload;
 		} catch {
