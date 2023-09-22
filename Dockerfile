@@ -4,7 +4,9 @@ WORKDIR /app
 
 RUN apt-get update && \
     apt-get install vim -y && \
-    npm i -g @nestjs/cli
+    npm install  -g @nestjs/cli && \
+		npm uninstall bcrypt \
+		npm install bcrypt@latest --save
 
 CMD [ "npm", "run", "start:dev" ]
 
