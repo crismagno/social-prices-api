@@ -16,10 +16,10 @@ import { UsersModule } from './users/users.module';
 		ConfigModule.forRoot({
 			isGlobal: true,
 		}),
-		AuthModule,
 		MongooseModuleForRoot(),
-		UsersModule,
 		JwtModuleRegister(),
+		AuthModule,
+		UsersModule,
 	],
 	controllers: [AppController],
 	providers: [

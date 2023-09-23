@@ -1,11 +1,10 @@
 import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UsePipes,
-  ValidationPipe,
+	Body,
+	Controller,
+	Get,
+	Post,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 
 import { Public } from '../shared/decorators/custom.decorator';
@@ -17,7 +16,6 @@ import { AuthService } from './auth.service';
 export class AuthController {
 	constructor(private _authService: AuthService) {}
 
-	@HttpCode(HttpStatus.OK)
 	@Public()
 	@Post('/signIn')
 	@UsePipes(ValidationPipe)
@@ -34,5 +32,11 @@ export class AuthController {
 		@Body() createUserDto: CreateUserDto,
 	): Promise<IUserEntity> {
 		return this._authService.signUp(createUserDto);
+	}
+
+	@Get('/validateToken')
+	@UsePipes(ValidationPipe)
+	public async validateToken(): Promise<boolean> {
+		return true;
 	}
 }

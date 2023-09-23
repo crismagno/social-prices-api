@@ -1,6 +1,10 @@
 import { Model } from 'mongoose';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { IAuthPayload } from '../auth/interfaces/auth.types';
@@ -32,6 +36,25 @@ export class UsersService {
 
 	public async findOneByEmail(email: string): Promise<IUser | undefined> {
 		return this._userModel.findOne({ email });
+	}
+
+	public async signIn(email: string, password: string): Promise<IUserEntity> {
+		const user: IUser | undefined = await this.findOneByEmail(email);
+
+		if (!user) {
+			throw new BadRequestException('User not found!');
+		}
+
+		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
+			password,
+			user?.password,
+		);
+
+		if (!isPasswordMatch) {
+			throw new UnauthorizedException();
+		}
+
+		return this.getUserEntityFromUserSchema(user);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
