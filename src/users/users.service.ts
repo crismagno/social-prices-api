@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
+import EmailTransport from '../config/services/email-transport/email-transport';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import { IUser } from './interfaces/user.interface';
@@ -24,6 +25,7 @@ export class UsersService {
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
+		private readonly _emailTransport: EmailTransport,
 	) {}
 
 	//#endregion Constructors
@@ -53,6 +55,8 @@ export class UsersService {
 		if (!isPasswordMatch) {
 			throw new UnauthorizedException();
 		}
+
+		this._emailTransport.sendEmailTest();
 
 		return this.getUserEntityFromUserSchema(user);
 	}

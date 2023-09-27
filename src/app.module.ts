@@ -7,7 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 import AuthorizationToken from './config/authorization/authorization-token';
-import { JwtModuleRegister } from './config/authorization/jwt';
+import { JwtModuleRegister } from './config/authorization/authorization-token.enum';
 import { MongooseModuleForRoot } from './config/database/mongo/mongo';
 import { UsersModule } from './users/users.module';
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { jwtConstants } from './jwt';
+import { AuthorizationTokenJwtConstants } from './authorization-token.enum';
 
 @Injectable()
 export default class AuthorizationToken {
@@ -13,7 +13,7 @@ export default class AuthorizationToken {
 
 	public async getToken(token: string): Promise<any> {
 		return await this._jwtService.verifyAsync(token, {
-			secret: jwtConstants.secret(),
+			secret: AuthorizationTokenJwtConstants.secret(),
 		});
 	}
 }

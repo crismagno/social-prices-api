@@ -3,11 +3,11 @@ import { JwtModule } from '@nestjs/jwt';
 export const JwtModuleRegister = () =>
 	JwtModule.register({
 		global: true,
-		secret: jwtConstants.secret(),
-		signOptions: { expiresIn: jwtConstants.expiresIn() },
+		secret: AuthorizationTokenJwtConstants.secret(),
+		signOptions: { expiresIn: AuthorizationTokenJwtConstants.expiresIn() },
 	});
 
-export const jwtConstants = {
+export const AuthorizationTokenJwtConstants = {
 	secret: () => process.env.JWT_SECRET_KEY,
 	expiresIn: () => process.env.JWT_EXPIRES_IN,
 };
