@@ -11,9 +11,13 @@ import CodesEnum from './interfaces/codes.enum';
 
 @Injectable()
 export class CodesService {
+	// #region Constructor
+
 	constructor(
 		@InjectModel(schemasName.code) private readonly _codeModel: Model<ICode>,
 	) {}
+
+	// #endregion
 
 	// #region Public Methods
 
@@ -55,13 +59,37 @@ export class CodesService {
 		return newCode.save();
 	}
 
-	public async validateSignIn(userId: string, value: string): Promise<boolean> {
+	public async updateSignIn(userId: string): Promise<ICode> {
 		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
 
 		const findCodeByUserAndType = await this._codeModel.findOne({
 			userId,
 			type,
 		});
+
+		const value: string = makeRandomCode();
+		const expiresIn: Date = moment().add(1, 'days').toDate();
+
+		return await this._codeModel.findOneAndUpdate(
+			findCodeByUserAndType._id,
+			{
+				$set: {
+					value: value,
+					expiresIn,
+				},
+			},
+			{ new: true },
+		);
+	}
+
+	public async validateSignIn(userId: string, value: string): Promise<boolean> {
+		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
+
+		const findCodeByUserAndType: ICode | undefined =
+			await this._codeModel.findOne({
+				userId,
+				type,
+			});
 
 		if (!findCodeByUserAndType) {
 			throw new BadRequestException('Code not found!');
@@ -71,7 +99,12 @@ export class CodesService {
 			throw new BadRequestException('Code expired!');
 		}
 
-		return findCodeByUserAndType.value === value;
+		if (findCodeByUserAndType.value === value) {
+			await this.updateSignIn(userId);
+			return true;
+		}
+
+		return false;
 	}
 
 	// #endregion

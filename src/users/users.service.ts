@@ -46,6 +46,20 @@ export class UsersService {
 		return this._userModel.findOne({ email });
 	}
 
+	public async findOneByUserId(userId: string): Promise<IUser | undefined> {
+		return this._userModel.findById(userId);
+	}
+
+	public async findOneByUserIdOrFail(userId: string): Promise<IUser> {
+		const user = await this._userModel.findById(userId);
+
+		if (!user) {
+			throw new BadRequestException('User not found!');
+		}
+
+		return user;
+	}
+
 	public async signIn(email: string, password: string): Promise<IUserEntity> {
 		const user: IUser | undefined = await this.findOneByEmail(email);
 
@@ -137,7 +151,28 @@ export class UsersService {
 		userId: string,
 		value: string,
 	): Promise<boolean> {
-		return this._codesService.validateSignIn(userId, value);
+		const isValidatedSignInCode: boolean =
+			await this._codesService.validateSignIn(userId, value);
+
+		if (!isValidatedSignInCode) {
+			return false;
+		}
+
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		if (user.status === UsersEnum.Status.ACTIVE) {
+			return true;
+		}
+
+		await this._userModel.findByIdAndUpdate(
+			userId,
+			{
+				$set: { status: UsersEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
+
+		return true;
 	}
 
 	//#rendegion
