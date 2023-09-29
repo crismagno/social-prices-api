@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
-import AuthorizationToken from '../config/authorization/authorization-token';
-import HashCrypt from '../config/hash-crypt/hash-crypt';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
-	constructor(
-		private _usersService: UsersService,
-		private _authorizationToken: AuthorizationToken,
-		private _hashCrypt: HashCrypt,
-	) {}
+	//#region Constructor
+
+	constructor(private _usersService: UsersService) {}
+
+	//#endregion
 
 	// #region Public Methods
 
@@ -24,5 +22,12 @@ export class AuthService {
 		return this._usersService.signUp(createUserDto);
 	}
 
-	// #endregion Public Methods
+	public async validateSignInCode(
+		userId: string,
+		value: string,
+	): Promise<boolean> {
+		return this._usersService.validateSignInCode(userId, value);
+	}
+
+	// #endregion
 }

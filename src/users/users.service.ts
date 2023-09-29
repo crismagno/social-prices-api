@@ -2,15 +2,19 @@ import { Model } from 'mongoose';
 
 import {
 	BadRequestException,
+	forwardRef,
+	Inject,
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import { CodesService } from '../codes/codes.service';
 import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
-import EmailTransport from '../config/services/email-transport/email-transport';
+import { INotificationResponse } from '../notification/interfaces/notification.types';
+import { NotificationService } from '../notification/notification.service';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import { IUser } from './interfaces/user.interface';
@@ -25,10 +29,12 @@ export class UsersService {
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
-		private readonly _emailTransport: EmailTransport,
+		@Inject(forwardRef(() => NotificationService))
+		private readonly _notificationService: NotificationService,
+		private readonly _codesService: CodesService,
 	) {}
 
-	//#endregion Constructors
+	//#endregion
 
 	//#region Public Methods
 
@@ -56,44 +62,52 @@ export class UsersService {
 			throw new UnauthorizedException();
 		}
 
-		this._emailTransport.sendEmailTest();
+		await this._notificationSendSignInCode(user);
 
 		return this.getUserEntityFromUserSchema(user);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
-		const findUserByEmail = await this._userModel
-			.findOne({
+		try {
+			const findUserByEmail = await this._userModel
+				.findOne({
+					email: createUserDto.email,
+				})
+				.exec();
+
+			if (findUserByEmail && createUserDto.authProvider) {
+				await this._notificationSendSignInCode(findUserByEmail);
+
+				return await this.getUserEntityFromUserSchema(findUserByEmail);
+			} else if (findUserByEmail) {
+				throw new BadRequestException('User credentials error.');
+			}
+
+			const hashPassword = await this._hashCrypt.generateHash(
+				createUserDto.password,
+			);
+
+			const newUser: IUser = new this._userModel({
 				email: createUserDto.email,
-			})
-			.exec();
+				username: createUserDto.username,
+				password: hashPassword,
+				authProvider:
+					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
+				phoneNumbers: createUserDto.phoneNumbers ?? [],
+				status: UsersEnum.Status.PENDING,
+				uid: createUserDto.uid,
+				avatar: createUserDto.avatar,
+				extraDataProvider: createUserDto.extraDataProvider,
+			});
 
-		if (findUserByEmail && createUserDto.authProvider) {
-			return await this.getUserEntityFromUserSchema(findUserByEmail);
-		} else if (findUserByEmail) {
-			throw new BadRequestException('User email not allowed.');
+			const user: IUser = await newUser.save();
+
+			await this._notificationSendSignInCode(user);
+
+			return await this.getUserEntityFromUserSchema(user);
+		} catch (error: any) {
+			throw error;
 		}
-
-		const hashPassword = await this._hashCrypt.generateHash(
-			createUserDto.password,
-		);
-
-		const newUser: IUser = new this._userModel({
-			email: createUserDto.email,
-			username: createUserDto.username,
-			password: hashPassword,
-			authProvider:
-				createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
-			phoneNumbers: createUserDto.phoneNumbers ?? [],
-			status: UsersEnum.Status.PENDING,
-			uid: createUserDto.uid,
-			avatar: createUserDto.avatar,
-			extraDataProvider: createUserDto.extraDataProvider,
-		});
-
-		const user: IUser = await newUser.save();
-
-		return await this.getUserEntityFromUserSchema(user);
 	}
 
 	public async getUserEntityFromUserSchema(
@@ -119,5 +133,27 @@ export class UsersService {
 		return userEntity;
 	}
 
-	//#rendegion Public Methods
+	public async validateSignInCode(
+		userId: string,
+		value: string,
+	): Promise<boolean> {
+		return this._codesService.validateSignIn(userId, value);
+	}
+
+	//#rendegion
+
+	//#region Private Methods
+
+	private async _notificationSendSignInCode(user: IUser): Promise<void> {
+		const notificationResponse: INotificationResponse =
+			await this._notificationService.sendSignInCode(user);
+
+		if (!notificationResponse.email) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to user',
+			);
+		}
+	}
+
+	//#rendegion
 }

@@ -2,7 +2,9 @@ import {
 	Body,
 	Controller,
 	Get,
+	Param,
 	Post,
+	Request,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -11,6 +13,8 @@ import { Public } from '../shared/decorators/custom.decorator';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
+import AuthEnum from './interfaces/auth.enum';
+import { IAuthPayload } from './interfaces/auth.types';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -38,5 +42,16 @@ export class AuthController {
 	@UsePipes(ValidationPipe)
 	public async validateToken(): Promise<boolean> {
 		return true;
+	}
+
+	@Get('/validateSignInCode/:codeValue')
+	@UsePipes(ValidationPipe)
+	public async validateSignInCode(
+		@Request() request,
+		@Param('codeValue') codeValue: string,
+	): Promise<boolean> {
+		const user: IAuthPayload = request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return this._authService.validateSignInCode(user._id, codeValue);
 	}
 }

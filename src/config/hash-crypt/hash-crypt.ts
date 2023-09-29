@@ -4,7 +4,13 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export default class HashCrypt {
+	//#region Private Properties
+
 	private readonly _saltOrRounds: number = +process.env.BCRYPT_SALT_ROUNDS;
+
+	//#endregion
+
+	//#region Public Methods
 
 	public async generateHash(
 		value: string,
@@ -24,4 +30,6 @@ export default class HashCrypt {
 	public async generateSalt(): Promise<string> {
 		return await bcrypt.genSalt();
 	}
+
+	//#endregion
 }

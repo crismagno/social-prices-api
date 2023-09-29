@@ -5,7 +5,13 @@ import { AuthorizationTokenJwtConstants } from './authorization-token.enum';
 
 @Injectable()
 export default class AuthorizationToken {
+	//#region Constructor
+
 	constructor(private _jwtService: JwtService) {}
+
+	//#endregion
+
+	//#region Public Methods
 
 	public async generateToken(payload: any): Promise<string> {
 		return await this._jwtService.signAsync(payload);
@@ -16,4 +22,6 @@ export default class AuthorizationToken {
 			secret: AuthorizationTokenJwtConstants.secret(),
 		});
 	}
+
+	//#endregion
 }

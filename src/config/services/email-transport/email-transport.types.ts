@@ -1,7 +1,7 @@
 export interface ISendEmailParams {
-	from: string;
+	from?: string;
 	to: string[] | string;
 	subject: string;
-	text: string;
-	html: any;
+	text?: string;
+	html?: any;
 }

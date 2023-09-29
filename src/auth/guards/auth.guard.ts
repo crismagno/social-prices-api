@@ -9,8 +9,8 @@ import {
 import { Reflector } from '@nestjs/core';
 
 import AuthorizationToken from '../../config/authorization/authorization-token';
-import { REQUEST_AUTH_PAYLOAD } from '../../shared/constants/request';
 import { IS_PUBLIC_KEY } from '../../shared/decorators/custom.decorator';
+import AuthEnum from '../interfaces/auth.enum';
 import { IAuthPayload } from '../interfaces/auth.types';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class AuthGuard implements CanActivate {
 		private _reflector: Reflector,
 	) {}
 
-	//#endregion Constructor
+	//#endregion
 
 	// #region Public Methods
 
@@ -48,7 +48,7 @@ export class AuthGuard implements CanActivate {
 			const payload: IAuthPayload =
 				await this._authorizationToken.getToken(token);
 
-			request[REQUEST_AUTH_PAYLOAD] = payload;
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD] = payload;
 		} catch {
 			throw new UnauthorizedException();
 		}
@@ -56,7 +56,7 @@ export class AuthGuard implements CanActivate {
 		return true;
 	}
 
-	// #endregion Public Methods
+	// #endregion
 
 	// #region Private Methods
 
@@ -65,5 +65,5 @@ export class AuthGuard implements CanActivate {
 		return type === 'Bearer' ? token : undefined;
 	}
 
-	//#endregion Private Methods
+	//#endregion
 }

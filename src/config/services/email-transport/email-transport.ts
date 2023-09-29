@@ -16,6 +16,7 @@ export default class EmailTransport {
 	//#endregion
 
 	//#region Constructor
+
 	constructor() {
 		this._userEmail = process.env.EMAIL_USER;
 
