@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { Public } from '../shared/decorators/custom.decorator';
+import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
@@ -47,11 +48,12 @@ export class AuthController {
 	@Get('/validateSignInCode/:codeValue')
 	@UsePipes(ValidationPipe)
 	public async validateSignInCode(
-		@Request() request,
-		@Param('codeValue') codeValue: string,
+		@Request() request: any,
+		@Param('codeValue', ValidationParamsPipe) codeValue: string,
 	): Promise<boolean> {
-		const user: IAuthPayload = request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._authService.validateSignInCode(user._id, codeValue);
+		return this._authService.validateSignInCode(authPayload._id, codeValue);
 	}
 }

@@ -1,7 +1,7 @@
 import * as moment from 'moment';
 import { Model } from 'mongoose';
 
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { makeRandomCode } from '../shared/helpers/global';
@@ -11,11 +11,22 @@ import CodesEnum from './interfaces/codes.enum';
 
 @Injectable()
 export class CodesService {
+	// #region Private Properties
+
+	private readonly _logger: Logger;
+
+	private readonly _codeExpiresInDays: number =
+		+process.env.CODE_EXPIRES_IN_DAYS;
+
+	// #endregion
+
 	// #region Constructor
 
 	constructor(
 		@InjectModel(schemasName.code) private readonly _codeModel: Model<ICode>,
-	) {}
+	) {
+		this._logger = new Logger(CodesService.name);
+	}
 
 	// #endregion
 
@@ -30,14 +41,16 @@ export class CodesService {
 		});
 
 		const value: string = makeRandomCode();
-		const expiresIn: Date = moment().add(1, 'days').toDate();
+		const expiresIn: Date = moment()
+			.add(this._codeExpiresInDays, 'days')
+			.toDate();
 
 		if (findCodeByUserAndType) {
 			if (moment().isBefore(findCodeByUserAndType.expiresIn)) {
 				return findCodeByUserAndType;
 			}
 
-			return await this._codeModel.findOneAndUpdate(
+			return this._codeModel.findOneAndUpdate(
 				findCodeByUserAndType._id,
 				{
 					$set: {
@@ -68,9 +81,11 @@ export class CodesService {
 		});
 
 		const value: string = makeRandomCode();
-		const expiresIn: Date = moment().add(1, 'days').toDate();
+		const expiresIn: Date = moment()
+			.add(this._codeExpiresInDays, 'days')
+			.toDate();
 
-		return await this._codeModel.findOneAndUpdate(
+		return this._codeModel.findOneAndUpdate(
 			findCodeByUserAndType._id,
 			{
 				$set: {
@@ -92,6 +107,8 @@ export class CodesService {
 			});
 
 		if (!findCodeByUserAndType) {
+			this._logger.warn('Code not found!', { userId, type });
+
 			throw new BadRequestException('Code not found!');
 		}
 

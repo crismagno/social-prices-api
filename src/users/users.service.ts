@@ -5,6 +5,8 @@ import {
 	forwardRef,
 	Inject,
 	Injectable,
+	Logger,
+	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -23,6 +25,12 @@ import { IUserEntity } from './interfaces/users.types';
 
 @Injectable()
 export class UsersService {
+	// #region Private Properties
+
+	private readonly _logger: Logger;
+
+	// #endregion
+
 	//#region Constructors
 
 	constructor(
@@ -32,7 +40,9 @@ export class UsersService {
 		@Inject(forwardRef(() => NotificationService))
 		private readonly _notificationService: NotificationService,
 		private readonly _codesService: CodesService,
-	) {}
+	) {
+		this._logger = new Logger(UsersService.name);
+	}
 
 	//#endregion
 
@@ -54,7 +64,7 @@ export class UsersService {
 		const user = await this._userModel.findById(userId);
 
 		if (!user) {
-			throw new BadRequestException('User not found!');
+			throw new NotFoundException('User not found!');
 		}
 
 		return user;
@@ -64,7 +74,7 @@ export class UsersService {
 		const user: IUser | undefined = await this.findOneByEmail(email);
 
 		if (!user) {
-			throw new BadRequestException('User not found!');
+			throw new NotFoundException('User not found!');
 		}
 
 		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
@@ -94,6 +104,7 @@ export class UsersService {
 
 				return await this.getUserEntityFromUserSchema(findUserByEmail);
 			} else if (findUserByEmail) {
+				this._logger.warn('signUp', createUserDto);
 				throw new BadRequestException('User credentials error.');
 			}
 
@@ -120,6 +131,7 @@ export class UsersService {
 
 			return await this.getUserEntityFromUserSchema(user);
 		} catch (error: any) {
+			this._logger.error(error);
 			throw error;
 		}
 	}
@@ -173,6 +185,12 @@ export class UsersService {
 		);
 
 		return true;
+	}
+
+	public async getUserEntityByUserId(userId: string): Promise<IUserEntity> {
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		return this.getUserEntityFromUserSchema(user);
 	}
 
 	//#rendegion

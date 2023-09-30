@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
@@ -6,9 +6,17 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
+	//#region Private Properties
+
+	private readonly _logger: Logger;
+
+	//#endregion
+
 	//#region Constructor
 
-	constructor(private _usersService: UsersService) {}
+	constructor(private _usersService: UsersService) {
+		this._logger = new Logger(AuthService.name);
+	}
 
 	//#endregion
 

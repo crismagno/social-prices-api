@@ -4,21 +4,16 @@ export const isValidEmail = (email: string): boolean => {
 	return regexEmail.test(email);
 };
 
-export const makeRandomCode = (lengthCode: number = 4): string | null => {
-	try {
-		let result: string = '';
+export const makeRandomCode = (lengthCode: number = 6): string => {
+	let result: string = '';
 
-		const characters: string = `${process.env.CHARACTERS}`;
+	const characters: string = `${process.env.CHARACTERS}`;
 
-		const charactersLength: number = characters.length;
+	const charactersLength: number = characters.length;
 
-		for (let i = 0; i < lengthCode; i++) {
-			result += characters.charAt(Math.floor(Math.random() * charactersLength));
-		}
-
-		return result.toUpperCase();
-	} catch (error) {
-		console.log(`Error to makeRandomCode `, error);
-		return null;
+	for (let i = 0; i < lengthCode; i++) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
 	}
+
+	return result.toUpperCase();
 };
