@@ -34,42 +34,7 @@ export class CodesService {
 
 	public async createSignIn(userId: string): Promise<ICode> {
 		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-
-		const findCodeByUserAndType = await this._codeModel.findOne({
-			userId,
-			type,
-		});
-
-		const value: string = makeRandomCode();
-		const expiresIn: Date = moment()
-			.add(this._codeExpiresInDays, 'days')
-			.toDate();
-
-		if (findCodeByUserAndType) {
-			if (moment().isBefore(findCodeByUserAndType.expiresIn)) {
-				return findCodeByUserAndType;
-			}
-
-			return this._codeModel.findOneAndUpdate(
-				findCodeByUserAndType._id,
-				{
-					$set: {
-						value: value,
-						expiresIn,
-					},
-				},
-				{ new: true },
-			);
-		}
-
-		const newCode = new this._codeModel({
-			userId,
-			value,
-			type,
-			expiresIn,
-		});
-
-		return newCode.save();
+		return this.getByUserIdAndType(userId, type);
 	}
 
 	public async updateSignIn(userId: string): Promise<ICode> {
@@ -122,6 +87,52 @@ export class CodesService {
 		}
 
 		return false;
+	}
+
+	public async createRecoverPassword(userId: string): Promise<ICode> {
+		const type: CodesEnum.Type = CodesEnum.Type.RECOVER_PASSWORD;
+		return this.getByUserIdAndType(userId, type);
+	}
+
+	public async getByUserIdAndType(
+		userId: string,
+		type: CodesEnum.Type,
+	): Promise<ICode> {
+		const findCodeByUserAndType = await this._codeModel.findOne({
+			userId,
+			type,
+		});
+
+		const value: string = makeRandomCode();
+		const expiresIn: Date = moment()
+			.add(this._codeExpiresInDays, 'days')
+			.toDate();
+
+		if (findCodeByUserAndType) {
+			if (moment().isBefore(findCodeByUserAndType.expiresIn)) {
+				return findCodeByUserAndType;
+			}
+
+			return this._codeModel.findOneAndUpdate(
+				findCodeByUserAndType._id,
+				{
+					$set: {
+						value: value,
+						expiresIn,
+					},
+				},
+				{ new: true },
+			);
+		}
+
+		const newCode = new this._codeModel({
+			userId,
+			value,
+			type,
+			expiresIn,
+		});
+
+		return newCode.save();
 	}
 
 	// #endregion
