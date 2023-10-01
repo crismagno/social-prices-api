@@ -36,5 +36,23 @@ export class NotificationService {
 		};
 	}
 
+	public async sendRecoverPasswordCode(
+		user: IUser,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createRecoverPassword(
+			user._id,
+		);
+
+		const emailResponse: string | null = await this._emailTransport.sendEmail({
+			to: user.email,
+			subject: `Recover Password Code`,
+			html: `Hi! here is your recover password code: <b>${code.value}</b>`,
+		});
+
+		return {
+			email: emailResponse,
+		};
+	}
+
 	//#endregion
 }

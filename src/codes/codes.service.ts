@@ -1,7 +1,12 @@
 import * as moment from 'moment';
 import { Model } from 'mongoose';
 
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { makeRandomCode } from '../shared/helpers/global';
@@ -34,67 +39,32 @@ export class CodesService {
 
 	public async createSignIn(userId: string): Promise<ICode> {
 		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-		return this.getByUserIdAndType(userId, type);
-	}
-
-	public async updateSignIn(userId: string): Promise<ICode> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-
-		const findCodeByUserAndType = await this._codeModel.findOne({
-			userId,
-			type,
-		});
-
-		const value: string = makeRandomCode();
-		const expiresIn: Date = moment()
-			.add(this._codeExpiresInDays, 'days')
-			.toDate();
-
-		return this._codeModel.findOneAndUpdate(
-			findCodeByUserAndType._id,
-			{
-				$set: {
-					value: value,
-					expiresIn,
-				},
-			},
-			{ new: true },
-		);
+		return await this._getByUserIdAndType(userId, type);
 	}
 
 	public async validateSignIn(userId: string, value: string): Promise<boolean> {
 		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-
-		const findCodeByUserAndType: ICode | undefined =
-			await this._codeModel.findOne({
-				userId,
-				type,
-			});
-
-		if (!findCodeByUserAndType) {
-			this._logger.warn('Code not found!', { userId, type });
-
-			throw new BadRequestException('Code not found!');
-		}
-
-		if (moment().isAfter(findCodeByUserAndType.expiresIn)) {
-			throw new BadRequestException('Code expired!');
-		}
-
-		if (findCodeByUserAndType.value === value) {
-			await this.updateSignIn(userId);
-			return true;
-		}
-
-		return false;
+		return await this._validateCode(userId, type, value);
 	}
 
 	public async createRecoverPassword(userId: string): Promise<ICode> {
 		const type: CodesEnum.Type = CodesEnum.Type.RECOVER_PASSWORD;
-		return this.getByUserIdAndType(userId, type);
+		return await this._getByUserIdAndType(userId, type);
 	}
 
-	public async getByUserIdAndType(
+	public async validateRecoverPassword(
+		userId: string,
+		value: string,
+	): Promise<boolean> {
+		const type: CodesEnum.Type = CodesEnum.Type.RECOVER_PASSWORD;
+		return await this._validateCode(userId, type, value);
+	}
+
+	// #endregion
+
+	//#region Private Methods
+
+	private async _getByUserIdAndType(
 		userId: string,
 		type: CodesEnum.Type,
 	): Promise<ICode> {
@@ -135,5 +105,60 @@ export class CodesService {
 		return newCode.save();
 	}
 
-	// #endregion
+	private async _validateCode(
+		userId: string,
+		type: CodesEnum.Type,
+		value: string,
+	): Promise<boolean> {
+		const findCodeByUserAndType: ICode | undefined =
+			await this._codeModel.findOne({
+				userId,
+				type,
+			});
+
+		if (!findCodeByUserAndType) {
+			this._logger.warn('Code not found!', { userId, type });
+
+			throw new NotFoundException('Code not found!');
+		}
+
+		if (moment().isAfter(findCodeByUserAndType.expiresIn)) {
+			throw new BadRequestException('Code expired!');
+		}
+
+		if (findCodeByUserAndType.value === value) {
+			await this._updateCode(userId, type);
+			return true;
+		}
+
+		return false;
+	}
+
+	private async _updateCode(
+		userId: string,
+		type: CodesEnum.Type,
+	): Promise<ICode> {
+		const findCodeByUserAndType: ICode = await this._codeModel.findOne({
+			userId,
+			type,
+		});
+
+		const value: string = makeRandomCode();
+		const expiresIn: Date = moment()
+			.add(this._codeExpiresInDays, 'days')
+			.toDate();
+
+		return this._codeModel.findOneAndUpdate(
+			findCodeByUserAndType._id,
+			{
+				$set: {
+					value: value,
+					expiresIn,
+				},
+			},
+			{ new: true },
+		);
+	}
+
+	//#endregion
 }

@@ -19,6 +19,7 @@ import { INotificationResponse } from '../notification/interfaces/notification.t
 import { NotificationService } from '../notification/notification.service';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
+import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import { IUser } from './interfaces/user.interface';
 import UsersEnum from './interfaces/users.enum';
 import { IUserEntity } from './interfaces/users.types';
@@ -54,6 +55,16 @@ export class UsersService {
 
 	public async findOneByEmail(email: string): Promise<IUser | undefined> {
 		return this._userModel.findOne({ email });
+	}
+
+	public async findOneByEmailOrFail(email: string): Promise<IUser> {
+		const user = await this._userModel.findOne({ email });
+
+		if (!user) {
+			throw new NotFoundException('User not found!');
+		}
+
+		return user;
 	}
 
 	public async findOneByUserId(userId: string): Promise<IUser | undefined> {
@@ -191,6 +202,47 @@ export class UsersService {
 		const user: IUser = await this.findOneByUserIdOrFail(userId);
 
 		return this.getUserEntityFromUserSchema(user);
+	}
+
+	public async sendRecoverPasswordCode(email: string): Promise<void> {
+		const user: IUser = await this.findOneByEmailOrFail(email);
+
+		const notificationResponse: INotificationResponse =
+			await this._notificationService.sendRecoverPasswordCode(user);
+
+		if (!notificationResponse.email) {
+			throw new BadRequestException(
+				'Error when attempt to send recover password code to user',
+			);
+		}
+	}
+
+	public async recoverPassword(
+		recoverPasswordDto: RecoverPasswordDto,
+	): Promise<void> {
+		const user: IUser = await this.findOneByEmailOrFail(
+			recoverPasswordDto.email,
+		);
+
+		const isValidatedRecoverPassword: boolean =
+			await this._codesService.validateRecoverPassword(
+				user._id,
+				recoverPasswordDto.codeValue,
+			);
+
+		if (!isValidatedRecoverPassword) {
+			throw new BadRequestException('Invalid recover password code');
+		}
+
+		const hashPassword = await this._hashCrypt.generateHash(
+			recoverPasswordDto.newPassword,
+		);
+
+		await this._userModel.findOneAndUpdate(user._id, {
+			$set: {
+				password: hashPassword,
+			},
+		});
 	}
 
 	//#rendegion
