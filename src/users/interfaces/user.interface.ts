@@ -10,7 +10,12 @@ export interface IUser extends Document {
 	avatar: string | null;
 	authToken: string | null;
 	authProvider: UsersEnum.Provider;
-	phoneNumbers: string[];
+	phoneNumbers: IPhoneNumber[];
 	extraDataProvider: any | null;
 	status: UsersEnum.Status;
+}
+
+export interface IPhoneNumber {
+	type: UsersEnum.PhoneTypes;
+	number: string;
 }

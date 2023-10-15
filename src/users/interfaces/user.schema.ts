@@ -3,6 +3,16 @@ import mongoose, { Schema } from 'mongoose';
 
 import UsersEnum from './users.enum';
 
+// const PhoneNumberSchema = new mongoose.Schema({
+// 	type: {
+// 		enum: {
+// 			values: Object.keys(UsersEnum.PhoneTypes),
+// 			message: '{VALUE} is not supported',
+// 		},
+// 	},
+// 	number: String,
+// });
+
 const UserSchema = new mongoose.Schema(
 	{
 		uid: { type: String, required: true, default: () => randomUUID() },
@@ -27,7 +37,15 @@ const UserSchema = new mongoose.Schema(
 			},
 			required: true,
 		},
-		phoneNumbers: [String],
+		phoneNumbers: {
+			type: [
+				{
+					type: String,
+					number: String,
+				},
+			],
+			optional: true,
+		},
 		extraDataProvider: Schema.Types.Mixed,
 	},
 	{ timestamps: true, collection: 'users' },

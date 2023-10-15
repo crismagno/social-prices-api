@@ -1,3 +1,4 @@
+import { IPhoneNumber } from './user.interface';
 import UsersEnum from './users.enum';
 
 export interface IUserEntity {
@@ -6,7 +7,7 @@ export interface IUserEntity {
 	avatar: string | null;
 	authToken: string | null;
 	authProvider: UsersEnum.Provider;
-	phoneNumbers: string[];
+	phoneNumbers: IPhoneNumber[];
 	status: UsersEnum.Status;
 	extraDataProvider: any | null;
 }

@@ -1,12 +1,13 @@
 import {
-  IsArray,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
+	IsArray,
+	IsEmail,
+	IsEnum,
+	IsNotEmpty,
+	IsOptional,
+	IsString,
 } from 'class-validator';
 
+import { IPhoneNumber } from '../user.interface';
 import UsersEnum from '../users.enum';
 
 export default class CreateUserDto {
@@ -38,7 +39,7 @@ export default class CreateUserDto {
 
 	@IsOptional()
 	@IsArray()
-	phoneNumbers: string[] | null;
+	phoneNumbers: IPhoneNumber[] | null;
 
 	@IsOptional()
 	extraDataProvider: any | null;

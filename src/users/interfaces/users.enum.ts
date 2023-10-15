@@ -9,6 +9,18 @@ namespace UsersEnum {
 		ACTIVE = 'ACTIVE',
 		STOPPED = 'STOPPED',
 	}
+
+	export enum Gender {
+		FEMALE = 'FEMALE',
+		MALE = 'MALE',
+	}
+
+	export enum PhoneTypes {
+		MOBILE = 'MOBILE',
+		HOME = 'HOME',
+		BUSINESS = 'BUSINESS',
+		OTHER = 'OTHER',
+	}
 }
 
 export default UsersEnum;
