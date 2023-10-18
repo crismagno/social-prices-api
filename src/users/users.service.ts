@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -20,6 +20,10 @@ import { NotificationService } from '../notification/notification.service';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
+import UpdateUserDto from './interfaces/dto/updateUser.dto';
+import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
+import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
+import UserEntity from './interfaces/user.entity';
 import { IUser } from './interfaces/user.interface';
 import UsersEnum from './interfaces/users.enum';
 import { IUserEntity } from './interfaces/users.types';
@@ -99,7 +103,7 @@ export class UsersService {
 
 		await this._notificationSendSignInCode(user);
 
-		return this.getUserEntityFromUserSchema(user);
+		return this._getUserEntityWithToken(user);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
@@ -113,7 +117,7 @@ export class UsersService {
 			if (findUserByEmail && createUserDto.authProvider) {
 				await this._notificationSendSignInCode(findUserByEmail);
 
-				return await this.getUserEntityFromUserSchema(findUserByEmail);
+				return await this._getUserEntityWithToken(findUserByEmail);
 			} else if (findUserByEmail) {
 				this._logger.warn('signUp', createUserDto);
 				throw new BadRequestException('User credentials error.');
@@ -134,40 +138,23 @@ export class UsersService {
 				uid: createUserDto.uid,
 				avatar: createUserDto.avatar,
 				extraDataProvider: createUserDto.extraDataProvider,
+				addresses: [],
+				firstName: null,
+				lastName: null,
+				middleName: null,
+				birthDate: null,
+				gender: null,
 			});
 
 			const user: IUser = await newUser.save();
 
 			await this._notificationSendSignInCode(user);
 
-			return await this.getUserEntityFromUserSchema(user);
+			return await this._getUserEntityWithToken(user);
 		} catch (error: any) {
 			this._logger.error(error);
 			throw error;
 		}
-	}
-
-	public async getUserEntityFromUserSchema(
-		userSchema: IUser,
-	): Promise<IUserEntity> {
-		const payload: IAuthPayload = {
-			_id: userSchema._id,
-			uid: userSchema.uid,
-			email: userSchema.email,
-		};
-
-		const userEntity: IUserEntity = {
-			authProvider: userSchema.authProvider,
-			authToken: await this._authorizationToken.generateToken(payload),
-			avatar: userSchema.avatar,
-			email: userSchema.email,
-			phoneNumbers: userSchema.phoneNumbers,
-			status: userSchema.status,
-			username: userSchema.username,
-			extraDataProvider: userSchema.extraDataProvider,
-		};
-
-		return userEntity;
 	}
 
 	public async validateSignInCode(
@@ -198,10 +185,16 @@ export class UsersService {
 		return true;
 	}
 
-	public async getUserEntityByUserId(userId: string): Promise<IUserEntity> {
+	public async getUserWIthTokenByUserId(userId: string): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByUserIdOrFail(userId);
 
-		return this.getUserEntityFromUserSchema(user);
+		return this._getUserEntityWithToken(user);
+	}
+
+	public async getUserByUserId(userId: string): Promise<IUserEntity> {
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		return this._getUserEntity(user);
 	}
 
 	public async sendRecoverPasswordCode(email: string): Promise<void> {
@@ -245,6 +238,73 @@ export class UsersService {
 		});
 	}
 
+	public async updateUser(
+		userId: string,
+		updateUserDto: UpdateUserDto,
+	): Promise<IUserEntity> {
+		await this.findOneByUserIdOrFail(userId);
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					firstName: updateUserDto.firstName,
+					lastName: updateUserDto.lastName,
+					middleName: updateUserDto.middleName,
+					birthDate: updateUserDto.birthDate,
+					gender: updateUserDto.gender,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntity(userUpdated);
+	}
+
+	public async updateUserAddresses(
+		userId: string,
+		updateUserAddressesDto: UpdateUserAddressesDto,
+	): Promise<IUserEntity> {
+		await this.findOneByUserIdOrFail(userId);
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					addresses: updateUserAddressesDto.addresses,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntity(userUpdated);
+	}
+
+	public async updateUserPhoneNumbers(
+		userId: string,
+		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
+	): Promise<IUserEntity> {
+		await this.findOneByUserIdOrFail(userId);
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					phoneNumbers: updatePhoneNumbers.phoneNumbers,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntity(userUpdated);
+	}
+
 	//#rendegion
 
 	//#region Private Methods
@@ -258,6 +318,22 @@ export class UsersService {
 				'Error when attempt to send signIn code to user',
 			);
 		}
+	}
+
+	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
+		const payload: IAuthPayload = {
+			_id: user._id,
+			uid: user.uid,
+			email: user.email,
+		};
+
+		const token: string = await this._authorizationToken.generateToken(payload);
+
+		return new UserEntity(user).addToken(token);
+	}
+
+	private _getUserEntity(user: IUser): IUserEntity {
+		return new UserEntity(user);
 	}
 
 	//#rendegion

@@ -13,6 +13,7 @@ namespace UsersEnum {
 	export enum Gender {
 		FEMALE = 'FEMALE',
 		MALE = 'MALE',
+		OTHER = 'OTHER',
 	}
 
 	export enum PhoneTypes {

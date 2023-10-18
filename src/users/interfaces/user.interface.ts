@@ -13,9 +13,38 @@ export interface IUser extends Document {
 	phoneNumbers: IPhoneNumber[];
 	extraDataProvider: any | null;
 	status: UsersEnum.Status;
+	firstName: string | null;
+	lastName: string | null;
+	middleName: string | null;
+	birthDate: Date | null;
+	addresses: IUserAddress[] | null;
+	gender: UsersEnum.Gender | null;
 }
 
 export interface IPhoneNumber {
 	type: UsersEnum.PhoneTypes;
 	number: string;
+}
+
+export interface IUserAddress {
+	address1: string;
+	address2?: string;
+	city: string;
+	isValid: boolean;
+	state?: IUserAddressState;
+	uid: string;
+	zip: string;
+	description?: string;
+	country: IUserAddressCountry;
+	district: string;
+}
+
+export interface IUserAddressState {
+	code: string;
+	name: string;
+}
+
+export interface IUserAddressCountry {
+	code: string;
+	name: string;
 }
