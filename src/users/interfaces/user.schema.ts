@@ -5,6 +5,7 @@ import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 
 const PhoneNumberSchema = new mongoose.Schema({
+	uid: String,
 	type: String,
 	number: String,
 });

@@ -22,6 +22,7 @@ export interface IUser extends Document {
 }
 
 export interface IPhoneNumber {
+	uid: string;
 	type: UsersEnum.PhoneTypes;
 	number: string;
 }
