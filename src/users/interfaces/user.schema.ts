@@ -4,29 +4,38 @@ import mongoose, { Schema } from 'mongoose';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 
-const PhoneNumberSchema = new mongoose.Schema({
-	uid: String,
-	type: String,
-	number: String,
-});
+const PhoneNumberSchema = new mongoose.Schema(
+	{
+		uid: String,
+		type: String,
+		number: String,
+	},
+	{ _id: false },
+);
 
-const CodeNameSchema = new mongoose.Schema({
-	code: String,
-	name: String,
-});
+const CodeNameSchema = new mongoose.Schema(
+	{
+		code: String,
+		name: String,
+	},
+	{ _id: false },
+);
 
-const AddressSchema = new mongoose.Schema({
-	address1: String,
-	address2: { type: String, optional: true },
-	city: String,
-	isValid: Boolean,
-	state: CodeNameSchema,
-	uid: String,
-	zip: String,
-	description: { type: String, optional: true },
-	country: CodeNameSchema,
-	district: String,
-});
+const AddressSchema = new mongoose.Schema(
+	{
+		address1: String,
+		address2: { type: String, optional: true },
+		city: String,
+		isValid: Boolean,
+		state: CodeNameSchema,
+		uid: String,
+		zip: String,
+		description: { type: String, optional: true },
+		country: CodeNameSchema,
+		district: String,
+	},
+	{ _id: false },
+);
 
 const UserSchema = new mongoose.Schema<IUser>(
 	{
