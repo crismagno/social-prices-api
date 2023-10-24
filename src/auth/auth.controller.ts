@@ -27,7 +27,7 @@ export class AuthController {
 	public async signIn(
 		@Body() signInDto: Record<string, string>,
 	): Promise<IUserEntity> {
-		return this._authService.signIn(signInDto.email, signInDto.password);
+		return await this._authService.signIn(signInDto.email, signInDto.password);
 	}
 
 	@Post('/signUp')
@@ -36,7 +36,7 @@ export class AuthController {
 	public async sighUp(
 		@Body() createUserDto: CreateUserDto,
 	): Promise<IUserEntity> {
-		return this._authService.signUp(createUserDto);
+		return await this._authService.signUp(createUserDto);
 	}
 
 	@Get('/validateToken')
@@ -54,6 +54,9 @@ export class AuthController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._authService.validateSignInCode(authPayload._id, codeValue);
+		return await this._authService.validateSignInCode(
+			authPayload._id,
+			codeValue,
+		);
 	}
 }

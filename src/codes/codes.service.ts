@@ -60,6 +60,24 @@ export class CodesService {
 		return await this._validateCode(userId, type, value);
 	}
 
+	public async findOneByUserIdAndCode(
+		userId: string,
+		type: CodesEnum.Type,
+	): Promise<ICode> {
+		const code: ICode | undefined = await this._codeModel.findOne({
+			userId,
+			type,
+		});
+
+		if (!code) {
+			this._logger.warn('Code not found!', { userId, type });
+
+			throw new NotFoundException('Code not found!');
+		}
+
+		return code;
+	}
+
 	// #endregion
 
 	//#region Private Methods
@@ -68,7 +86,7 @@ export class CodesService {
 		userId: string,
 		type: CodesEnum.Type,
 	): Promise<ICode> {
-		const findCodeByUserAndType = await this._codeModel.findOne({
+		const findCodeByUserAndType: ICode = await this._codeModel.findOne({
 			userId,
 			type,
 		});
@@ -95,7 +113,7 @@ export class CodesService {
 			);
 		}
 
-		const newCode = new this._codeModel({
+		const newCode: ICode = new this._codeModel({
 			userId,
 			value,
 			type,
@@ -110,23 +128,13 @@ export class CodesService {
 		type: CodesEnum.Type,
 		value: string,
 	): Promise<boolean> {
-		const findCodeByUserAndType: ICode | undefined =
-			await this._codeModel.findOne({
-				userId,
-				type,
-			});
+		const code: ICode = await this.findOneByUserIdAndCode(userId, type);
 
-		if (!findCodeByUserAndType) {
-			this._logger.warn('Code not found!', { userId, type });
-
-			throw new NotFoundException('Code not found!');
-		}
-
-		if (moment().isAfter(findCodeByUserAndType.expiresIn)) {
+		if (moment().isAfter(code.expiresIn)) {
 			throw new BadRequestException('Code expired!');
 		}
 
-		if (findCodeByUserAndType.value === value) {
+		if (code.value === value) {
 			await this._updateCode(userId, type);
 			return true;
 		}
@@ -138,10 +146,7 @@ export class CodesService {
 		userId: string,
 		type: CodesEnum.Type,
 	): Promise<ICode> {
-		const findCodeByUserAndType: ICode = await this._codeModel.findOne({
-			userId,
-			type,
-		});
+		const code: ICode = await this.findOneByUserIdAndCode(userId, type);
 
 		const value: string = makeRandomCode();
 		const expiresIn: Date = moment()
@@ -149,7 +154,7 @@ export class CodesService {
 			.toDate();
 
 		return this._codeModel.findOneAndUpdate(
-			findCodeByUserAndType._id,
+			code._id,
 			{
 				$set: {
 					value: value,

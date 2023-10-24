@@ -28,7 +28,7 @@ export class UsersController {
 	public async getUser(@Request() request: any): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-		return this._usersService.getUserByUserId(authPayload._id);
+		return await this._usersService.getUserByUserId(authPayload._id);
 	}
 
 	@Get('/getUserByToken')
@@ -37,7 +37,7 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-		return this._usersService.getUserWIthTokenByUserId(authPayload._id);
+		return await this._usersService.getUserWIthTokenByUserId(authPayload._id);
 	}
 
 	@Public()
