@@ -46,7 +46,7 @@ export class AuthGuard implements CanActivate {
 
 		try {
 			const payload: IAuthPayload =
-				await this._authorizationToken.getToken(token);
+				await this._authorizationToken.getToken<IAuthPayload>(token);
 
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD] = payload;
 		} catch {

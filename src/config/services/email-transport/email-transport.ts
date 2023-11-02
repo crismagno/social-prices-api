@@ -15,6 +15,8 @@ export default class EmailTransport {
 
 	private readonly _emailUser: string = process.env.EMAIL_USER;
 
+	private readonly _emailTest: string = process.env.EMAIL_TEST;
+
 	private readonly _emailHost: string = process.env.EMAIL_HOST;
 
 	private readonly _emailPort: number = +process.env.EMAIL_PORT;
@@ -68,7 +70,7 @@ export default class EmailTransport {
 	public async sendEmailTest(): Promise<string | null> {
 		const result: string | null = await this.sendEmail({
 			from: this._emailUser,
-			to: 'cristhoferbieber@gmail.com',
+			to: this._emailTest,
 			subject: 'Test',
 			text: 'Text........',
 			html: '<b>Test----</b>',

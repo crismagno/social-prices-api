@@ -17,8 +17,8 @@ export default class AuthorizationToken {
 		return await this._jwtService.signAsync(payload);
 	}
 
-	public async getToken(token: string): Promise<any> {
-		return await this._jwtService.verifyAsync(token, {
+	public async getToken<T>(token: string): Promise<T> {
+		return await this._jwtService.verifyAsync<Promise<T>>(token, {
 			secret: AuthorizationTokenJwtConstants.secret(),
 		});
 	}

@@ -2,16 +2,23 @@ import {
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Param,
+	ParseFilePipeBuilder,
 	Post,
 	Request,
+	Res,
+	UploadedFile,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { Public } from '../shared/decorators/custom.decorator';
+import { fileInterceptorOptionsUploadAvatar } from '../shared/helpers/global/files-interceptors';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
@@ -94,5 +101,45 @@ export class UsersController {
 			authPayload._id,
 			updateUserPhoneNumbersDto,
 		);
+	}
+
+	@Post('/uploadAvatar')
+	@UseInterceptors(
+		FileInterceptor(
+			'avatar',
+			fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
+		),
+	)
+	public uploadAvatar(
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addFileTypeValidator({
+					fileType: /(jpg|jpeg|png|gif)$/,
+				})
+				.addMaxSizeValidator({
+					maxSize: 5242880,
+				})
+				.build({
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+				}),
+		)
+		file: Express.Multer.File,
+		@Request() request: any,
+	) {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return this._usersService.updateAvatar(authPayload._id, file.filename);
+	}
+
+	@Public()
+	@Get('/avatars/:filename')
+	public getAvatarImage(
+		@Res() res: any,
+		@Param('filename', ValidationParamsPipe) filename: string,
+	) {
+		return res.sendFile(filename, {
+			root: './uploads/avatars',
+		});
 	}
 }

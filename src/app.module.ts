@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { MulterModule } from '@nestjs/platform-express';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,6 +18,9 @@ import { UsersModule } from './users/users.module';
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
+		}),
+		MulterModule.register({
+			dest: './uploads',
 		}),
 		MongooseModuleForRoot(),
 		JwtModuleRegister(),

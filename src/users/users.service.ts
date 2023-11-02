@@ -227,7 +227,7 @@ export class UsersService {
 			throw new BadRequestException('Invalid recover password code');
 		}
 
-		const hashPassword = await this._hashCrypt.generateHash(
+		const hashPassword: string = await this._hashCrypt.generateHash(
 			recoverPasswordDto.newPassword,
 		);
 
@@ -295,6 +295,27 @@ export class UsersService {
 			{
 				$set: {
 					phoneNumbers: updatePhoneNumbers.phoneNumbers,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntity(userUpdated);
+	}
+
+	public async updateAvatar(
+		userId: string,
+		avatar: string,
+	): Promise<IUserEntity> {
+		await this.findOneByUserIdOrFail(userId);
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					avatar,
 				},
 			},
 			{
