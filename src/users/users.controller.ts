@@ -35,6 +35,7 @@ export class UsersController {
 	public async getUser(@Request() request: any): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._usersService.getUserByUserId(authPayload._id);
 	}
 
@@ -44,6 +45,7 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._usersService.getUserWIthTokenByUserId(authPayload._id);
 	}
 
@@ -72,6 +74,7 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._usersService.updateUser(authPayload._id, updateUserDto);
 	}
 
@@ -83,6 +86,7 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._usersService.updateUserAddresses(
 			authPayload._id,
 			updateUserAddressesDto,
@@ -97,6 +101,7 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._usersService.updateUserPhoneNumbers(
 			authPayload._id,
 			updateUserPhoneNumbersDto,
