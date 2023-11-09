@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	HttpStatus,
 	Param,
@@ -130,11 +131,19 @@ export class UsersController {
 		)
 		file: Express.Multer.File,
 		@Request() request: any,
-	) {
+	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
 		return this._usersService.updateAvatar(authPayload._id, file.filename);
+	}
+
+	@Delete('/removeAvatar')
+	public removeAvatar(@Request() request: any): Promise<IUserEntity> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return this._usersService.updateAvatar(authPayload._id, null);
 	}
 
 	@Public()

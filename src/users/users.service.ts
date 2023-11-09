@@ -307,7 +307,7 @@ export class UsersService {
 
 	public async updateAvatar(
 		userId: string,
-		avatar: string,
+		avatar: string | null,
 	): Promise<IUserEntity> {
 		await this.findOneByUserIdOrFail(userId);
 
