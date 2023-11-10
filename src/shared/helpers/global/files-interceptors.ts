@@ -1,13 +1,13 @@
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
+import { createUniqueSuffix } from './';
+
 export const fileInterceptorOptionsUploadAvatar = (destination: string) => ({
 	storage: diskStorage({
 		destination,
 		filename: (req, file, callback) => {
-			const uniqueSuffix: string = `${Date.now()}-${Math.round(
-				Math.random() * 1e9,
-			)}`;
+			const uniqueSuffix: string = createUniqueSuffix();
 
 			const ext: string = extname(file.originalname);
 

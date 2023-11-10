@@ -22,6 +22,7 @@ import { Public } from '../shared/decorators/custom.decorator';
 import { fileInterceptorOptionsUploadAvatar } from '../shared/helpers/global/files-interceptors';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
+import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
 import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
@@ -155,5 +156,31 @@ export class UsersController {
 		return res.sendFile(filename, {
 			root: './uploads/avatars',
 		});
+	}
+
+	@Get('/sendUpdateEmailCode/:email')
+	public async sendUpdateEmailCode(
+		@Request() request: any,
+		@Param('email', ValidationParamsPipe) email: string,
+	): Promise<void> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		await this._usersService.sendUpdateEmailCode(authPayload._id, email);
+	}
+
+	@Post('/updateEmail')
+	@UsePipes(ValidationPipe)
+	public async updateEmail(
+		@Request() request: any,
+		@Body() updateEmailDto: UpdateEmailDto,
+	): Promise<IUserEntity> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._usersService.updateEmail(
+			authPayload._id,
+			updateEmailDto,
+		);
 	}
 }

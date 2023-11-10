@@ -60,6 +60,19 @@ export class CodesService {
 		return await this._validateCode(userId, type, value);
 	}
 
+	public async createUpdateEmail(userId: string): Promise<ICode> {
+		const type: CodesEnum.Type = CodesEnum.Type.UPDATE_EMAIL;
+		return await this._getByUserIdAndType(userId, type);
+	}
+
+	public async validateUpdateEmail(
+		userId: string,
+		value: string,
+	): Promise<boolean> {
+		const type: CodesEnum.Type = CodesEnum.Type.UPDATE_EMAIL;
+		return await this._validateCode(userId, type, value);
+	}
+
 	public async findOneByUserIdAndCode(
 		userId: string,
 		type: CodesEnum.Type,

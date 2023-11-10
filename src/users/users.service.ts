@@ -17,9 +17,11 @@ import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
 import { INotificationResponse } from '../notification/interfaces/notification.types';
 import { NotificationService } from '../notification/notification.service';
+import { createUsernameByEmail } from '../shared/helpers/global';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
+import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
 import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
@@ -129,7 +131,7 @@ export class UsersService {
 
 			const newUser: IUser = new this._userModel({
 				email: createUserDto.email,
-				username: createUserDto.username,
+				username: createUsernameByEmail(createUserDto.email),
 				password: hashPassword,
 				authProvider:
 					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
@@ -143,7 +145,7 @@ export class UsersService {
 				lastName: null,
 				middleName: null,
 				birthDate: null,
-				gender: null,
+				gender: UsersEnum.Gender.OTHER,
 			});
 
 			const user: IUser = await newUser.save();
@@ -324,6 +326,71 @@ export class UsersService {
 		);
 
 		return this._getUserEntity(userUpdated);
+	}
+
+	public async sendUpdateEmailCode(
+		userId: string,
+		email: string,
+	): Promise<void> {
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		if (user.email != email) {
+			throw new BadRequestException('Incorrect user email.');
+		}
+
+		const notificationResponse: INotificationResponse =
+			await this._notificationService.sendUpdateEmailCode(user);
+
+		if (!notificationResponse.email) {
+			throw new BadRequestException(
+				'Error when attempt to send update email code to user',
+			);
+		}
+	}
+
+	public async updateEmail(
+		userId: string,
+		updateEmailDto: UpdateEmailDto,
+	): Promise<IUserEntity> {
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		if (user.email != updateEmailDto.email) {
+			throw new BadRequestException('Incorrect user email.');
+		}
+
+		const findUserByEmail: IUser = await this._userModel.findOne({
+			email: updateEmailDto.newEmail,
+		});
+
+		if (findUserByEmail && findUserByEmail._id !== user._id) {
+			throw new BadRequestException(
+				'Error when attempt to update email, email not allowed',
+			);
+		}
+
+		const isValidatedUpdateEmail: boolean =
+			await this._codesService.validateUpdateEmail(
+				user._id,
+				updateEmailDto.codeValue,
+			);
+
+		if (!isValidatedUpdateEmail) {
+			throw new BadRequestException('Invalid update email code');
+		}
+
+		const newUser: IUser = await this._userModel.findOneAndUpdate(
+			user._id,
+			{
+				$set: {
+					email: updateEmailDto.newEmail,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntityWithToken(newUser);
 	}
 
 	//#rendegion

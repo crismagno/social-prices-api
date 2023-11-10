@@ -79,6 +79,7 @@ const UserSchema = new mongoose.Schema<IUser>(
 			enum: {
 				values: Object.keys(UsersEnum.Gender),
 				message: '{VALUE} is not supported',
+				default: UsersEnum.Gender.OTHER,
 			},
 			optional: true,
 		},

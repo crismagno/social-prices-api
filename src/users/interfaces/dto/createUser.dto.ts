@@ -21,10 +21,6 @@ export default class CreateUserDto {
 	password: string;
 
 	@IsString()
-	@IsNotEmpty()
-	username: string;
-
-	@IsString()
 	@IsOptional()
 	uid: string | null;
 

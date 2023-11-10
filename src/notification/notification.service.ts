@@ -54,5 +54,21 @@ export class NotificationService {
 		};
 	}
 
+	public async sendUpdateEmailCode(
+		user: IUser,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createUpdateEmail(user._id);
+
+		const emailResponse: string | null = await this._emailTransport.sendEmail({
+			to: user.email,
+			subject: `Update Email Code`,
+			html: `Hi! here is your update email code: <b>${code.value}</b>`,
+		});
+
+		return {
+			email: emailResponse,
+		};
+	}
+
 	//#endregion
 }
