@@ -21,7 +21,7 @@ export const makeRandomCode = (lengthCode: number = 6): string => {
 export const createUniqueSuffix = (length: number = 1e9): string =>
 	`${Date.now()}${Math.round(Math.random() * length)}`;
 
-export const createUsernameByEmail = (email: string) => {
+export const createUsernameByEmail = (email: string): string => {
 	const firstPartEmail: string = email.split('@')[0];
 	const uniqueSuffix: string = createUniqueSuffix(10);
 	return `${firstPartEmail}${uniqueSuffix}`;

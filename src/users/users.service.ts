@@ -64,7 +64,7 @@ export class UsersService {
 	}
 
 	public async findOneByEmailOrFail(email: string): Promise<IUser> {
-		const user = await this._userModel.findOne({ email });
+		const user: IUser | undefined = await this.findOneByEmail(email);
 
 		if (!user) {
 			throw new NotFoundException('User not found!');
@@ -78,7 +78,7 @@ export class UsersService {
 	}
 
 	public async findOneByUserIdOrFail(userId: string): Promise<IUser> {
-		const user = await this._userModel.findById(userId);
+		const user: IUser | undefined = await this.findOneByUserId(userId);
 
 		if (!user) {
 			throw new NotFoundException('User not found!');
@@ -88,15 +88,11 @@ export class UsersService {
 	}
 
 	public async signIn(email: string, password: string): Promise<IUserEntity> {
-		const user: IUser | undefined = await this.findOneByEmail(email);
-
-		if (!user) {
-			throw new NotFoundException('User not found!');
-		}
+		const user: IUser = await this.findOneByEmailOrFail(email);
 
 		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
 			password,
-			user?.password,
+			user.password,
 		);
 
 		if (!isPasswordMatch) {
@@ -110,7 +106,7 @@ export class UsersService {
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
 		try {
-			const findUserByEmail = await this._userModel
+			const findUserByEmail: IUser | undefined = await this._userModel
 				.findOne({
 					email: createUserDto.email,
 				})
@@ -125,7 +121,7 @@ export class UsersService {
 				throw new BadRequestException('User credentials error.');
 			}
 
-			const hashPassword = await this._hashCrypt.generateHash(
+			const hashPassword: string = await this._hashCrypt.generateHash(
 				createUserDto.password,
 			);
 
@@ -358,9 +354,9 @@ export class UsersService {
 			throw new BadRequestException('Incorrect user email.');
 		}
 
-		const findUserByEmail: IUser = await this._userModel.findOne({
-			email: updateEmailDto.newEmail,
-		});
+		const findUserByEmail: IUser | undefined = await this.findOneByEmail(
+			updateEmailDto.newEmail,
+		);
 
 		if (findUserByEmail && findUserByEmail._id !== user._id) {
 			throw new BadRequestException(
@@ -368,13 +364,13 @@ export class UsersService {
 			);
 		}
 
-		const isValidatedUpdateEmail: boolean =
+		const isValidatedUpdateCodeEmail: boolean =
 			await this._codesService.validateUpdateEmail(
 				user._id,
 				updateEmailDto.codeValue,
 			);
 
-		if (!isValidatedUpdateEmail) {
+		if (!isValidatedUpdateCodeEmail) {
 			throw new BadRequestException('Invalid update email code');
 		}
 
@@ -383,6 +379,7 @@ export class UsersService {
 			{
 				$set: {
 					email: updateEmailDto.newEmail,
+					username: createUsernameByEmail(updateEmailDto.newEmail),
 				},
 			},
 			{
