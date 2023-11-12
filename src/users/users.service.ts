@@ -1,3 +1,4 @@
+import { ManagedUpload } from 'aws-sdk/clients/s3';
 import { Model, Types } from 'mongoose';
 
 import {
@@ -15,6 +16,7 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import AuthorizationToken from '../config/authorization/authorization-token';
 import HashCrypt from '../config/hash-crypt/hash-crypt';
+import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
 import { INotificationResponse } from '../notification/interfaces/notification.types';
 import { NotificationService } from '../notification/notification.service';
 import { createUsernameByEmail } from '../shared/helpers/global';
@@ -47,6 +49,7 @@ export class UsersService {
 		@Inject(forwardRef(() => NotificationService))
 		private readonly _notificationService: NotificationService,
 		private readonly _codesService: CodesService,
+		private readonly _amazonFilesService: AmazonFilesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -305,15 +308,36 @@ export class UsersService {
 
 	public async updateAvatar(
 		userId: string,
-		avatar: string | null,
+		file: Express.Multer.File,
 	): Promise<IUserEntity> {
+		await this.findOneByUserIdOrFail(userId);
+
+		const response: ManagedUpload.SendData =
+			await this._amazonFilesService.uploadFile(file);
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					avatar: response.Key,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		return this._getUserEntity(userUpdated);
+	}
+
+	public async removeAvatar(userId: string): Promise<IUserEntity> {
 		await this.findOneByUserIdOrFail(userId);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
 				$set: {
-					avatar,
+					avatar: null,
 				},
 			},
 			{
@@ -388,6 +412,12 @@ export class UsersService {
 		);
 
 		return this._getUserEntityWithToken(newUser);
+	}
+
+	public async getFileFromAmazonFiles(
+		filename: string,
+	): Promise<string | undefined> {
+		return await this._amazonFilesService.getFileObject(filename);
 	}
 
 	//#rendegion

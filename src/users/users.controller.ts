@@ -8,7 +8,6 @@ import {
 	ParseFilePipeBuilder,
 	Post,
 	Request,
-	Res,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -19,7 +18,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { Public } from '../shared/decorators/custom.decorator';
-import { fileInterceptorOptionsUploadAvatar } from '../shared/helpers/global/files-interceptors';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
@@ -110,13 +108,38 @@ export class UsersController {
 		);
 	}
 
+	// That controller is used on legacy t save on own server
+	// @Post('/uploadAvatar')
+	// @UseInterceptors(
+	// 	FileInterceptor(
+	// 		'avatar',
+	// 		fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
+	// 	),
+	// )
+	// public uploadAvatar(
+	// 	@UploadedFile(
+	// 		new ParseFilePipeBuilder()
+	// 			.addFileTypeValidator({
+	// 				fileType: /(jpg|jpeg|png|gif)$/,
+	// 			})
+	// 			.addMaxSizeValidator({
+	// 				maxSize: 5242880,
+	// 			})
+	// 			.build({
+	// 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+	// 			}),
+	// 	)
+	// 	file: Express.Multer.File,
+	// 	@Request() request: any,
+	// ): Promise<IUserEntity> {
+	// 	const authPayload: IAuthPayload =
+	// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+	// 	return this._usersService.updateAvatar(authPayload._id, file);
+	// }
+
 	@Post('/uploadAvatar')
-	@UseInterceptors(
-		FileInterceptor(
-			'avatar',
-			fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
-		),
-	)
+	@UseInterceptors(FileInterceptor('avatar'))
 	public uploadAvatar(
 		@UploadedFile(
 			new ParseFilePipeBuilder()
@@ -136,27 +159,27 @@ export class UsersController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._usersService.updateAvatar(authPayload._id, file.filename);
+		return this._usersService.updateAvatar(authPayload._id, file);
 	}
 
 	@Delete('/removeAvatar')
-	public removeAvatar(@Request() request: any): Promise<IUserEntity> {
+	public async removeAvatar(@Request() request: any): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._usersService.updateAvatar(authPayload._id, null);
+		return await this._usersService.removeAvatar(authPayload._id);
 	}
 
-	@Public()
-	@Get('/avatars/:filename')
-	public getAvatarImage(
-		@Res() res: any,
-		@Param('filename', ValidationParamsPipe) filename: string,
-	) {
-		return res.sendFile(filename, {
-			root: './uploads/avatars',
-		});
-	}
+	// @Public()
+	// @Get('/avatars/:filename')
+	// public getAvatarImage(
+	// 	@Res() res: any,
+	// 	@Param('filename', ValidationParamsPipe) filename: string,
+	// ) {
+	// 	return res.sendFile(filename, {
+	// 		root: './uploads/avatars',
+	// 	});
+	// }
 
 	@Get('/sendUpdateEmailCode/:email')
 	public async sendUpdateEmailCode(
