@@ -1,7 +1,7 @@
 import * as AWS from 'aws-sdk';
 
 // file: aws-s3 > src > app.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { newFileOriginalname } from '../../../shared/helpers/global';
 
@@ -11,6 +11,7 @@ export class AmazonFilesService {
 
 	private _awsS3Bucket: string = process.env.AWS_S3_BUCKET;
 	private _awsS3: AWS.S3;
+	private _logger: Logger;
 
 	//#endregion
 
@@ -22,6 +23,8 @@ export class AmazonFilesService {
 			secretAccessKey: process.env.SECRET_ACCESS_KEY,
 			region: process.env.AWS_S3_REGION,
 		});
+
+		this._logger = new Logger(AmazonFilesService.name);
 	}
 
 	//#endregion
@@ -82,6 +85,7 @@ export class AmazonFilesService {
 
 			return s3Response;
 		} catch (error: any) {
+			this._logger.error(error);
 			throw error;
 		}
 	}

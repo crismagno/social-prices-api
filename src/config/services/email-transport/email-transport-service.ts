@@ -68,15 +68,20 @@ export default class EmailTransport {
 	}
 
 	public async sendEmailTest(): Promise<string | null> {
-		const result: string | null = await this.sendEmail({
-			from: this._emailUser,
-			to: this._emailTest,
-			subject: 'Test',
-			text: 'Text........',
-			html: '<b>Test----</b>',
-		});
+		try {
+			const result: string | null = await this.sendEmail({
+				from: this._emailUser,
+				to: this._emailTest,
+				subject: 'Test',
+				text: 'Text........',
+				html: '<b>Test----</b>',
+			});
 
-		return result;
+			return result;
+		} catch (error: any) {
+			this._logger.error(error);
+			return null;
+		}
 	}
 
 	//#endregion
