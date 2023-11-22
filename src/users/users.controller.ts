@@ -108,7 +108,7 @@ export class UsersController {
 		);
 	}
 
-	// That controller is used on legacy t save on own server
+	// That controller is used on legacy to save on own server
 	// @Post('/uploadAvatar')
 	// @UseInterceptors(
 	// 	FileInterceptor(
