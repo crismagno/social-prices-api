@@ -54,9 +54,9 @@ export class AmazonFilesService {
 
 		if (data.Body) {
 			return data.Body.toString('utf-8');
-		} else {
-			return undefined;
 		}
+
+		return undefined;
 	}
 
 	//#endregion

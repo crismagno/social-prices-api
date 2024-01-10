@@ -13,6 +13,7 @@ import { JwtModuleRegister } from './config/authorization/authorization-token.en
 import { MongooseModuleForRoot } from './config/database/mongo/mongo';
 import { NotificationModule } from './notification/notification.module';
 import { UsersModule } from './users/users.module';
+import { StoresModule } from './stores/stores.module';
 
 @Module({
 	imports: [
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
 		UsersModule,
 		CodesModule,
 		NotificationModule,
+		StoresModule,
 	],
 	controllers: [AppController],
 	providers: [
