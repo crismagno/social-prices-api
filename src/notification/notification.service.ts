@@ -3,6 +3,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import EmailTransport from '../config/services/email-transport/email-transport-service';
+import { IStore } from '../stores/interfaces/stores.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { INotificationResponse } from './interfaces/notification.types';
@@ -63,6 +64,21 @@ export class NotificationService {
 			to: user.email,
 			subject: `Update Email Code`,
 			html: `Hi! here is your update email code: <b>${code.value}</b>`,
+		});
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async sendCreateStore(
+		store: IStore,
+		user: IUser,
+	): Promise<INotificationResponse> {
+		const emailResponse: string | null = await this._emailTransport.sendEmail({
+			to: user.email,
+			subject: `New store`,
+			html: `Hi! ${user.username}, you have created a new store <b>${store.name}</b>. Congratulation!!!`,
 		});
 
 		return {

@@ -7,7 +7,13 @@ import UsersEnum from './users.enum';
 const PhoneNumberSchema = new mongoose.Schema(
 	{
 		uid: String,
-		type: String,
+		type: {
+			type: String,
+			enum: {
+				values: Object.keys(UsersEnum.PhoneTypes),
+				message: '{VALUE} is not supported',
+			},
+		},
 		number: String,
 	},
 	{ _id: false },
