@@ -1,3 +1,4 @@
+import { ManagedUpload } from 'aws-sdk/clients/s3';
 import { Model } from 'mongoose';
 
 import {
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
+import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
 import { NotificationService } from '../notification/notification.service';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import { IUser } from '../users/interfaces/user.interface';
@@ -30,6 +32,7 @@ export class StoresService {
 		@InjectModel(schemasName.store) private readonly _storeModel: Model<IStore>,
 		private readonly _notificationService: NotificationService,
 		private readonly _usersService: UsersService,
+		private readonly _amazonFilesService: AmazonFilesService,
 	) {
 		this._logger = new Logger(StoresService.name);
 	}
@@ -63,6 +66,7 @@ export class StoresService {
 	}
 
 	public async create(
+		file: Express.Multer.File,
 		createStoreDto: CreateStoreDto,
 		userId: string,
 	): Promise<IStore> {
@@ -76,10 +80,13 @@ export class StoresService {
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
+		const response: ManagedUpload.SendData =
+			await this._amazonFilesService.uploadFile(file);
+
 		const store = new this._storeModel({
 			name: createStoreDto.name,
 			description: createStoreDto.description,
-			logo: createStoreDto.logo,
+			logo: response.Key,
 			startedAt: createStoreDto.startedAt,
 			status: StoresEnum.Status.ACTIVE,
 			userId,

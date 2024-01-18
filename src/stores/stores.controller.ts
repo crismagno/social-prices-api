@@ -2,12 +2,17 @@ import {
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Param,
+	ParseFilePipeBuilder,
 	Post,
 	Request,
+	UploadedFile,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
@@ -20,15 +25,30 @@ import { StoresService } from './stores.service';
 export class StoresController {
 	constructor(private _storeService: StoresService) {}
 
-	@Post('/')
 	@UsePipes(ValidationPipe)
+	@Post('/')
+	@UseInterceptors(FileInterceptor('logo'))
 	public async create(
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addFileTypeValidator({
+					fileType: /(jpg|jpeg|png|gif)$/,
+				})
+				.addMaxSizeValidator({
+					maxSize: 5242880,
+				})
+				.build({
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+				}),
+		)
+		file: Express.Multer.File,
 		@Request() request: any,
 		@Body() createStoreDto: CreateStoreDto,
 	): Promise<IStore> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-		return this._storeService.create(createStoreDto, authPayload._id);
+
+		return this._storeService.create(file, createStoreDto, authPayload._id);
 	}
 
 	@Get('/user')

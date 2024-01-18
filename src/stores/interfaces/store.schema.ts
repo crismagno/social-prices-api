@@ -50,6 +50,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 		},
 		startedAt: { type: Date, required: true },
 		userId: { type: String, required: true },
+		description: { type: String, optional: true },
 		phoneNumbers: {
 			type: [PhoneNumberSchema],
 			optional: true,

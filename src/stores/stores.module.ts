@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
 import { NotificationModule } from '../notification/notification.module';
 import { schemasModule } from '../shared/modules/imports/schemas/schemas';
 import { UsersModule } from '../users/users.module';
@@ -8,7 +9,7 @@ import { StoresService } from './stores.service';
 
 @Module({
 	imports: [schemasModule.store, NotificationModule, UsersModule],
-	providers: [StoresService],
+	providers: [StoresService, AmazonFilesService],
 	controllers: [StoresController],
 })
 export class StoresModule {}
