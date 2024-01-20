@@ -65,34 +65,60 @@ export class StoresService {
 		return this._storeModel.findOne({ email });
 	}
 
+	public async findOneByNameOrEmail(
+		name: string,
+		email: string,
+	): Promise<IStore | undefined> {
+		return this._storeModel.findOne({
+			$or: [{ name }, { email }],
+		});
+	}
+
 	public async create(
 		file: Express.Multer.File,
 		createStoreDto: CreateStoreDto,
 		userId: string,
 	): Promise<IStore> {
-		const storeByEmail: IStore | undefined = await this.findOneByEmail(
-			createStoreDto.email,
-		);
+		console.log('file: ', file);
+		const storeByNameOrEmail: IStore | undefined =
+			await this.findOneByNameOrEmail(
+				createStoreDto.name,
+				createStoreDto.email,
+			);
 
-		if (storeByEmail) {
+		if (storeByNameOrEmail?.name === createStoreDto.name) {
+			throw new BadRequestException('Invalid name, please try a new name.');
+		}
+
+		if (storeByNameOrEmail?.email === createStoreDto.email) {
 			throw new BadRequestException('Invalid email, please try a new email.');
 		}
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
-		const response: ManagedUpload.SendData =
+		const responseFile: ManagedUpload.SendData =
 			await this._amazonFilesService.uploadFile(file);
 
+		console.log(responseFile);
+
+		if (typeof createStoreDto.addresses === 'string') {
+			createStoreDto.addresses = JSON.parse(createStoreDto.addresses);
+		}
+
+		if (typeof createStoreDto.phoneNumbers === 'string') {
+			createStoreDto.phoneNumbers = JSON.parse(createStoreDto.phoneNumbers);
+		}
+
 		const store = new this._storeModel({
-			name: createStoreDto.name,
-			description: createStoreDto.description,
-			logo: response.Key,
-			startedAt: createStoreDto.startedAt,
+			logo: responseFile.Key,
 			status: StoresEnum.Status.ACTIVE,
 			userId,
+			addresses: createStoreDto.addresses,
+			phoneNumbers: createStoreDto.phoneNumbers,
+			name: createStoreDto.name,
 			email: createStoreDto.email,
-			addresses: [],
-			phoneNumbers: [],
+			designMode: createStoreDto.description,
+			startedAt: createStoreDto.startedAt,
 		});
 
 		const newStore: IStore = await store.save();
