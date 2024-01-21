@@ -1,5 +1,5 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { Model } from 'mongoose';
+import { Model, Types, UpdateQuery } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -15,6 +15,7 @@ import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
+import UpdateStoreDto from './interfaces/dto/updateStore.dto';
 import StoresEnum from './interfaces/stores.enum';
 import { IStore } from './interfaces/stores.interface';
 
@@ -65,6 +66,10 @@ export class StoresService {
 		return this._storeModel.findOne({ email });
 	}
 
+	public async findOneByName(name: string): Promise<IStore | undefined> {
+		return this._storeModel.findOne({ name });
+	}
+
 	public async findOneByNameOrEmail(
 		name: string,
 		email: string,
@@ -79,7 +84,6 @@ export class StoresService {
 		createStoreDto: CreateStoreDto,
 		userId: string,
 	): Promise<IStore> {
-		console.log('file: ', file);
 		const storeByNameOrEmail: IStore | undefined =
 			await this.findOneByNameOrEmail(
 				createStoreDto.name,
@@ -99,8 +103,6 @@ export class StoresService {
 		const responseFile: ManagedUpload.SendData =
 			await this._amazonFilesService.uploadFile(file);
 
-		console.log(responseFile);
-
 		if (typeof createStoreDto.addresses === 'string') {
 			createStoreDto.addresses = JSON.parse(createStoreDto.addresses);
 		}
@@ -117,7 +119,7 @@ export class StoresService {
 			phoneNumbers: createStoreDto.phoneNumbers,
 			name: createStoreDto.name,
 			email: createStoreDto.email,
-			designMode: createStoreDto.description,
+			description: createStoreDto.description,
 			startedAt: createStoreDto.startedAt,
 		});
 
@@ -126,6 +128,75 @@ export class StoresService {
 		await this._notificationService.sendCreateStore(newStore, user);
 
 		return store.save();
+	}
+
+	public async update(
+		file: Express.Multer.File,
+		updateStoreDto: UpdateStoreDto,
+	): Promise<IStore> {
+		const store: IStore = await this.findByIdOrFail(updateStoreDto.storeId);
+
+		if (store?.email !== updateStoreDto.email) {
+			const storeByEmail: IStore | undefined = await this.findOneByEmail(
+				updateStoreDto.email,
+			);
+
+			if (storeByEmail?.email === updateStoreDto.email) {
+				throw new BadRequestException('Invalid email, please try a new email.');
+			}
+		}
+
+		if (store?.name !== updateStoreDto.name) {
+			const storeByName: IStore | undefined = await this.findOneByName(
+				updateStoreDto.name,
+			);
+
+			if (storeByName?.name === updateStoreDto.name) {
+				throw new BadRequestException('Invalid name, please try a new name.');
+			}
+		}
+
+		if (typeof updateStoreDto.addresses === 'string') {
+			updateStoreDto.addresses = JSON.parse(updateStoreDto.addresses);
+		}
+
+		if (typeof updateStoreDto.phoneNumbers === 'string') {
+			updateStoreDto.phoneNumbers = JSON.parse(updateStoreDto.phoneNumbers);
+		}
+
+		const user: IUser = await this._usersService.findOneByUserIdOrFail(
+			store.userId,
+		);
+
+		const $set: UpdateQuery<IStore> = {
+			addresses: updateStoreDto.addresses,
+			phoneNumbers: updateStoreDto.phoneNumbers,
+			name: updateStoreDto.name,
+			email: updateStoreDto.email,
+			description: updateStoreDto.description,
+			startedAt: updateStoreDto.startedAt,
+		};
+
+		let responseFile: ManagedUpload.SendData | null = null;
+
+		if (file) {
+			responseFile = await this._amazonFilesService.uploadFile(file);
+			$set.logo = responseFile.Key;
+		}
+
+		const updatedStore: IStore = await this._storeModel.findOneAndUpdate(
+			new Types.ObjectId(updateStoreDto.storeId),
+			{
+				$set,
+			},
+			{
+				new: true,
+			},
+		);
+
+		await this._notificationService.sendUpdateStore(updatedStore, user);
+
+		return updatedStore;
 	}
 
 	// #endregion

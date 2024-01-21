@@ -86,5 +86,20 @@ export class NotificationService {
 		};
 	}
 
+	public async sendUpdateStore(
+		store: IStore,
+		user: IUser,
+	): Promise<INotificationResponse> {
+		const emailResponse: string | null = await this._emailTransport.sendEmail({
+			to: user.email,
+			subject: `Update store`,
+			html: `Hi! ${user.username}, you have updated store <b>${store.name}</b>!`,
+		});
+
+		return {
+			email: emailResponse,
+		};
+	}
+
 	//#endregion
 }

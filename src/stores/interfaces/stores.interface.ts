@@ -1,6 +1,7 @@
 import StoresEnum from './stores.enum';
 
 export interface IStore extends Document {
+	readonly _id: string;
 	logo: string | null;
 	email: string;
 	name: string;

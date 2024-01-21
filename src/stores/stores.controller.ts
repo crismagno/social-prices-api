@@ -6,6 +6,7 @@ import {
 	Param,
 	ParseFilePipeBuilder,
 	Post,
+	Put,
 	Request,
 	UploadedFile,
 	UseInterceptors,
@@ -18,6 +19,7 @@ import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
+import UpdateStoreDto from './interfaces/dto/updateStore.dto';
 import { IStore } from './interfaces/stores.interface';
 import { StoresService } from './stores.service';
 
@@ -49,6 +51,29 @@ export class StoresController {
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
 		return this._storeService.create(file, createStoreDto, authPayload._id);
+	}
+
+	@UsePipes(ValidationPipe)
+	@Put('/')
+	@UseInterceptors(FileInterceptor('logo'))
+	public async update(
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addFileTypeValidator({
+					fileType: /(jpg|jpeg|png|gif)$/,
+				})
+				.addMaxSizeValidator({
+					maxSize: 5242880,
+				})
+				.build({
+					fileIsRequired: false,
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+				}),
+		)
+		file: Express.Multer.File,
+		@Body() updateStoreDto: UpdateStoreDto,
+	): Promise<IStore> {
+		return this._storeService.update(file, updateStoreDto);
 	}
 
 	@Get('/user')
