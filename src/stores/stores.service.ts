@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { NotificationService } from '../notification/notification.service';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import { IUser } from '../users/interfaces/user.interface';

@@ -14,9 +14,9 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
-import AuthorizationToken from '../config/authorization/authorization-token';
-import HashCrypt from '../config/hash-crypt/hash-crypt';
-import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
+import AuthorizationToken from '../infra/authorization/authorization-token';
+import HashCrypt from '../infra/hash-crypt/hash-crypt';
+import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { INotificationResponse } from '../notification/interfaces/notification.types';
 import { NotificationService } from '../notification/notification.service';
 import { createUsernameByEmail } from '../shared/helpers/global';

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import AuthorizationToken from '../../config/authorization/authorization-token';
+import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { IS_PUBLIC_KEY } from '../../shared/decorators/custom.decorator';
 import AuthEnum from '../interfaces/auth.enum';
 import { IAuthPayload } from '../interfaces/auth.types';

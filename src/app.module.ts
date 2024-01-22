@@ -8,12 +8,12 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { CodesModule } from './codes/codes.module';
-import AuthorizationToken from './config/authorization/authorization-token';
-import { JwtModuleRegister } from './config/authorization/authorization-token.enum';
-import { MongooseModuleForRoot } from './config/database/mongo/mongo';
+import AuthorizationToken from './infra/authorization/authorization-token';
+import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
+import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
 import { NotificationModule } from './notification/notification.module';
-import { UsersModule } from './users/users.module';
 import { StoresModule } from './stores/stores.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
 	imports: [

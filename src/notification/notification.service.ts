@@ -2,7 +2,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
-import EmailTransport from '../config/services/email-transport/email-transport-service';
+import EmailTransport from '../infra/services/email-transport/email-transport-service';
 import { IStore } from '../stores/interfaces/stores.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';

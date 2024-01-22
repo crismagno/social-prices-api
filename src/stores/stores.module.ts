@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AmazonFilesService } from '../config/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { NotificationModule } from '../notification/notification.module';
 import { schemasModule } from '../shared/modules/imports/schemas/schemas';
 import { UsersModule } from '../users/users.module';
