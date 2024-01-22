@@ -49,7 +49,11 @@ const StoreSchema = new mongoose.Schema<IStore>(
 			required: true,
 		},
 		startedAt: { type: Date, required: true },
-		userId: { type: String, required: true },
+		userId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			required: true,
+		},
 		description: { type: String, optional: true },
 		phoneNumbers: {
 			type: [PhoneNumberSchema],

@@ -3,6 +3,7 @@ import { Document } from 'mongoose';
 import UsersEnum from './users.enum';
 
 export interface IUser extends Document {
+	readonly _id: string;
 	uid: string;
 	email: string;
 	username: string;

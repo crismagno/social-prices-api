@@ -50,7 +50,11 @@ export class StoresController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._storeService.create(file, createStoreDto, authPayload._id);
+		return await this._storeService.create(
+			file,
+			createStoreDto,
+			authPayload._id,
+		);
 	}
 
 	@UsePipes(ValidationPipe)
@@ -73,7 +77,7 @@ export class StoresController {
 		file: Express.Multer.File,
 		@Body() updateStoreDto: UpdateStoreDto,
 	): Promise<IStore> {
-		return this._storeService.update(file, updateStoreDto);
+		return await this._storeService.update(file, updateStoreDto);
 	}
 
 	@Get('/user')
@@ -81,7 +85,7 @@ export class StoresController {
 	public async findByUserId(@Request() request: any): Promise<IStore[]> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-		return this._storeService.findByUserId(authPayload._id);
+		return await this._storeService.findByUserId(authPayload._id);
 	}
 
 	@Get('/:storeId')
@@ -89,6 +93,6 @@ export class StoresController {
 	public async findById(
 		@Param('storeId', ValidationParamsPipe) storeId: string,
 	): Promise<IStore> {
-		return this._storeService.findById(storeId);
+		return await this._storeService.findById(storeId);
 	}
 }

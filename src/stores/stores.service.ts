@@ -165,7 +165,7 @@ export class StoresService {
 		}
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(
-			store.userId,
+			store.userId.toString(),
 		);
 
 		const $set: UpdateQuery<IStore> = {

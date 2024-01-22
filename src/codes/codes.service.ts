@@ -1,5 +1,5 @@
 import * as moment from 'moment';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -115,7 +115,7 @@ export class CodesService {
 			}
 
 			return this._codeModel.findOneAndUpdate(
-				findCodeByUserAndType._id,
+				new Types.ObjectId(findCodeByUserAndType._id),
 				{
 					$set: {
 						value: value,
@@ -167,7 +167,7 @@ export class CodesService {
 			.toDate();
 
 		return this._codeModel.findOneAndUpdate(
-			code._id,
+			new Types.ObjectId(code._id),
 			{
 				$set: {
 					value: value,

@@ -5,6 +5,10 @@ import { IUserEntity } from './users.types';
 export default class UserEntity implements IUserEntity {
 	//#region Public properties
 
+	public _id: string;
+
+	public uid: string;
+
 	public email: string;
 
 	public username: string;
@@ -38,6 +42,8 @@ export default class UserEntity implements IUserEntity {
 	//#region Constructor
 
 	constructor(private _user: IUser) {
+		this._id = _user._id;
+		this.uid = _user.uid;
 		this.authProvider = _user.authProvider;
 		this.authToken = null;
 		this.avatar = _user.avatar;

@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 import StoresEnum from './stores.enum';
 
 export interface IStore extends Document {
@@ -10,7 +12,7 @@ export interface IStore extends Document {
 	createdAt: Date;
 	updatedAt: Date;
 	status: StoresEnum.Status;
-	userId: string;
+	userId: mongoose.Schema.Types.ObjectId;
 	addresses: IStoreAddress[];
 	phoneNumbers: IStorePhoneNumber[];
 }

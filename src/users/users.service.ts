@@ -232,7 +232,7 @@ export class UsersService {
 			recoverPasswordDto.newPassword,
 		);
 
-		await this._userModel.findOneAndUpdate(user._id, {
+		await this._userModel.findOneAndUpdate(new Types.ObjectId(user._id), {
 			$set: {
 				password: hashPassword,
 			},
@@ -399,7 +399,7 @@ export class UsersService {
 		}
 
 		const newUser: IUser = await this._userModel.findOneAndUpdate(
-			user._id,
+			new Types.ObjectId(user._id),
 			{
 				$set: {
 					email: updateEmailDto.newEmail,

@@ -108,39 +108,9 @@ export class UsersController {
 		);
 	}
 
-	// That controller is used on legacy to save on own server
-	// @Post('/uploadAvatar')
-	// @UseInterceptors(
-	// 	FileInterceptor(
-	// 		'avatar',
-	// 		fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
-	// 	),
-	// )
-	// public uploadAvatar(
-	// 	@UploadedFile(
-	// 		new ParseFilePipeBuilder()
-	// 			.addFileTypeValidator({
-	// 				fileType: /(jpg|jpeg|png|gif)$/,
-	// 			})
-	// 			.addMaxSizeValidator({
-	// 				maxSize: 5242880,
-	// 			})
-	// 			.build({
-	// 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-	// 			}),
-	// 	)
-	// 	file: Express.Multer.File,
-	// 	@Request() request: any,
-	// ): Promise<IUserEntity> {
-	// 	const authPayload: IAuthPayload =
-	// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
-	// 	return this._usersService.updateAvatar(authPayload._id, file);
-	// }
-
 	@Post('/uploadAvatar')
 	@UseInterceptors(FileInterceptor('avatar'))
-	public uploadAvatar(
+	public async uploadAvatar(
 		@UploadedFile(
 			new ParseFilePipeBuilder()
 				.addFileTypeValidator({
@@ -159,7 +129,7 @@ export class UsersController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return this._usersService.updateAvatar(authPayload._id, file);
+		return await this._usersService.updateAvatar(authPayload._id, file);
 	}
 
 	@Delete('/removeAvatar')
@@ -169,17 +139,6 @@ export class UsersController {
 
 		return await this._usersService.removeAvatar(authPayload._id);
 	}
-
-	// @Public()
-	// @Get('/avatars/:filename')
-	// public getAvatarImage(
-	// 	@Res() res: any,
-	// 	@Param('filename', ValidationParamsPipe) filename: string,
-	// ) {
-	// 	return res.sendFile(filename, {
-	// 		root: './uploads/avatars',
-	// 	});
-	// }
 
 	@Get('/sendUpdateEmailCode/:email')
 	public async sendUpdateEmailCode(
@@ -207,3 +166,48 @@ export class UsersController {
 		);
 	}
 }
+
+// #region Legacy Methods
+
+// That controller is used on legacy to save on own server
+// @Post('/uploadAvatar')
+// @UseInterceptors(
+// 	FileInterceptor(
+// 		'avatar',
+// 		fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
+// 	),
+// )
+// public uploadAvatar(
+// 	@UploadedFile(
+// 		new ParseFilePipeBuilder()
+// 			.addFileTypeValidator({
+// 				fileType: /(jpg|jpeg|png|gif)$/,
+// 			})
+// 			.addMaxSizeValidator({
+// 				maxSize: 5242880,
+// 			})
+// 			.build({
+// 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+// 			}),
+// 	)
+// 	file: Express.Multer.File,
+// 	@Request() request: any,
+// ): Promise<IUserEntity> {
+// 	const authPayload: IAuthPayload =
+// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+// 	return this._usersService.updateAvatar(authPayload._id, file);
+// }
+
+// @Public()
+// @Get('/avatars/:filename')
+// public getAvatarImage(
+// 	@Res() res: any,
+// 	@Param('filename', ValidationParamsPipe) filename: string,
+// ) {
+// 	return res.sendFile(filename, {
+// 		root: './uploads/avatars',
+// 	});
+// }
+
+// #endregion

@@ -4,7 +4,11 @@ import CodesEnum from './codes.enum';
 
 const CodeSchema = new mongoose.Schema(
 	{
-		userId: { type: String, required: true },
+		userId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			required: true,
+		},
 		value: { type: String, required: true },
 		type: {
 			type: String,

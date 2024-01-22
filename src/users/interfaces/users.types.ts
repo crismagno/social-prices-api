@@ -2,6 +2,8 @@ import { IPhoneNumber, IUserAddress } from './user.interface';
 import UsersEnum from './users.enum';
 
 export interface IUserEntity {
+	_id: string;
+	uid: string;
 	email: string;
 	username: string;
 	avatar: string | null;
