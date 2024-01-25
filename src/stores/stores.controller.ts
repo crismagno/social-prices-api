@@ -17,6 +17,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import {
+	ITableStateRequest,
+	ITableStateResponse,
+} from '../shared/helpers/table/table-state.interface';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
@@ -85,7 +89,23 @@ export class StoresController {
 	public async findByUserId(@Request() request: any): Promise<IStore[]> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._storeService.findByUserId(authPayload._id);
+	}
+
+	@Post('/userTableState')
+	@UsePipes(ValidationPipe)
+	public async findByUserTableState(
+		@Request() request: any,
+		@Body() tableState: ITableStateRequest<IStore>,
+	): Promise<ITableStateResponse<IStore[]>> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._storeService.findByUserTableState(
+			authPayload._id,
+			tableState,
+		);
 	}
 
 	@Get('/:storeId')

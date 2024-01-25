@@ -1,5 +1,5 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { Model, Types, UpdateQuery } from 'mongoose';
+import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -11,6 +11,10 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { NotificationService } from '../notification/notification.service';
+import {
+	ITableStateRequest,
+	ITableStateResponse,
+} from '../shared/helpers/table/table-state.interface';
 import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
@@ -60,6 +64,38 @@ export class StoresService {
 		const stores: IStore[] = await this._storeModel.find({ userId });
 
 		return stores;
+	}
+
+	public async findByUserTableState(
+		userId: string,
+		tableState: ITableStateRequest<IStore>,
+	): Promise<ITableStateResponse<IStore[]>> {
+		const filter: FilterQuery<IStore> = {
+			userId,
+		};
+
+		if (tableState.search) {
+			const search = new RegExp(tableState.search, 'ig');
+
+			filter.$or = [
+				{
+					name: search,
+				},
+				{
+					email: search,
+				},
+			];
+		}
+
+		const response: ITableStateResponse<IStore[]> = {
+			data: [],
+			total: 0,
+		};
+
+		response.total = await this._storeModel.countDocuments(filter);
+		response.data = await this._storeModel.find(filter);
+
+		return response;
 	}
 
 	public async findOneByEmail(email: string): Promise<IStore | undefined> {

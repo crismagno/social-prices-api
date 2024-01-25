@@ -23,6 +23,8 @@ export default class EmailTransport {
 
 	private readonly _emailPass: string = process.env.EMAIL_PASS;
 
+	private readonly _messageIdTest: string = 'messageIdTest';
+
 	//#endregion
 
 	//#region Constructor
@@ -52,6 +54,11 @@ export default class EmailTransport {
 
 	public async sendEmail(params: ISendEmailParams): Promise<string | null> {
 		try {
+			if (!!process.env.EMAIL_STOP_SEND) {
+				console.log('EMAIL STOP SEND: ', params);
+				return this._messageIdTest;
+			}
+
 			const info = await this._transporter.sendMail({
 				from: params.from ?? this._emailUser,
 				to: params.to,
