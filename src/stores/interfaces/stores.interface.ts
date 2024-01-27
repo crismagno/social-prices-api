@@ -15,11 +15,14 @@ export interface IStore extends Document {
 	userId: mongoose.Schema.Types.ObjectId;
 	addresses: IStoreAddress[];
 	phoneNumbers: IStorePhoneNumber[];
+	about: string | null;
 }
 
 export interface IStorePhoneNumber {
 	uid: string;
+	type: StoresEnum.PhoneTypes;
 	number: string;
+	messengers: StoresEnum.PhoneNumberMessenger[];
 }
 
 export interface IStoreAddress {

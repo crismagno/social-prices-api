@@ -39,4 +39,8 @@ export default class CreateUserDto {
 
 	@IsOptional()
 	extraDataProvider: any | null;
+
+	@IsOptional()
+	@IsString()
+	about: string | null;
 }

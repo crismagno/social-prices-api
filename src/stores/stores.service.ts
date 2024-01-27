@@ -157,6 +157,7 @@ export class StoresService {
 			email: createStoreDto.email,
 			description: createStoreDto.description,
 			startedAt: createStoreDto.startedAt,
+			about: createStoreDto.about,
 		});
 
 		const newStore: IStore = await store.save();
@@ -211,6 +212,7 @@ export class StoresService {
 			email: updateStoreDto.email,
 			description: updateStoreDto.description,
 			startedAt: updateStoreDto.startedAt,
+			about: updateStoreDto.about,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;

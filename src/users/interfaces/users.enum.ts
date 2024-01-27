@@ -22,6 +22,13 @@ namespace UsersEnum {
 		BUSINESS = 'BUSINESS',
 		OTHER = 'OTHER',
 	}
+
+	export enum PhoneNumberMessenger {
+		WHATSAPP = 'WHATSAPP',
+		TELEGRAM = 'TELEGRAM',
+		MESSENGER = 'MESSENGER',
+		OTHER = 'OTHER',
+	}
 }
 
 export default UsersEnum;

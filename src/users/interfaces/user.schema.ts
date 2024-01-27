@@ -15,6 +15,13 @@ const PhoneNumberSchema = new mongoose.Schema(
 			},
 		},
 		number: String,
+		messengers: {
+			type: [String],
+			enum: {
+				values: Object.keys(UsersEnum.PhoneNumberMessenger),
+				message: '{VALUE} is not supported',
+			},
+		},
 	},
 	{ _id: false },
 );
@@ -50,6 +57,7 @@ const UserSchema = new mongoose.Schema<IUser>(
 		password: { type: String, required: true },
 		email: { type: String, unique: true, required: true },
 		avatar: { type: String, optional: true },
+		about: { type: String, optional: true },
 		authToken: String,
 		authProvider: {
 			type: String,

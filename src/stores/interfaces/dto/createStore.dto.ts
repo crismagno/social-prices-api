@@ -17,6 +17,10 @@ export default class CreateStoreDto {
 	@IsOptional()
 	description: string | null;
 
+	@IsString()
+	@IsOptional()
+	about: string | null;
+
 	addresses: any[];
 
 	phoneNumbers: any[];

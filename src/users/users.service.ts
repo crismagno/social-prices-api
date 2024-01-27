@@ -1,4 +1,5 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import { randomUUID } from 'crypto';
 import { Model, Types } from 'mongoose';
 
 import {
@@ -136,7 +137,7 @@ export class UsersService {
 					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
 				phoneNumbers: createUserDto.phoneNumbers ?? [],
 				status: UsersEnum.Status.PENDING,
-				uid: createUserDto.uid,
+				uid: createUserDto.uid ?? randomUUID(),
 				avatar: createUserDto.avatar,
 				extraDataProvider: createUserDto.extraDataProvider,
 				addresses: [],
@@ -145,6 +146,7 @@ export class UsersService {
 				middleName: null,
 				birthDate: null,
 				gender: UsersEnum.Gender.OTHER,
+				about: createUserDto.about,
 			});
 
 			const user: IUser = await newUser.save();
@@ -254,6 +256,7 @@ export class UsersService {
 					middleName: updateUserDto.middleName,
 					birthDate: updateUserDto.birthDate,
 					gender: updateUserDto.gender,
+					about: updateUserDto.about,
 				},
 			},
 			{

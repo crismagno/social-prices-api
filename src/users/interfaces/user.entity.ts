@@ -37,6 +37,8 @@ export default class UserEntity implements IUserEntity {
 
 	public gender: UsersEnum.Gender;
 
+	public about: string | null;
+
 	//#endregion
 
 	//#region Constructor
@@ -58,6 +60,7 @@ export default class UserEntity implements IUserEntity {
 		this.lastName = _user.lastName;
 		this.gender = _user.gender;
 		this.middleName = _user.middleName;
+		this.about = _user.about;
 	}
 
 	public async addToken(token: string): Promise<this> {

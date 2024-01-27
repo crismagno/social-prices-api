@@ -6,7 +6,21 @@ import { IStore } from './stores.interface';
 const PhoneNumberSchema = new mongoose.Schema(
 	{
 		uid: String,
+		type: {
+			type: String,
+			enum: {
+				values: Object.keys(StoresEnum.PhoneTypes),
+				message: '{VALUE} is not supported',
+			},
+		},
 		number: String,
+		messengers: {
+			type: [String],
+			enum: {
+				values: Object.keys(StoresEnum.PhoneNumberMessenger),
+				message: '{VALUE} is not supported',
+			},
+		},
 	},
 	{ _id: false },
 );
@@ -40,6 +54,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 		name: { type: String, required: true },
 		email: { type: String, unique: true, required: true },
 		logo: { type: String, optional: true },
+		about: { type: String, optional: true },
 		status: {
 			type: String,
 			enum: {
