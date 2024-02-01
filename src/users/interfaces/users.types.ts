@@ -18,4 +18,5 @@ export interface IUserEntity {
 	birthDate: Date | null;
 	addresses: IUserAddress[] | null;
 	gender: UsersEnum.Gender | null;
+	about: string | null;
 }

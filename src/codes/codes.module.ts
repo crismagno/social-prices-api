@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { schemasModule } from '../shared/modules/imports/schemas/schemas';
+import { schemasModule } from '../infra/database/mongo/schemas';
 import { CodesService } from './codes.service';
 
 @Module({

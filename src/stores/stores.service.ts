@@ -9,13 +9,13 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
+import { schemasName } from '../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { NotificationService } from '../notification/notification.service';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../shared/helpers/table/table-state.interface';
-import { schemasName } from '../shared/modules/imports/schemas/schemas';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
