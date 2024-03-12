@@ -14,6 +14,7 @@ import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
 import { NotificationModule } from './notification/notification.module';
 import { StoresModule } from './stores/stores.module';
 import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
 	imports: [
@@ -30,6 +31,7 @@ import { UsersModule } from './users/users.module';
 		CodesModule,
 		NotificationModule,
 		StoresModule,
+		ProductsModule,
 	],
 	controllers: [AppController],
 	providers: [

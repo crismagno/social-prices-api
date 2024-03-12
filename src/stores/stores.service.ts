@@ -54,7 +54,7 @@ export class StoresService {
 		const store: IStore | undefined = await this.findById(storeId);
 
 		if (!store) {
-			throw new NotFoundException('User not found!');
+			throw new NotFoundException('Store not found!');
 		}
 
 		return store;
@@ -164,7 +164,7 @@ export class StoresService {
 
 		await this._notificationService.sendCreateStore(newStore, user);
 
-		return store.save();
+		return newStore;
 	}
 
 	public async update(

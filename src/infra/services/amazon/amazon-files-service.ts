@@ -44,6 +44,35 @@ export class AmazonFilesService {
 		);
 	}
 
+	public async uploadFiles(
+		files: Express.Multer.File[],
+	): Promise<AWS.S3.ManagedUpload.SendData[]> {
+		const result: AWS.S3.ManagedUpload.SendData[] = [];
+
+		for await (const file of files) {
+			const responseUploadFile: AWS.S3.ManagedUpload.SendData =
+				await this.uploadFile(file);
+			result.push(responseUploadFile);
+		}
+
+		return result;
+	}
+
+	public async getUploadFilesUrl(
+		files: Express.Multer.File[],
+	): Promise<string[]> {
+		if (!files?.length) {
+			return [];
+		}
+
+		const result: AWS.S3.ManagedUpload.SendData[] =
+			await this.uploadFiles(files);
+
+		return result.map(
+			(responseFile: AWS.S3.ManagedUpload.SendData) => responseFile.Key,
+		);
+	}
+
 	public async getFileObject(key: string): Promise<string | undefined> {
 		const data = await this._awsS3
 			.getObject({

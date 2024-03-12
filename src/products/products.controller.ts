@@ -8,12 +8,12 @@ import {
 	Post,
 	Put,
 	Request,
-	UploadedFile,
+	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
@@ -22,20 +22,20 @@ import {
 	ITableStateResponse,
 } from '../shared/helpers/table/table-state.interface';
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
-import CreateStoreDto from './interfaces/dto/createStore.dto';
-import UpdateStoreDto from './interfaces/dto/updateStore.dto';
-import { IStore } from './interfaces/stores.interface';
-import { StoresService } from './stores.service';
+import CreateProductDto from './interfaces/dto/createProduct.dto';
+import UpdateProductDto from './interfaces/dto/updateProduct.dto';
+import { IProduct } from './interfaces/products.interface';
+import { ProductsService } from './products.service';
 
-@Controller('api/v1/stores')
-export class StoresController {
-	constructor(private _storesService: StoresService) {}
+@Controller('api/v1/products')
+export class ProductsController {
+	constructor(private _productsService: ProductsService) {}
 
 	@Post('/')
 	@UsePipes(ValidationPipe)
-	@UseInterceptors(FileInterceptor('logo'))
+	@UseInterceptors(FilesInterceptor('files'))
 	public async create(
-		@UploadedFile(
+		@UploadedFiles(
 			new ParseFilePipeBuilder()
 				.addFileTypeValidator({
 					fileType: /(jpg|jpeg|png|gif)$/,
@@ -47,25 +47,25 @@ export class StoresController {
 					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
 				}),
 		)
-		file: Express.Multer.File,
+		files: Express.Multer.File[],
 		@Request() request: any,
-		@Body() createStoreDto: CreateStoreDto,
-	): Promise<IStore> {
+		@Body() createProductDto: CreateProductDto,
+	): Promise<IProduct> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._storesService.create(
-			file,
-			createStoreDto,
+		return await this._productsService.create(
+			files,
+			createProductDto,
 			authPayload._id,
 		);
 	}
 
 	@Put('/')
 	@UsePipes(ValidationPipe)
-	@UseInterceptors(FileInterceptor('logo'))
+	@UseInterceptors(FilesInterceptor('files'))
 	public async update(
-		@UploadedFile(
+		@UploadedFiles(
 			new ParseFilePipeBuilder()
 				.addFileTypeValidator({
 					fileType: /(jpg|jpeg|png|gif)$/,
@@ -74,45 +74,52 @@ export class StoresController {
 					maxSize: 5242880,
 				})
 				.build({
-					fileIsRequired: false,
 					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
 				}),
 		)
-		file: Express.Multer.File,
-		@Body() updateStoreDto: UpdateStoreDto,
-	): Promise<IStore> {
-		return await this._storesService.update(file, updateStoreDto);
+		files: Express.Multer.File[],
+		@Request() request: any,
+		@Body() updateProductDto: UpdateProductDto,
+	): Promise<IProduct> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._productsService.create(
+			files,
+			updateProductDto,
+			authPayload._id,
+		);
 	}
 
 	@Get('/user')
 	@UsePipes(ValidationPipe)
-	public async findByUserId(@Request() request: any): Promise<IStore[]> {
+	public async findByUserId(@Request() request: any): Promise<IProduct[]> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._storesService.findByUserId(authPayload._id);
+		return await this._productsService.findByUserId(authPayload._id);
 	}
 
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
 		@Request() request: any,
-		@Body() tableState: ITableStateRequest<IStore>,
-	): Promise<ITableStateResponse<IStore[]>> {
+		@Body() tableState: ITableStateRequest<IProduct>,
+	): Promise<ITableStateResponse<IProduct[]>> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._storesService.findByUserTableState(
+		return await this._productsService.findByUserTableState(
 			authPayload._id,
 			tableState,
 		);
 	}
 
-	@Get('/:storeId')
+	@Get('/:productId')
 	@UsePipes(ValidationPipe)
 	public async findById(
-		@Param('storeId', ValidationParamsPipe) storeId: string,
-	): Promise<IStore> {
-		return await this._storesService.findById(storeId);
+		@Param('productId', ValidationParamsPipe) productId: string,
+	): Promise<IProduct> {
+		return await this._productsService.findById(productId);
 	}
 }
