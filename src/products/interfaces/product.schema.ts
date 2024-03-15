@@ -2,7 +2,7 @@ import mongoose, { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { IProduct } from './products.interface';
+import { IProduct } from './product.interface';
 
 @Schema()
 export class Product extends Document implements IProduct {

@@ -6,7 +6,7 @@ import { ISendEmailParams } from './email-transport.types';
 const nodemailer = require('nodemailer');
 
 @Injectable()
-export default class EmailTransport {
+export default class EmailTransportService {
 	//#region Private Properties
 
 	private readonly _logger: Logger;
@@ -31,7 +31,7 @@ export default class EmailTransport {
 
 	constructor() {
 		try {
-			this._logger = new Logger(EmailTransport.name);
+			this._logger = new Logger(EmailTransportService.name);
 
 			this._transporter = nodemailer.createTransport({
 				host: this._emailHost,

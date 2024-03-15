@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
+import { IStore } from './store.interface';
 import StoresEnum from './stores.enum';
-import { IStore } from './stores.interface';
 
 const PhoneNumberSchema = new mongoose.Schema(
 	{
@@ -49,6 +49,14 @@ const AddressSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
+const RemovedSchema = new mongoose.Schema(
+	{
+		description: { type: String, optional: true },
+		removedAt: Date,
+	},
+	{ _id: false },
+);
+
 const StoreSchema = new mongoose.Schema<IStore>(
 	{
 		name: { type: String, required: true },
@@ -78,6 +86,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 			type: [AddressSchema],
 			optional: true,
 		},
+		removed: { type: RemovedSchema, optional: true },
 	},
 	{ timestamps: true, collection: 'stores' },
 );

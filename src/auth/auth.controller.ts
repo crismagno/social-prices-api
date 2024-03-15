@@ -30,10 +30,10 @@ export class AuthController {
 		return await this._authService.signIn(signInDto.email, signInDto.password);
 	}
 
-	@Post('/signUp')
 	@Public()
+	@Post('/signUp')
 	@UsePipes(ValidationPipe)
-	public async sighUp(
+	public async signUp(
 		@Body() createUserDto: CreateUserDto,
 	): Promise<IUserEntity> {
 		return await this._authService.signUp(createUserDto);

@@ -110,12 +110,13 @@ export class UsersService {
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
 		try {
-			const findUserByEmail: IUser | undefined = await this._userModel
-				.findOne({
-					email: createUserDto.email,
-				})
-				.exec();
+			const findUserByEmail: IUser | undefined = await this.findOneByEmail(
+				createUserDto.email,
+			);
 
+			/**
+			 * This part is when user tries to create a new user by Google
+			 */
 			if (findUserByEmail && createUserDto.authProvider) {
 				await this._notificationSendSignInCode(findUserByEmail);
 

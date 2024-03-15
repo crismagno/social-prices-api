@@ -5,6 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
+import { queryOptions } from '../shared/helpers/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -12,8 +13,8 @@ import {
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
+import { IProduct } from './interfaces/product.interface';
 import { Product } from './interfaces/product.schema';
-import { IProduct } from './interfaces/products.interface';
 
 @Injectable()
 export class ProductsService {
@@ -76,6 +77,9 @@ export class ProductsService {
 				{
 					description: search,
 				},
+				{
+					barCode: search,
+				},
 			];
 		}
 
@@ -85,7 +89,11 @@ export class ProductsService {
 		};
 
 		response.total = await this._productModel.countDocuments(filter);
-		response.data = await this._productModel.find(filter);
+		response.data = await this._productModel.find(
+			filter,
+			null,
+			queryOptions<IProduct>(tableState),
+		);
 
 		return response;
 	}

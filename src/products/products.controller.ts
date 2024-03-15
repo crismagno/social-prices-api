@@ -24,7 +24,7 @@ import {
 import { ValidationParamsPipe } from '../shared/pipes/validation-params-pipe';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
-import { IProduct } from './interfaces/products.interface';
+import { IProduct } from './interfaces/product.interface';
 import { ProductsService } from './products.service';
 
 @Controller('api/v1/products')

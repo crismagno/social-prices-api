@@ -12,6 +12,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../infra/services/amazon/amazon-files-service';
 import { NotificationService } from '../notification/notification.service';
+import { queryOptions } from '../shared/helpers/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -20,8 +21,8 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
+import { IStore } from './interfaces/store.interface';
 import StoresEnum from './interfaces/stores.enum';
-import { IStore } from './interfaces/stores.interface';
 
 @Injectable()
 export class StoresService {
@@ -87,13 +88,21 @@ export class StoresService {
 			];
 		}
 
+		if (tableState?.filters?.status) {
+			filter.status = { $in: tableState.filters.status as StoresEnum.Status };
+		}
+
 		const response: ITableStateResponse<IStore[]> = {
 			data: [],
 			total: 0,
 		};
 
 		response.total = await this._storeModel.countDocuments(filter);
-		response.data = await this._storeModel.find(filter);
+		response.data = await this._storeModel.find(
+			filter,
+			null,
+			queryOptions<IStore>(tableState),
+		);
 
 		return response;
 	}
