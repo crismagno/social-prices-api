@@ -5,16 +5,18 @@ import { MulterModule } from '@nestjs/platform-express';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { AuthGuard } from './auth/guards/auth.guard';
-import { CodesModule } from './codes/codes.module';
 import AuthorizationToken from './infra/authorization/authorization-token';
-import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
+import {
+  JwtModuleRegister,
+} from './infra/authorization/authorization-token.enum';
 import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
-import { NotificationModule } from './notification/notification.module';
-import { StoresModule } from './stores/stores.module';
-import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AuthGuard } from './modules/auth/guards/auth.guard';
+import { CodesModule } from './modules/codes/codes.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { ProductsModule } from './modules/products/products.module';
+import { StoresModule } from './modules/stores/stores.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
 	imports: [

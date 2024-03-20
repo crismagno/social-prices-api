@@ -1,9 +1,11 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
-import CodeSchema from '../../../codes/interfaces/code.schema';
-import { ProductSchema } from '../../../products/interfaces/product.schema';
-import StoreSchema from '../../../stores/interfaces/store.schema';
-import UserSchema from '../../../users/interfaces/user.schema';
+import CodeSchema from '../../../modules/codes/interfaces/code.schema';
+import {
+  ProductSchema,
+} from '../../../modules/products/interfaces/product.schema';
+import StoreSchema from '../../../modules/stores/interfaces/store.schema';
+import UserSchema from '../../../modules/users/interfaces/user.schema';
 
 export const schemasName = {
 	user: 'User',
