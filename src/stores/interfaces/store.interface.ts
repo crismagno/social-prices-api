@@ -1,22 +1,28 @@
 import mongoose from 'mongoose';
 
+import { ICreatedAtEntity } from '../../shared/interfaces/created-at.interface';
+import {
+  ISoftDeleteEntity,
+} from '../../shared/interfaces/soft-delete.interface';
+import { IUpdatedAtEntity } from '../../shared/interfaces/updated-at.interface';
 import StoresEnum from './stores.enum';
 
-export interface IStore extends Document {
+export interface IStore
+	extends Document,
+		ISoftDeleteEntity,
+		ICreatedAtEntity,
+		IUpdatedAtEntity {
 	readonly _id: string;
 	logo: string | null;
 	email: string;
 	name: string;
 	description: string | null;
 	startedAt: Date;
-	createdAt: Date;
-	updatedAt: Date;
 	status: StoresEnum.Status;
 	userId: mongoose.Schema.Types.ObjectId;
 	addresses: IStoreAddress[];
 	phoneNumbers: IStorePhoneNumber[];
 	about: string | null;
-	removed: IStoreRemoved | null;
 }
 
 export interface IStorePhoneNumber {

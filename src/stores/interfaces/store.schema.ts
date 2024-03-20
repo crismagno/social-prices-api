@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+import { SoftDeleteSchema } from '../../shared/schemas/soft-delete.schema';
 import { IStore } from './store.interface';
 import StoresEnum from './stores.enum';
 
@@ -49,14 +50,6 @@ const AddressSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
-const RemovedSchema = new mongoose.Schema(
-	{
-		description: { type: String, optional: true },
-		removedAt: Date,
-	},
-	{ _id: false },
-);
-
 const StoreSchema = new mongoose.Schema<IStore>(
 	{
 		name: { type: String, required: true },
@@ -86,7 +79,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 			type: [AddressSchema],
 			optional: true,
 		},
-		removed: { type: RemovedSchema, optional: true },
+		softDelete: SoftDeleteSchema,
 	},
 	{ timestamps: true, collection: 'stores' },
 );
