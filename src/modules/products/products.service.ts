@@ -92,6 +92,10 @@ export class ProductsService {
 			];
 		}
 
+		if (tableState.filters?.isActive?.length === 1) {
+			filter.isActive = tableState.filters?.isActive[0];
+		}
+
 		const response: ITableStateResponse<IProduct[]> = {
 			data: [],
 			total: 0,
