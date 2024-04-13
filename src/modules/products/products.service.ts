@@ -1,23 +1,14 @@
-import {
-  FilterQuery,
-  Model,
-} from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import {
-  AmazonFilesService,
-} from '../../infra/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
 import { queryOptions } from '../../shared/helpers/table/table-state';
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
@@ -96,6 +87,10 @@ export class ProductsService {
 			filter.isActive = tableState.filters?.isActive[0];
 		}
 
+		if (tableState.filters?.storeIds?.length) {
+			filter.storeIds = { $in: tableState.filters?.storeIds as string[] };
+		}
+
 		const response: ITableStateResponse<IProduct[]> = {
 			data: [],
 			total: 0,
@@ -129,17 +124,18 @@ export class ProductsService {
 
 		const product = new this._productModel({
 			createdAt: now,
-			description: createProductDto.description ?? null,
+			description: createProductDto.description,
 			filesUrl,
 			isActive: createProductDto.isActive,
 			name: createProductDto.name,
 			price: createProductDto.price,
 			quantity: createProductDto.quantity,
+			details: createProductDto.details,
 			storeIds: createProductDto.storeIds,
 			updatedAt: now,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barCode: null,
+			barCode: createProductDto.barCode,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -167,13 +163,15 @@ export class ProductsService {
 			product._id,
 			{
 				$set: {
-					description: updateProductDto.description ?? null,
+					description: updateProductDto.description,
 					filesUrl,
 					isActive: updateProductDto.isActive,
 					name: updateProductDto.name,
 					price: updateProductDto.price,
 					quantity: updateProductDto.quantity,
+					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
+					barCode: updateProductDto.barCode,
 					updatedAt: now,
 				},
 			},

@@ -1,27 +1,20 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import {
-  FilterQuery,
-  Model,
-  Types,
-  UpdateQuery,
-} from 'mongoose';
+import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
 
 import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
+	BadRequestException,
+	Injectable,
+	Logger,
+	NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import {
-  AmazonFilesService,
-} from '../../infra/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
 import { queryOptions } from '../../shared/helpers/table/table-state';
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
 import { NotificationService } from '../notification/notification.service';
 import { IUser } from '../users/interfaces/user.interface';
@@ -165,7 +158,7 @@ export class StoresService {
 
 		const store = new this._storeModel({
 			logo: responseFile.Key,
-			status: StoresEnum.Status.ACTIVE,
+			status: createStoreDto.status,
 			userId,
 			addresses: createStoreDto.addresses,
 			phoneNumbers: createStoreDto.phoneNumbers,
@@ -229,6 +222,7 @@ export class StoresService {
 			description: updateStoreDto.description,
 			startedAt: updateStoreDto.startedAt,
 			about: updateStoreDto.about,
+			status: updateStoreDto.status,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;

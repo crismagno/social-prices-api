@@ -1,32 +1,28 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpStatus,
-  Param,
-  ParseFilePipeBuilder,
-  Post,
-  Request,
-  UploadedFile,
-  UseInterceptors,
-  UsePipes,
-  ValidationPipe,
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Post,
+	Request,
+	UploadedFile,
+	UseInterceptors,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { Public } from '../../shared/decorators/custom.decorator';
-import {
-  ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
-import UpdateUserPhoneNumbersDto
-  from './interfaces/dto/updateUserPhoneNumbers.dto';
+import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
 import { IUserEntity } from './interfaces/users.types';
 import { UsersService } from './users.service';
 
@@ -114,18 +110,7 @@ export class UsersController {
 	@Post('/uploadAvatar')
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async uploadAvatar(
-		@UploadedFile(
-			new ParseFilePipeBuilder()
-				.addFileTypeValidator({
-					fileType: /(jpg|jpeg|png|gif)$/,
-				})
-				.addMaxSizeValidator({
-					maxSize: 5242880,
-				})
-				.build({
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-				}),
-		)
+		@UploadedFile(parseFilePipeBuilder())
 		file: Express.Multer.File,
 		@Request() request: any,
 	): Promise<IUserEntity> {

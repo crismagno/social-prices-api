@@ -1,27 +1,26 @@
 import {
-  Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Param,
-  ParseFilePipeBuilder,
-  Post,
-  Put,
-  Request,
-  UploadedFile,
-  UseInterceptors,
-  UsePipes,
-  ValidationPipe,
+	Body,
+	Controller,
+	Get,
+	HttpStatus,
+	Param,
+	ParseFilePipeBuilder,
+	Post,
+	Put,
+	Request,
+	UploadedFile,
+	UseInterceptors,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
-import {
-  ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
@@ -37,18 +36,7 @@ export class StoresController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('logo'))
 	public async create(
-		@UploadedFile(
-			new ParseFilePipeBuilder()
-				.addFileTypeValidator({
-					fileType: /(jpg|jpeg|png|gif)$/,
-				})
-				.addMaxSizeValidator({
-					maxSize: 5242880,
-				})
-				.build({
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-				}),
-		)
+		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
 		@Request() request: any,
 		@Body() createStoreDto: CreateStoreDto,

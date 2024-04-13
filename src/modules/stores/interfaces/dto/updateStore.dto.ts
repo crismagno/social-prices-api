@@ -1,5 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+import StoresEnum from '../stores.enum';
+
 export default class UpdateStoreDto {
 	@IsString()
 	@IsNotEmpty()
@@ -28,4 +30,6 @@ export default class UpdateStoreDto {
 	addresses: any[];
 
 	phoneNumbers: any[];
+
+	status: StoresEnum.Status;
 }

@@ -1,35 +1,29 @@
-import {
-	IsArray,
-	IsBoolean,
-	IsNumber,
-	IsOptional,
-	IsString,
-	Min,
-} from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export default class UpdateProductDto {
 	@IsString()
 	productId: string;
 
 	@IsString()
+	@IsOptional()
+	barCode: string | null;
+
+	@IsString()
+	@IsOptional()
+	details: string | null;
+
+	@IsString()
 	name: string;
 
-	@IsNumber()
-	@Min(0)
-	@Min(1000000)
 	quantity: number;
 
 	@IsString()
 	@IsOptional()
 	description: string | null;
 
-	@IsNumber()
-	@Min(0)
 	price: number;
 
-	@IsBoolean()
 	isActive: boolean;
 
-	@IsArray()
 	storeIds: string[];
 }

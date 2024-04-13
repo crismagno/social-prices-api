@@ -1,11 +1,7 @@
 import mongoose from 'mongoose';
 
-import {
-  ICreatedAtEntity,
-} from '../../../shared/interfaces/created-at.interface';
-import {
-  IUpdatedAtEntity,
-} from '../../../shared/interfaces/updated-at.interface';
+import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 
 export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
@@ -19,4 +15,5 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	filesUrl: string[];
 	mainUrl: string | null;
 	barCode: string | null;
+	details: string | null;
 }

@@ -43,6 +43,9 @@ export class Product extends Document implements IProduct {
 
 	@Prop({ type: String })
 	barCode: string | null;
+
+	@Prop({ type: String })
+	details: string | null;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

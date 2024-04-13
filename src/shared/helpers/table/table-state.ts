@@ -15,8 +15,11 @@ export function queryOptions<T>(
 	}
 
 	if (tableStateRequest?.pagination?.current) {
-		options.skip = tableStateRequest?.pagination?.current - 1;
+		options.skip =
+			(tableStateRequest?.pagination?.current - 1) *
+			tableStateRequest?.pagination?.pageSize;
 	}
+
 	if (tableStateRequest?.pagination?.pageSize) {
 		options.limit = tableStateRequest?.pagination?.pageSize;
 	}

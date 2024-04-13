@@ -1,27 +1,24 @@
 import {
-  Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Param,
-  ParseFilePipeBuilder,
-  Post,
-  Put,
-  Request,
-  UploadedFiles,
-  UseInterceptors,
-  UsePipes,
-  ValidationPipe,
+	Body,
+	Controller,
+	Get,
+	Param,
+	Post,
+	Put,
+	Request,
+	UploadedFiles,
+	UseInterceptors,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
-import {
-  ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
@@ -37,18 +34,7 @@ export class ProductsController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async create(
-		@UploadedFiles(
-			new ParseFilePipeBuilder()
-				.addFileTypeValidator({
-					fileType: /(jpg|jpeg|png|gif)$/,
-				})
-				.addMaxSizeValidator({
-					maxSize: 5242880,
-				})
-				.build({
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-				}),
-		)
+		@UploadedFiles(parseFilePipeBuilder())
 		files: Express.Multer.File[],
 		@Request() request: any,
 		@Body() createProductDto: CreateProductDto,
@@ -67,18 +53,7 @@ export class ProductsController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async update(
-		@UploadedFiles(
-			new ParseFilePipeBuilder()
-				.addFileTypeValidator({
-					fileType: /(jpg|jpeg|png|gif)$/,
-				})
-				.addMaxSizeValidator({
-					maxSize: 5242880,
-				})
-				.build({
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-				}),
-		)
+		@UploadedFiles(parseFilePipeBuilder())
 		files: Express.Multer.File[],
 		@Request() request: any,
 		@Body() updateProductDto: UpdateProductDto,
