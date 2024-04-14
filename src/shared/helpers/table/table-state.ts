@@ -1,15 +1,24 @@
 import { QueryOptions } from 'mongoose';
 
-import { ITableStateRequest } from './table-state.interface';
+import {
+	ITableStateRequest,
+	TTableStateSortOrder,
+} from './table-state.interface';
 
 export function queryOptions<T>(
 	tableStateRequest: ITableStateRequest<T>,
 ): QueryOptions<T> {
 	const options: QueryOptions<T> = {};
 
+	const tableStateRequestSortField: keyof T | 'createdAt' =
+		tableStateRequest?.sort?.field ?? 'createdAt';
+
+	const tableStateRequestSortOrder: TTableStateSortOrder =
+		tableStateRequest?.sort?.order ?? 'ascend';
+
 	options.sort = {
-		[tableStateRequest?.sort?.field]:
-			tableStateRequest?.sort?.order === 'ascend' ? 1 : -1,
+		[tableStateRequestSortField]:
+			tableStateRequestSortOrder === 'ascend' ? 1 : -1,
 	};
 
 	if (tableStateRequest?.pagination?.current) {

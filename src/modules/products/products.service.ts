@@ -5,6 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { createUniqueSuffix } from '../../shared/helpers/global';
 import { queryOptions } from '../../shared/helpers/table/table-state';
 import {
 	ITableStateRequest,
@@ -135,7 +136,7 @@ export class ProductsService {
 			updatedAt: now,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barCode: createProductDto.barCode,
+			barCode: createProductDto.barCode || createUniqueSuffix(),
 			QRCode: createProductDto.QRCode,
 		});
 
@@ -197,7 +198,7 @@ export class ProductsService {
 					quantity: updateProductDto.quantity,
 					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
-					barCode: updateProductDto.barCode,
+					barCode: updateProductDto.barCode || createUniqueSuffix(),
 					updatedAt: now,
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
