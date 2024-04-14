@@ -55,7 +55,7 @@ export default class EmailTransportService {
 	public async sendEmail(params: ISendEmailParams): Promise<string | null> {
 		try {
 			if (!!process.env.EMAIL_STOP_SEND) {
-				console.log('EMAIL STOP SEND: ', params);
+				this._logger.log('EMAIL STOP SEND: ', params);
 				return this._messageIdTest;
 			}
 
