@@ -45,6 +45,9 @@ export class Product extends Document implements IProduct {
 	barCode: string | null;
 
 	@Prop({ type: String })
+	QRCode: string | null;
+
+	@Prop({ type: String })
 	details: string | null;
 }
 

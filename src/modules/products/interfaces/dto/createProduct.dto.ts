@@ -23,4 +23,8 @@ export default class CreateProductDto {
 	isActive: boolean;
 
 	storeIds: string[];
+
+	@IsString()
+	@IsOptional()
+	QRCode: string | null;
 }

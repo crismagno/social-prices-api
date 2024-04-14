@@ -136,6 +136,7 @@ export class ProductsService {
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
 			barCode: createProductDto.barCode,
+			QRCode: createProductDto.QRCode,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -154,17 +155,42 @@ export class ProductsService {
 			updateProductDto.productId,
 		);
 
+		if (typeof updateProductDto.deletedFilesUrl === 'string') {
+			updateProductDto.deletedFilesUrl = JSON.parse(
+				updateProductDto.deletedFilesUrl,
+			);
+
+			if (updateProductDto.deletedFilesUrl.length) {
+				await this._amazonFilesService.deleteFiles(
+					updateProductDto.deletedFilesUrl,
+				);
+			}
+		}
+
+		if (typeof updateProductDto.storeIds === 'string') {
+			updateProductDto.storeIds = JSON.parse(updateProductDto.storeIds);
+		}
+
 		const filesUrl: string[] =
 			await this._amazonFilesService.getUploadFilesUrl(files);
 
 		const now: Date = new Date();
 
+		product.filesUrl = product.filesUrl.filter(
+			(fileUrl: string) =>
+				!updateProductDto.deletedFilesUrl.find(
+					(deletedFileUrl: string) => deletedFileUrl === fileUrl,
+				),
+		);
+
+		product.filesUrl.push(...filesUrl);
+
 		const productUpdated = await this._productModel.findByIdAndUpdate(
 			product._id,
 			{
 				$set: {
+					filesUrl: product.filesUrl,
 					description: updateProductDto.description,
-					filesUrl,
 					isActive: updateProductDto.isActive,
 					name: updateProductDto.name,
 					price: updateProductDto.price,
@@ -173,6 +199,8 @@ export class ProductsService {
 					storeIds: updateProductDto.storeIds,
 					barCode: updateProductDto.barCode,
 					updatedAt: now,
+					mainUrl: product.filesUrl?.[0] ?? null,
+					QRCode: updateProductDto.QRCode,
 				},
 			},
 		);

@@ -15,6 +15,6 @@ export const parseFilePipeBuilder = (params?: {
 			maxSize: 5242880,
 		})
 		.build({
-			...params,
+			fileIsRequired: !!params?.build?.fileIsRequired,
 			errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
 		});

@@ -26,4 +26,10 @@ export default class UpdateProductDto {
 	isActive: boolean;
 
 	storeIds: string[];
+
+	@IsString()
+	@IsOptional()
+	QRCode: string | null;
+
+	deletedFilesUrl: string[];
 }

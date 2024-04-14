@@ -88,6 +88,24 @@ export class AmazonFilesService {
 		return undefined;
 	}
 
+	public async deleteFile(filename: string): Promise<any> {
+		return await this._s3delete(this._awsS3Bucket, filename);
+	}
+
+	public async deleteFiles(
+		filenames: string[],
+	): Promise<AWS.S3.DeleteObjectOutput[]> {
+		const result: AWS.S3.DeleteObjectOutput[] = [];
+
+		for await (const filename of filenames) {
+			const responseDeleteFile: AWS.S3.DeleteObjectOutput =
+				await this.deleteFile(filename);
+			result.push(responseDeleteFile);
+		}
+
+		return result;
+	}
+
 	//#endregion
 
 	//#region Private methods
@@ -117,6 +135,35 @@ export class AmazonFilesService {
 			this._logger.error(error);
 			throw error;
 		}
+	}
+
+	private async _s3delete(
+		bucket: any,
+		filename: any,
+	): Promise<AWS.S3.DeleteObjectOutput> {
+		return new Promise((resolve, reject) => {
+			const params = {
+				Bucket: bucket,
+				Key: filename,
+			};
+
+			try {
+				this._awsS3.deleteObject(
+					params,
+					(error: AWS.AWSError, data: AWS.S3.DeleteObjectOutput) => {
+						if (error) {
+							this._logger.error('Error deleting file:', error);
+							reject(error);
+						} else {
+							resolve(data);
+						}
+					},
+				);
+			} catch (error: any) {
+				this._logger.error(error);
+				reject(error);
+			}
+		});
 	}
 
 	//#endregion

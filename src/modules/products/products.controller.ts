@@ -53,7 +53,7 @@ export class ProductsController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async update(
-		@UploadedFiles(parseFilePipeBuilder())
+		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		files: Express.Multer.File[],
 		@Request() request: any,
 		@Body() updateProductDto: UpdateProductDto,
@@ -61,7 +61,7 @@ export class ProductsController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._productsService.create(
+		return await this._productsService.update(
 			files,
 			updateProductDto,
 			authPayload._id,

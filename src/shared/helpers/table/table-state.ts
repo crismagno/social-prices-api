@@ -7,12 +7,10 @@ export function queryOptions<T>(
 ): QueryOptions<T> {
 	const options: QueryOptions<T> = {};
 
-	if (tableStateRequest?.sort) {
-		options.sort = {
-			[tableStateRequest?.sort?.field]:
-				tableStateRequest?.sort?.order === 'ascend' ? 1 : -1,
-		};
-	}
+	options.sort = {
+		[tableStateRequest?.sort?.field]:
+			tableStateRequest?.sort?.order === 'ascend' ? 1 : -1,
+	};
 
 	if (tableStateRequest?.pagination?.current) {
 		options.skip =
