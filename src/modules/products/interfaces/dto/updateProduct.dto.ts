@@ -32,4 +32,6 @@ export default class UpdateProductDto {
 	QRCode: string | null;
 
 	deletedFilesUrl: string[];
+
+	categoriesCode: string[];
 }

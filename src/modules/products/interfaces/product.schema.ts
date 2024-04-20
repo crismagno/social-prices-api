@@ -41,7 +41,7 @@ export class Product extends Document implements IProduct {
 	@Prop({ type: String })
 	mainUrl: string | null;
 
-	@Prop({ type: String })
+	@Prop({ type: String, unique: true })
 	barCode: string | null;
 
 	@Prop({ type: String })
@@ -49,6 +49,9 @@ export class Product extends Document implements IProduct {
 
 	@Prop({ type: String })
 	details: string | null;
+
+	@Prop({ type: [String] })
+	categoriesCode: string[];
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

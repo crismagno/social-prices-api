@@ -123,6 +123,12 @@ export class ProductsService {
 			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
 		}
 
+		if (typeof createProductDto.categoriesCode === 'string') {
+			createProductDto.categoriesCode = JSON.parse(
+				createProductDto.categoriesCode,
+			);
+		}
+
 		const product = new this._productModel({
 			createdAt: now,
 			description: createProductDto.description,
@@ -133,6 +139,7 @@ export class ProductsService {
 			quantity: createProductDto.quantity,
 			details: createProductDto.details,
 			storeIds: createProductDto.storeIds,
+			categoriesCode: createProductDto.categoriesCode,
 			updatedAt: now,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
@@ -172,6 +179,12 @@ export class ProductsService {
 			updateProductDto.storeIds = JSON.parse(updateProductDto.storeIds);
 		}
 
+		if (typeof updateProductDto.categoriesCode === 'string') {
+			updateProductDto.categoriesCode = JSON.parse(
+				updateProductDto.categoriesCode,
+			);
+		}
+
 		const filesUrl: string[] =
 			await this._amazonFilesService.getUploadFilesUrl(files);
 
@@ -198,6 +211,7 @@ export class ProductsService {
 					quantity: updateProductDto.quantity,
 					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
+					categoriesCode: updateProductDto.categoriesCode,
 					barCode: updateProductDto.barCode || createUniqueSuffix(),
 					updatedAt: now,
 					mainUrl: product.filesUrl?.[0] ?? null,

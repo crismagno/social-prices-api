@@ -1,9 +1,13 @@
-import { diskStorage } from 'multer';
+import multer, { diskStorage } from 'multer';
 import { extname } from 'path';
 
 import { createUniqueSuffix } from './';
 
-export const fileInterceptorOptionsUploadAvatar = (destination: string) => ({
+export const fileInterceptorOptionsUploadAvatar = (
+	destination: string,
+): {
+	storage: multer.StorageEngine;
+} => ({
 	storage: diskStorage({
 		destination,
 		filename: (req, file, callback) => {

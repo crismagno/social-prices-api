@@ -27,4 +27,6 @@ export default class CreateProductDto {
 	@IsString()
 	@IsOptional()
 	QRCode: string | null;
+
+	categoriesCode: string | null;
 }
