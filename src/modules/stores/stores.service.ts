@@ -240,6 +240,8 @@ export class StoresService {
 		if (file) {
 			responseFile = await this._amazonFilesService.uploadFile(file);
 			$set.logo = responseFile.Key;
+
+			await this._amazonFilesService.deleteFile(store.logo);
 		}
 
 		const updatedStore: IStore = await this._storeModel.findOneAndUpdate(
