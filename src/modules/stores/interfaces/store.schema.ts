@@ -71,6 +71,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 			required: true,
 		},
 		description: { type: String, optional: true },
+		categoriesCode: { type: [String] },
 		phoneNumbers: {
 			type: [PhoneNumberSchema],
 			optional: true,

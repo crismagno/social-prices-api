@@ -1,14 +1,8 @@
 import mongoose from 'mongoose';
 
-import {
-  ICreatedAtEntity,
-} from '../../../shared/interfaces/created-at.interface';
-import {
-  ISoftDeleteEntity,
-} from '../../../shared/interfaces/soft-delete.interface';
-import {
-  IUpdatedAtEntity,
-} from '../../../shared/interfaces/updated-at.interface';
+import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
+import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import StoresEnum from './stores.enum';
 
 export interface IStore
@@ -27,6 +21,7 @@ export interface IStore
 	addresses: IStoreAddress[];
 	phoneNumbers: IStorePhoneNumber[];
 	about: string | null;
+	categoriesCode: string[];
 }
 
 export interface IStorePhoneNumber {

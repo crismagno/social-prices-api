@@ -156,6 +156,10 @@ export class StoresService {
 			createStoreDto.phoneNumbers = JSON.parse(createStoreDto.phoneNumbers);
 		}
 
+		if (typeof createStoreDto.categoriesCode === 'string') {
+			createStoreDto.categoriesCode = JSON.parse(createStoreDto.categoriesCode);
+		}
+
 		const store = new this._storeModel({
 			logo: responseFile.Key,
 			status: createStoreDto.status,
@@ -167,6 +171,7 @@ export class StoresService {
 			description: createStoreDto.description,
 			startedAt: createStoreDto.startedAt,
 			about: createStoreDto.about,
+			categoriesCode: createStoreDto.categoriesCode,
 		});
 
 		const newStore: IStore = await store.save();
@@ -210,6 +215,10 @@ export class StoresService {
 			updateStoreDto.phoneNumbers = JSON.parse(updateStoreDto.phoneNumbers);
 		}
 
+		if (typeof updateStoreDto.categoriesCode === 'string') {
+			updateStoreDto.categoriesCode = JSON.parse(updateStoreDto.categoriesCode);
+		}
+
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(
 			store.userId.toString(),
 		);
@@ -223,6 +232,7 @@ export class StoresService {
 			startedAt: updateStoreDto.startedAt,
 			about: updateStoreDto.about,
 			status: updateStoreDto.status,
+			categoriesCode: updateStoreDto.categoriesCode,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;
