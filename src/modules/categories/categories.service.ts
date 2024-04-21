@@ -8,6 +8,9 @@ import { UsersService } from '../users/users.service';
 import CategoriesEnum from './interfaces/categories.enum';
 import { ICategory } from './interfaces/category.interface';
 import { Category } from './interfaces/category.schema';
+import CreateCategoryDto from './interfaces/dto/createCategory.dto';
+import CreateCategoryMultiDto from './interfaces/dto/createCategoryMulti.dto';
+import UpdateCategoryDto from './interfaces/dto/updateCategory.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -36,7 +39,7 @@ export class CategoriesService {
 	}
 
 	public async create(
-		createCategoryDto: any,
+		createCategoryDto: CreateCategoryDto,
 		userId: string,
 	): Promise<ICategory> {
 		await this._usersService.findOneByUserIdOrFail(userId);
@@ -58,7 +61,7 @@ export class CategoriesService {
 	}
 
 	public async update(
-		updateCategoryDto: any,
+		updateCategoryDto: UpdateCategoryDto,
 		userId: string,
 	): Promise<ICategory> {
 		await this._usersService.findOneByUserIdOrFail(userId);
@@ -82,7 +85,7 @@ export class CategoriesService {
 	}
 
 	public async createMulti(
-		createCategoriesDto: any,
+		createCategoriesDto: CreateCategoryMultiDto,
 		userId: string,
 	): Promise<void> {
 		await this._usersService.findOneByUserIdOrFail(userId);
