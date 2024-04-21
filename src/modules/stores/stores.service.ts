@@ -92,6 +92,10 @@ export class StoresService {
 			filter.status = { $in: tableState.filters.status as StoresEnum.Status };
 		}
 
+		if (tableState?.filters?.categoriesIds) {
+			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
+		}
+
 		const response: ITableStateResponse<IStore[]> = {
 			data: [],
 			total: 0,

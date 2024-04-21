@@ -92,6 +92,10 @@ export class ProductsService {
 			filter.storeIds = { $in: tableState.filters?.storeIds as string[] };
 		}
 
+		if (tableState?.filters?.categoriesIds) {
+			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
+		}
+
 		const response: ITableStateResponse<IProduct[]> = {
 			data: [],
 			total: 0,
