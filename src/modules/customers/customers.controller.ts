@@ -26,7 +26,7 @@ import { ICustomer } from './interfaces/customer.interface';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
 
-@Controller('api/v1/products')
+@Controller('api/v1/customers')
 export class CustomersController {
 	constructor(private _customersService: CustomersService) {}
 
