@@ -1,6 +1,6 @@
 import { IsArray } from 'class-validator';
 
-import { IPhoneNumber } from '../user.interface';
+import { IPhoneNumber } from '../../../../shared/interfaces/phone-number';
 
 export default class UpdateUserPhoneNumbersDto {
 	@IsArray()

@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
+import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import StoresEnum from './stores.enum';
@@ -18,43 +20,8 @@ export interface IStore
 	startedAt: Date;
 	status: StoresEnum.Status;
 	userId: mongoose.Schema.Types.ObjectId;
-	addresses: IStoreAddress[];
-	phoneNumbers: IStorePhoneNumber[];
+	addresses: IAddress[];
+	phoneNumbers: IPhoneNumber[];
 	about: string | null;
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
-}
-
-export interface IStorePhoneNumber {
-	uid: string;
-	type: StoresEnum.PhoneTypes;
-	number: string;
-	messengers: StoresEnum.PhoneNumberMessenger[];
-}
-
-export interface IStoreAddress {
-	address1: string;
-	address2?: string;
-	city: string;
-	isValid: boolean;
-	state?: IStoreAddressState;
-	uid: string;
-	zip: string;
-	description?: string;
-	country: IStoreAddressCountry;
-	district: string;
-}
-
-export interface IStoreAddressState {
-	code: string;
-	name: string;
-}
-
-export interface IStoreAddressCountry {
-	code: string;
-	name: string;
-}
-
-export interface IStoreRemoved {
-	description: string | null;
-	removedAt: Date;
 }

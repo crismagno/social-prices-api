@@ -2,6 +2,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
 import CodeSchema from '../../../modules/codes/interfaces/code.schema';
+import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
 import StoreSchema from '../../../modules/stores/interfaces/store.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
@@ -12,6 +13,7 @@ export const schemasName = {
 	store: 'Store',
 	product: 'Product',
 	category: 'Category',
+	customer: 'Customer',
 };
 
 export const schemasModule = {
@@ -29,5 +31,8 @@ export const schemasModule = {
 	]),
 	category: MongooseModule.forFeature([
 		{ name: schemasName.category, schema: CategorySchema },
+	]),
+	customer: MongooseModule.forFeature([
+		{ name: schemasName.customer, schema: CustomerSchema },
 	]),
 };

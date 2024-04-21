@@ -1,54 +1,10 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
+import { AddressSchema } from '../../../shared/schemas/address.schema';
+import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
-
-const PhoneNumberSchema = new mongoose.Schema(
-	{
-		uid: String,
-		type: {
-			type: String,
-			enum: {
-				values: Object.keys(UsersEnum.PhoneTypes),
-				message: '{VALUE} is not supported',
-			},
-		},
-		number: String,
-		messengers: {
-			type: [String],
-			enum: {
-				values: Object.keys(UsersEnum.PhoneNumberMessenger),
-				message: '{VALUE} is not supported',
-			},
-		},
-	},
-	{ _id: false },
-);
-
-const CodeNameSchema = new mongoose.Schema(
-	{
-		code: String,
-		name: String,
-	},
-	{ _id: false },
-);
-
-const AddressSchema = new mongoose.Schema(
-	{
-		address1: String,
-		address2: { type: String, optional: true },
-		city: String,
-		isValid: Boolean,
-		state: CodeNameSchema,
-		uid: String,
-		zip: String,
-		description: { type: String, optional: true },
-		country: CodeNameSchema,
-		district: String,
-	},
-	{ _id: false },
-);
 
 const UserSchema = new mongoose.Schema<IUser>(
 	{

@@ -1,4 +1,6 @@
-import { IPhoneNumber, IUser, IUserAddress } from './user.interface';
+import { IAddress } from '../../../shared/interfaces/address.interface';
+import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 import { IUserEntity } from './users.types';
 
@@ -33,7 +35,7 @@ export default class UserEntity implements IUserEntity {
 
 	public birthDate: Date;
 
-	public addresses: IUserAddress[];
+	public addresses: IAddress[];
 
 	public gender: UsersEnum.Gender;
 

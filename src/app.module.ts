@@ -12,11 +12,11 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CodesModule } from './modules/codes/codes.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ProductsModule } from './modules/products/products.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
-import { CategoriesController } from './categories/categories.controller';
 
 @Module({
 	imports: [
@@ -35,8 +35,9 @@ import { CategoriesController } from './categories/categories.controller';
 		StoresModule,
 		ProductsModule,
 		CategoriesModule,
+		CustomersModule,
 	],
-	controllers: [AppController, CategoriesController],
+	controllers: [AppController],
 	providers: [
 		AppService,
 		AuthorizationToken,
