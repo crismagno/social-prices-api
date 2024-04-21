@@ -117,8 +117,6 @@ export class ProductsService {
 		const filesUrl: string[] =
 			await this._amazonFilesService.getUploadFilesUrl(files);
 
-		const now: Date = new Date();
-
 		if (typeof createProductDto.storeIds === 'string') {
 			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
 		}
@@ -130,7 +128,6 @@ export class ProductsService {
 		}
 
 		const product = new this._productModel({
-			createdAt: now,
 			description: createProductDto.description,
 			filesUrl,
 			isActive: createProductDto.isActive,
@@ -140,10 +137,9 @@ export class ProductsService {
 			details: createProductDto.details,
 			storeIds: createProductDto.storeIds,
 			categoriesCode: createProductDto.categoriesCode,
-			updatedAt: now,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barCode: createProductDto.barCode || createUniqueSuffix(),
+			barCode: createProductDto.barCode ?? createUniqueSuffix(),
 			QRCode: createProductDto.QRCode,
 		});
 
@@ -188,8 +184,6 @@ export class ProductsService {
 		const filesUrl: string[] =
 			await this._amazonFilesService.getUploadFilesUrl(files);
 
-		const now: Date = new Date();
-
 		product.filesUrl = product.filesUrl.filter(
 			(fileUrl: string) =>
 				!updateProductDto.deletedFilesUrl.find(
@@ -212,8 +206,7 @@ export class ProductsService {
 					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
 					categoriesCode: updateProductDto.categoriesCode,
-					barCode: updateProductDto.barCode || createUniqueSuffix(),
-					updatedAt: now,
+					barCode: updateProductDto.barCode ?? createUniqueSuffix(),
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
 				},

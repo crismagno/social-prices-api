@@ -1,7 +1,9 @@
+import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { IPhoneNumber, IUserAddress } from './user.interface';
 import UsersEnum from './users.enum';
 
-export interface IUserEntity {
+export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	_id: string;
 	uid: string;
 	email: string;

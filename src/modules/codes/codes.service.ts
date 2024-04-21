@@ -1,14 +1,11 @@
 import * as moment from 'moment';
-import {
-  Model,
-  Types,
-} from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
+	BadRequestException,
+	Injectable,
+	Logger,
+	NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 

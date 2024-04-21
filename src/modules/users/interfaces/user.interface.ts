@@ -1,8 +1,10 @@
 import { Document } from 'mongoose';
 
+import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import UsersEnum from './users.enum';
 
-export interface IUser extends Document {
+export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
 	uid: string;
 	email: string;

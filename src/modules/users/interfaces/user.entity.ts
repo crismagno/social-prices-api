@@ -39,6 +39,10 @@ export default class UserEntity implements IUserEntity {
 
 	public about: string | null;
 
+	public createdAt: Date;
+
+	public updatedAt: Date;
+
 	//#endregion
 
 	//#region Constructor
@@ -61,6 +65,8 @@ export default class UserEntity implements IUserEntity {
 		this.gender = _user.gender;
 		this.middleName = _user.middleName;
 		this.about = _user.about;
+		this.createdAt = _user.createdAt;
+		this.updatedAt = _user.updatedAt;
 	}
 
 	public async addToken(token: string): Promise<this> {
