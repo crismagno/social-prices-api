@@ -6,17 +6,17 @@ import { MulterModule } from '@nestjs/platform-express';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import AuthorizationToken from './infra/authorization/authorization-token';
-import {
-  JwtModuleRegister,
-} from './infra/authorization/authorization-token.enum';
+import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
 import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { CodesModule } from './modules/codes/codes.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ProductsModule } from './modules/products/products.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
+import { CategoriesController } from './categories/categories.controller';
 
 @Module({
 	imports: [
@@ -34,8 +34,9 @@ import { UsersModule } from './modules/users/users.module';
 		NotificationModule,
 		StoresModule,
 		ProductsModule,
+		CategoriesModule,
 	],
-	controllers: [AppController],
+	controllers: [AppController, CategoriesController],
 	providers: [
 		AppService,
 		AuthorizationToken,

@@ -130,6 +130,8 @@ export class UsersService {
 				createUserDto.password,
 			);
 
+			const now: Date = new Date();
+
 			const newUser: IUser = new this._userModel({
 				email: createUserDto.email,
 				username: createUsernameByEmail(createUserDto.email),
@@ -148,6 +150,8 @@ export class UsersService {
 				birthDate: null,
 				gender: UsersEnum.Gender.OTHER,
 				about: createUserDto.about,
+				createdAt: now,
+				updatedAt: now,
 			});
 
 			const user: IUser = await newUser.save();
@@ -238,6 +242,7 @@ export class UsersService {
 		await this._userModel.findOneAndUpdate(new Types.ObjectId(user._id), {
 			$set: {
 				password: hashPassword,
+				updatedAt: new Date(),
 			},
 		});
 	}
@@ -258,6 +263,7 @@ export class UsersService {
 					birthDate: updateUserDto.birthDate,
 					gender: updateUserDto.gender,
 					about: updateUserDto.about,
+					updatedAt: new Date(),
 				},
 			},
 			{
@@ -279,6 +285,7 @@ export class UsersService {
 			{
 				$set: {
 					addresses: updateUserAddressesDto.addresses,
+					updatedAt: new Date(),
 				},
 			},
 			{
@@ -300,6 +307,7 @@ export class UsersService {
 			{
 				$set: {
 					phoneNumbers: updatePhoneNumbers.phoneNumbers,
+					updatedAt: new Date(),
 				},
 			},
 			{
@@ -326,6 +334,7 @@ export class UsersService {
 			{
 				$set: {
 					avatar: response.Key,
+					updatedAt: new Date(),
 				},
 			},
 			{
@@ -344,6 +353,7 @@ export class UsersService {
 			{
 				$set: {
 					avatar: null,
+					updatedAt: new Date(),
 				},
 			},
 			{
@@ -410,6 +420,7 @@ export class UsersService {
 				$set: {
 					email: updateEmailDto.newEmail,
 					username: createUsernameByEmail(updateEmailDto.newEmail),
+					updatedAt: new Date(),
 				},
 			},
 			{

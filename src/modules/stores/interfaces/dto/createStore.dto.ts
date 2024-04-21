@@ -27,7 +27,7 @@ export default class CreateStoreDto {
 
 	phoneNumbers: any[];
 
-	categoriesCode: string[];
+	categoriesIds: string[];
 
 	status: StoresEnum.Status;
 }

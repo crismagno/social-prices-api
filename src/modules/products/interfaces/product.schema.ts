@@ -50,8 +50,8 @@ export class Product extends Document implements IProduct {
 	@Prop({ type: String })
 	details: string | null;
 
-	@Prop({ type: [String] })
-	categoriesCode: string[];
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

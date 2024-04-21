@@ -21,7 +21,7 @@ export interface IStore
 	addresses: IStoreAddress[];
 	phoneNumbers: IStorePhoneNumber[];
 	about: string | null;
-	categoriesCode: string[];
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
 }
 
 export interface IStorePhoneNumber {

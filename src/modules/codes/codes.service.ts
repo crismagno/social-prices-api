@@ -125,12 +125,15 @@ export class CodesService {
 				{ new: true },
 			);
 		}
+		const now: Date = new Date();
 
 		const newCode: ICode = new this._codeModel({
 			userId,
 			value,
 			type,
 			expiresIn,
+			createdAt: now,
+			updatedAt: now,
 		});
 
 		return newCode.save();

@@ -156,9 +156,11 @@ export class StoresService {
 			createStoreDto.phoneNumbers = JSON.parse(createStoreDto.phoneNumbers);
 		}
 
-		if (typeof createStoreDto.categoriesCode === 'string') {
-			createStoreDto.categoriesCode = JSON.parse(createStoreDto.categoriesCode);
+		if (typeof createStoreDto.categoriesIds === 'string') {
+			createStoreDto.categoriesIds = JSON.parse(createStoreDto.categoriesIds);
 		}
+
+		const now: Date = new Date();
 
 		const store = new this._storeModel({
 			logo: responseFile.Key,
@@ -171,7 +173,9 @@ export class StoresService {
 			description: createStoreDto.description,
 			startedAt: createStoreDto.startedAt,
 			about: createStoreDto.about,
-			categoriesCode: createStoreDto.categoriesCode,
+			categoriesIds: createStoreDto.categoriesIds,
+			createdAt: now,
+			updatedAt: now,
 		});
 
 		const newStore: IStore = await store.save();
@@ -215,13 +219,15 @@ export class StoresService {
 			updateStoreDto.phoneNumbers = JSON.parse(updateStoreDto.phoneNumbers);
 		}
 
-		if (typeof updateStoreDto.categoriesCode === 'string') {
-			updateStoreDto.categoriesCode = JSON.parse(updateStoreDto.categoriesCode);
+		if (typeof updateStoreDto.categoriesIds === 'string') {
+			updateStoreDto.categoriesIds = JSON.parse(updateStoreDto.categoriesIds);
 		}
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(
 			store.userId.toString(),
 		);
+
+		const now: Date = new Date();
 
 		const $set: UpdateQuery<IStore> = {
 			addresses: updateStoreDto.addresses,
@@ -232,7 +238,8 @@ export class StoresService {
 			startedAt: updateStoreDto.startedAt,
 			about: updateStoreDto.about,
 			status: updateStoreDto.status,
-			categoriesCode: updateStoreDto.categoriesCode,
+			categoriesIds: updateStoreDto.categoriesIds,
+			updatedAt: now,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;

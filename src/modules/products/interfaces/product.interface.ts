@@ -17,5 +17,5 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	barCode: string | null;
 	QRCode: string | null;
 	details: string | null;
-	categoriesCode: string[];
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
 }

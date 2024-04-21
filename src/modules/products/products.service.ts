@@ -121,11 +121,13 @@ export class ProductsService {
 			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
 		}
 
-		if (typeof createProductDto.categoriesCode === 'string') {
-			createProductDto.categoriesCode = JSON.parse(
-				createProductDto.categoriesCode,
+		if (typeof createProductDto.categoriesIds === 'string') {
+			createProductDto.categoriesIds = JSON.parse(
+				createProductDto.categoriesIds,
 			);
 		}
+
+		const now: Date = new Date();
 
 		const product = new this._productModel({
 			description: createProductDto.description,
@@ -136,11 +138,13 @@ export class ProductsService {
 			quantity: createProductDto.quantity,
 			details: createProductDto.details,
 			storeIds: createProductDto.storeIds,
-			categoriesCode: createProductDto.categoriesCode,
+			categoriesIds: createProductDto.categoriesIds,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
 			barCode: createProductDto.barCode ?? createUniqueSuffix(),
 			QRCode: createProductDto.QRCode,
+			createdAt: now,
+			updatedAt: now,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -175,9 +179,9 @@ export class ProductsService {
 			updateProductDto.storeIds = JSON.parse(updateProductDto.storeIds);
 		}
 
-		if (typeof updateProductDto.categoriesCode === 'string') {
-			updateProductDto.categoriesCode = JSON.parse(
-				updateProductDto.categoriesCode,
+		if (typeof updateProductDto.categoriesIds === 'string') {
+			updateProductDto.categoriesIds = JSON.parse(
+				updateProductDto.categoriesIds,
 			);
 		}
 
@@ -193,6 +197,8 @@ export class ProductsService {
 
 		product.filesUrl.push(...filesUrl);
 
+		const now: Date = new Date();
+
 		const productUpdated = await this._productModel.findByIdAndUpdate(
 			product._id,
 			{
@@ -205,10 +211,11 @@ export class ProductsService {
 					quantity: updateProductDto.quantity,
 					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
-					categoriesCode: updateProductDto.categoriesCode,
+					categoriesIds: updateProductDto.categoriesIds,
 					barCode: updateProductDto.barCode ?? createUniqueSuffix(),
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
+					updatedAt: now,
 				},
 			},
 		);
