@@ -54,22 +54,20 @@ export class CustomersService {
 		return customer;
 	}
 
-	public async findByOwnerOfUserId(
-		ownerOfUserId: string,
-	): Promise<ICustomer[]> {
+	public async findByOwnerUserId(ownerUserId: string): Promise<ICustomer[]> {
 		const customers: ICustomer[] = await this._customerModel.find({
-			ownerOfUserId,
+			ownerUserId,
 		});
 
 		return customers;
 	}
 
-	public async findByOwnerOfUserTableState(
-		ownerOfUserId: string,
+	public async findByOwnerUserTableState(
+		ownerUserId: string,
 		tableState: ITableStateRequest<ICustomer>,
 	): Promise<ITableStateResponse<ICustomer[]>> {
 		const filter: FilterQuery<ICustomer> = {
-			ownerOfUserId,
+			ownerUserId,
 		};
 
 		if (tableState.search) {
@@ -106,9 +104,9 @@ export class CustomersService {
 	public async create(
 		file: Express.Multer.File | null,
 		createProductDto: CreateProductDto,
-		ownerOfUserId: string,
+		ownerUserId: string,
 	): Promise<ICustomer> {
-		await this._usersService.findOneByUserIdOrFail(ownerOfUserId);
+		await this._usersService.findOneByUserIdOrFail(ownerUserId);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -137,7 +135,7 @@ export class CustomersService {
 			gender: createProductDto.gender,
 			about: createProductDto.about,
 			phoneNumbers: createProductDto.phoneNumbers,
-			ownerOfUserId,
+			ownerUserId,
 			createdAt: now,
 			updatedAt: now,
 		});

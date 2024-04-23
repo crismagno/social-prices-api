@@ -68,27 +68,27 @@ export class CustomersController {
 		);
 	}
 
-	@Get('/ownerOfUserId')
+	@Get('/ownerUserId')
 	@UsePipes(ValidationPipe)
-	public async findByOwnerOfUserId(
+	public async findByOwnerUserId(
 		@Request() request: any,
 	): Promise<ICustomer[]> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._customersService.findByOwnerOfUserId(authPayload._id);
+		return await this._customersService.findByOwnerUserId(authPayload._id);
 	}
 
-	@Post('/ownerOfUserTableState')
+	@Post('/ownerUserTableState')
 	@UsePipes(ValidationPipe)
-	public async findByOwnerOfUserTableState(
+	public async findByOwnerUserTableState(
 		@Request() request: any,
 		@Body() tableState: ITableStateRequest<ICustomer>,
 	): Promise<ITableStateResponse<ICustomer[]>> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._customersService.findByOwnerOfUserTableState(
+		return await this._customersService.findByOwnerUserTableState(
 			authPayload._id,
 			tableState,
 		);

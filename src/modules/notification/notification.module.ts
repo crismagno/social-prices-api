@@ -1,10 +1,6 @@
-import {
-  forwardRef,
-  Module,
-} from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
-import EmailTransportService
-  from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
 import { CodesModule } from '../codes/codes.module';
 import { UsersModule } from '../users/users.module';
 import { NotificationService } from './notification.service';

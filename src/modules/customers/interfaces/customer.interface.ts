@@ -11,7 +11,7 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	avatar: string | null;
 	userId: mongoose.Schema.Types.ObjectId | null;
 	email: string | null;
-	ownerOfUserId: mongoose.Schema.Types.ObjectId;
+	ownerUserId: mongoose.Schema.Types.ObjectId;
 	firstName: string | null;
 	lastName: string | null;
 	middleName: string | null;
