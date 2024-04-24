@@ -6,7 +6,7 @@ import {
 	Post,
 	Put,
 	Request,
-	UploadedFiles,
+	UploadedFile,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
@@ -34,8 +34,8 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async create(
-		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
-		file: Express.Multer.File | null,
+		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		file: Express.Multer.File,
 		@Request() request: any,
 		@Body() createCustomerDto: CreateCustomerDto,
 	): Promise<ICustomer> {
@@ -53,8 +53,8 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async update(
-		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
-		file: Express.Multer.File | null,
+		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		file: Express.Multer.File,
 		@Request() request: any,
 		@Body() updateCustomerDto: UpdateCustomerDto,
 	): Promise<ICustomer> {

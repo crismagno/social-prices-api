@@ -11,6 +11,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
+import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
@@ -86,6 +87,10 @@ export class CustomersService {
 			];
 		}
 
+		if (tableState?.filters?.gender) {
+			filter.gender = { $in: tableState.filters.gender as UsersEnum.Gender[] };
+		}
+
 		const response: ITableStateResponse<ICustomer[]> = {
 			data: [],
 			total: 0,
@@ -125,9 +130,9 @@ export class CustomersService {
 		const now: Date = new Date();
 
 		const product = new this._customerModel({
-			avatar: responseFile.Key,
+			avatar: responseFile?.Key ?? null,
 			firstName: createProductDto.firstName,
-			middleName: createProductDto.middleName,
+			middleName: createProductDto.middleName ?? '',
 			lastName: createProductDto.lastName,
 			email: createProductDto.email,
 			birthDate: createProductDto.birthDate,
