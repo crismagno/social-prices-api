@@ -11,6 +11,8 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
+import { NotificationService } from '../notification/notification.service';
+import { IUser } from '../users/interfaces/user.interface';
 import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import { ICustomer } from './interfaces/customer.interface';
@@ -33,6 +35,7 @@ export class CustomersService {
 		private readonly _customerModel: Model<Customer>,
 		private readonly _usersService: UsersService,
 		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _notificationService: NotificationService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -111,7 +114,8 @@ export class CustomersService {
 		createProductDto: CreateProductDto,
 		ownerUserId: string,
 	): Promise<ICustomer> {
-		await this._usersService.findOneByUserIdOrFail(ownerUserId);
+		const user: IUser =
+			await this._usersService.findOneByUserIdOrFail(ownerUserId);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -147,6 +151,8 @@ export class CustomersService {
 
 		const newCustomer: ICustomer = await product.save();
 
+		await this._notificationService.createdCustomer(user, newCustomer);
+
 		return newCustomer;
 	}
 
@@ -155,7 +161,7 @@ export class CustomersService {
 		updateCustomerDto: UpdateCustomerDto,
 		userId: string,
 	): Promise<ICustomer> {
-		await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
 		const customer: ICustomer = await this.findByIdOrFail(
 			updateCustomerDto.customerId,
@@ -202,6 +208,8 @@ export class CustomersService {
 			customer._id,
 			{ $set },
 		);
+
+		await this._notificationService.updatedCustomer(user, customerUpdated);
 
 		return customerUpdated;
 	}

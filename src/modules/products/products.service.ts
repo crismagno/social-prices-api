@@ -11,6 +11,8 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
+import { NotificationService } from '../notification/notification.service';
+import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
@@ -32,6 +34,7 @@ export class ProductsService {
 		private readonly _productModel: Model<Product>,
 		private readonly _usersService: UsersService,
 		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _notificationService: NotificationService,
 	) {
 		this._logger = new Logger(ProductsService.name);
 	}
@@ -116,7 +119,7 @@ export class ProductsService {
 		createProductDto: CreateProductDto,
 		userId: string,
 	): Promise<IProduct> {
-		await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
 		const filesUrl: string[] =
 			await this._amazonFilesService.getUploadFilesUrl(files);
@@ -153,6 +156,8 @@ export class ProductsService {
 
 		const newProduct: IProduct = await product.save();
 
+		await this._notificationService.createdProduct(user, product);
+
 		return newProduct;
 	}
 
@@ -161,7 +166,7 @@ export class ProductsService {
 		updateProductDto: UpdateProductDto,
 		userId: string,
 	): Promise<IProduct> {
-		await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
 		const product: IProduct = await this.findByIdOrFail(
 			updateProductDto.productId,
@@ -223,6 +228,8 @@ export class ProductsService {
 				},
 			},
 		);
+
+		await this._notificationService.updatedProduct(user, productUpdated);
 
 		return productUpdated;
 	}

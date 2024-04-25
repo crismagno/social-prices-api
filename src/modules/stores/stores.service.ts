@@ -184,7 +184,7 @@ export class StoresService {
 
 		const newStore: IStore = await store.save();
 
-		await this._notificationService.sendCreateStore(newStore, user);
+		await this._notificationService.createdStore(user, newStore);
 
 		return newStore;
 	}
@@ -265,7 +265,7 @@ export class StoresService {
 			},
 		);
 
-		await this._notificationService.sendUpdateStore(updatedStore, user);
+		await this._notificationService.updatedStore(user, updatedStore);
 
 		return updatedStore;
 	}
