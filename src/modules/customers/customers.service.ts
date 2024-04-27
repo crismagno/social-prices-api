@@ -204,10 +204,8 @@ export class CustomersService {
 			}
 		}
 
-		const customerUpdated = await this._customerModel.findByIdAndUpdate(
-			customer._id,
-			{ $set },
-		);
+		const customerUpdated: ICustomer =
+			await this._customerModel.findByIdAndUpdate(customer._id, { $set });
 
 		await this._notificationsService.updatedCustomer(user, customerUpdated);
 

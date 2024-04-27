@@ -20,19 +20,13 @@ export class Product extends Document implements IProduct {
 	@Prop({ required: true, type: Number })
 	price: number;
 
-	@Prop({ required: true, type: Date })
-	createdAt: Date;
-
-	@Prop({ required: true, type: Date })
-	updatedAt: Date;
-
 	@Prop({ required: true, type: Boolean })
 	isActive: boolean;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
 	userId: mongoose.Schema.Types.ObjectId;
 
-	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	@Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Store' })
 	storeIds: mongoose.Schema.Types.ObjectId[];
 
 	@Prop({ type: [String] })
@@ -50,8 +44,14 @@ export class Product extends Document implements IProduct {
 	@Prop({ type: String })
 	details: string | null;
 
-	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	@Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Category' })
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
+
+	@Prop({ required: true, type: Date })
+	createdAt: Date;
+
+	@Prop({ required: true, type: Date })
+	updatedAt: Date;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

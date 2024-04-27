@@ -45,4 +45,13 @@ export class NotificationsController {
 	): Promise<INotification> {
 		return await this._notificationsService.findById(notificationId);
 	}
+
+	@Get('/:countNotSeenByUser')
+	@UsePipes(ValidationPipe)
+	public async countNotSeenByUser(@Request() request: any): Promise<number> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._notificationsService.countNotSeenByUser(authPayload._id);
+	}
 }

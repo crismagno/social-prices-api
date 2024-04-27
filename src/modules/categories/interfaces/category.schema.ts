@@ -15,7 +15,7 @@ export class Category extends Document implements ICategory {
 	@Prop({ required: true, type: String })
 	code: string;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
 	userId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({

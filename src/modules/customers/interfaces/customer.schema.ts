@@ -2,6 +2,8 @@ import mongoose, { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
+import { IAddress } from '../../../shared/interfaces/address.interface';
+import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import UsersEnum from '../../users/interfaces/users.enum';
@@ -42,22 +44,22 @@ export class Customer extends Document implements ICustomer {
 	about: string | null;
 
 	@Prop({ type: [AddressSchema] })
-	addresses: any[];
+	addresses: IAddress[];
 
 	@Prop({ type: [PhoneNumberSchema] })
-	phoneNumbers: any[];
+	phoneNumbers: IPhoneNumber[];
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	userId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	ownerUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 
 	@Prop({ required: true, type: Date })
 	updatedAt: Date;
-
-	@Prop({ type: mongoose.Schema.Types.ObjectId })
-	userId: mongoose.Schema.Types.ObjectId | null;
-
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
-	ownerUserId: mongoose.Schema.Types.ObjectId;
 }
 
 export const CustomerSchema = SchemaFactory.createForClass(Customer);

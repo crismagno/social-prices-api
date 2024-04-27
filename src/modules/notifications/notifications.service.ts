@@ -111,7 +111,7 @@ export class NotificationsService {
 		type: NotificationsEnum.Type;
 		subtitle: string | null;
 		content: any;
-	}): Promise<any> {
+	}): Promise<Notification> {
 		const now: Date = new Date();
 
 		const notification = new this._notificationModel({
@@ -123,9 +123,10 @@ export class NotificationsService {
 			userId,
 			createdAt: now,
 			updatedAt: now,
+			isSeen: false,
 		});
 
-		const newNotification = await notification.save();
+		const newNotification: Notification = await notification.save();
 
 		return newNotification;
 	}
@@ -274,6 +275,13 @@ export class NotificationsService {
 			title: 'Customer Updated',
 			type: NotificationsEnum.Type.DEFAULT,
 			userId,
+		});
+	}
+
+	public async countNotSeenByUser(userId: string): Promise<number> {
+		return await this._notificationModel.countDocuments({
+			userId,
+			isSeen: false,
 		});
 	}
 

@@ -9,16 +9,16 @@ import NotificationsEnum from './notifications.enum';
 export class Notification extends Document implements INotification {
 	readonly _id: string;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
 	userId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ type: mongoose.Schema.Types.Mixed })
 	content: any;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.Mixed })
+	@Prop({ required: true, type: String })
 	title: string;
 
-	@Prop({ type: mongoose.Schema.Types.Mixed })
+	@Prop({ type: String })
 	subtitle: string | null;
 
 	@Prop({
@@ -30,8 +30,11 @@ export class Notification extends Document implements INotification {
 	})
 	type: NotificationsEnum.Type;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
 	createdByUserId: mongoose.Schema.Types.ObjectId;
+
+	@Prop({ required: true, type: Boolean })
+	isSeen: boolean;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
