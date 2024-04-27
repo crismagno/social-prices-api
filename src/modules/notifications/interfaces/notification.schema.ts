@@ -19,9 +19,15 @@ export class Notification extends Document implements INotification {
 	title: string;
 
 	@Prop({ type: mongoose.Schema.Types.Mixed })
-	subtitle: string;
+	subtitle: string | null;
 
-	@Prop({ type: String })
+	@Prop({
+		type: String,
+		enum: {
+			values: Object.keys(NotificationsEnum.Type),
+			message: '{VALUE} is not supported',
+		},
+	})
 	type: NotificationsEnum.Type;
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })

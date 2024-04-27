@@ -4,7 +4,8 @@ import { schemasModule } from '../../infra/database/mongo/schemas';
 import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
 import { CodesModule } from '../codes/codes.module';
 import { UsersModule } from '../users/users.module';
-import { NotificationService } from './notification.service';
+import { NotificationsController } from './notifications.controller';
+import { NotificationsService } from './notifications.service';
 
 @Module({
 	imports: [
@@ -12,7 +13,8 @@ import { NotificationService } from './notification.service';
 		CodesModule,
 		forwardRef(() => UsersModule),
 	],
-	providers: [NotificationService, EmailTransportService],
-	exports: [NotificationService],
+	controllers: [NotificationsController],
+	providers: [NotificationsService, EmailTransportService],
+	exports: [NotificationsService],
 })
-export class NotificationModule {}
+export class NotificationsModule {}

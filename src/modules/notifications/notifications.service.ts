@@ -1,10 +1,15 @@
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import { queryOptions } from '../../shared/helpers/table/table-state';
+import {
+	ITableStateRequest,
+	ITableStateResponse,
+} from '../../shared/helpers/table/table-state.interface';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
@@ -12,11 +17,12 @@ import { IProduct } from '../products/interfaces/product.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
+import { INotification } from './interfaces/notification.interface';
 import { INotificationResponse } from './interfaces/notification.types';
 import NotificationsEnum from './interfaces/notifications.enum';
 
 @Injectable()
-export class NotificationService {
+export class NotificationsService {
 	// #region Private Properties
 
 	private readonly _logger: Logger;
@@ -33,12 +39,63 @@ export class NotificationService {
 		@Inject(forwardRef(() => UsersService))
 		private readonly _usersService: UsersService,
 	) {
-		this._logger = new Logger(NotificationService.name);
+		this._logger = new Logger(NotificationsService.name);
 	}
 
 	//#endregion
 
 	//#region Public Methods
+
+	public async findById(
+		notificationId: string,
+	): Promise<INotification | undefined> {
+		return this._notificationModel.findById(notificationId);
+	}
+
+	public async findByUserTableState(
+		userId: string,
+		tableState: ITableStateRequest<INotification>,
+	): Promise<ITableStateResponse<INotification[]>> {
+		const filter: FilterQuery<INotification> = {
+			userId,
+		};
+
+		if (tableState.search) {
+			const search = new RegExp(tableState.search, 'ig');
+
+			filter.$or = [
+				{
+					content: search,
+				},
+				{
+					title: search,
+				},
+				{
+					subtitle: search,
+				},
+			];
+		}
+
+		if (tableState.filters?.types?.length) {
+			filter.type = {
+				$in: tableState.filters?.types as NotificationsEnum.Type[],
+			};
+		}
+
+		const response: ITableStateResponse<INotification[]> = {
+			data: [],
+			total: 0,
+		};
+
+		response.total = await this._notificationModel.countDocuments(filter);
+		response.data = await this._notificationModel.find(
+			filter,
+			null,
+			queryOptions<INotification>(tableState),
+		);
+
+		return response;
+	}
 
 	public async create({
 		userId,

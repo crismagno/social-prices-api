@@ -13,7 +13,7 @@ import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CodesModule } from './modules/codes/codes.module';
 import { CustomersModule } from './modules/customers/customers.module';
-import { NotificationModule } from './modules/notification/notification.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
@@ -31,7 +31,7 @@ import { UsersModule } from './modules/users/users.module';
 		AuthModule,
 		UsersModule,
 		CodesModule,
-		NotificationModule,
+		NotificationsModule,
 		StoresModule,
 		ProductsModule,
 		CategoriesModule,

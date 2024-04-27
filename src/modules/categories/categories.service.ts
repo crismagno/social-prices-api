@@ -66,20 +66,21 @@ export class CategoriesService {
 	): Promise<ICategory> {
 		await this._usersService.findOneByUserIdOrFail(userId);
 
-		const categoryUpdated = await this._categoryModel.findByIdAndUpdate(
-			updateCategoryDto.categoryId,
-			{
-				$set: {
-					name: updateCategoryDto.name,
-					code: updateCategoryDto.code,
-					type: updateCategoryDto.type,
-					userId,
+		const categoryUpdated: ICategory =
+			await this._categoryModel.findByIdAndUpdate(
+				updateCategoryDto.categoryId,
+				{
+					$set: {
+						name: updateCategoryDto.name,
+						code: updateCategoryDto.code,
+						type: updateCategoryDto.type,
+						userId,
+					},
 				},
-			},
-			{
-				new: true,
-			},
-		);
+				{
+					new: true,
+				},
+			);
 
 		return categoryUpdated;
 	}
@@ -93,7 +94,7 @@ export class CategoriesService {
 		const now: Date = new Date();
 
 		const categoriesToCreate = createCategoriesDto.categories.map(
-			(category) => ({
+			(category: CreateCategoryDto) => ({
 				...category,
 				userId,
 				createdAt: now,

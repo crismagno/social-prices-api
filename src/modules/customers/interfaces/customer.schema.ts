@@ -29,7 +29,13 @@ export class Customer extends Document implements ICustomer {
 	@Prop({ type: Date })
 	birthDate: Date | null;
 
-	@Prop({ type: String })
+	@Prop({
+		type: String,
+		enum: {
+			values: Object.keys(UsersEnum.Gender),
+			message: '{VALUE} is not supported',
+		},
+	})
 	gender: UsersEnum.Gender | null;
 
 	@Prop({ type: String })

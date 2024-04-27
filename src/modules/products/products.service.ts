@@ -11,7 +11,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
@@ -34,7 +34,7 @@ export class ProductsService {
 		private readonly _productModel: Model<Product>,
 		private readonly _usersService: UsersService,
 		private readonly _amazonFilesService: AmazonFilesService,
-		private readonly _notificationService: NotificationService,
+		private readonly _notificationsService: NotificationsService,
 	) {
 		this._logger = new Logger(ProductsService.name);
 	}
@@ -156,7 +156,7 @@ export class ProductsService {
 
 		const newProduct: IProduct = await product.save();
 
-		await this._notificationService.createdProduct(user, product);
+		await this._notificationsService.createdProduct(user, product);
 
 		return newProduct;
 	}
@@ -208,7 +208,7 @@ export class ProductsService {
 
 		const now: Date = new Date();
 
-		const productUpdated = await this._productModel.findByIdAndUpdate(
+		const productUpdated: IProduct = await this._productModel.findByIdAndUpdate(
 			product._id,
 			{
 				$set: {
@@ -229,7 +229,7 @@ export class ProductsService {
 			},
 		);
 
-		await this._notificationService.updatedProduct(user, productUpdated);
+		await this._notificationsService.updatedProduct(user, productUpdated);
 
 		return productUpdated;
 	}

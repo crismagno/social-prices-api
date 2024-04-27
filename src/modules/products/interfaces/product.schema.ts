@@ -14,7 +14,7 @@ export class Product extends Document implements IProduct {
 	@Prop({ required: true, type: Number })
 	quantity: number;
 
-	@Prop()
+	@Prop({ type: String })
 	description: string | null;
 
 	@Prop({ required: true, type: Number })

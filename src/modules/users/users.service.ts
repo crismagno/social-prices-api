@@ -20,8 +20,8 @@ import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-ser
 import { createUsernameByEmail } from '../../shared/helpers/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
-import { INotificationResponse } from '../notification/interfaces/notification.types';
-import { NotificationService } from '../notification/notification.service';
+import { INotificationResponse } from '../notifications/interfaces/notification.types';
+import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
@@ -47,8 +47,8 @@ export class UsersService {
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
-		@Inject(forwardRef(() => NotificationService))
-		private readonly _notificationService: NotificationService,
+		@Inject(forwardRef(() => NotificationsService))
+		private readonly _notificationsService: NotificationsService,
 		private readonly _codesService: CodesService,
 		private readonly _amazonFilesService: AmazonFilesService,
 	) {
@@ -209,7 +209,7 @@ export class UsersService {
 		const user: IUser = await this.findOneByEmailOrFail(email);
 
 		const notificationResponse: INotificationResponse =
-			await this._notificationService.sendRecoverPasswordCode(user);
+			await this._notificationsService.sendRecoverPasswordCode(user);
 
 		if (!notificationResponse.email) {
 			throw new BadRequestException(
@@ -375,7 +375,7 @@ export class UsersService {
 		}
 
 		const notificationResponse: INotificationResponse =
-			await this._notificationService.sendUpdateEmailCode(user);
+			await this._notificationsService.sendUpdateEmailCode(user);
 
 		if (!notificationResponse.email) {
 			throw new BadRequestException(
@@ -443,7 +443,7 @@ export class UsersService {
 
 	private async _notificationSendSignInCode(user: IUser): Promise<void> {
 		const notificationResponse: INotificationResponse =
-			await this._notificationService.sendSignInCode(user);
+			await this._notificationsService.sendSignInCode(user);
 
 		if (!notificationResponse.email) {
 			throw new BadRequestException(

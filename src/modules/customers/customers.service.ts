@@ -11,7 +11,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
@@ -35,7 +35,7 @@ export class CustomersService {
 		private readonly _customerModel: Model<Customer>,
 		private readonly _usersService: UsersService,
 		private readonly _amazonFilesService: AmazonFilesService,
-		private readonly _notificationService: NotificationService,
+		private readonly _notificationsService: NotificationsService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -151,7 +151,7 @@ export class CustomersService {
 
 		const newCustomer: ICustomer = await product.save();
 
-		await this._notificationService.createdCustomer(user, newCustomer);
+		await this._notificationsService.createdCustomer(user, newCustomer);
 
 		return newCustomer;
 	}
@@ -209,7 +209,7 @@ export class CustomersService {
 			{ $set },
 		);
 
-		await this._notificationService.updatedCustomer(user, customerUpdated);
+		await this._notificationsService.updatedCustomer(user, customerUpdated);
 
 		return customerUpdated;
 	}

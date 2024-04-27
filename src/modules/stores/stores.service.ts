@@ -16,7 +16,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/helpers/table/table-state.interface';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
@@ -36,7 +36,7 @@ export class StoresService {
 
 	constructor(
 		@InjectModel(schemasName.store) private readonly _storeModel: Model<IStore>,
-		private readonly _notificationService: NotificationService,
+		private readonly _notificationsService: NotificationsService,
 		private readonly _usersService: UsersService,
 		private readonly _amazonFilesService: AmazonFilesService,
 	) {
@@ -184,7 +184,7 @@ export class StoresService {
 
 		const newStore: IStore = await store.save();
 
-		await this._notificationService.createdStore(user, newStore);
+		await this._notificationsService.createdStore(user, newStore);
 
 		return newStore;
 	}
@@ -265,7 +265,7 @@ export class StoresService {
 			},
 		);
 
-		await this._notificationService.updatedStore(user, updatedStore);
+		await this._notificationsService.updatedStore(user, updatedStore);
 
 		return updatedStore;
 	}
