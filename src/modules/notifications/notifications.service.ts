@@ -76,9 +76,9 @@ export class NotificationsService {
 			];
 		}
 
-		if (tableState.filters?.types?.length) {
+		if (tableState.filters?.type?.length) {
 			filter.type = {
-				$in: tableState.filters?.types as NotificationsEnum.Type[],
+				$in: tableState.filters?.type as NotificationsEnum.Type[],
 			};
 		}
 
@@ -279,10 +279,23 @@ export class NotificationsService {
 	}
 
 	public async countNotSeenByUser(userId: string): Promise<number> {
-		return await this._notificationModel.countDocuments({
+		return this._notificationModel.countDocuments({
 			userId,
 			isSeen: false,
 		});
+	}
+
+	public async updateToSeen(notificationIds: string[]): Promise<void> {
+		await this._notificationModel.updateMany(
+			{
+				_id: { $in: notificationIds },
+			},
+			{
+				$set: {
+					isSeen: true,
+				},
+			},
+		);
 	}
 
 	//#endregion

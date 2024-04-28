@@ -49,10 +49,10 @@ export class Customer extends Document implements ICustomer {
 	@Prop({ type: [PhoneNumberSchema] })
 	phoneNumbers: IPhoneNumber[];
 
-	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	userId: mongoose.Schema.Types.ObjectId | null;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	ownerUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: Date })

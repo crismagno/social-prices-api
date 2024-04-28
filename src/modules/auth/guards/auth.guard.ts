@@ -1,15 +1,14 @@
 import { Request } from 'express';
 
 import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
+	CanActivate,
+	ExecutionContext,
+	Injectable,
+	UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import AuthorizationToken
-  from '../../../infra/authorization/authorization-token';
+import AuthorizationToken from '../../../infra/authorization/authorization-token';
 import { IS_PUBLIC_KEY } from '../../../shared/decorators/custom.decorator';
 import AuthEnum from '../interfaces/auth.enum';
 import { IAuthPayload } from '../interfaces/auth.types';

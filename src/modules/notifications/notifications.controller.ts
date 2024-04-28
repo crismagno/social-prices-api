@@ -16,6 +16,7 @@ import {
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import UpdateToSeenDto from './interfaces/dto/updateToSeen.dto';
 import { INotification } from './interfaces/notification.interface';
 import { NotificationsService } from './notifications.service';
 
@@ -38,20 +39,30 @@ export class NotificationsController {
 		);
 	}
 
-	@Get('/:notificationId')
-	@UsePipes(ValidationPipe)
-	public async findById(
-		@Param('notificationId', ValidationParamsPipe) notificationId: string,
-	): Promise<INotification> {
-		return await this._notificationsService.findById(notificationId);
-	}
-
-	@Get('/:countNotSeenByUser')
+	@Get('/countNotSeenByUser')
 	@UsePipes(ValidationPipe)
 	public async countNotSeenByUser(@Request() request: any): Promise<number> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
 		return await this._notificationsService.countNotSeenByUser(authPayload._id);
+	}
+
+	@Post('/updateToSeen')
+	@UsePipes(ValidationPipe)
+	public async updateToSeen(
+		@Body() updateToSeenDto: UpdateToSeenDto,
+	): Promise<void> {
+		await this._notificationsService.updateToSeen(
+			updateToSeenDto.notificationIds,
+		);
+	}
+
+	@Get('/:notificationId')
+	@UsePipes(ValidationPipe)
+	public async findById(
+		@Param('notificationId', ValidationParamsPipe) notificationId: string,
+	): Promise<INotification> {
+		return await this._notificationsService.findById(notificationId);
 	}
 }

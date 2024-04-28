@@ -23,10 +23,10 @@ export class Product extends Document implements IProduct {
 	@Prop({ required: true, type: Boolean })
 	isActive: boolean;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	userId: mongoose.Schema.Types.ObjectId;
 
-	@Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Store' })
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	storeIds: mongoose.Schema.Types.ObjectId[];
 
 	@Prop({ type: [String] })
@@ -44,7 +44,7 @@ export class Product extends Document implements IProduct {
 	@Prop({ type: String })
 	details: string | null;
 
-	@Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Category' })
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 
 	@Prop({ required: true, type: Date })

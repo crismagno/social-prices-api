@@ -9,7 +9,7 @@ import NotificationsEnum from './notifications.enum';
 export class Notification extends Document implements INotification {
 	readonly _id: string;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	userId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ type: mongoose.Schema.Types.Mixed })
@@ -30,7 +30,7 @@ export class Notification extends Document implements INotification {
 	})
 	type: NotificationsEnum.Type;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	createdByUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: Boolean })
