@@ -1,3 +1,4 @@
+import { isNumber } from 'class-validator';
 import { QueryOptions } from 'mongoose';
 
 import {
@@ -21,7 +22,9 @@ export function queryOptions<T>(
 			tableStateRequestSortOrder === 'ascend' ? 1 : -1,
 	};
 
-	if (tableStateRequest?.pagination?.current) {
+	if (isNumber(tableStateRequest?.pagination?.skip)) {
+		options.skip = tableStateRequest.pagination.skip;
+	} else if (tableStateRequest?.pagination?.current) {
 		options.skip =
 			(tableStateRequest?.pagination?.current - 1) *
 			tableStateRequest?.pagination?.pageSize;

@@ -10,7 +10,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { makeRandomCode } from '../../shared/helpers/global';
+import { makeRandomCode } from '../../shared/utils/global';
 import { ICode } from './interfaces/code.interface';
 import CodesEnum from './interfaces/codes.enum';
 

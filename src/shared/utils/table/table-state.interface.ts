@@ -17,6 +17,7 @@ export interface ITableStateRequestPagination {
 	current?: number;
 	pageSize?: number;
 	total?: number;
+	skip?: number;
 }
 
 export interface ITableStateResponse<T> {

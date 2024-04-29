@@ -15,12 +15,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-} from '../../shared/helpers/table/table-state.interface';
-import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
-import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+} from '../../shared/utils/table/table-state.interface';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateStoreDto from './interfaces/dto/createStore.dto';

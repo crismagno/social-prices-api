@@ -3,7 +3,7 @@ import * as AWS from 'aws-sdk';
 // file: aws-s3 > src > app.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 
-import { newFileOriginalname } from '../../../shared/helpers/global';
+import { newFileOriginalname } from '../../../shared/utils/global';
 
 @Injectable()
 export class AmazonFilesService {

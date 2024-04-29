@@ -6,11 +6,11 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
-import { queryOptions } from '../../shared/helpers/table/table-state';
+import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-} from '../../shared/helpers/table/table-state.interface';
+} from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import UsersEnum from '../users/interfaces/users.enum';

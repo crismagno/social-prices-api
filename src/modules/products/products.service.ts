@@ -5,12 +5,12 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
-import { createUniqueSuffix } from '../../shared/helpers/global';
-import { queryOptions } from '../../shared/helpers/table/table-state';
+import { createUniqueSuffix } from '../../shared/utils/global';
+import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-} from '../../shared/helpers/table/table-state.interface';
+} from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';

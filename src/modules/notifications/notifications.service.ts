@@ -5,11 +5,11 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
-import { queryOptions } from '../../shared/helpers/table/table-state';
+import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-} from '../../shared/helpers/table/table-state.interface';
+} from '../../shared/utils/table/table-state.interface';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';

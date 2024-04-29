@@ -9,11 +9,11 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-} from '../../shared/helpers/table/table-state.interface';
-import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+} from '../../shared/utils/table/table-state.interface';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import UpdateToSeenDto from './interfaces/dto/updateToSeen.dto';

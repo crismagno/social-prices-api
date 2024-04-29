@@ -17,7 +17,7 @@ import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
-import { createUsernameByEmail } from '../../shared/helpers/global';
+import { createUsernameByEmail } from '../../shared/utils/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
