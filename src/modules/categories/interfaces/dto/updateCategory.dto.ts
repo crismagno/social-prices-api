@@ -19,4 +19,8 @@ export default class UpdateCategoryDto {
 	@IsString()
 	@IsOptional()
 	ownerUserId: string | null;
+
+	@IsString()
+	@IsOptional()
+	description: string | null;
 }

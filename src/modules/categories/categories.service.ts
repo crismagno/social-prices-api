@@ -103,7 +103,7 @@ export class CategoriesService {
 		if (tableState.search) {
 			const search = new RegExp(tableState.search, 'ig');
 
-			filter.name = search;
+			filter.$or = [{ name: search }, { description: search }];
 		}
 
 		if (tableState.filters?.type?.length) {
@@ -155,6 +155,7 @@ export class CategoriesService {
 			type: createCategoryDto.type,
 			createdByUserId: userId,
 			ownerUserId: createCategoryDto.ownerUserId,
+			description: createCategoryDto.description,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -185,6 +186,7 @@ export class CategoriesService {
 						name: updateCategoryDto.name,
 						code: updateCategoryDto.code,
 						type: updateCategoryDto.type,
+						description: updateCategoryDto.description,
 					},
 				},
 				{

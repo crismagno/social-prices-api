@@ -31,6 +31,9 @@ export class Category extends Document implements ICategory {
 	})
 	type: CategoriesEnum.Type;
 
+	@Prop({ type: String })
+	description: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

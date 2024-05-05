@@ -16,4 +16,8 @@ export default class CreateCategoryDto {
 	@IsString()
 	@IsOptional()
 	ownerUserId: string | null;
+
+	@IsString()
+	@IsOptional()
+	description: string | null;
 }
