@@ -54,7 +54,11 @@ export default class EmailTransportService {
 
 	public async sendEmail(params: ISendEmailParams): Promise<string | null> {
 		try {
-			if (!!process.env.EMAIL_STOP_SEND) {
+			const shouldSendRealEmails: boolean = Boolean(
+				process.env?.EMAIL_STOP_SEND === 'true',
+			);
+
+			if (shouldSendRealEmails) {
 				this._logger.log('EMAIL STOP SEND: ', params);
 				return this._messageIdTest;
 			}

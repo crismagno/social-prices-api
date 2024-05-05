@@ -1,3 +1,5 @@
+import AddressEnum from '../enums/address.enum';
+
 export interface IAddress {
 	address1: string;
 	address2?: string;
@@ -9,6 +11,7 @@ export interface IAddress {
 	description?: string;
 	country: IAddressCountry;
 	district: string;
+	types: AddressEnum.Types[];
 }
 
 export interface IAddressState {

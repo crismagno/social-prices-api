@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+import AddressEnum from '../enums/address.enum';
+
 export const CodeNameSchema = new mongoose.Schema(
 	{
 		code: String,
@@ -20,6 +22,13 @@ export const AddressSchema = new mongoose.Schema(
 		description: { type: String, optional: true },
 		country: CodeNameSchema,
 		district: String,
+		types: {
+			type: [String],
+			enum: {
+				values: Object.keys(AddressEnum.Types),
+				message: '{VALUE} is not supported',
+			},
+		},
 	},
 	{ _id: false },
 );
