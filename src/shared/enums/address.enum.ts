@@ -1,5 +1,5 @@
 namespace AddressEnum {
-	export enum Types {
+	export enum Type {
 		SHIPPING = 'SHIPPING',
 		HOME = 'HOME',
 		NORMAL = 'NORMAL',

@@ -25,7 +25,7 @@ export const AddressSchema = new mongoose.Schema(
 		types: {
 			type: [String],
 			enum: {
-				values: Object.keys(AddressEnum.Types),
+				values: Object.keys(AddressEnum.Type),
 				message: '{VALUE} is not supported',
 			},
 		},

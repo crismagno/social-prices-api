@@ -11,7 +11,7 @@ export interface IAddress {
 	description?: string;
 	country: IAddressCountry;
 	district: string;
-	types: AddressEnum.Types[];
+	types: AddressEnum.Type[];
 }
 
 export interface IAddressState {

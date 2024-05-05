@@ -1,4 +1,4 @@
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import CategoriesEnum from '../categories.enum';
 
@@ -15,4 +15,8 @@ export default class UpdateCategoryDto {
 
 	@IsString()
 	code: string;
+
+	@IsString()
+	@IsOptional()
+	ownerUserId: string | null;
 }
