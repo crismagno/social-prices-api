@@ -5,7 +5,7 @@ namespace StoresEnum {
 		STOPPED = 'STOPPED',
 	}
 
-	export enum PhoneTypes {
+	export enum Type {
 		MOBILE = 'MOBILE',
 		HOME = 'HOME',
 		BUSINESS = 'BUSINESS',

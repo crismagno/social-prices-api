@@ -8,7 +8,7 @@ export const PhoneNumberSchema = new mongoose.Schema(
 		type: {
 			type: String,
 			enum: {
-				values: Object.keys(PhoneNumberEnum.PhoneTypes),
+				values: Object.keys(PhoneNumberEnum.Type),
 				message: '{VALUE} is not supported',
 			},
 		},
