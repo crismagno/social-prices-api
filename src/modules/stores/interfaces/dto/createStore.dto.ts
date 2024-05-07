@@ -29,5 +29,7 @@ export default class CreateStoreDto {
 
 	categoriesIds: string[];
 
+	@IsString()
+	@IsOptional()
 	status: StoresEnum.Status;
 }

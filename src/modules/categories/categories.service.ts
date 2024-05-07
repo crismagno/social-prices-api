@@ -83,12 +83,12 @@ export class CategoriesService {
 			return;
 		}
 
-		if (category._id === categoryId) {
+		if (category._id.toString() === categoryId) {
 			return;
 		}
 
 		throw new BadRequestException(
-			`Already exists a category by same type ${type} and name: ${name}`,
+			`Already exists a category by same type "${CategoriesEnum.TypeLabels[type]}" and name: ${name}`,
 		);
 	}
 
