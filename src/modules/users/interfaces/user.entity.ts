@@ -27,11 +27,7 @@ export default class UserEntity implements IUserEntity {
 
 	public extraDataProvider: any;
 
-	public firstName: string;
-
-	public lastName: string;
-
-	public middleName: string;
+	public name: string;
 
 	public birthDate: Date;
 
@@ -62,10 +58,8 @@ export default class UserEntity implements IUserEntity {
 		this.extraDataProvider = _user.extraDataProvider;
 		this.addresses = _user.addresses;
 		this.birthDate = _user.birthDate;
-		this.firstName = _user.firstName;
-		this.lastName = _user.lastName;
+		this.name = _user.name;
 		this.gender = _user.gender;
-		this.middleName = _user.middleName;
 		this.about = _user.about;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
