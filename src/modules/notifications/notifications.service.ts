@@ -257,7 +257,7 @@ export class NotificationsService {
 	): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.name}, you have created a new customer <b>${customer.firstName}</b>. Congratulation!!!`;
+		const content: string = `Hi! ${user.name}, you have created a new customer <b>${customer.name}</b>. Congratulation!!!`;
 
 		await this.create({
 			content,
@@ -275,7 +275,7 @@ export class NotificationsService {
 	): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.name}, you have updated customer <b>${customer.firstName}</b>!`;
+		const content: string = `Hi! ${user.name}, you have updated customer <b>${customer.name}</b>!`;
 
 		await this.create({
 			content,
