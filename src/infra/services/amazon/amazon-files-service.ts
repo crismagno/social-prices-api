@@ -21,7 +21,7 @@ export class AmazonFilesService {
 	private _awsS3Bucket: string = process.env.AWS_S3_BUCKET;
 	private _awsS3: AWS.S3;
 	private _logger: Logger;
-	private _localFolderPath = path.join(process.cwd(), '/uploads/');
+	private _localFolderPath: any = path.join(process.cwd(), '/uploads/');
 
 	//#endregion
 
