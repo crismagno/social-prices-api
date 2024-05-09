@@ -112,7 +112,8 @@ export class UsersController {
 	public async uploadAvatar(
 		@UploadedFile(parseFilePipeBuilder())
 		file: Express.Multer.File,
-		@Request() request: any,
+		@Request()
+		request: any,
 	): Promise<IUserEntity> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
@@ -154,48 +155,3 @@ export class UsersController {
 		);
 	}
 }
-
-// #region Legacy Methods
-
-// That controller is used on legacy to save on own server
-// @Post('/uploadAvatar')
-// @UseInterceptors(
-// 	FileInterceptor(
-// 		'avatar',
-// 		fileInterceptorOptionsUploadAvatar('./uploads/avatars'),
-// 	),
-// )
-// public uploadAvatar(
-// 	@UploadedFile(
-// 		new ParseFilePipeBuilder()
-// 			.addFileTypeValidator({
-// 				fileType: /(jpg|jpeg|png|gif)$/,
-// 			})
-// 			.addMaxSizeValidator({
-// 				maxSize: 5242880,
-// 			})
-// 			.build({
-// 				errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-// 			}),
-// 	)
-// 	file: Express.Multer.File,
-// 	@Request() request: any,
-// ): Promise<IUserEntity> {
-// 	const authPayload: IAuthPayload =
-// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
-// 	return this._usersService.updateAvatar(authPayload._id, file);
-// }
-
-// @Public()
-// @Get('/avatars/:filename')
-// public getAvatarImage(
-// 	@Res() res: any,
-// 	@Param('filename', ValidationParamsPipe) filename: string,
-// ) {
-// 	return res.sendFile(filename, {
-// 		root: './uploads/avatars',
-// 	});
-// }
-
-// #endregion

@@ -1,41 +1,33 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import { randomUUID } from 'crypto';
-import {
-  Model,
-  Types,
-} from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
+	BadRequestException,
+	forwardRef,
+	Inject,
+	Injectable,
+	Logger,
+	NotFoundException,
+	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import {
-  AmazonFilesService,
-} from '../../infra/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
 import { createUsernameByEmail } from '../../shared/utils/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
-import {
-  INotificationResponse,
-} from '../notifications/interfaces/notification.types';
+import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from './interfaces/dto/createUser.dto';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
-import UpdateUserPhoneNumbersDto
-  from './interfaces/dto/updateUserPhoneNumbers.dto';
+import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
 import UserEntity from './interfaces/user.entity';
 import { IUser } from './interfaces/user.interface';
 import UsersEnum from './interfaces/users.enum';
@@ -350,7 +342,9 @@ export class UsersService {
 	}
 
 	public async removeAvatar(userId: string): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		await this._amazonFilesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -433,12 +427,6 @@ export class UsersService {
 		);
 
 		return this._getUserEntityWithToken(newUser);
-	}
-
-	public async getFileFromAmazonFiles(
-		filename: string,
-	): Promise<string | undefined> {
-		return await this._amazonFilesService.getFileObject(filename);
 	}
 
 	//#rendegion
