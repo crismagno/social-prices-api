@@ -40,15 +40,3 @@ export const newFileOriginalname = (fileOriginalname: string): string => {
 
 	return filename;
 };
-
-export const getFormattedFilename = (file: Express.Multer.File): string => {
-	const uniqueSuffix: string = createUniqueSuffix();
-
-	const ext: string = extname(file.originalname);
-
-	const name: string = file.originalname.split('.').slice(0, -1).join('.');
-
-	const filename: string = `${name}-${uniqueSuffix}${ext}`;
-
-	return filename;
-};

@@ -3,10 +3,7 @@ import * as AWS from 'aws-sdk';
 // file: aws-s3 > src > app.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 
-import {
-	getFormattedFilename,
-	newFileOriginalname,
-} from '../../../shared/utils/global';
+import { newFileOriginalname } from '../../../shared/utils/global';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
@@ -183,7 +180,7 @@ export class AmazonFilesService {
 		file: Express.Multer.File,
 	): Promise<AWS.S3.ManagedUpload.SendData> {
 		return new Promise((resolve, reject) => {
-			const filename: string = getFormattedFilename(file);
+			const filename: string = newFileOriginalname(file.originalname);
 
 			const filePath: string = `${this._localFolderPath}${filename}`;
 
