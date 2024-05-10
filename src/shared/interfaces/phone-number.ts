@@ -2,7 +2,7 @@ import PhoneNumberEnum from '../enums/phone-number.enum';
 
 export interface IPhoneNumber {
 	uid: string;
-	type: PhoneNumberEnum.PhoneTypes;
+	type: PhoneNumberEnum.Type;
 	number: string;
 	messengers: PhoneNumberEnum.PhoneNumberMessenger[];
 }

@@ -144,9 +144,7 @@ export class UsersService {
 				avatar: createUserDto.avatar,
 				extraDataProvider: createUserDto.extraDataProvider,
 				addresses: [],
-				firstName: null,
-				lastName: null,
-				middleName: null,
+				name: null,
 				birthDate: null,
 				gender: UsersEnum.Gender.OTHER,
 				about: createUserDto.about,
@@ -257,9 +255,7 @@ export class UsersService {
 			new Types.ObjectId(userId),
 			{
 				$set: {
-					firstName: updateUserDto.firstName,
-					lastName: updateUserDto.lastName,
-					middleName: updateUserDto.middleName,
+					name: updateUserDto.name,
 					birthDate: updateUserDto.birthDate,
 					gender: updateUserDto.gender,
 					about: updateUserDto.about,
@@ -346,7 +342,9 @@ export class UsersService {
 	}
 
 	public async removeAvatar(userId: string): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByUserIdOrFail(userId);
+
+		await this._amazonFilesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -429,12 +427,6 @@ export class UsersService {
 		);
 
 		return this._getUserEntityWithToken(newUser);
-	}
-
-	public async getFileFromAmazonFiles(
-		filename: string,
-	): Promise<string | undefined> {
-		return await this._amazonFilesService.getFileObject(filename);
 	}
 
 	//#rendegion

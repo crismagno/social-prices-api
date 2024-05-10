@@ -1,15 +1,26 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
+import {
+  AnyKeys,
+  AnyObject,
+  FilterQuery,
+  Model,
+} from 'mongoose';
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import {
+  AmazonFilesService,
+} from '../../infra/services/amazon/amazon-files-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
-	ITableStateRequest,
-	ITableStateResponse,
+  ITableStateRequest,
+  ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
@@ -79,10 +90,7 @@ export class CustomersService {
 
 			filter.$or = [
 				{
-					firstName: search,
-				},
-				{
-					lastName: search,
+					name: search,
 				},
 				{
 					email: search,
@@ -133,11 +141,9 @@ export class CustomersService {
 
 		const now: Date = new Date();
 
-		const product = new this._customerModel({
+		const customer = new this._customerModel({
 			avatar: responseFile?.Key ?? null,
-			firstName: createProductDto.firstName,
-			middleName: createProductDto.middleName ?? '',
-			lastName: createProductDto.lastName,
+			name: createProductDto.name,
 			email: createProductDto.email,
 			birthDate: createProductDto.birthDate,
 			addresses: createProductDto.addresses,
@@ -149,7 +155,7 @@ export class CustomersService {
 			updatedAt: now,
 		});
 
-		const newCustomer: ICustomer = await product.save();
+		const newCustomer: ICustomer = await customer.save();
 
 		await this._notificationsService.createdCustomer(user, newCustomer);
 
@@ -180,9 +186,7 @@ export class CustomersService {
 		const now: Date = new Date();
 
 		const $set: AnyKeys<Customer> & AnyObject = {
-			firstName: updateCustomerDto.firstName,
-			middleName: updateCustomerDto.middleName,
-			lastName: updateCustomerDto.lastName,
+			name: updateCustomerDto.name,
 			email: updateCustomerDto.email,
 			birthDate: updateCustomerDto.birthDate,
 			addresses: updateCustomerDto.addresses,

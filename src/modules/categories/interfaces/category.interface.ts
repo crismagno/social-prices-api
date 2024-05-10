@@ -9,5 +9,7 @@ export interface ICategory extends ICreatedAtEntity, IUpdatedAtEntity {
 	name: string;
 	code: string;
 	type: CategoriesEnum.Type;
-	userId: mongoose.Schema.Types.ObjectId;
+	createdByUserId: mongoose.Schema.Types.ObjectId;
+	ownerUserId: mongoose.Schema.Types.ObjectId | null;
+	description: string | null;
 }

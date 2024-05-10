@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
 
 import { IAddress } from '../../../shared/interfaces/address.interface';
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
+import {
+  ICreatedAtEntity,
+} from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import {
+  IUpdatedAtEntity,
+} from '../../../shared/interfaces/updated-at.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
 
 export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -12,9 +16,7 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	userId: mongoose.Schema.Types.ObjectId | null;
 	email: string | null;
 	ownerUserId: mongoose.Schema.Types.ObjectId;
-	firstName: string | null;
-	lastName: string | null;
-	middleName: string | null;
+	name: string | null;
 	birthDate: Date | null;
 	addresses: IAddress[];
 	gender: UsersEnum.Gender | null;

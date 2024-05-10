@@ -1,6 +1,10 @@
 import mongoose, { Document } from 'mongoose';
 
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import {
+  Prop,
+  Schema,
+  SchemaFactory,
+} from '@nestjs/mongoose';
 
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
@@ -20,13 +24,7 @@ export class Customer extends Document implements ICustomer {
 	email: string | null;
 
 	@Prop({ type: String })
-	firstName: string | null;
-
-	@Prop({ type: String })
-	lastName: string | null;
-
-	@Prop({ type: String })
-	middleName: string | null;
+	name: string | null;
 
 	@Prop({ type: Date })
 	birthDate: Date | null;

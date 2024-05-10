@@ -1,14 +1,23 @@
-import { FilterQuery, Model } from 'mongoose';
+import {
+  FilterQuery,
+  Model,
+} from 'mongoose';
 
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService
+  from '../../infra/services/email-transport/email-transport-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
-	ITableStateRequest,
-	ITableStateResponse,
+  ITableStateRequest,
+  ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
@@ -215,7 +224,7 @@ export class NotificationsService {
 	public async createdProduct(user: IUser, product: IProduct): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.firstName}, you have created a new product <b>${product.name}</b>. Congratulation!!!`;
+		const content: string = `Hi! ${user.name}, you have created a new product <b>${product.name}</b>. Congratulation!!!`;
 
 		await this.create({
 			content,
@@ -230,7 +239,7 @@ export class NotificationsService {
 	public async updatedProduct(user: IUser, product: IProduct): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.firstName}, you have updated product <b>${product.name}</b>!`;
+		const content: string = `Hi! ${user.name}, you have updated product <b>${product.name}</b>!`;
 
 		await this.create({
 			content,
@@ -248,7 +257,7 @@ export class NotificationsService {
 	): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.firstName}, you have created a new customer <b>${customer.firstName}</b>. Congratulation!!!`;
+		const content: string = `Hi! ${user.name}, you have created a new customer <b>${customer.name}</b>. Congratulation!!!`;
 
 		await this.create({
 			content,
@@ -266,7 +275,7 @@ export class NotificationsService {
 	): Promise<void> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.firstName}, you have updated customer <b>${customer.firstName}</b>!`;
+		const content: string = `Hi! ${user.name}, you have updated customer <b>${customer.name}</b>!`;
 
 		await this.create({
 			content,

@@ -36,9 +36,7 @@ const UserSchema = new mongoose.Schema<IUser>(
 			optional: true,
 		},
 		extraDataProvider: Schema.Types.Mixed,
-		firstName: { type: String, optional: true },
-		lastName: { type: String, optional: true },
-		middleName: { type: String, optional: true },
+		name: { type: String, optional: true },
 		birthDate: { type: Date, optional: true },
 		addresses: {
 			type: [AddressSchema],

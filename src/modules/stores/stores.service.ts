@@ -128,24 +128,29 @@ export class StoresService {
 		});
 	}
 
+	public async validateCreate(name: string, email: string): Promise<void> {
+		const storeByNameOrEmail: IStore | undefined =
+			await this.findOneByNameOrEmail(name, email);
+
+		if (!storeByNameOrEmail) {
+			return;
+		}
+
+		if (storeByNameOrEmail?.name === name) {
+			throw new BadRequestException('Invalid name, please try a new name.');
+		}
+
+		if (storeByNameOrEmail?.email === email) {
+			throw new BadRequestException('Invalid email, please try a new email.');
+		}
+	}
+
 	public async create(
 		file: Express.Multer.File,
 		createStoreDto: CreateStoreDto,
 		userId: string,
 	): Promise<IStore> {
-		const storeByNameOrEmail: IStore | undefined =
-			await this.findOneByNameOrEmail(
-				createStoreDto.name,
-				createStoreDto.email,
-			);
-
-		if (storeByNameOrEmail?.name === createStoreDto.name) {
-			throw new BadRequestException('Invalid name, please try a new name.');
-		}
-
-		if (storeByNameOrEmail?.email === createStoreDto.email) {
-			throw new BadRequestException('Invalid email, please try a new email.');
-		}
+		await this.validateCreate(createStoreDto.name, createStoreDto.email);
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 

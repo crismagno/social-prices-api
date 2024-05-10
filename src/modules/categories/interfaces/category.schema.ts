@@ -16,7 +16,10 @@ export class Category extends Document implements ICategory {
 	code: string;
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
-	userId: mongoose.Schema.Types.ObjectId;
+	createdByUserId: mongoose.Schema.Types.ObjectId;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	ownerUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({
 		required: true,
@@ -27,6 +30,9 @@ export class Category extends Document implements ICategory {
 		},
 	})
 	type: CategoriesEnum.Type;
+
+	@Prop({ type: String })
+	description: string | null;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

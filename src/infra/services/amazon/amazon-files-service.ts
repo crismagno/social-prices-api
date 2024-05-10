@@ -5,6 +5,12 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { newFileOriginalname } from '../../../shared/utils/global';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const path = require('path');
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fs = require('fs');
+
 @Injectable()
 export class AmazonFilesService {
 	//#region Private properties
@@ -12,6 +18,7 @@ export class AmazonFilesService {
 	private _awsS3Bucket: string = process.env.AWS_S3_BUCKET;
 	private _awsS3: AWS.S3;
 	private _logger: Logger;
+	private _localFolderPath: any = path.join(process.cwd(), '/uploads/');
 
 	//#endregion
 
@@ -34,6 +41,14 @@ export class AmazonFilesService {
 	public async uploadFile(
 		file: Express.Multer.File,
 	): Promise<AWS.S3.ManagedUpload.SendData> {
+		const useLocalFiles: boolean = Boolean(
+			process.env?.USE_LOCAL_FILES === 'true',
+		);
+
+		if (useLocalFiles) {
+			return await this._localUpload(file);
+		}
+
 		const { originalname, buffer, mimetype } = file;
 
 		return await this._s3upload(
@@ -73,22 +88,17 @@ export class AmazonFilesService {
 		);
 	}
 
-	public async getFileObject(key: string): Promise<string | undefined> {
-		const data = await this._awsS3
-			.getObject({
-				Bucket: this._awsS3Bucket,
-				Key: key,
-			})
-			.promise();
+	public async deleteFile(filename: string): Promise<any> {
+		if (!filename) return null;
 
-		if (data.Body) {
-			return data.Body.toString('utf-8');
+		const useLocalFiles: boolean = Boolean(
+			process.env?.USE_LOCAL_FILES === 'true',
+		);
+
+		if (useLocalFiles) {
+			return await this._localDelete(filename);
 		}
 
-		return undefined;
-	}
-
-	public async deleteFile(filename: string): Promise<any> {
 		return await this._s3delete(this._awsS3Bucket, filename);
 	}
 
@@ -164,6 +174,69 @@ export class AmazonFilesService {
 				reject(error);
 			}
 		});
+	}
+
+	private async _localUpload(
+		file: Express.Multer.File,
+	): Promise<AWS.S3.ManagedUpload.SendData> {
+		return new Promise((resolve, reject) => {
+			const filename: string = newFileOriginalname(file.originalname);
+
+			const filePath: string = `${this._localFolderPath}${filename}`;
+
+			fs.writeFile(filePath, file.buffer, (err) => {
+				if (err) {
+					this._logger.error('Error saving file:', err);
+					reject(err);
+					return;
+				}
+
+				this._logger.log('File saved successfully');
+
+				resolve({
+					Bucket: 'uploads',
+					ETag: '',
+					Key: filename,
+					Location: this._localFolderPath,
+				});
+			});
+		});
+	}
+
+	private async _localDelete(filename: string): Promise<any> {
+		return new Promise((resolve) => {
+			const filePath: string = `${this._localFolderPath}${filename}`;
+
+			fs.unlink(filePath, (err) => {
+				if (err) {
+					this._logger.error('Error removing file:', err);
+					resolve(err);
+					return;
+				}
+
+				this._logger.log('File successfully removed');
+				resolve(true);
+			});
+		});
+	}
+
+	//#endregion
+
+	//#region Unused
+
+	public async getFileObject(key: string): Promise<string | undefined> {
+		const data = await this._awsS3
+			.getObject({
+				Bucket: this._awsS3Bucket,
+				Key: key,
+			})
+			.promise();
+
+		if (data.Body) {
+			return data.Body.toString('utf-8');
+		}
+
+		return undefined;
 	}
 
 	//#endregion

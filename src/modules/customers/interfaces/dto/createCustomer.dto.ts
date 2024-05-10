@@ -1,4 +1,8 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 import UsersEnum from '../../../users/interfaces/users.enum';
 
@@ -9,15 +13,7 @@ export default class CreateCustomerDto {
 
 	@IsString()
 	@IsOptional()
-	firstName: string | null;
-
-	@IsString()
-	@IsOptional()
-	lastName: string | null;
-
-	@IsString()
-	@IsOptional()
-	middleName: string | null;
+	name: string | null;
 
 	@IsOptional()
 	birthDate: Date | null;

@@ -16,7 +16,7 @@ namespace UsersEnum {
 		OTHER = 'OTHER',
 	}
 
-	export enum PhoneTypes {
+	export enum Type {
 		MOBILE = 'MOBILE',
 		HOME = 'HOME',
 		BUSINESS = 'BUSINESS',

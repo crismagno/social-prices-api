@@ -1,19 +1,16 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 import UsersEnum from '../users.enum';
 
 export default class UpdateUserDto {
 	@IsString()
 	@IsNotEmpty()
-	firstName: string;
-
-	@IsString()
-	@IsNotEmpty()
-	lastName: string;
-
-	@IsString()
-	@IsOptional()
-	middleName: string | null;
+	name: string;
 
 	@IsNotEmpty()
 	birthDate: any;

@@ -11,6 +11,10 @@ import {
 } from '@nestjs/common';
 
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import {
+	ITableStateRequest,
+	ITableStateResponse,
+} from '../../shared/utils/table/table-state.interface';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CategoriesService } from './categories.service';
@@ -24,11 +28,37 @@ import UpdateCategoryDto from './interfaces/dto/updateCategory.dto';
 export class CategoriesController {
 	constructor(private _categoriesService: CategoriesService) {}
 
-	@Get('/:type')
-	public async getByType(
+	@Post('/userTableState')
+	@UsePipes(ValidationPipe)
+	public async findByUserTableState(
+		@Request() request: any,
+		@Body() tableState: ITableStateRequest<ICategory>,
+	): Promise<ITableStateResponse<ICategory[]>> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._categoriesService.findByUserTableState(
+			authPayload._id,
+			tableState,
+		);
+	}
+
+	@Get('type/:type')
+	public async findByType(
+		@Request() request: any,
 		@Param('type', ValidationParamsPipe) type: CategoriesEnum.Type,
 	): Promise<ICategory[]> {
-		return await this._categoriesService.findByType(type);
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._categoriesService.findByType(type, authPayload._id);
+	}
+
+	@Get('/:categoryId')
+	public async findById(
+		@Param('categoryId', ValidationParamsPipe) categoryId: string,
+	): Promise<ICategory> {
+		return await this._categoriesService.findById(categoryId);
 	}
 
 	@Post('/')

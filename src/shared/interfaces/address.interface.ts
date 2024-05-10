@@ -1,14 +1,17 @@
+import AddressEnum from '../enums/address.enum';
+
 export interface IAddress {
 	address1: string;
-	address2?: string;
+	address2: string | null;
 	city: string;
 	isValid: boolean;
-	state?: IAddressState;
+	state: IAddressState | null;
 	uid: string;
 	zip: string;
-	description?: string;
+	description: string | null;
 	country: IAddressCountry;
 	district: string;
+	types: AddressEnum.Type[];
 }
 
 export interface IAddressState {

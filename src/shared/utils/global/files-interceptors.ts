@@ -3,23 +3,28 @@ import { extname } from 'path';
 
 import { createUniqueSuffix } from './';
 
-export const fileInterceptorOptionsUploadAvatar = (
-	destination: string,
+export const fileInterceptorOptions = (
+	destination: string = './uploads',
 ): {
 	storage: multer.StorageEngine;
-} => ({
-	storage: diskStorage({
-		destination,
-		filename: (req, file, callback) => {
-			const uniqueSuffix: string = createUniqueSuffix();
+} => {
+	return {
+		storage: diskStorage({
+			destination,
+			filename: (req, file, callback) => {
+				const uniqueSuffix: string = createUniqueSuffix();
 
-			const ext: string = extname(file.originalname);
+				const ext: string = extname(file.originalname);
 
-			const name: string = file.originalname.split('.').slice(0, -1).join('.');
+				const name: string = file.originalname
+					.split('.')
+					.slice(0, -1)
+					.join('.');
 
-			const filename: string = `${name}-${uniqueSuffix}${ext}`;
+				const filename: string = `${name}-${uniqueSuffix}${ext}`;
 
-			callback(null, filename);
-		},
-	}),
-});
+				callback(null, filename);
+			},
+		}),
+	};
+};
