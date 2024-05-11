@@ -1,26 +1,15 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import {
-  AnyKeys,
-  AnyObject,
-  FilterQuery,
-  Model,
-} from 'mongoose';
+import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
 
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import {
-  AmazonFilesService,
-} from '../../infra/services/amazon/amazon-files-service';
+import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
@@ -57,6 +46,10 @@ export class CustomersService {
 
 	public async findById(customerId: string): Promise<ICustomer | undefined> {
 		return this._customerModel.findById(customerId);
+	}
+
+	public async countByOwnerUserId(ownerUserId: string): Promise<number> {
+		return this._customerModel.countDocuments({ ownerUserId });
 	}
 
 	public async findByIdOrFail(customerId: string): Promise<ICustomer> {
