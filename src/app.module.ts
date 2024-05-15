@@ -17,6 +17,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ProductsModule } from './modules/products/products.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
+import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
 	imports: [
@@ -36,6 +37,7 @@ import { UsersModule } from './modules/users/users.module';
 		ProductsModule,
 		CategoriesModule,
 		CustomersModule,
+		SalesModule,
 	],
 	controllers: [AppController],
 	providers: [
