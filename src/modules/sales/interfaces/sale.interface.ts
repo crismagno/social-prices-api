@@ -8,29 +8,35 @@ import SalesEnum from './sales.enum';
 export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
 	description: string | null;
-	ownerUserId: mongoose.Schema.Types.ObjectId;
 	createdByUserId: mongoose.Schema.Types.ObjectId;
 	customerId: mongoose.Schema.Types.ObjectId;
-	stores: ISaleStore[];
 	number: string;
 	type: SalesEnum.Type;
-	payments: ISalePayment[];
 	totals: ISaleTotals;
+	header: ISaleHeader | null;
 	note: string | null;
-	header: ISaleHeader;
 	status: SalesEnum.Status;
+	payments: ISalePayment[];
+	stores: ISaleStore[];
 }
 
 export interface ISaleStore {
 	storeId: mongoose.Schema.Types.ObjectId;
 	products: ISaleStoreProduct[];
+	totals: ISaleStoreTotals;
+}
+
+export interface ISaleStoreTotals {
+	discount: ISaleTotalsDiscount | null;
+	tax: number | null;
+	shipping: number | null;
 }
 
 export interface ISaleTotals {
 	subtotal: number;
 	discount: ISaleTotalsDiscount | null;
-	tax: number;
-	shipping: number;
+	tax: number | null;
+	shipping: number | null;
 	totalFinal: number;
 }
 
@@ -54,6 +60,6 @@ export interface ISaleStoreProduct {
 }
 
 export interface ISaleHeader {
-	billingAddress: IAddress;
-	shippingAddress: IAddress;
+	billingAddress: IAddress | null;
+	shippingAddress: IAddress | null;
 }

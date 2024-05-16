@@ -10,6 +10,7 @@ import {
 	ISalePayment,
 	ISaleStore,
 	ISaleStoreProduct,
+	ISaleStoreTotals,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -60,14 +61,14 @@ export class SaleTotals implements ISaleTotals {
 	@Prop({ required: true, type: Number })
 	subtotal: number;
 
-	@Prop({ type: SaleTotalsDiscount })
+	@Prop({ type: SaleTotalsDiscountSchema })
 	discount: ISaleTotalsDiscount | null;
 
-	@Prop({ required: true, type: Number })
-	tax: number;
+	@Prop({ type: Number })
+	tax: number | null;
 
-	@Prop({ required: true, type: Number })
-	shipping: number;
+	@Prop({ type: Number })
+	shipping: number | null;
 
 	@Prop({ required: true, type: Number })
 	totalFinal: number;
@@ -98,14 +99,26 @@ export const SaleStoreProductSchema =
 
 @Schema()
 export class SaleHeader implements ISaleHeader {
-	@Prop({ required: true, type: AddressSchema })
-	billingAddress: IAddress;
+	@Prop({ type: AddressSchema })
+	billingAddress: IAddress | null;
 
-	@Prop({ required: true, type: AddressSchema })
-	shippingAddress: IAddress;
+	@Prop({ type: AddressSchema })
+	shippingAddress: IAddress | null;
 }
 
 export const SaleHeaderSchema = SchemaFactory.createForClass(SaleHeader);
+
+@Schema()
+export class SaleStoreTotals implements ISaleStoreTotals {
+	@Prop({ type: SaleTotalsDiscountSchema })
+	discount: ISaleTotalsDiscount;
+
+	@Prop({ type: Number })
+	tax: number | null;
+
+	@Prop({ type: Number })
+	shipping: number | null;
+}
 
 @Schema()
 export class SaleStore implements ISaleStore {
@@ -114,6 +127,9 @@ export class SaleStore implements ISaleStore {
 
 	@Prop({ required: true, type: [SaleStoreProductSchema] })
 	products: ISaleStoreProduct[];
+
+	@Prop({ required: true, type: SaleStoreProductSchema })
+	totals: ISaleStoreTotals;
 }
 
 export const SaleStoreSchema = SchemaFactory.createForClass(SaleStore);
@@ -124,9 +140,6 @@ export class Sale extends Document implements ISale {
 
 	@Prop({ type: String })
 	description: string | null;
-
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
-	ownerUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	createdByUserId: mongoose.Schema.Types.ObjectId;
@@ -159,8 +172,8 @@ export class Sale extends Document implements ISale {
 	@Prop({ String })
 	note: string | null;
 
-	@Prop({ required: true, type: SaleHeaderSchema })
-	header: ISaleHeader;
+	@Prop({ type: SaleHeaderSchema })
+	header: ISaleHeader | null;
 
 	@Prop({
 		required: true,

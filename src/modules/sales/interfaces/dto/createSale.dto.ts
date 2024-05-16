@@ -29,12 +29,34 @@ export class SaleStoreProductDto {
 	note: string | null;
 }
 
+export class SaleTotalsDiscountDto {
+	@IsNumber()
+	normal: number;
+}
+
+export class SaleStoreTotalsDto {
+	@IsOptional()
+	@Type(() => SaleTotalsDiscountDto)
+	discount: SaleTotalsDiscountDto | null;
+
+	@IsNumber()
+	@IsOptional()
+	tax: number | null;
+
+	@IsNumber()
+	@IsOptional()
+	shipping: number | null;
+}
+
 export class SaleStoreDto {
 	@IsString()
 	storeId: string;
 
 	@IsArray()
 	products: SaleStoreProductDto[];
+
+	@Type(() => SaleStoreTotalsDto)
+	totals: SaleStoreTotalsDto;
 }
 
 export class SalePaymentDto {
@@ -51,23 +73,21 @@ export class SalePaymentDto {
 	provider: any | null;
 }
 
-export class SaleTotalsDiscountDto {
-	@IsNumber()
-	normal: number;
-}
-
 export class SaleTotalsDto {
 	@IsNumber()
 	subtotal: number;
 
 	@Type(() => SaleTotalsDiscountDto)
+	@IsOptional()
 	discount: SaleTotalsDiscountDto | null;
 
+	@IsOptional()
 	@IsNumber()
-	tax: number;
+	tax: number | null;
 
+	@IsOptional()
 	@IsNumber()
-	shipping: number;
+	shipping: number | null;
 
 	@IsNumber()
 	totalFinal: number;
@@ -75,19 +95,18 @@ export class SaleTotalsDto {
 
 export class SaleHeaderDto {
 	@Type(() => SaleTotalsDto)
-	billingAddress: CreateAddressDto;
+	@IsOptional()
+	billingAddress: CreateAddressDto | null;
 
 	@Type(() => SaleTotalsDto)
-	shippingAddress: CreateAddressDto;
+	@IsOptional()
+	shippingAddress: CreateAddressDto | null;
 }
 
 export default class CreateSaleDto {
 	@IsString()
 	@IsOptional()
 	description: string | null;
-
-	@IsString()
-	ownerUserId: string;
 
 	@IsString()
 	createdByUserId: string;
@@ -119,7 +138,8 @@ export default class CreateSaleDto {
 	note: string | null;
 
 	@Type(() => SaleHeaderDto)
-	header: SaleHeaderDto;
+	@IsOptional()
+	header: SaleHeaderDto | null;
 
 	@IsEnum(SalesEnum.Status)
 	status: SalesEnum.Status;

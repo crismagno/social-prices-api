@@ -11,6 +11,7 @@ import {
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import CreateSaleDto from './interfaces/dto/createSale.dto';
 import { ISale } from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
 
@@ -99,9 +100,11 @@ export class SalesService {
 		return response;
 	}
 
-	// public async create(createSaleDto: CreateSaleDto, userId: string) {
+	public async create(createSaleDto: CreateSaleDto): Promise<ISale> {
+		console.log(createSaleDto);
 
-	// }
+		return null;
+	}
 
 	// #endregion
 }

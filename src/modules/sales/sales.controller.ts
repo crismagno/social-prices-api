@@ -16,6 +16,7 @@ import {
 } from '../../shared/utils/table/table-state.interface';
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import CreateSaleDto from './interfaces/dto/createSale.dto';
 import { ISale } from './interfaces/sale.interface';
 import { SalesService } from './sales.service';
 
@@ -64,15 +65,9 @@ export class SalesController {
 		return await this._salesService.findById(saleId);
 	}
 
-	// @Post('/')
-	// @UsePipes(ValidationPipe)
-	// public async create(
-	// 	@Request() request: any,
-	// 	@Body() createSaleDto: CreateSaleDto,
-	// ): Promise<ISale> {
-	// 	const authPayload: IAuthPayload =
-	// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
-	// 	return await this._salesService.create(createSaleDto, authPayload._id);
-	// }
+	@Post('/')
+	@UsePipes(ValidationPipe)
+	public async create(@Body() createSaleDto: CreateSaleDto): Promise<ISale> {
+		return await this._salesService.create(createSaleDto);
+	}
 }
