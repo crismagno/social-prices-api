@@ -99,5 +99,9 @@ export class SalesService {
 		return response;
 	}
 
+	// public async create(createSaleDto: CreateSaleDto, userId: string) {
+
+	// }
+
 	// #endregion
 }

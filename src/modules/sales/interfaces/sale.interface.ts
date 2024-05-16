@@ -23,7 +23,7 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 
 export interface ISaleStore {
 	storeId: mongoose.Schema.Types.ObjectId;
-	products: ISaleProduct[];
+	products: ISaleStoreProduct[];
 }
 
 export interface ISaleTotals {
@@ -45,7 +45,7 @@ export interface ISalePayment {
 	provider: any | null;
 }
 
-export interface ISaleProduct {
+export interface ISaleStoreProduct {
 	productId: string;
 	price: number;
 	quantity: number;

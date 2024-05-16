@@ -66,39 +66,13 @@ export class SalesController {
 
 	// @Post('/')
 	// @UsePipes(ValidationPipe)
-	// @UseInterceptors(FileInterceptor('avatar'))
 	// public async create(
-	// 	@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
-	// 	file: Express.Multer.File,
 	// 	@Request() request: any,
-	// 	@Body() createCustomerDto: CreateCustomerDto,
-	// ): Promise<ICustomer> {
+	// 	@Body() createSaleDto: CreateSaleDto,
+	// ): Promise<ISale> {
 	// 	const authPayload: IAuthPayload =
 	// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-	// 	return await this._customersService.create(
-	// 		file,
-	// 		createCustomerDto,
-	// 		authPayload._id,
-	// 	);
-	// }
-
-	// @Put('/')
-	// @UsePipes(ValidationPipe)
-	// @UseInterceptors(FileInterceptor('avatar'))
-	// public async update(
-	// 	@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
-	// 	file: Express.Multer.File,
-	// 	@Request() request: any,
-	// 	@Body() updateCustomerDto: UpdateCustomerDto,
-	// ): Promise<ICustomer> {
-	// 	const authPayload: IAuthPayload =
-	// 		request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
-	// 	return await this._customersService.update(
-	// 		file,
-	// 		updateCustomerDto,
-	// 		authPayload._id,
-	// 	);
+	// 	return await this._salesService.create(createSaleDto, authPayload._id);
 	// }
 }

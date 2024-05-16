@@ -8,8 +8,8 @@ import {
 	ISale,
 	ISaleHeader,
 	ISalePayment,
-	ISaleProduct,
 	ISaleStore,
+	ISaleStoreProduct,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -76,7 +76,7 @@ export class SaleTotals implements ISaleTotals {
 export const SaleTotalsSchema = SchemaFactory.createForClass(SaleTotals);
 
 @Schema()
-export class SaleProduct implements ISaleProduct {
+export class SaleStoreProduct implements ISaleStoreProduct {
 	@Prop({ required: true, type: String })
 	productId: string;
 
@@ -93,7 +93,8 @@ export class SaleProduct implements ISaleProduct {
 	note: string | null;
 }
 
-export const SaleProductSchema = SchemaFactory.createForClass(SaleProduct);
+export const SaleStoreProductSchema =
+	SchemaFactory.createForClass(SaleStoreProduct);
 
 @Schema()
 export class SaleHeader implements ISaleHeader {
@@ -111,8 +112,8 @@ export class SaleStore implements ISaleStore {
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	storeId: mongoose.Schema.Types.ObjectId;
 
-	@Prop({ required: true, type: [SaleProductSchema] })
-	products: ISaleProduct[];
+	@Prop({ required: true, type: [SaleStoreProductSchema] })
+	products: ISaleStoreProduct[];
 }
 
 export const SaleStoreSchema = SchemaFactory.createForClass(SaleStore);
