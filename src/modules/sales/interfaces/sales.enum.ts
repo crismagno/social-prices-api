@@ -14,6 +14,7 @@ namespace SalesEnum {
 	export enum PaymentStatus {
 		COMPLETED = 'COMPLETED',
 		WAITING_PAYMENT = 'WAITING_PAYMENT',
+		PARTIALLY = 'PARTIALLY',
 		CANCELLED = 'CANCELLED',
 		REFUNDED = 'REFUNDED',
 	}
