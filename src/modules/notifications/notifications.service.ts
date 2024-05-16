@@ -18,6 +18,7 @@ import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { INotification } from './interfaces/notification.interface';
+import { Notification } from './interfaces/notification.schema';
 import { INotificationResponse } from './interfaces/notification.types';
 import NotificationsEnum from './interfaces/notifications.enum';
 
@@ -111,7 +112,7 @@ export class NotificationsService {
 		type: NotificationsEnum.Type;
 		subtitle: string | null;
 		content: any;
-	}): Promise<Notification> {
+	}): Promise<INotification> {
 		const now: Date = new Date();
 
 		const notification = new this._notificationModel({
@@ -126,7 +127,7 @@ export class NotificationsService {
 			isSeen: false,
 		});
 
-		const newNotification: Notification = await notification.save();
+		const newNotification: INotification = await notification.save();
 
 		return newNotification;
 	}

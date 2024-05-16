@@ -9,17 +9,18 @@ namespace SalesEnum {
 		PIX = 'PIX',
 		CASH = 'CASH',
 		CARD = 'CARD',
-		SPUN = 'SPUN',
 	}
 
 	export enum PaymentStatus {
 		COMPLETED = 'COMPLETED',
 		WAITING_PAYMENT = 'WAITING_PAYMENT',
+		CANCELLED = 'CANCELLED',
 		REFUNDED = 'REFUNDED',
 	}
 
 	export enum Status {
 		STARTED = 'STARTED',
+		CANCELLED = 'CANCELLED',
 		STOPPED = 'STOPPED',
 		ERROR = 'ERROR',
 		COMPLETED = 'COMPLETED',

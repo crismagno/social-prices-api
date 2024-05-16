@@ -11,15 +11,19 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	ownerUserId: mongoose.Schema.Types.ObjectId;
 	createdByUserId: mongoose.Schema.Types.ObjectId;
 	customerId: mongoose.Schema.Types.ObjectId;
-	storeId: mongoose.Schema.Types.ObjectId;
+	stores: ISaleStore[];
 	number: string;
 	type: SalesEnum.Type;
-	payment: ISalePayment;
+	payments: ISalePayment[];
 	totals: ISaleTotals;
 	note: string | null;
-	products: ISaleProduct[];
 	header: ISaleHeader;
 	status: SalesEnum.Status;
+}
+
+export interface ISaleStore {
+	storeId: mongoose.Schema.Types.ObjectId;
+	products: ISaleProduct[];
 }
 
 export interface ISaleTotals {
@@ -37,6 +41,7 @@ export interface ISaleTotalsDiscount {
 export interface ISalePayment {
 	type: SalesEnum.PaymentType;
 	status: SalesEnum.PaymentStatus;
+	amount: number;
 	provider: any | null;
 }
 

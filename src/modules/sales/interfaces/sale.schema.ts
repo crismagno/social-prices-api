@@ -9,6 +9,7 @@ import {
 	ISaleHeader,
 	ISalePayment,
 	ISaleProduct,
+	ISaleStore,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -38,13 +39,21 @@ export class SalePayment implements ISalePayment {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed })
 	provider: any | null;
+
+	@Prop({ required: true, type: Number })
+	amount: number;
 }
+
+export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);
 
 @Schema()
 export class SaleTotalsDiscount implements ISaleTotalsDiscount {
 	@Prop({ required: true, type: Number })
 	normal: number;
 }
+
+export const SaleTotalsDiscountSchema =
+	SchemaFactory.createForClass(SaleTotalsDiscount);
 
 @Schema()
 export class SaleTotals implements ISaleTotals {
@@ -64,6 +73,8 @@ export class SaleTotals implements ISaleTotals {
 	totalFinal: number;
 }
 
+export const SaleTotalsSchema = SchemaFactory.createForClass(SaleTotals);
+
 @Schema()
 export class SaleProduct implements ISaleProduct {
 	@Prop({ required: true, type: String })
@@ -82,6 +93,8 @@ export class SaleProduct implements ISaleProduct {
 	note: string | null;
 }
 
+export const SaleProductSchema = SchemaFactory.createForClass(SaleProduct);
+
 @Schema()
 export class SaleHeader implements ISaleHeader {
 	@Prop({ required: true, type: AddressSchema })
@@ -90,6 +103,19 @@ export class SaleHeader implements ISaleHeader {
 	@Prop({ required: true, type: AddressSchema })
 	shippingAddress: IAddress;
 }
+
+export const SaleHeaderSchema = SchemaFactory.createForClass(SaleHeader);
+
+@Schema()
+export class SaleStore implements ISaleStore {
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	storeId: mongoose.Schema.Types.ObjectId;
+
+	@Prop({ required: true, type: [SaleProductSchema] })
+	products: ISaleProduct[];
+}
+
+export const SaleStoreSchema = SchemaFactory.createForClass(SaleStore);
 
 @Schema()
 export class Sale extends Document implements ISale {
@@ -107,8 +133,8 @@ export class Sale extends Document implements ISale {
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	customerId: mongoose.Schema.Types.ObjectId;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
-	storeId: mongoose.Schema.Types.ObjectId;
+	@Prop({ required: true, type: [SaleStoreSchema] })
+	stores: ISaleStore[];
 
 	@Prop({ required: true, type: String })
 	number: string;
@@ -123,19 +149,16 @@ export class Sale extends Document implements ISale {
 	})
 	type: SalesEnum.Type;
 
-	@Prop({ required: true, type: SalePayment })
-	payment: ISalePayment;
+	@Prop({ required: true, type: [SalePaymentSchema] })
+	payments: ISalePayment[];
 
-	@Prop({ required: true, type: SaleTotals })
+	@Prop({ required: true, type: SaleTotalsSchema })
 	totals: ISaleTotals;
 
 	@Prop({ String })
 	note: string | null;
 
-	@Prop({ required: true, type: [SaleProduct] })
-	products: ISaleProduct[];
-
-	@Prop({ required: true, type: SaleHeader })
+	@Prop({ required: true, type: SaleHeaderSchema })
 	header: ISaleHeader;
 
 	@Prop({
