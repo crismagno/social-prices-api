@@ -15,9 +15,9 @@ import { CodesModule } from './modules/codes/codes.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
-import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
 	imports: [
@@ -33,11 +33,11 @@ import { SalesModule } from './modules/sales/sales.module';
 		UsersModule,
 		CodesModule,
 		NotificationsModule,
+		SalesModule,
 		StoresModule,
 		ProductsModule,
 		CategoriesModule,
 		CustomersModule,
-		SalesModule,
 	],
 	controllers: [AppController],
 	providers: [

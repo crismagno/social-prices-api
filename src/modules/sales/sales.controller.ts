@@ -24,37 +24,37 @@ import { SalesService } from './sales.service';
 export class SalesController {
 	constructor(private _salesService: SalesService) {}
 
-	@Get('/ownerUserId')
+	@Get('/userId')
 	@UsePipes(ValidationPipe)
-	public async findByOwnerUserId(@Request() request: any): Promise<ISale[]> {
+	public async findByUserId(@Request() request: any): Promise<ISale[]> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._salesService.findByOwnerUserId(authPayload._id);
+		return await this._salesService.findByUserId(authPayload._id);
 	}
 
-	@Post('/ownerUserTableState')
+	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
-	public async findByOwnerUserTableState(
+	public async findByUserTableState(
 		@Request() request: any,
 		@Body() tableState: ITableStateRequest<ISale>,
 	): Promise<ITableStateResponse<ISale[]>> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._salesService.findByOwnerUserTableState(
+		return await this._salesService.findByUserTableState(
 			authPayload._id,
 			tableState,
 		);
 	}
 
-	@Get('/ownerUser/count')
+	@Get('/user/count')
 	@UsePipes(ValidationPipe)
-	public async countByOwnerUserId(@Request() request: any): Promise<number> {
+	public async countByUserId(@Request() request: any): Promise<number> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._salesService.countByOwnerUserId(authPayload._id);
+		return await this._salesService.countByUserId(authPayload._id);
 	}
 
 	@Get('/:saleId')

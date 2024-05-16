@@ -10,6 +10,7 @@ import {
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StoresService } from '../stores/stores.service';
 import { UsersService } from '../users/users.service';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import { ISale } from './interfaces/sale.interface';
@@ -30,6 +31,7 @@ export class SalesService {
 		private readonly _saleModel: Model<Sale>,
 		private readonly _usersService: UsersService,
 		private readonly _notificationsService: NotificationsService,
+		private readonly _storesService: StoresService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -42,8 +44,18 @@ export class SalesService {
 		return this._saleModel.findById(saleId);
 	}
 
-	public async countByOwnerUserId(ownerUserId: string): Promise<number> {
-		return this._saleModel.countDocuments({ ownerUserId });
+	public async countByUserId(userId: string): Promise<number> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		return this._saleModel.countDocuments({
+			$or: [
+				{ createdByUserId: userId },
+				{
+					'stores.storeId': { $in: storesIds },
+				},
+			],
+		});
 	}
 
 	public async findByIdOrFail(saleId: string): Promise<ISale> {
@@ -56,20 +68,36 @@ export class SalesService {
 		return sale;
 	}
 
-	public async findByOwnerUserId(ownerUserId: string): Promise<ISale[]> {
+	public async findByUserId(userId: string): Promise<ISale[]> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
 		const sales: ISale[] = await this._saleModel.find({
-			ownerUserId,
+			$or: [
+				{ createdByUserId: userId },
+				{
+					'stores.storeId': { $in: storesIds },
+				},
+			],
 		});
 
 		return sales;
 	}
 
-	public async findByOwnerUserTableState(
-		ownerUserId: string,
+	public async findByUserTableState(
+		userId: string,
 		tableState: ITableStateRequest<ISale>,
 	): Promise<ITableStateResponse<ISale[]>> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
 		const filter: FilterQuery<ISale> = {
-			ownerUserId,
+			$or: [
+				{ createdByUserId: userId },
+				{
+					'stores.storeId': { $in: storesIds },
+				},
+			],
 		};
 
 		if (tableState.search) {

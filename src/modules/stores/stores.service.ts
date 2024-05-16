@@ -67,6 +67,17 @@ export class StoresService {
 		return stores;
 	}
 
+	public async findStoreIdsByUserId(userId: string): Promise<string[]> {
+		const stores: IStore[] = await this._storeModel.find(
+			{ userId },
+			{ _id: 1 },
+		);
+
+		const storesIds: string[] = stores.map((store: IStore) => store._id);
+
+		return storesIds;
+	}
+
 	public async findByUserTableState(
 		userId: string,
 		tableState: ITableStateRequest<IStore>,
