@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
+	IsDate,
 	IsEnum,
 	IsNumber,
 	IsOptional,
@@ -9,6 +10,8 @@ import {
 } from 'class-validator';
 
 import { CreateAddressDto } from '../../../../shared/dtos/CreateAddress.dto';
+import { IPhoneNumber } from '../../../../shared/interfaces/phone-number';
+import UsersEnum from '../../../users/interfaces/users.enum';
 import SalesEnum from '../sales.enum';
 
 export class SaleStoreProductDto {
@@ -34,31 +37,6 @@ export class SaleTotalsDiscountDto {
 	normal: number;
 }
 
-export class SaleStoreTotalsDto {
-	@IsOptional()
-	@Type(() => SaleTotalsDiscountDto)
-	discount: SaleTotalsDiscountDto | null;
-
-	@IsNumber()
-	@IsOptional()
-	tax: number | null;
-
-	@IsNumber()
-	@IsOptional()
-	shipping: number | null;
-}
-
-export class SaleStoreDto {
-	@IsString()
-	storeId: string;
-
-	@IsArray()
-	products: SaleStoreProductDto[];
-
-	@Type(() => SaleStoreTotalsDto)
-	totals: SaleStoreTotalsDto;
-}
-
 export class SalePaymentDto {
 	@IsEnum(SalesEnum.PaymentType)
 	type: SalesEnum.PaymentType;
@@ -75,7 +53,7 @@ export class SalePaymentDto {
 
 export class SaleTotalsDto {
 	@IsNumber()
-	subtotal: number;
+	subtotalAmount: number;
 
 	@Type(() => SaleTotalsDiscountDto)
 	@IsOptional()
@@ -83,24 +61,81 @@ export class SaleTotalsDto {
 
 	@IsOptional()
 	@IsNumber()
-	tax: number | null;
+	taxAmount: number | null;
 
 	@IsOptional()
 	@IsNumber()
-	shipping: number | null;
+	shippingAmount: number | null;
 
 	@IsNumber()
-	totalFinal: number;
+	totalFinalAmount: number;
+}
+
+export class SaleHeaderBillingDto {
+	@Type(() => CreateAddressDto)
+	@IsOptional()
+	address: CreateAddressDto | null;
+}
+
+export class SaleHeaderShippingDto {
+	@Type(() => CreateAddressDto)
+	@IsOptional()
+	address: CreateAddressDto | null;
 }
 
 export class SaleHeaderDto {
-	@Type(() => SaleTotalsDto)
+	@Type(() => SaleHeaderBillingDto)
 	@IsOptional()
-	billingAddress: CreateAddressDto | null;
+	billing: SaleHeaderBillingDto | null;
+
+	@Type(() => SaleHeaderShippingDto)
+	@IsOptional()
+	shipping: SaleHeaderShippingDto | null;
+
+	@IsEnum(SalesEnum.DeliveryType)
+	deliveryType: SalesEnum.DeliveryType;
+}
+
+export class SaleBuyerDto {
+	@IsString()
+	email: string;
+
+	@IsString()
+	name: string;
+
+	@IsString()
+	@IsDate()
+	birthDate: Date | null;
+
+	@IsString()
+	@IsOptional()
+	@IsEnum(UsersEnum.Gender)
+	gender: UsersEnum.Gender | null;
+
+	@IsOptional()
+	phoneNumber: IPhoneNumber | null;
+
+	@Type(() => CreateAddressDto)
+	@IsOptional()
+	address: CreateAddressDto | null;
+}
+
+export class SaleStoreDto {
+	@IsString()
+	storeId: string;
+
+	@IsString()
+	number: string;
+
+	@IsString()
+	@IsOptional()
+	customerId: string;
+
+	@IsArray()
+	products: SaleStoreProductDto[];
 
 	@Type(() => SaleTotalsDto)
-	@IsOptional()
-	shippingAddress: CreateAddressDto | null;
+	totals: SaleTotalsDto;
 }
 
 export default class CreateSaleDto {
@@ -111,13 +146,9 @@ export default class CreateSaleDto {
 	@IsString()
 	createdByUserId: string;
 
-	@IsString()
-	customerId: string;
-
-	@IsArray()
-	@Type(() => SaleStoreDto)
-	@ValidateNested({ each: true })
-	stores: SaleStoreDto[];
+	@Type(() => SaleBuyerDto)
+	@IsOptional()
+	buyer: SaleBuyerDto | null;
 
 	@IsString()
 	number: string;
@@ -125,22 +156,27 @@ export default class CreateSaleDto {
 	@IsEnum(SalesEnum.Type)
 	type: SalesEnum.Type;
 
-	@IsArray()
-	@Type(() => SalePaymentDto)
-	@ValidateNested({ each: true })
-	payments: SalePaymentDto[];
-
 	@Type(() => SaleTotalsDto)
 	totals: SaleTotalsDto;
-
-	@IsString()
-	@IsOptional()
-	note: string | null;
 
 	@Type(() => SaleHeaderDto)
 	@IsOptional()
 	header: SaleHeaderDto | null;
 
+	@IsString()
+	@IsOptional()
+	note: string | null;
+
 	@IsEnum(SalesEnum.Status)
 	status: SalesEnum.Status;
+
+	@IsArray()
+	@Type(() => SalePaymentDto)
+	@ValidateNested({ each: true })
+	payments: SalePaymentDto[];
+
+	@IsArray()
+	@Type(() => SaleStoreDto)
+	@ValidateNested({ each: true })
+	stores: SaleStoreDto[];
 }
