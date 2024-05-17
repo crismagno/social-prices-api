@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 
 import { CreateAddressDto } from '../../../../shared/dtos/CreateAddress.dto';
-import { IPhoneNumber } from '../../../../shared/interfaces/phone-number';
+import { CreatePhoneNumberDto } from '../../../../shared/dtos/CreatePhoneNumber.dto';
 import UsersEnum from '../../../users/interfaces/users.enum';
 import SalesEnum from '../sales.enum';
 
@@ -116,8 +116,9 @@ export class SaleBuyerDto {
 	@IsEnum(UsersEnum.Gender)
 	gender: UsersEnum.Gender | null;
 
+	@Type(() => CreatePhoneNumberDto)
 	@IsOptional()
-	phoneNumber: IPhoneNumber | null;
+	phoneNumber: CreatePhoneNumberDto | null;
 
 	@Type(() => CreateAddressDto)
 	@IsOptional()
