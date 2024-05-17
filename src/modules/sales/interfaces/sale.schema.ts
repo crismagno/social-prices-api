@@ -162,6 +162,9 @@ export const SaleStoreSchema = SchemaFactory.createForClass(SaleStore);
 
 @Schema()
 export class SaleBuyer implements ISaleBuyer {
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	userId: mongoose.Schema.Types.ObjectId | null;
+
 	@Prop({ type: String, required: true })
 	email: string;
 

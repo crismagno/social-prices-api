@@ -72,6 +72,7 @@ export interface ISaleHeaderShipping {
 }
 
 export interface ISaleBuyer {
+	userId: mongoose.Schema.Types.ObjectId | null;
 	email: string;
 	name: string;
 	birthDate: Date | null;

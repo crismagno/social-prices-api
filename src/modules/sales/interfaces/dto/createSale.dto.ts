@@ -98,6 +98,10 @@ export class SaleHeaderDto {
 
 export class SaleBuyerDto {
 	@IsString()
+	@IsOptional()
+	userId: string | null;
+
+	@IsString()
 	email: string;
 
 	@IsString()
