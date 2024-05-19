@@ -51,6 +51,10 @@ export class StoresService {
 		return this._storeModel.findById(storeId);
 	}
 
+	public async findByIds(storeIds: string[]): Promise<IStore[]> {
+		return this._storeModel.find({ _id: { $in: storeIds } });
+	}
+
 	public async findByIdOrFail(storeId: string): Promise<IStore> {
 		const store: IStore | undefined = await this.findById(storeId);
 

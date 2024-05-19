@@ -65,9 +65,11 @@ export class SalesController {
 		return await this._salesService.findById(saleId);
 	}
 
-	@Post('/')
+	@Post('/createManual')
 	@UsePipes(ValidationPipe)
-	public async create(@Body() createSaleDto: CreateSaleDto): Promise<ISale> {
-		return await this._salesService.create(createSaleDto);
+	public async createManual(
+		@Body() createSaleDto: CreateSaleDto,
+	): Promise<ISale> {
+		return await this._salesService.createManual(createSaleDto);
 	}
 }
