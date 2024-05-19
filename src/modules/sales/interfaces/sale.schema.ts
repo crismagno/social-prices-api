@@ -152,7 +152,7 @@ export class SaleStore implements ISaleStore {
 	totals: ISaleTotals;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
-	customerId: mongoose.Schema.Types.ObjectId;
+	customerId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ required: true, type: String })
 	number: string;
@@ -205,7 +205,7 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: SaleBuyerSchema })
 	buyer: ISaleBuyer | null;
 
-	@Prop({ required: true, type: String })
+	@Prop({ required: true, type: String, unique: true })
 	number: string;
 
 	@Prop({

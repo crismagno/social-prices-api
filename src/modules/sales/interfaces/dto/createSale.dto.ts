@@ -3,6 +3,7 @@ import {
 	IsArray,
 	IsDate,
 	IsEnum,
+	IsNotEmpty,
 	IsNumber,
 	IsOptional,
 	IsString,
@@ -16,6 +17,7 @@ import SalesEnum from '../sales.enum';
 
 export class SaleStoreProductDto {
 	@IsString()
+	@IsNotEmpty()
 	productId: string;
 
 	@IsNumber()
@@ -25,6 +27,7 @@ export class SaleStoreProductDto {
 	quantity: number;
 
 	@IsString()
+	@IsNotEmpty()
 	barCode: string;
 
 	@IsString()
@@ -102,9 +105,11 @@ export class SaleBuyerDto {
 	userId: string | null;
 
 	@IsString()
+	@IsNotEmpty()
 	email: string;
 
 	@IsString()
+	@IsNotEmpty()
 	name: string;
 
 	@IsString()
@@ -127,9 +132,11 @@ export class SaleBuyerDto {
 
 export class SaleStoreDto {
 	@IsString()
+	@IsNotEmpty()
 	storeId: string;
 
 	@IsString()
+	@IsNotEmpty()
 	number: string;
 
 	@IsString()
@@ -137,6 +144,8 @@ export class SaleStoreDto {
 	customerId: string;
 
 	@IsArray()
+	@Type(() => SaleStoreProductDto)
+	@ValidateNested({ each: true })
 	products: SaleStoreProductDto[];
 
 	@Type(() => SaleTotalsDto)
@@ -149,6 +158,7 @@ export default class CreateSaleDto {
 	description: string | null;
 
 	@IsString()
+	@IsNotEmpty()
 	createdByUserId: string;
 
 	@Type(() => SaleBuyerDto)
@@ -156,6 +166,7 @@ export default class CreateSaleDto {
 	buyer: SaleBuyerDto | null;
 
 	@IsString()
+	@IsNotEmpty()
 	number: string;
 
 	@IsEnum(SalesEnum.Type)

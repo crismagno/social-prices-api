@@ -96,7 +96,7 @@ export class CustomersController {
 
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
-	public async countByUser(@Request() request: any): Promise<number> {
+	public async countByOwnerUserId(@Request() request: any): Promise<number> {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 

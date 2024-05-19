@@ -22,6 +22,7 @@ export class Notification extends Document implements INotification {
 	subtitle: string | null;
 
 	@Prop({
+		required: true,
 		type: String,
 		enum: {
 			values: Object.keys(NotificationsEnum.Type),

@@ -1,7 +1,8 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export default class UpdateProductDto {
 	@IsString()
+	@IsNotEmpty()
 	productId: string;
 
 	@IsString()
@@ -13,6 +14,7 @@ export default class UpdateProductDto {
 	details: string | null;
 
 	@IsString()
+	@IsNotEmpty()
 	name: string;
 
 	quantity: number;
