@@ -13,6 +13,7 @@ namespace SalesEnum {
 		PIX = 'PIX',
 		CASH = 'CASH',
 		CARD = 'CARD',
+		OTHER = 'OTHER',
 	}
 
 	export enum PaymentStatus {

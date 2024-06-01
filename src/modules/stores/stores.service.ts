@@ -169,8 +169,14 @@ export class StoresService {
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
-		const responseFile: ManagedUpload.SendData =
-			await this._amazonFilesService.uploadFile(file);
+		let logo: string | null = null;
+
+		if (file) {
+			const responseFile: ManagedUpload.SendData =
+				await this._amazonFilesService.uploadFile(file);
+
+			logo = responseFile.Key;
+		}
 
 		if (typeof createStoreDto.addresses === 'string') {
 			createStoreDto.addresses = JSON.parse(createStoreDto.addresses);
@@ -187,7 +193,7 @@ export class StoresService {
 		const now: Date = new Date();
 
 		const store = new this._storeModel({
-			logo: responseFile.Key,
+			logo,
 			status: createStoreDto.status,
 			userId,
 			addresses: createStoreDto.addresses,
