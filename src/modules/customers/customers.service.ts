@@ -175,6 +175,7 @@ export class CustomersService {
 			ownerUserId,
 			createdAt: now,
 			updatedAt: now,
+			userId: createCustomerDto.userId,
 		});
 
 		const newCustomer: ICustomer = await customer.save();

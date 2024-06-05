@@ -20,6 +20,7 @@ import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
+import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateSaleDto, { SaleStoreDto } from './interfaces/dto/createSale.dto';
 import { ISale, ISaleStore } from './interfaces/sale.interface';
@@ -229,6 +230,7 @@ export class SalesService {
 				stores: saleStores,
 				totals: createSaleDto.totals,
 				type: createSaleDto.type,
+				paymentStatus: createSaleDto.paymentStatus,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -264,6 +266,17 @@ export class SalesService {
 
 		const stores: IStore[] = await this._storesService.findByIds(storeIds);
 
+		const userByEmail: IUser | undefined =
+			createSaleDto.buyer && !createSaleDto.buyer.userId
+				? await this._usersService.findOneByEmail(createSaleDto.buyer.email)
+				: undefined;
+
+		const createSaleDtoBuyerUserId: string | undefined =
+			createSaleDto.buyer?.userId;
+
+		const buyerUserId: string | undefined =
+			createSaleDtoBuyerUserId ?? userByEmail?._id;
+
 		for await (const createSaleStoreDto of createSaleDto.stores) {
 			if (createSaleStoreDto.customerId) continue;
 
@@ -271,30 +284,28 @@ export class SalesService {
 				(store: IStore) => store._id === createSaleStoreDto.storeId,
 			);
 
-			const userId: string = store.userId.toString();
+			const storeUserId: string = store.userId.toString();
 
 			let customer: ICustomer | null = null;
+
+			// When created by owner of store and owner is making a buy in a shopping of another store users or in his own store
 			if (!createSaleDto.buyer) {
 				customer = await this._customersService.findByOwnerUserIdAndUserId(
-					userId,
+					storeUserId,
 					createSaleDto.createdByUserId,
 				);
 			} else {
-				const createSaleDtoBuyerUserId: string = createSaleDto.buyer.userId;
-
 				if (createSaleDtoBuyerUserId) {
 					customer = await this._customersService.findByOwnerUserIdAndUserId(
-						userId,
+						storeUserId,
 						createSaleDtoBuyerUserId,
 					);
-				}
-
-				if (!customer) {
+				} else {
 					customer =
 						await this._customersService.findByOwnerUserIdAndProperties({
 							email: createSaleDto.buyer.email,
 							name: createSaleDto.buyer.name,
-							ownerUserId: userId,
+							ownerUserId: storeUserId,
 							birthDate: createSaleDto.buyer.birthDate,
 						});
 				}
@@ -308,12 +319,13 @@ export class SalesService {
 						gender: createSaleDto.buyer.gender,
 						name: createSaleDto.buyer.name,
 						phoneNumbers: [createSaleDto.buyer.phoneNumber],
+						userId: buyerUserId,
 					};
 
 					const newCustomer: ICustomer = await this._customersService.create(
 						null,
 						createCustomerDto,
-						userId,
+						storeUserId,
 					);
 
 					customer = newCustomer;

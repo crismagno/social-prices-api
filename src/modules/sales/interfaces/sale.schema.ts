@@ -243,6 +243,16 @@ export class Sale extends Document implements ISale {
 	@Prop({ required: true, type: [SaleStoreSchema] })
 	stores: ISaleStore[];
 
+	@Prop({
+		required: true,
+		type: String,
+		enum: {
+			values: Object.keys(SalesEnum.PaymentStatus),
+			message: '{VALUE} is not supported',
+		},
+	})
+	paymentStatus: SalesEnum.PaymentStatus;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

@@ -20,6 +20,7 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	status: SalesEnum.Status;
 	payments: ISalePayment[];
 	stores: ISaleStore[];
+	paymentStatus: SalesEnum.PaymentStatus;
 }
 
 export interface ISaleStore {

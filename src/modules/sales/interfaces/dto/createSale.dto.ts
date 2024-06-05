@@ -186,6 +186,9 @@ export default class CreateSaleDto {
 	@IsEnum(SalesEnum.Status)
 	status: SalesEnum.Status;
 
+	@IsEnum(SalesEnum.PaymentStatus)
+	paymentStatus: SalesEnum.PaymentStatus;
+
 	@IsArray()
 	@Type(() => SalePaymentDto)
 	@ValidateNested({ each: true })
