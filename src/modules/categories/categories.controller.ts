@@ -54,6 +54,14 @@ export class CategoriesController {
 		return await this._categoriesService.findByType(type, authPayload._id);
 	}
 
+	@Get('/user/count')
+	public async countByUserId(@Request() request: any): Promise<number> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._categoriesService.countByUserId(authPayload._id);
+	}
+
 	@Get('/:categoryId')
 	public async findById(
 		@Param('categoryId', ValidationParamsPipe) categoryId: string,

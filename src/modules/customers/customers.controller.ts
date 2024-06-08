@@ -94,6 +94,15 @@ export class CustomersController {
 		);
 	}
 
+	@Get('/ownerUser/count')
+	@UsePipes(ValidationPipe)
+	public async countByOwnerUserId(@Request() request: any): Promise<number> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._customersService.countByOwnerUserId(authPayload._id);
+	}
+
 	@Get('/:customerId')
 	@UsePipes(ValidationPipe)
 	public async findById(

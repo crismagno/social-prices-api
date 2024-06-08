@@ -48,6 +48,12 @@ export class CategoriesService {
 		return this._categoryModel.findById(categoryId);
 	}
 
+	public async countByUserId(userId: string): Promise<number> {
+		return this._categoryModel.countDocuments({
+			ownerUserId: userId,
+		});
+	}
+
 	public async findByIdOrFail(categoryId: string): Promise<ICategory> {
 		const category: ICategory | undefined = await this.findById(categoryId);
 

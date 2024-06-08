@@ -1,23 +1,14 @@
-import {
-  FilterQuery,
-  Model,
-} from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 
-import {
-  forwardRef,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService
-  from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
-  ITableStateRequest,
-  ITableStateResponse,
+	ITableStateRequest,
+	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
@@ -27,6 +18,7 @@ import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { INotification } from './interfaces/notification.interface';
+import { Notification } from './interfaces/notification.schema';
 import { INotificationResponse } from './interfaces/notification.types';
 import NotificationsEnum from './interfaces/notifications.enum';
 
@@ -120,7 +112,7 @@ export class NotificationsService {
 		type: NotificationsEnum.Type;
 		subtitle: string | null;
 		content: any;
-	}): Promise<Notification> {
+	}): Promise<INotification> {
 		const now: Date = new Date();
 
 		const notification = new this._notificationModel({
@@ -135,7 +127,7 @@ export class NotificationsService {
 			isSeen: false,
 		});
 
-		const newNotification: Notification = await notification.save();
+		const newNotification: INotification = await notification.save();
 
 		return newNotification;
 	}

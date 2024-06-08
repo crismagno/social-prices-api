@@ -184,7 +184,7 @@ export class AmazonFilesService {
 
 			const filePath: string = `${this._localFolderPath}${filename}`;
 
-			fs.writeFile(filePath, file.buffer, (err) => {
+			fs.writeFile(filePath, file.buffer, (err: any) => {
 				if (err) {
 					this._logger.error('Error saving file:', err);
 					reject(err);
@@ -207,7 +207,7 @@ export class AmazonFilesService {
 		return new Promise((resolve) => {
 			const filePath: string = `${this._localFolderPath}${filename}`;
 
-			fs.unlink(filePath, (err) => {
+			fs.unlink(filePath, (err: any) => {
 				if (err) {
 					this._logger.error('Error removing file:', err);
 					resolve(err);

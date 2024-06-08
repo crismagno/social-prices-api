@@ -58,9 +58,13 @@ export class ProductsService {
 	}
 
 	public async findByUserId(userId: string): Promise<IProduct[]> {
-		const products: IProduct[] = await this._productModel.find({ userId });
+		return await this._productModel.find({ userId });
+	}
 
-		return products;
+	public async countByUserId(userId: string): Promise<number> {
+		return await this._productModel.countDocuments({
+			userId,
+		});
 	}
 
 	public async findByUserTableState(
@@ -95,7 +99,7 @@ export class ProductsService {
 			filter.storeIds = { $in: tableState.filters?.storeIds as string[] };
 		}
 
-		if (tableState?.filters?.categoriesIds) {
+		if (tableState?.filters?.categoriesIds?.length) {
 			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
 		}
 

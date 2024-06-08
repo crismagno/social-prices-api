@@ -5,6 +5,7 @@ import CodeSchema from '../../../modules/codes/interfaces/code.schema';
 import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
 import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
+import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
 import StoreSchema from '../../../modules/stores/interfaces/store.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
 
@@ -16,6 +17,7 @@ export const schemasName = {
 	category: 'Category',
 	customer: 'Customer',
 	notification: 'Notification',
+	sale: 'Sale',
 };
 
 export const schemasModule = {
@@ -39,5 +41,8 @@ export const schemasModule = {
 	]),
 	notification: MongooseModule.forFeature([
 		{ name: schemasName.notification, schema: NotificationSchema },
+	]),
+	sale: MongooseModule.forFeature([
+		{ name: schemasName.sale, schema: SaleSchema },
 	]),
 };

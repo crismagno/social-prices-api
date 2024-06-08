@@ -1,8 +1,4 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 import UsersEnum from '../../../users/interfaces/users.enum';
 
@@ -26,6 +22,10 @@ export default class CreateCustomerDto {
 	@IsString()
 	@IsOptional()
 	about: string | null;
+
+	@IsString()
+	@IsOptional()
+	userId: string | null;
 
 	addresses: any[];
 

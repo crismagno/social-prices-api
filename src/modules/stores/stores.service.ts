@@ -51,6 +51,10 @@ export class StoresService {
 		return this._storeModel.findById(storeId);
 	}
 
+	public async findByIds(storeIds: string[]): Promise<IStore[]> {
+		return this._storeModel.find({ _id: { $in: storeIds } });
+	}
+
 	public async findByIdOrFail(storeId: string): Promise<IStore> {
 		const store: IStore | undefined = await this.findById(storeId);
 
@@ -65,6 +69,17 @@ export class StoresService {
 		const stores: IStore[] = await this._storeModel.find({ userId });
 
 		return stores;
+	}
+
+	public async findStoreIdsByUserId(userId: string): Promise<string[]> {
+		const stores: IStore[] = await this._storeModel.find(
+			{ userId },
+			{ _id: 1 },
+		);
+
+		const storesIds: string[] = stores.map((store: IStore) => store._id);
+
+		return storesIds;
 	}
 
 	public async findByUserTableState(
@@ -154,8 +169,14 @@ export class StoresService {
 
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
-		const responseFile: ManagedUpload.SendData =
-			await this._amazonFilesService.uploadFile(file);
+		let logo: string | null = null;
+
+		if (file) {
+			const responseFile: ManagedUpload.SendData =
+				await this._amazonFilesService.uploadFile(file);
+
+			logo = responseFile.Key;
+		}
 
 		if (typeof createStoreDto.addresses === 'string') {
 			createStoreDto.addresses = JSON.parse(createStoreDto.addresses);
@@ -172,7 +193,7 @@ export class StoresService {
 		const now: Date = new Date();
 
 		const store = new this._storeModel({
-			logo: responseFile.Key,
+			logo,
 			status: createStoreDto.status,
 			userId,
 			addresses: createStoreDto.addresses,

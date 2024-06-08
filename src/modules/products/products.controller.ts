@@ -77,6 +77,15 @@ export class ProductsController {
 		return await this._productsService.findByUserId(authPayload._id);
 	}
 
+	@Get('/user/count')
+	@UsePipes(ValidationPipe)
+	public async countByUserId(@Request() request: any): Promise<number> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._productsService.countByUserId(authPayload._id);
+	}
+
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(

@@ -11,5 +11,6 @@ import { StoresService } from './stores.service';
 	imports: [schemasModule.store, NotificationsModule, UsersModule],
 	providers: [StoresService, AmazonFilesService],
 	controllers: [StoresController],
+	exports: [StoresService],
 })
 export class StoresModule {}
