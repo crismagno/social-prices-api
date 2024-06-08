@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
+	IsBoolean,
 	IsDate,
 	IsEnum,
 	IsNotEmpty,
@@ -198,4 +199,7 @@ export default class CreateSaleDto {
 	@Type(() => SaleStoreDto)
 	@ValidateNested({ each: true })
 	stores: SaleStoreDto[];
+
+	@IsBoolean()
+	isCreateQuote: boolean;
 }
