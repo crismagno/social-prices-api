@@ -17,7 +17,8 @@ import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
-import CreateProductDto from './interfaces/dto/createCustomer.dto';
+import { IFindByOwnerUserIdAndPropertiesParams } from './interfaces/customers.type';
+import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
 
 @Injectable()
@@ -70,6 +71,32 @@ export class CustomersService {
 		return customers;
 	}
 
+	public async findByOwnerUserIdAndUserId(
+		ownerUserId: string,
+		userId: string,
+	): Promise<ICustomer> {
+		const customers: ICustomer = await this._customerModel.findOne({
+			ownerUserId,
+			userId,
+		});
+
+		return customers;
+	}
+
+	public async findByOwnerUserIdAndProperties({
+		email,
+		name,
+		ownerUserId,
+	}: IFindByOwnerUserIdAndPropertiesParams): Promise<ICustomer> {
+		const customers: ICustomer = await this._customerModel.findOne({
+			ownerUserId,
+			email,
+			name,
+		});
+
+		return customers;
+	}
+
 	public async findByOwnerUserTableState(
 		ownerUserId: string,
 		tableState: ITableStateRequest<ICustomer>,
@@ -112,7 +139,7 @@ export class CustomersService {
 
 	public async create(
 		file: Express.Multer.File | null,
-		createProductDto: CreateProductDto,
+		createCustomerDto: CreateCustomerDto,
 		ownerUserId: string,
 	): Promise<ICustomer> {
 		const user: IUser =
@@ -124,28 +151,31 @@ export class CustomersService {
 			responseFile = await this._amazonFilesService.uploadFile(file);
 		}
 
-		if (typeof createProductDto.addresses === 'string') {
-			createProductDto.addresses = JSON.parse(createProductDto.addresses);
+		if (typeof createCustomerDto.addresses === 'string') {
+			createCustomerDto.addresses = JSON.parse(createCustomerDto.addresses);
 		}
 
-		if (typeof createProductDto.phoneNumbers === 'string') {
-			createProductDto.phoneNumbers = JSON.parse(createProductDto.phoneNumbers);
+		if (typeof createCustomerDto.phoneNumbers === 'string') {
+			createCustomerDto.phoneNumbers = JSON.parse(
+				createCustomerDto.phoneNumbers,
+			);
 		}
 
 		const now: Date = new Date();
 
 		const customer = new this._customerModel({
 			avatar: responseFile?.Key ?? null,
-			name: createProductDto.name,
-			email: createProductDto.email,
-			birthDate: createProductDto.birthDate,
-			addresses: createProductDto.addresses,
-			gender: createProductDto.gender,
-			about: createProductDto.about,
-			phoneNumbers: createProductDto.phoneNumbers,
+			name: createCustomerDto.name,
+			email: createCustomerDto.email,
+			birthDate: createCustomerDto.birthDate,
+			addresses: createCustomerDto.addresses,
+			gender: createCustomerDto.gender,
+			about: createCustomerDto.about,
+			phoneNumbers: createCustomerDto.phoneNumbers,
 			ownerUserId,
 			createdAt: now,
 			updatedAt: now,
+			userId: createCustomerDto.userId,
 		});
 
 		const newCustomer: ICustomer = await customer.save();

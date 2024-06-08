@@ -1,13 +1,10 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import UsersEnum from '../../../users/interfaces/users.enum';
 
 export default class UpdateCustomerDto {
 	@IsString()
+	@IsNotEmpty()
 	customerId: string;
 
 	@IsString()

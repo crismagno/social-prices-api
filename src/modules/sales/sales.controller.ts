@@ -24,15 +24,6 @@ import { SalesService } from './sales.service';
 export class SalesController {
 	constructor(private _salesService: SalesService) {}
 
-	@Get('/userId')
-	@UsePipes(ValidationPipe)
-	public async findByUserId(@Request() request: any): Promise<ISale[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
-		return await this._salesService.findByUserId(authPayload._id);
-	}
-
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
@@ -65,9 +56,11 @@ export class SalesController {
 		return await this._salesService.findById(saleId);
 	}
 
-	@Post('/')
+	@Post('/createManual')
 	@UsePipes(ValidationPipe)
-	public async create(@Body() createSaleDto: CreateSaleDto): Promise<ISale> {
-		return await this._salesService.create(createSaleDto);
+	public async createManual(
+		@Body() createSaleDto: CreateSaleDto,
+	): Promise<ISale> {
+		return await this._salesService.createManual(createSaleDto);
 	}
 }

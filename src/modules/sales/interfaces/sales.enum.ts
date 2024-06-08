@@ -2,18 +2,23 @@ namespace SalesEnum {
 	export enum Type {
 		MANUAL = 'MANUAL',
 		SHOPPING = 'SHOPPING',
-		AUTOMATIC = 'AUTOMATIC',
+	}
+
+	export enum DeliveryType {
+		PICKUP = 'PICKUP',
+		DELIVERY = 'DELIVERY',
 	}
 
 	export enum PaymentType {
 		PIX = 'PIX',
 		CASH = 'CASH',
 		CARD = 'CARD',
+		OTHER = 'OTHER',
 	}
 
 	export enum PaymentStatus {
 		COMPLETED = 'COMPLETED',
-		WAITING_PAYMENT = 'WAITING_PAYMENT',
+		PENDING = 'PENDING',
 		PARTIALLY = 'PARTIALLY',
 		CANCELLED = 'CANCELLED',
 		REFUNDED = 'REFUNDED',
@@ -25,7 +30,8 @@ namespace SalesEnum {
 		STOPPED = 'STOPPED',
 		ERROR = 'ERROR',
 		COMPLETED = 'COMPLETED',
-		WAITING_PAYMENT = 'WAITING_PAYMENT',
+		PROCESSING = 'PROCESSING',
+		PENDING = 'PENDING',
 		REFUNDED = 'REFUNDED',
 	}
 }

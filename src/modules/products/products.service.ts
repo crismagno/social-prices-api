@@ -99,7 +99,7 @@ export class ProductsService {
 			filter.storeIds = { $in: tableState.filters?.storeIds as string[] };
 		}
 
-		if (tableState?.filters?.categoriesIds) {
+		if (tableState?.filters?.categoriesIds?.length) {
 			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
 		}
 
