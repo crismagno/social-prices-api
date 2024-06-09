@@ -1,5 +1,5 @@
-import { find, map } from 'lodash';
-import { FilterQuery, Model } from 'mongoose';
+import { find, forEach, map, reduce } from 'lodash';
+import mongoose, { FilterQuery, Model } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -21,13 +21,19 @@ import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateSaleDto, { SaleStoreDto } from './interfaces/dto/createSale.dto';
-import { ISale, ISaleStore } from './interfaces/sale.interface';
+import {
+	ISale,
+	ISaleStore,
+	ISaleStoreProduct,
+} from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
+import { IProductToSubtract } from './interfaces/sales.type';
 
 @Injectable()
 export class SalesService {
@@ -46,6 +52,7 @@ export class SalesService {
 		private readonly _notificationsService: NotificationsService,
 		private readonly _storesService: StoresService,
 		private readonly _customersService: CustomersService,
+		private readonly _productsService: ProductsService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -203,6 +210,8 @@ export class SalesService {
 
 			const newSale: ISale = await saleModel.save();
 
+			await this._subtractProductsQuantityBySaleStores(saleStores);
+
 			return newSale;
 		} catch (error: any) {
 			this._logger.error(error);
@@ -347,6 +356,53 @@ export class SalesService {
 					zip: createAddressDto.zip,
 			  }
 			: null;
+	}
+
+	private async _subtractProductsQuantityBySaleStores(
+		saleStores: ISaleStore[],
+	): Promise<void> {
+		const productsToSubtract: IProductToSubtract[] = reduce(
+			saleStores,
+			(acc: IProductToSubtract[], saleStore: ISaleStore) => {
+				forEach(
+					saleStore.products,
+					(saleStoreProduct: ISaleStoreProduct): void => {
+						const findProductToSubtract: IProductToSubtract | undefined = find(
+							acc,
+							{
+								productId: saleStoreProduct.productId,
+							},
+						);
+
+						if (findProductToSubtract) {
+							findProductToSubtract.quantity += saleStoreProduct.quantity;
+						} else {
+							acc.push({
+								productId: saleStoreProduct.productId,
+								quantity: saleStoreProduct.quantity,
+							});
+						}
+					},
+				);
+
+				return acc;
+			},
+			[],
+		);
+
+		for await (const productToSubtract of productsToSubtract) {
+			await this._productsService.updateOne(
+				new mongoose.Types.ObjectId(productToSubtract.productId),
+				{
+					$inc: {
+						quantity: -productToSubtract.quantity,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+		}
 	}
 
 	// #endregion
