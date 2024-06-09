@@ -9,7 +9,6 @@ import SalesEnum from './sales.enum';
 
 export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
-	description: string | null;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
 	number: string;
