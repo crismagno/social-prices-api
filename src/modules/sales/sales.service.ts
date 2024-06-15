@@ -172,11 +172,25 @@ export class SalesService {
 		};
 
 		response.total = await this._saleModel.countDocuments(filter);
-		response.data = await this._saleModel.find(
-			filter,
-			null,
-			queryOptions<ISale>(tableState),
-		);
+		let sales: ISale[] = await this._saleModel
+			.find(filter, null, queryOptions<ISale>(tableState))
+			.populate({
+				path: 'stores.customerId',
+				model: 'Customer',
+			});
+
+		sales = JSON.parse(JSON.stringify(sales));
+
+		sales.forEach((sale: ISale) => {
+			sale.stores = JSON.parse(JSON.stringify(sale.stores)).map(
+				(store: ISaleStore) => ({
+					...store,
+					customer: store.customerId,
+				}),
+			);
+		});
+
+		response.data = sales;
 
 		return response;
 	}

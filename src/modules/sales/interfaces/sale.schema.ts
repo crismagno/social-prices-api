@@ -151,7 +151,10 @@ export class SaleStore implements ISaleStore {
 	@Prop({ required: true, type: SaleTotalsSchema, _id: false })
 	totals: ISaleTotals;
 
-	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	@Prop({
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Customer',
+	})
 	customerId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ required: true, type: Number })
