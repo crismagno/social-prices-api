@@ -1,3 +1,4 @@
+import { isNumber } from 'class-validator';
 import { find, forEach, map, reduce } from 'lodash';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 
@@ -17,6 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { CountersService } from '../counters/counters.service';
 import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
@@ -53,6 +55,7 @@ export class SalesService {
 		private readonly _storesService: StoresService,
 		private readonly _customersService: CustomersService,
 		private readonly _productsService: ProductsService,
+		private readonly _countersService: CountersService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -129,9 +132,38 @@ export class SalesService {
 					description: search,
 				},
 				{
-					number: search,
+					'buyer.name': search,
+				},
+				{
+					'buyer.email': search,
 				},
 			];
+
+			if (isNumber(+tableState.search)) {
+				filter.$or.push({
+					number: +tableState.search,
+				});
+			}
+		}
+
+		if (tableState.filters?.type?.length) {
+			filter.type = { $in: tableState.filters?.type };
+		}
+
+		if (tableState.filters?.status?.length) {
+			filter.status = { $in: tableState.filters?.status };
+		}
+
+		if (tableState.filters?.paymentStatus?.length) {
+			filter.paymentStatus = { $in: tableState.filters?.paymentStatus };
+		}
+
+		if (tableState.filters?.deliveryType?.length) {
+			filter['header.deliveryType'] = { $in: tableState.filters?.deliveryType };
+		}
+
+		if (tableState.filters?.stores?.length) {
+			filter['stores.storeId'] = { $in: tableState.filters?.stores };
 		}
 
 		const response: ITableStateResponse<ISale[]> = {
@@ -155,10 +187,19 @@ export class SalesService {
 				throw new BadRequestException('Create user required!');
 			}
 
-			const saleNumber: string = `${Date.now()}`;
+			const saleNumber: number =
+				await this._countersService.findNextNumberBySaleType();
+
+			const storeIds: string[] = map(createSaleDto.stores, 'storeId');
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
 
 			const saleStores: ISaleStore[] =
-				await this._processSaleStoresDtoToSaleStores(createSaleDto, saleNumber);
+				await this._processSaleStoresDtoToSaleStores(
+					createSaleDto,
+					saleNumber,
+					stores,
+				);
 
 			const now: Date = new Date();
 
@@ -212,6 +253,13 @@ export class SalesService {
 
 			await this._subtractProductsQuantityBySaleStores(saleStores);
 
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const user: IUser =
+				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+
+			await this._notificationsService.createdManualSale(newSale, user);
+
 			return newSale;
 		} catch (error: any) {
 			this._logger.error(error);
@@ -226,7 +274,8 @@ export class SalesService {
 
 	private async _processSaleStoresDtoToSaleStores(
 		createSaleDto: CreateSaleDto,
-		saleNumber: string,
+		saleNumber: number,
+		stores: IStore[],
 	): Promise<ISaleStore[]> {
 		const hasCustomerIdNull: boolean = createSaleDto.stores.some(
 			(saleStoreDto: SaleStoreDto) => !saleStoreDto.customerId,
@@ -238,10 +287,6 @@ export class SalesService {
 				saleNumber,
 			);
 		}
-
-		const storeIds: string[] = map(createSaleDto.stores, 'storeId');
-
-		const stores: IStore[] = await this._storesService.findByIds(storeIds);
 
 		const userByEmail: IUser | undefined =
 			createSaleDto.buyer && !createSaleDto.buyer?.userId
@@ -291,7 +336,13 @@ export class SalesService {
 				if (!customer) {
 					const createCustomerDto: CreateCustomerDto = {
 						about: null,
-						addresses: [createSaleDto.buyer.address],
+						addresses: createSaleDto.buyer.address
+							? [
+									this._parseCreateAddressDtoToAddress(
+										createSaleDto.buyer.address,
+									),
+							  ]
+							: [],
 						birthDate: createSaleDto.buyer.birthDate,
 						email: createSaleDto.buyer.email,
 						gender: createSaleDto.buyer.gender,
@@ -325,7 +376,7 @@ export class SalesService {
 
 	private _parseCreateSaleStoresDtoToSaleStores(
 		saleStoreDto: SaleStoreDto[],
-		saleNumber: string,
+		saleNumber: number,
 	): ISaleStore[] {
 		return saleStoreDto.map(
 			(saleStoreDto: SaleStoreDto): ISaleStore => ({

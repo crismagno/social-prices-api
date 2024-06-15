@@ -154,8 +154,8 @@ export class SaleStore implements ISaleStore {
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	customerId: mongoose.Schema.Types.ObjectId | null;
 
-	@Prop({ required: true, type: String })
-	number: string;
+	@Prop({ required: true, type: Number })
+	number: number;
 }
 
 export const SaleStoreSchema = SchemaFactory.createForClass(SaleStore);
@@ -202,8 +202,8 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: SaleBuyerSchema, _id: false })
 	buyer: ISaleBuyer | null;
 
-	@Prop({ required: true, type: String, unique: true })
-	number: string;
+	@Prop({ required: true, type: Number, unique: true })
+	number: number;
 
 	@Prop({
 		required: true,

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
+import { CountersModule } from '../counters/counters.module';
 import { CustomersModule } from '../customers/customers.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ProductsModule } from '../products/products.module';
@@ -17,6 +18,7 @@ import { SalesService } from './sales.service';
 		StoresModule,
 		CustomersModule,
 		ProductsModule,
+		CountersModule,
 	],
 	controllers: [SalesController],
 	providers: [SalesService],

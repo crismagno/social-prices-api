@@ -11,7 +11,7 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
-	number: string;
+	number: number;
 	type: SalesEnum.Type;
 	totals: ISaleTotals;
 	header: ISaleHeader;
@@ -24,7 +24,7 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 
 export interface ISaleStore {
 	storeId: mongoose.Schema.Types.ObjectId;
-	number: string;
+	number: number;
 	products: ISaleStoreProduct[];
 	totals: ISaleTotals;
 	customerId: mongoose.Schema.Types.ObjectId | null;
