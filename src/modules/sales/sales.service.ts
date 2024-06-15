@@ -166,12 +166,18 @@ export class SalesService {
 			filter['stores.storeId'] = { $in: tableState.filters?.stores };
 		}
 
+		if (tableState.filters?.createdAtRange) {
+			const { startDate, endDate } = tableState.filters?.createdAtRange;
+			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
 		};
 
 		response.total = await this._saleModel.countDocuments(filter);
+
 		let sales: ISale[] = await this._saleModel
 			.find(filter, null, queryOptions<ISale>(tableState))
 			.populate({
