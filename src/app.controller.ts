@@ -1,14 +1,14 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
 
 import { AppService } from './app.service';
-import { Public } from './shared/decorators/custom.decorator';
-import { ValidationParamsPipe } from './shared/pipes/validation-params-pipe';
 import { CurrentUser } from './modules/auth/decorators/current-user.decorator';
 import UserEntity from './modules/users/interfaces/user.entity';
+import { Public } from './shared/decorators/custom.decorator';
+import { ValidationParamsPipe } from './shared/pipes/validation-params-pipe';
 
 @Controller('api/v1')
 export class AppController {
-	constructor(private readonly _appService: AppService) { }
+	constructor(private readonly _appService: AppService) {}
 
 	@Public()
 	@Get()
@@ -28,7 +28,7 @@ export class AppController {
 	}
 
 	@Get('/me')
-	getMe(@CurrentUser() user: UserEntity) {
+	public getMe(@CurrentUser() user: UserEntity) {
 		return user;
 	}
 }
