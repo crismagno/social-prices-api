@@ -101,6 +101,12 @@ export class ProductsController {
 		);
 	}
 
+	@Post('/findByIds')
+	@UsePipes(ValidationPipe)
+	public async findByIds(@Body() productIds: string[]): Promise<IProduct[]> {
+		return await this._productsService.findByIds(productIds);
+	}
+
 	@Get('/:productId')
 	@UsePipes(ValidationPipe)
 	public async findById(

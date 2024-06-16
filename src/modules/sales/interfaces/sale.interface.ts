@@ -35,13 +35,13 @@ export interface ISaleStore {
 export interface ISaleTotals {
 	subtotalAmount: number;
 	discount: ISaleTotalsDiscount | null;
-	taxAmount: number | null;
-	shippingAmount: number | null;
+	tax: ISaleAmountNote | null;
+	shipping: ISaleAmountNote | null;
 	totalFinalAmount: number;
 }
 
 export interface ISaleTotalsDiscount {
-	normal: number;
+	normal: ISaleAmountNote;
 }
 
 export interface ISalePayment {
@@ -81,4 +81,9 @@ export interface ISaleBuyer {
 	gender: UsersEnum.Gender | null;
 	phoneNumber: IPhoneNumber | null;
 	address: IAddress | null;
+}
+
+export interface ISaleAmountNote {
+	amount: number;
+	note: string | null;
 }

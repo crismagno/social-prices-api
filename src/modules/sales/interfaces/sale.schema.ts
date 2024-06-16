@@ -9,6 +9,7 @@ import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import UsersEnum from '../../users/interfaces/users.enum';
 import {
 	ISale,
+	ISaleAmountNote,
 	ISaleBuyer,
 	ISaleHeader,
 	ISaleHeaderBilling,
@@ -20,6 +21,18 @@ import {
 	ISaleTotalsDiscount,
 } from './sale.interface';
 import SalesEnum from './sales.enum';
+
+@Schema()
+export class SaleAmountNote implements ISaleAmountNote {
+	@Prop({ type: String })
+	note: string | null;
+
+	@Prop({ required: true, type: Number })
+	amount: number;
+}
+
+export const SaleAmountNoteSchema =
+	SchemaFactory.createForClass(SaleAmountNote);
 
 @Schema()
 export class SalePayment implements ISalePayment {
@@ -54,8 +67,8 @@ export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);
 
 @Schema()
 export class SaleTotalsDiscount implements ISaleTotalsDiscount {
-	@Prop({ required: true, type: Number })
-	normal: number;
+	@Prop({ required: true, type: SaleAmountNoteSchema, _id: false })
+	normal: ISaleAmountNote;
 }
 
 export const SaleTotalsDiscountSchema =
@@ -69,11 +82,11 @@ export class SaleTotals implements ISaleTotals {
 	@Prop({ type: SaleTotalsDiscountSchema, _id: false })
 	discount: ISaleTotalsDiscount | null;
 
-	@Prop({ type: Number })
-	taxAmount: number | null;
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	tax: ISaleAmountNote | null;
 
-	@Prop({ type: Number })
-	shippingAmount: number | null;
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	shipping: ISaleAmountNote | null;
 
 	@Prop({ required: true, type: Number })
 	totalFinalAmount: number;

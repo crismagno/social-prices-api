@@ -53,6 +53,10 @@ export class ProductsService {
 		return this._productModel.findById(productId);
 	}
 
+	public async findByIds(productIds: string[]): Promise<IProduct[]> {
+		return this._productModel.find({ _id: { $in: productIds } });
+	}
+
 	public async findByIdOrFail(productId: string): Promise<IProduct> {
 		const product: IProduct | undefined = await this.findById(productId);
 
