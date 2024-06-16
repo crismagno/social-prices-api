@@ -1,4 +1,10 @@
-import { FilterQuery, Model } from 'mongoose';
+import {
+	FilterQuery,
+	Model,
+	QueryOptions,
+	UpdateQuery,
+	UpdateWithAggregationPipeline,
+} from 'mongoose';
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -236,6 +242,14 @@ export class ProductsService {
 		await this._notificationsService.updatedProduct(user, productUpdated);
 
 		return productUpdated;
+	}
+
+	public async updateOne(
+		filter?: FilterQuery<Product>,
+		update?: UpdateWithAggregationPipeline | UpdateQuery<IProduct>,
+		options?: QueryOptions<IProduct>,
+	): Promise<void> {
+		return this._productModel.findOneAndUpdate(filter, update, options);
 	}
 
 	// #endregion

@@ -19,7 +19,7 @@ export class Category extends Document implements ICategory {
 	createdByUserId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
-	ownerUserId: mongoose.Schema.Types.ObjectId;
+	ownerUserId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({
 		required: true,

@@ -14,6 +14,7 @@ import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import { IProduct } from '../products/interfaces/product.interface';
+import { ISale } from '../sales/interfaces/sale.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
@@ -297,6 +298,21 @@ export class NotificationsService {
 				},
 			},
 		);
+	}
+
+	public async createdManualSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have create a new sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Created',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
 	}
 
 	//#endregion

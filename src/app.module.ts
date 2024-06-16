@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { CodesModule } from './modules/codes/codes.module';
+import { CountersModule } from './modules/counters/counters.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
 		ProductsModule,
 		CategoriesModule,
 		CustomersModule,
+		CountersModule,
 	],
 	controllers: [AppController],
 	providers: [

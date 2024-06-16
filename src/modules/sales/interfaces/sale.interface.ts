@@ -4,15 +4,15 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import { ICustomer } from '../../customers/interfaces/customer.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
 import SalesEnum from './sales.enum';
 
 export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
-	description: string | null;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
-	number: string;
+	number: number;
 	type: SalesEnum.Type;
 	totals: ISaleTotals;
 	header: ISaleHeader;
@@ -25,10 +25,11 @@ export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 
 export interface ISaleStore {
 	storeId: mongoose.Schema.Types.ObjectId;
-	number: string;
+	number: number;
 	products: ISaleStoreProduct[];
 	totals: ISaleTotals;
 	customerId: mongoose.Schema.Types.ObjectId | null;
+	customer?: ICustomer;
 }
 
 export interface ISaleTotals {

@@ -71,6 +71,14 @@ export class CustomersService {
 		return customers;
 	}
 
+	public async findByIds(customerIds: string[]): Promise<ICustomer[]> {
+		const customers: ICustomer[] = await this._customerModel.find({
+			_id: { $in: customerIds },
+		});
+
+		return customers;
+	}
+
 	public async findByOwnerUserIdAndUserId(
 		ownerUserId: string,
 		userId: string,

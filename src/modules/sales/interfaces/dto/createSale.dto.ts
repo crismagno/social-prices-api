@@ -137,10 +137,6 @@ export class SaleStoreDto {
 	storeId: string;
 
 	@IsString()
-	@IsNotEmpty()
-	number: string;
-
-	@IsString()
 	@IsOptional()
 	customerId: string;
 
@@ -155,20 +151,12 @@ export class SaleStoreDto {
 
 export default class CreateSaleDto {
 	@IsString()
-	@IsOptional()
-	description: string | null;
-
-	@IsString()
 	@IsNotEmpty()
 	createdByUserId: string;
 
 	@Type(() => SaleBuyerDto)
 	@IsOptional()
 	buyer: SaleBuyerDto | null;
-
-	@IsString()
-	@IsNotEmpty()
-	number: string;
 
 	@IsEnum(SalesEnum.Type)
 	type: SalesEnum.Type;
