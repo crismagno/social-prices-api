@@ -11,6 +11,7 @@ import SalesEnum from './sales.enum';
 export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
+	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
 	number: number;
 	type: SalesEnum.Type;

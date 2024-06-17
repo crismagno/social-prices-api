@@ -17,6 +17,7 @@ import {
 import AuthEnum from '../auth/interfaces/auth.enum';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
+import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import { ISale } from './interfaces/sale.interface';
 import { SalesService } from './sales.service';
 
@@ -62,5 +63,13 @@ export class SalesController {
 		@Body() createSaleDto: CreateSaleDto,
 	): Promise<ISale> {
 		return await this._salesService.createManual(createSaleDto);
+	}
+
+	@Post('/updateManual')
+	@UsePipes(ValidationPipe)
+	public async updateManual(
+		@Body() updateSaleDto: UpdateSaleDto,
+	): Promise<ISale> {
+		return await this._salesService.updateManual(updateSaleDto);
 	}
 }

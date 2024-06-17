@@ -315,5 +315,20 @@ export class NotificationsService {
 		});
 	}
 
+	public async updatedManualSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have updated a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Updated',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
 	//#endregion
 }

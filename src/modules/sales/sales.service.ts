@@ -29,6 +29,7 @@ import { StoresService } from '../stores/stores.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateSaleDto, { SaleStoreDto } from './interfaces/dto/createSale.dto';
+import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import {
 	ISale,
 	ISaleStore,
@@ -281,6 +282,90 @@ export class SalesService {
 			await this._notificationsService.createdManualSale(newSale, user);
 
 			return newSale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async updateManual(updateSaleDto: UpdateSaleDto): Promise<ISale> {
+		try {
+			if (!updateSaleDto.updatedByUserId) {
+				throw new BadRequestException('User required!');
+			}
+
+			const sale: ISale = await this.findByIdOrFail(updateSaleDto.saleId);
+
+			const storeIds: string[] = map(updateSaleDto.stores, 'storeId');
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const saleStores: ISaleStore[] =
+				this._parseCreateSaleStoresDtoToSaleStores(
+					updateSaleDto.stores,
+					sale.number,
+				);
+
+			const now: Date = new Date();
+
+			const saleToUpdate = {
+				buyer: updateSaleDto.buyer
+					? {
+							address: this._parseCreateAddressDtoToAddress(
+								updateSaleDto.buyer.address,
+							),
+							birthDate: updateSaleDto.buyer.birthDate,
+							email: updateSaleDto.buyer.email,
+							gender: updateSaleDto.buyer.gender,
+							name: updateSaleDto.buyer.name,
+							phoneNumber: updateSaleDto.buyer.phoneNumber,
+					  }
+					: null,
+				updatedAt: now,
+				updatedByUserId: updateSaleDto.updatedByUserId as any,
+				header: {
+					billing: updateSaleDto.header.billing
+						? {
+								address: this._parseCreateAddressDtoToAddress(
+									updateSaleDto.header.billing.address,
+								),
+						  }
+						: null,
+					shipping: updateSaleDto.header.shipping
+						? {
+								address: this._parseCreateAddressDtoToAddress(
+									updateSaleDto.header.shipping.address,
+								),
+						  }
+						: null,
+					deliveryType: updateSaleDto.header.deliveryType,
+				},
+				note: updateSaleDto.note,
+				payments: updateSaleDto.payments,
+				status: updateSaleDto.status,
+				stores: saleStores,
+				totals: updateSaleDto.totals,
+				type: updateSaleDto.type,
+				paymentStatus: updateSaleDto.paymentStatus,
+			};
+
+			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
+				updateSaleDto.saleId,
+				{
+					$set: saleToUpdate,
+				},
+				{ new: true },
+			);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const user: IUser =
+				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+
+			await this._notificationsService.updatedManualSale(updatedSale, user);
+
+			return updatedSale;
 		} catch (error: any) {
 			this._logger.error(error);
 
