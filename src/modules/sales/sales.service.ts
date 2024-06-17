@@ -205,7 +205,7 @@ export class SalesService {
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
 		try {
 			if (!createSaleDto.createdByUserId) {
-				throw new BadRequestException('Create user required!');
+				throw new BadRequestException('user which created sale is required!');
 			}
 
 			const saleNumber: number =
@@ -292,7 +292,7 @@ export class SalesService {
 	public async updateManual(updateSaleDto: UpdateSaleDto): Promise<ISale> {
 		try {
 			if (!updateSaleDto.updatedByUserId) {
-				throw new BadRequestException('User required!');
+				throw new BadRequestException('User which updated sale is required!');
 			}
 
 			const sale: ISale = await this.findByIdOrFail(updateSaleDto.saleId);
