@@ -45,7 +45,7 @@ export class CustomersService {
 
 	// #region Public Methods
 
-	public async findById(customerId: string): Promise<ICustomer | undefined> {
+	public async findById(customerId: string): Promise<ICustomer | null> {
 		return this._customerModel.findById(customerId);
 	}
 

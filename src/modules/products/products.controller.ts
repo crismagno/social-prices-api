@@ -111,7 +111,7 @@ export class ProductsController {
 	@UsePipes(ValidationPipe)
 	public async findById(
 		@Param('productId', ValidationParamsPipe) productId: string,
-	): Promise<IProduct> {
+	): Promise<IProduct | null> {
 		return await this._productsService.findById(productId);
 	}
 }

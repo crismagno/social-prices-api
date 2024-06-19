@@ -44,7 +44,7 @@ export class CategoriesService {
 
 	// #region Public Methods
 
-	public async findById(categoryId: string): Promise<ICategory | undefined> {
+	public async findById(categoryId: string): Promise<ICategory | null> {
 		return this._categoryModel.findById(categoryId);
 	}
 
@@ -68,7 +68,7 @@ export class CategoriesService {
 		ownerUserId: string,
 		type: CategoriesEnum.Type,
 		name: string,
-	): Promise<ICategory | undefined> {
+	): Promise<ICategory | null> {
 		return this._categoryModel.findOne({
 			ownerUserId,
 			type,
@@ -82,8 +82,11 @@ export class CategoriesService {
 		name: string,
 		categoryId?: string,
 	): Promise<void> {
-		const category: ICategory | undefined =
-			await this.findByOwnerUserIdTypeName(ownerUserId, type, name);
+		const category: ICategory | null = await this.findByOwnerUserIdTypeName(
+			ownerUserId,
+			type,
+			name,
+		);
 
 		if (!category) {
 			return;

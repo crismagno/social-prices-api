@@ -102,7 +102,7 @@ export class StoresController {
 	@UsePipes(ValidationPipe)
 	public async findById(
 		@Param('storeId', ValidationParamsPipe) storeId: string,
-	): Promise<IStore> {
+	): Promise<IStore | null> {
 		return await this._storesService.findById(storeId);
 	}
 }

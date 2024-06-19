@@ -53,7 +53,7 @@ export class SalesController {
 	@UsePipes(ValidationPipe)
 	public async findById(
 		@Param('saleId', ValidationParamsPipe) saleId: string,
-	): Promise<ISale> {
+	): Promise<ISale | null> {
 		return await this._salesService.findById(saleId);
 	}
 

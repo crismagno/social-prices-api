@@ -48,9 +48,7 @@ export class NotificationsService {
 
 	//#region Public Methods
 
-	public async findById(
-		notificationId: string,
-	): Promise<INotification | undefined> {
+	public async findById(notificationId: string): Promise<INotification | null> {
 		return this._notificationModel.findById(notificationId);
 	}
 

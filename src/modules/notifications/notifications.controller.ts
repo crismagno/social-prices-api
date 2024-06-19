@@ -62,7 +62,7 @@ export class NotificationsController {
 	@UsePipes(ValidationPipe)
 	public async findById(
 		@Param('notificationId', ValidationParamsPipe) notificationId: string,
-	): Promise<INotification> {
+	): Promise<INotification | null> {
 		return await this._notificationsService.findById(notificationId);
 	}
 }

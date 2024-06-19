@@ -47,7 +47,7 @@ export class StoresService {
 
 	// #region Public Methods
 
-	public async findById(storeId: string): Promise<IStore | undefined> {
+	public async findById(storeId: string): Promise<IStore | null> {
 		return this._storeModel.findById(storeId);
 	}
 

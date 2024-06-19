@@ -65,7 +65,7 @@ export class SalesService {
 
 	// #region Public Methods
 
-	public async findById(saleId: string): Promise<ISale | undefined> {
+	public async findById(saleId: string): Promise<ISale | null> {
 		return this._saleModel.findById(saleId);
 	}
 
