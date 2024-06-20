@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Param,
 	Post,
@@ -71,5 +72,14 @@ export class SalesController {
 		@Body() updateSaleDto: UpdateSaleDto,
 	): Promise<ISale> {
 		return await this._salesService.updateManual(updateSaleDto);
+	}
+
+	@Delete('/deleteManual/:saleId/userId/:userId')
+	@UsePipes(ValidationPipe)
+	public async deleteManual(
+		@Param('saleId', ValidationParamsPipe) saleId: string,
+		@Param('userId', ValidationParamsPipe) userId: string,
+	): Promise<ISale> {
+		return await this._salesService.deleteManual(saleId, userId);
 	}
 }

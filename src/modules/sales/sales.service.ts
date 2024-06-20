@@ -123,6 +123,7 @@ export class SalesService {
 					'stores.storeId': { $in: storesIds },
 				},
 			],
+			softDelete: null,
 		};
 
 		if (tableState.search) {
@@ -366,6 +367,49 @@ export class SalesService {
 			await this._notificationsService.updatedManualSale(updatedSale, user);
 
 			return updatedSale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async deleteManual(saleId: string, userId: string): Promise<ISale> {
+		try {
+			if (!saleId) {
+				throw new BadRequestException('SaleId is required!');
+			}
+
+			const sale: ISale = await this._saleModel.findOneAndUpdate(
+				{ _id: new mongoose.Types.ObjectId(saleId) },
+				{
+					$set: {
+						softDelete: {
+							isDeleted: true,
+							deletedAt: new Date(),
+							deletedBy: new mongoose.Types.ObjectId(userId),
+						},
+					},
+				},
+				{
+					new: true,
+				},
+			);
+
+			const storeIds: string[] = map(map(sale.stores, 'storeId'), (storeId) =>
+				storeId.toString(),
+			);
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+
+			await this._notificationsService.deletedSale(sale, userIdOwnerStore);
+
+			return sale;
 		} catch (error: any) {
 			this._logger.error(error);
 

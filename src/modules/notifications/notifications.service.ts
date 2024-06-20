@@ -328,5 +328,20 @@ export class NotificationsService {
 		});
 	}
 
+	public async deletedSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have deleted a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Deleted',
+			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
+	}
+
 	//#endregion
 }

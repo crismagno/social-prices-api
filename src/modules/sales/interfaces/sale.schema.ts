@@ -4,8 +4,10 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { ISoftDelete } from '../../../shared/interfaces/soft-delete.interface';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
+import { SoftDeleteSchema } from '../../../shared/schemas/soft-delete.schema';
 import UsersEnum from '../../users/interfaces/users.enum';
 import {
 	ISale,
@@ -268,6 +270,9 @@ export class Sale extends Document implements ISale {
 		},
 	})
 	paymentStatus: SalesEnum.PaymentStatus;
+
+	@Prop({ type: SoftDeleteSchema, _id: false })
+	softDelete: ISoftDelete | null;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

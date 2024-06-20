@@ -3,12 +3,16 @@ import mongoose from 'mongoose';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
 import SalesEnum from './sales.enum';
 
-export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
+export interface ISale
+	extends ICreatedAtEntity,
+		IUpdatedAtEntity,
+		ISoftDeleteEntity {
 	readonly _id: string;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
