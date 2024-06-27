@@ -28,7 +28,10 @@ import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import CreateSaleDto, { SaleStoreDto } from './interfaces/dto/createSale.dto';
+import CreateSaleDto, {
+	SaleStoreDto,
+	SaleStoreProductDto,
+} from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import {
 	ISale,
@@ -36,7 +39,7 @@ import {
 	ISaleStoreProduct,
 } from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
-import { IProductToSubtract } from './interfaces/sales.type';
+import { IProductQuantity, IProductToSubtract } from './interfaces/sales.type';
 
 @Injectable()
 export class SalesService {
@@ -359,6 +362,11 @@ export class SalesService {
 				{ new: true },
 			);
 
+			await this._updateProductsQuantityByUpdateManualSale(
+				updateSaleDto.stores,
+				sale.stores,
+			);
+
 			const userIdByStores: string = stores[0].userId.toString();
 
 			const user: IUser =
@@ -590,6 +598,134 @@ export class SalesService {
 			[],
 		);
 
+		for await (const productToSubtract of productsToSubtract) {
+			await this._productsService.updateOne(
+				new mongoose.Types.ObjectId(productToSubtract.productId),
+				{
+					$inc: {
+						quantity: -productToSubtract.quantity,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+		}
+	}
+
+	private async _updateProductsQuantityByUpdateManualSale(
+		saleStoresDto: SaleStoreDto[],
+		saleStores: ISaleStore[],
+	): Promise<void> {
+		// Format all products on previous state of sale stores to productId and quantity
+		const productsQuantityBySaleStores: IProductQuantity[] = reduce(
+			saleStores,
+			(acc: IProductQuantity[], saleStore: ISaleStore) => {
+				forEach(
+					saleStore.products,
+					(saleStoreProduct: ISaleStoreProduct): void => {
+						const findProductToSubtract: IProductQuantity | undefined = find(
+							acc,
+							{
+								productId: saleStoreProduct.productId,
+							},
+						);
+
+						if (findProductToSubtract) {
+							findProductToSubtract.quantity += saleStoreProduct.quantity;
+						} else {
+							acc.push({
+								productId: saleStoreProduct.productId,
+								quantity: saleStoreProduct.quantity,
+							});
+						}
+					},
+				);
+
+				return acc;
+			},
+			[],
+		);
+
+		// Format all products on sale stores dto to productId and quantity
+		const productsQuantityBySaleStoresDto: IProductQuantity[] = reduce(
+			saleStoresDto,
+			(acc: IProductQuantity[], saleStoreDto: SaleStoreDto) => {
+				forEach(
+					saleStoreDto.products,
+					(saleStoreProductDto: SaleStoreProductDto): void => {
+						const findProductToSubtract: IProductQuantity | undefined = find(
+							acc,
+							{
+								productId: saleStoreProductDto.productId,
+							},
+						);
+
+						if (findProductToSubtract) {
+							findProductToSubtract.quantity += saleStoreProductDto.quantity;
+						} else {
+							acc.push({
+								productId: saleStoreProductDto.productId,
+								quantity: saleStoreProductDto.quantity,
+							});
+						}
+					},
+				);
+
+				return acc;
+			},
+			[],
+		);
+
+		// Make a logic to put a quantity by product and to increment or decrement based on state of new quantity
+		const productsToSubtract: IProductToSubtract[] = reduce(
+			productsQuantityBySaleStoresDto,
+			(
+				acc: IProductToSubtract[],
+				productQuantityBySaleStoreDto: IProductQuantity,
+			) => {
+				const findProductQuantityBySaleStores: IProductQuantity | undefined =
+					find(productsQuantityBySaleStores, {
+						productId: productQuantityBySaleStoreDto.productId,
+					});
+
+				if (findProductQuantityBySaleStores) {
+					acc.push({
+						productId: findProductQuantityBySaleStores.productId,
+						quantity:
+							productQuantityBySaleStoreDto.quantity -
+							findProductQuantityBySaleStores.quantity,
+					});
+				} else {
+					acc.push({
+						productId: productQuantityBySaleStoreDto.productId,
+						quantity: productQuantityBySaleStoreDto.quantity,
+					});
+				}
+
+				return acc;
+			},
+			[],
+		);
+
+		// Add new products to subtract when product was removed from sale stores
+		productsQuantityBySaleStores.forEach(
+			(productQuantityBySaleStores: IProductQuantity) => {
+				const productToSubtract: IProductToSubtract | undefined = find(
+					productsToSubtract,
+					{ productId: productQuantityBySaleStores.productId },
+				);
+
+				if (!productToSubtract) {
+					productsToSubtract.push({
+						productId: productQuantityBySaleStores.productId,
+						quantity: -productQuantityBySaleStores.quantity,
+					});
+				}
+			},
+		);
+
+		// Increment or decrement quantity products
 		for await (const productToSubtract of productsToSubtract) {
 			await this._productsService.updateOne(
 				new mongoose.Types.ObjectId(productToSubtract.productId),
