@@ -125,6 +125,7 @@ export class CodesService {
 				{ new: true },
 			);
 		}
+
 		const now: Date = new Date();
 
 		const newCode: ICode = new this._codeModel({

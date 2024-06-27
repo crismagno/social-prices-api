@@ -84,7 +84,7 @@ export class SalesService {
 	}
 
 	public async findByIdOrFail(saleId: string): Promise<ISale> {
-		const sale: ISale | undefined = await this.findById(saleId);
+		const sale: ISale | null = await this.findById(saleId);
 
 		if (!sale) {
 			throw new NotFoundException('Sale not found!');
@@ -396,8 +396,8 @@ export class SalesService {
 				},
 			);
 
-			const storeIds: string[] = map(map(sale.stores, 'storeId'), (storeId) =>
-				storeId.toString(),
+			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+				saleStore.storeId.toString(),
 			);
 
 			const stores: IStore[] = await this._storesService.findByIds(storeIds);

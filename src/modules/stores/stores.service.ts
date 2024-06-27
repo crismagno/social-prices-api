@@ -56,7 +56,7 @@ export class StoresService {
 	}
 
 	public async findByIdOrFail(storeId: string): Promise<IStore> {
-		const store: IStore | undefined = await this.findById(storeId);
+		const store: IStore | null = await this.findById(storeId);
 
 		if (!store) {
 			throw new NotFoundException('Store not found!');

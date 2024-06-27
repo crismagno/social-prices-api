@@ -55,7 +55,7 @@ export class CategoriesService {
 	}
 
 	public async findByIdOrFail(categoryId: string): Promise<ICategory> {
-		const category: ICategory | undefined = await this.findById(categoryId);
+		const category: ICategory | null = await this.findById(categoryId);
 
 		if (!category) {
 			throw new NotFoundException('Category not found!');

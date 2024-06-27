@@ -58,7 +58,7 @@ export class ProductsService {
 	}
 
 	public async findByIdOrFail(productId: string): Promise<IProduct> {
-		const product: IProduct | undefined = await this.findById(productId);
+		const product: IProduct | null = await this.findById(productId);
 
 		if (!product) {
 			throw new NotFoundException('Product not found!');

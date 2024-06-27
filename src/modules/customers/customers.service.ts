@@ -54,7 +54,7 @@ export class CustomersService {
 	}
 
 	public async findByIdOrFail(customerId: string): Promise<ICustomer> {
-		const customer: ICustomer | undefined = await this.findById(customerId);
+		const customer: ICustomer | null = await this.findById(customerId);
 
 		if (!customer) {
 			throw new NotFoundException('Customer not found!');
@@ -83,12 +83,12 @@ export class CustomersService {
 		ownerUserId: string,
 		userId: string,
 	): Promise<ICustomer> {
-		const customers: ICustomer = await this._customerModel.findOne({
+		const customer: ICustomer = await this._customerModel.findOne({
 			ownerUserId,
 			userId,
 		});
 
-		return customers;
+		return customer;
 	}
 
 	public async findByOwnerUserIdAndProperties({
@@ -96,13 +96,13 @@ export class CustomersService {
 		name,
 		ownerUserId,
 	}: IFindByOwnerUserIdAndPropertiesParams): Promise<ICustomer> {
-		const customers: ICustomer = await this._customerModel.findOne({
+		const customer: ICustomer = await this._customerModel.findOne({
 			ownerUserId,
 			email,
 			name,
 		});
 
-		return customers;
+		return customer;
 	}
 
 	public async findByOwnerUserTableState(
