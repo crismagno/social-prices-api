@@ -49,12 +49,16 @@ export class ProductsService {
 
 	// #region Public Methods
 
-	public async findById(productId: string): Promise<IProduct | undefined> {
+	public async findById(productId: string): Promise<IProduct | null> {
 		return this._productModel.findById(productId);
 	}
 
+	public async findByIds(productIds: string[]): Promise<IProduct[]> {
+		return this._productModel.find({ _id: { $in: productIds } });
+	}
+
 	public async findByIdOrFail(productId: string): Promise<IProduct> {
-		const product: IProduct | undefined = await this.findById(productId);
+		const product: IProduct | null = await this.findById(productId);
 
 		if (!product) {
 			throw new NotFoundException('Product not found!');
@@ -248,7 +252,7 @@ export class ProductsService {
 		filter?: FilterQuery<Product>,
 		update?: UpdateWithAggregationPipeline | UpdateQuery<IProduct>,
 		options?: QueryOptions<IProduct>,
-	): Promise<void> {
+	): Promise<IProduct | null> {
 		return this._productModel.findOneAndUpdate(filter, update, options);
 	}
 

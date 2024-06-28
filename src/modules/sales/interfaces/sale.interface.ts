@@ -3,14 +3,19 @@ import mongoose from 'mongoose';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
 import SalesEnum from './sales.enum';
 
-export interface ISale extends ICreatedAtEntity, IUpdatedAtEntity {
+export interface ISale
+	extends ICreatedAtEntity,
+		IUpdatedAtEntity,
+		ISoftDeleteEntity {
 	readonly _id: string;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
+	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
 	number: number;
 	type: SalesEnum.Type;
@@ -35,13 +40,13 @@ export interface ISaleStore {
 export interface ISaleTotals {
 	subtotalAmount: number;
 	discount: ISaleTotalsDiscount | null;
-	taxAmount: number | null;
-	shippingAmount: number | null;
+	tax: ISaleAmountNote | null;
+	shipping: ISaleAmountNote | null;
 	totalFinalAmount: number;
 }
 
 export interface ISaleTotalsDiscount {
-	normal: number;
+	normal: ISaleAmountNote;
 }
 
 export interface ISalePayment {
@@ -81,4 +86,9 @@ export interface ISaleBuyer {
 	gender: UsersEnum.Gender | null;
 	phoneNumber: IPhoneNumber | null;
 	address: IAddress | null;
+}
+
+export interface ISaleAmountNote {
+	amount: number;
+	note: string | null;
 }

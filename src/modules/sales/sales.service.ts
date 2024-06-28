@@ -28,14 +28,18 @@ import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import CreateSaleDto, { SaleStoreDto } from './interfaces/dto/createSale.dto';
+import CreateSaleDto, {
+	SaleStoreDto,
+	SaleStoreProductDto,
+} from './interfaces/dto/createSale.dto';
+import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import {
 	ISale,
 	ISaleStore,
 	ISaleStoreProduct,
 } from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
-import { IProductToSubtract } from './interfaces/sales.type';
+import { IProductQuantity, IProductToSubtract } from './interfaces/sales.type';
 
 @Injectable()
 export class SalesService {
@@ -64,7 +68,7 @@ export class SalesService {
 
 	// #region Public Methods
 
-	public async findById(saleId: string): Promise<ISale | undefined> {
+	public async findById(saleId: string): Promise<ISale | null> {
 		return this._saleModel.findById(saleId);
 	}
 
@@ -83,7 +87,7 @@ export class SalesService {
 	}
 
 	public async findByIdOrFail(saleId: string): Promise<ISale> {
-		const sale: ISale | undefined = await this.findById(saleId);
+		const sale: ISale | null = await this.findById(saleId);
 
 		if (!sale) {
 			throw new NotFoundException('Sale not found!');
@@ -122,6 +126,7 @@ export class SalesService {
 					'stores.storeId': { $in: storesIds },
 				},
 			],
+			softDelete: null,
 		};
 
 		if (tableState.search) {
@@ -204,7 +209,7 @@ export class SalesService {
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
 		try {
 			if (!createSaleDto.createdByUserId) {
-				throw new BadRequestException('Create user required!');
+				throw new BadRequestException('user which created sale is required!');
 			}
 
 			const saleNumber: number =
@@ -281,6 +286,138 @@ export class SalesService {
 			await this._notificationsService.createdManualSale(newSale, user);
 
 			return newSale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async updateManual(updateSaleDto: UpdateSaleDto): Promise<ISale> {
+		try {
+			if (!updateSaleDto.updatedByUserId) {
+				throw new BadRequestException('User which updated sale is required!');
+			}
+
+			const sale: ISale = await this.findByIdOrFail(updateSaleDto.saleId);
+
+			const storeIds: string[] = map(updateSaleDto.stores, 'storeId');
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const saleStores: ISaleStore[] =
+				this._parseCreateSaleStoresDtoToSaleStores(
+					updateSaleDto.stores,
+					sale.number,
+				);
+
+			const now: Date = new Date();
+
+			const saleToUpdate = {
+				buyer: updateSaleDto.buyer
+					? {
+							address: this._parseCreateAddressDtoToAddress(
+								updateSaleDto.buyer.address,
+							),
+							birthDate: updateSaleDto.buyer.birthDate,
+							email: updateSaleDto.buyer.email,
+							gender: updateSaleDto.buyer.gender,
+							name: updateSaleDto.buyer.name,
+							phoneNumber: updateSaleDto.buyer.phoneNumber,
+					  }
+					: null,
+				updatedAt: now,
+				updatedByUserId: updateSaleDto.updatedByUserId as any,
+				header: {
+					billing: updateSaleDto.header.billing
+						? {
+								address: this._parseCreateAddressDtoToAddress(
+									updateSaleDto.header.billing.address,
+								),
+						  }
+						: null,
+					shipping: updateSaleDto.header.shipping
+						? {
+								address: this._parseCreateAddressDtoToAddress(
+									updateSaleDto.header.shipping.address,
+								),
+						  }
+						: null,
+					deliveryType: updateSaleDto.header.deliveryType,
+				},
+				note: updateSaleDto.note,
+				payments: updateSaleDto.payments,
+				status: updateSaleDto.status,
+				stores: saleStores,
+				totals: updateSaleDto.totals,
+				type: updateSaleDto.type,
+				paymentStatus: updateSaleDto.paymentStatus,
+			};
+
+			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
+				updateSaleDto.saleId,
+				{
+					$set: saleToUpdate,
+				},
+				{ new: true },
+			);
+
+			await this._updateProductsQuantityByUpdateManualSale(
+				updateSaleDto.stores,
+				sale.stores,
+			);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const user: IUser =
+				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+
+			await this._notificationsService.updatedManualSale(updatedSale, user);
+
+			return updatedSale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async deleteManual(saleId: string, userId: string): Promise<ISale> {
+		try {
+			if (!saleId) {
+				throw new BadRequestException('SaleId is required!');
+			}
+
+			const sale: ISale = await this._saleModel.findOneAndUpdate(
+				{ _id: new mongoose.Types.ObjectId(saleId) },
+				{
+					$set: {
+						softDelete: {
+							isDeleted: true,
+							deletedAt: new Date(),
+							deletedBy: new mongoose.Types.ObjectId(userId),
+						},
+					},
+				},
+				{
+					new: true,
+				},
+			);
+
+			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+				saleStore.storeId.toString(),
+			);
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+
+			await this._notificationsService.deletedSale(sale, userIdOwnerStore);
+
+			return sale;
 		} catch (error: any) {
 			this._logger.error(error);
 
@@ -461,6 +598,134 @@ export class SalesService {
 			[],
 		);
 
+		for await (const productToSubtract of productsToSubtract) {
+			await this._productsService.updateOne(
+				new mongoose.Types.ObjectId(productToSubtract.productId),
+				{
+					$inc: {
+						quantity: -productToSubtract.quantity,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+		}
+	}
+
+	private async _updateProductsQuantityByUpdateManualSale(
+		saleStoresDto: SaleStoreDto[],
+		saleStores: ISaleStore[],
+	): Promise<void> {
+		// Format all products on previous state of sale stores to productId and quantity
+		const productsQuantityBySaleStores: IProductQuantity[] = reduce(
+			saleStores,
+			(acc: IProductQuantity[], saleStore: ISaleStore) => {
+				forEach(
+					saleStore.products,
+					(saleStoreProduct: ISaleStoreProduct): void => {
+						const findProductToSubtract: IProductQuantity | undefined = find(
+							acc,
+							{
+								productId: saleStoreProduct.productId,
+							},
+						);
+
+						if (findProductToSubtract) {
+							findProductToSubtract.quantity += saleStoreProduct.quantity;
+						} else {
+							acc.push({
+								productId: saleStoreProduct.productId,
+								quantity: saleStoreProduct.quantity,
+							});
+						}
+					},
+				);
+
+				return acc;
+			},
+			[],
+		);
+
+		// Format all products on sale stores dto to productId and quantity
+		const productsQuantityBySaleStoresDto: IProductQuantity[] = reduce(
+			saleStoresDto,
+			(acc: IProductQuantity[], saleStoreDto: SaleStoreDto) => {
+				forEach(
+					saleStoreDto.products,
+					(saleStoreProductDto: SaleStoreProductDto): void => {
+						const findProductToSubtract: IProductQuantity | undefined = find(
+							acc,
+							{
+								productId: saleStoreProductDto.productId,
+							},
+						);
+
+						if (findProductToSubtract) {
+							findProductToSubtract.quantity += saleStoreProductDto.quantity;
+						} else {
+							acc.push({
+								productId: saleStoreProductDto.productId,
+								quantity: saleStoreProductDto.quantity,
+							});
+						}
+					},
+				);
+
+				return acc;
+			},
+			[],
+		);
+
+		// Make a logic to put a quantity by product and to increment or decrement based on state of new quantity
+		const productsToSubtract: IProductToSubtract[] = reduce(
+			productsQuantityBySaleStoresDto,
+			(
+				acc: IProductToSubtract[],
+				productQuantityBySaleStoreDto: IProductQuantity,
+			) => {
+				const findProductQuantityBySaleStores: IProductQuantity | undefined =
+					find(productsQuantityBySaleStores, {
+						productId: productQuantityBySaleStoreDto.productId,
+					});
+
+				if (findProductQuantityBySaleStores) {
+					acc.push({
+						productId: findProductQuantityBySaleStores.productId,
+						quantity:
+							productQuantityBySaleStoreDto.quantity -
+							findProductQuantityBySaleStores.quantity,
+					});
+				} else {
+					acc.push({
+						productId: productQuantityBySaleStoreDto.productId,
+						quantity: productQuantityBySaleStoreDto.quantity,
+					});
+				}
+
+				return acc;
+			},
+			[],
+		);
+
+		// Add new products to subtract when product was removed from sale stores
+		productsQuantityBySaleStores.forEach(
+			(productQuantityBySaleStores: IProductQuantity) => {
+				const productToSubtract: IProductToSubtract | undefined = find(
+					productsToSubtract,
+					{ productId: productQuantityBySaleStores.productId },
+				);
+
+				if (!productToSubtract) {
+					productsToSubtract.push({
+						productId: productQuantityBySaleStores.productId,
+						quantity: -productQuantityBySaleStores.quantity,
+					});
+				}
+			},
+		);
+
+		// Increment or decrement quantity products
 		for await (const productToSubtract of productsToSubtract) {
 			await this._productsService.updateOne(
 				new mongoose.Types.ObjectId(productToSubtract.productId),

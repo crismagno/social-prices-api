@@ -48,9 +48,7 @@ export class NotificationsService {
 
 	//#region Public Methods
 
-	public async findById(
-		notificationId: string,
-	): Promise<INotification | undefined> {
+	public async findById(notificationId: string): Promise<INotification | null> {
 		return this._notificationModel.findById(notificationId);
 	}
 
@@ -311,6 +309,36 @@ export class NotificationsService {
 			subtitle: null,
 			title: 'Sale Created',
 			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
+	public async updatedManualSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have updated a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Updated',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
+	public async deletedSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have deleted a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Deleted',
+			type: NotificationsEnum.Type.WARNING,
 			userId,
 		});
 	}

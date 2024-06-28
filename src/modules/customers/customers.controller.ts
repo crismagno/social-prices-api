@@ -107,7 +107,7 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	public async findById(
 		@Param('customerId', ValidationParamsPipe) customerId: string,
-	): Promise<ICustomer> {
+	): Promise<ICustomer | null> {
 		return await this._customersService.findById(customerId);
 	}
 }

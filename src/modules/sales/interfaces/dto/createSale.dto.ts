@@ -16,6 +16,15 @@ import { CreatePhoneNumberDto } from '../../../../shared/dtos/CreatePhoneNumber.
 import UsersEnum from '../../../users/interfaces/users.enum';
 import SalesEnum from '../sales.enum';
 
+export class SaleAmountNoteDto {
+	@IsNumber()
+	amount: number;
+
+	@IsString()
+	@IsOptional()
+	note: string | null;
+}
+
 export class SaleStoreProductDto {
 	@IsString()
 	@IsNotEmpty()
@@ -37,8 +46,8 @@ export class SaleStoreProductDto {
 }
 
 export class SaleTotalsDiscountDto {
-	@IsNumber()
-	normal: number;
+	@Type(() => SaleAmountNoteDto)
+	normal: SaleAmountNoteDto;
 }
 
 export class SalePaymentDto {
@@ -64,12 +73,12 @@ export class SaleTotalsDto {
 	discount: SaleTotalsDiscountDto | null;
 
 	@IsOptional()
-	@IsNumber()
-	taxAmount: number | null;
+	@Type(() => SaleAmountNoteDto)
+	tax: SaleAmountNoteDto | null;
 
 	@IsOptional()
-	@IsNumber()
-	shippingAmount: number | null;
+	@Type(() => SaleAmountNoteDto)
+	shipping: SaleAmountNoteDto | null;
 
 	@IsNumber()
 	totalFinalAmount: number;

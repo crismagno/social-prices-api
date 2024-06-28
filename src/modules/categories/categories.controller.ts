@@ -65,7 +65,7 @@ export class CategoriesController {
 	@Get('/:categoryId')
 	public async findById(
 		@Param('categoryId', ValidationParamsPipe) categoryId: string,
-	): Promise<ICategory> {
+	): Promise<ICategory | null> {
 		return await this._categoriesService.findById(categoryId);
 	}
 
