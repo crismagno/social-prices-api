@@ -188,16 +188,31 @@ export class SalesService {
 			.populate({
 				path: 'stores.customerId',
 				model: 'Customer',
+			})
+			.populate({
+				path: 'stores.products.productId',
+				model: 'Product',
 			});
 
 		sales = JSON.parse(JSON.stringify(sales));
 
 		sales.forEach((sale: ISale) => {
 			sale.stores = JSON.parse(JSON.stringify(sale.stores)).map(
-				(store: ISaleStore) => ({
-					...store,
-					customer: store.customerId,
-				}),
+				(store: ISaleStore) => {
+					store.products = JSON.parse(JSON.stringify(store.products)).map(
+						(product: ISaleStoreProduct) => {
+							return {
+								...product,
+								product: product.productId,
+							};
+						},
+					);
+
+					return {
+						...store,
+						customer: store.customerId,
+					};
+				},
 			);
 		});
 

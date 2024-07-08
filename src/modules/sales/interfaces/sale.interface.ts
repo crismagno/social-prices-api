@@ -6,6 +6,7 @@ import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
+import { IProduct } from '../../products/interfaces/product.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
 import SalesEnum from './sales.enum';
 
@@ -57,6 +58,7 @@ export interface ISalePayment {
 }
 
 export interface ISaleStoreProduct {
+	product?: IProduct;
 	productId: string;
 	price: number;
 	quantity: number;
