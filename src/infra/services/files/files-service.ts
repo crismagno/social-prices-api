@@ -1,11 +1,14 @@
 import * as AWS from 'aws-sdk';
 
 // file: aws-s3 > src > app.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 
 import { AmazonFilesService } from './amazon-files-service';
-import { FilesLocalService } from './files-local-service';
 import { IFilesServiceFactory } from './files-service-factory.interface';
+import { LocalFilesService } from './local-files-service';
 
 @Injectable()
 export class FilesService {
@@ -27,7 +30,7 @@ export class FilesService {
 		);
 
 		if (useLocalFiles) {
-			this._filesServiceFactory = new FilesLocalService();
+			this._filesServiceFactory = new LocalFilesService();
 		} else {
 			this._filesServiceFactory = new AmazonFilesService();
 		}
