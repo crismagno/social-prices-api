@@ -10,7 +10,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { FilesService } from '../../infra/services/files/files-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -38,7 +38,7 @@ export class StoresService {
 		@InjectModel(schemasName.store) private readonly _storeModel: Model<IStore>,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _usersService: UsersService,
-		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _filesService: FilesService,
 	) {
 		this._logger = new Logger(StoresService.name);
 	}
@@ -173,7 +173,7 @@ export class StoresService {
 
 		if (file) {
 			const responseFile: ManagedUpload.SendData =
-				await this._amazonFilesService.uploadFile(file);
+				await this._filesService.uploadFile(file);
 
 			logo = responseFile.Key;
 		}
@@ -275,10 +275,10 @@ export class StoresService {
 		let responseFile: ManagedUpload.SendData | null = null;
 
 		if (file) {
-			responseFile = await this._amazonFilesService.uploadFile(file);
+			responseFile = await this._filesService.uploadFile(file);
 			$set.logo = responseFile.Key;
 
-			await this._amazonFilesService.deleteFile(store.logo);
+			await this._filesService.deleteFile(store.logo);
 		}
 
 		const updatedStore: IStore = await this._storeModel.findOneAndUpdate(

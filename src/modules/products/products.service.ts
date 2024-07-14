@@ -10,7 +10,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { FilesService } from '../../infra/services/files/files-service';
 import { createUniqueSuffix } from '../../shared/utils/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
@@ -39,7 +39,7 @@ export class ProductsService {
 		@InjectModel(schemasName.product)
 		private readonly _productModel: Model<Product>,
 		private readonly _usersService: UsersService,
-		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
 	) {
 		this._logger = new Logger(ProductsService.name);
@@ -136,7 +136,7 @@ export class ProductsService {
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
 		const filesUrl: string[] =
-			await this._amazonFilesService.getUploadFilesUrl(files);
+			await this._filesService.getUploadFilesUrl(files);
 
 		if (typeof createProductDto.storeIds === 'string') {
 			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
@@ -192,9 +192,7 @@ export class ProductsService {
 			);
 
 			if (updateProductDto.deletedFilesUrl.length) {
-				await this._amazonFilesService.deleteFiles(
-					updateProductDto.deletedFilesUrl,
-				);
+				await this._filesService.deleteFiles(updateProductDto.deletedFilesUrl);
 			}
 		}
 
@@ -209,7 +207,7 @@ export class ProductsService {
 		}
 
 		const filesUrl: string[] =
-			await this._amazonFilesService.getUploadFilesUrl(files);
+			await this._filesService.getUploadFilesUrl(files);
 
 		product.filesUrl = product.filesUrl.filter(
 			(fileUrl: string) =>

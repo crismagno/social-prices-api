@@ -16,7 +16,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { FilesService } from '../../infra/services/files/files-service';
 import { createUsernameByEmail } from '../../shared/utils/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
@@ -50,7 +50,7 @@ export class UsersService {
 		@Inject(forwardRef(() => NotificationsService))
 		private readonly _notificationsService: NotificationsService,
 		private readonly _codesService: CodesService,
-		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _filesService: FilesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -321,9 +321,9 @@ export class UsersService {
 		const user: IUser = await this.findOneByUserIdOrFail(userId);
 
 		const response: ManagedUpload.SendData =
-			await this._amazonFilesService.uploadFile(file);
+			await this._filesService.uploadFile(file);
 
-		await this._amazonFilesService.deleteFile(user.avatar);
+		await this._filesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -344,7 +344,7 @@ export class UsersService {
 	public async removeAvatar(userId: string): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByUserIdOrFail(userId);
 
-		await this._amazonFilesService.deleteFile(user.avatar);
+		await this._filesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),

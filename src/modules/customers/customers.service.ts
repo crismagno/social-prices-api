@@ -5,7 +5,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { FilesService } from '../../infra/services/files/files-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -35,7 +35,7 @@ export class CustomersService {
 		@InjectModel(schemasName.customer)
 		private readonly _customerModel: Model<Customer>,
 		private readonly _usersService: UsersService,
-		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
 	) {
 		this._logger = new Logger(CustomersService.name);
@@ -156,7 +156,7 @@ export class CustomersService {
 		let responseFile: ManagedUpload.SendData | null = null;
 
 		if (file) {
-			responseFile = await this._amazonFilesService.uploadFile(file);
+			responseFile = await this._filesService.uploadFile(file);
 		}
 
 		if (typeof createCustomerDto.addresses === 'string') {
@@ -230,12 +230,12 @@ export class CustomersService {
 		let responseFile: ManagedUpload.SendData | null = null;
 
 		if (file) {
-			responseFile = await this._amazonFilesService.uploadFile(file);
+			responseFile = await this._filesService.uploadFile(file);
 
 			$set.avatar = responseFile.Key;
 
 			if (customer.avatar) {
-				await this._amazonFilesService.deleteFile(customer.avatar);
+				await this._filesService.deleteFile(customer.avatar);
 			}
 		}
 
