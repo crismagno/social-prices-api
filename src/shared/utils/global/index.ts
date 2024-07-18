@@ -1,5 +1,7 @@
 import { extname } from 'path';
 
+import AppEnum from '../../enums/app.enum';
+
 export const isValidEmail = (email: string): boolean => {
 	const regexEmail: RegExp =
 		/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -7,6 +9,10 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 export const makeRandomCode = (lengthCode: number = 6): string => {
+	if (process.env.ENVIRONMENT === AppEnum.Environment.DEVELOPMENT) {
+		return 'TEST';
+	}
+
 	let result: string = '';
 
 	const characters: string = `${process.env.CHARACTERS}`;
