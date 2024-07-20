@@ -8,6 +8,7 @@ import { NotificationSchema } from '../../../modules/notifications/interfaces/no
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
 import StoreSchema from '../../../modules/stores/interfaces/store.schema';
+import { TagSchema } from '../../../modules/tags/interfaces/tags.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
 
 export const schemasName = {
@@ -20,6 +21,7 @@ export const schemasName = {
 	notification: 'Notification',
 	sale: 'Sale',
 	counter: 'Counter',
+	tag: 'Tag',
 };
 
 export const schemasModule = {
@@ -49,5 +51,8 @@ export const schemasModule = {
 	]),
 	counter: MongooseModule.forFeature([
 		{ name: schemasName.counter, schema: CounterSchema },
+	]),
+	tag: MongooseModule.forFeature([
+		{ name: schemasName.tag, schema: TagSchema },
 	]),
 };
