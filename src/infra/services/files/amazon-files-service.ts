@@ -45,7 +45,7 @@ export class AmazonFilesService implements IFilesServiceFactory {
 		);
 	}
 
-	public async deleteFile(filename: string): Promise<any> {
+	public async deleteFile(filename: string): Promise<any | null> {
 		if (!filename) return null;
 
 		return this._s3delete(this._awsS3Bucket, filename);

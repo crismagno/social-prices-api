@@ -1,10 +1,7 @@
 import * as AWS from 'aws-sdk';
 
 // file: aws-s3 > src > app.service.ts
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { newFileOriginalname } from '../../../shared/utils/global';
 import { IFilesServiceFactory } from './files-service-factory.interface';
@@ -64,7 +61,7 @@ export class LocalFilesService implements IFilesServiceFactory {
 		});
 	}
 
-	public async deleteFile(filename: string): Promise<any> {
+	public async deleteFile(filename: string): Promise<any | null> {
 		if (!filename) return null;
 
 		return new Promise((resolve) => {
