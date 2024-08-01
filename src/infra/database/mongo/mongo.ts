@@ -2,8 +2,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 export const MongooseModuleForRoot = () =>
 	MongooseModule.forRoot(process.env.MONGO_URI, {
-		// useNewUrlParser: true,
+		// @ts-ignore comment
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
 		// useCreateIndex: true,
-		// useUnifiedTopology: true,
 		// useFindAndModify: true,
 	});

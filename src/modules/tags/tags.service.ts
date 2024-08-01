@@ -126,12 +126,12 @@ export class TagsService {
 	}
 
 	public async findByType(
-		type: TagsEnum.Type,
 		userId: string,
+		type: TagsEnum.Type,
 	): Promise<ITag[]> {
 		return this._tagModel.find({
-			type,
 			userId,
+			type,
 		});
 	}
 
