@@ -1,7 +1,7 @@
 import multer, { diskStorage } from 'multer';
 import { extname } from 'path';
 
-import { createUniqueSuffix } from './';
+import { createUniqueSuffix } from '../global/global';
 
 export const fileInterceptorOptions = (
 	destination: string = './uploads',

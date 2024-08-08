@@ -1,19 +1,16 @@
 import * as moment from 'moment';
-import {
-  Model,
-  Types,
-} from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
+	BadRequestException,
+	Injectable,
+	Logger,
+	NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { makeRandomCode } from '../../shared/utils/global';
+import { makeRandomCode } from '../../shared/utils/global/global';
 import { ICode } from './interfaces/code.interface';
 import CodesEnum from './interfaces/codes.enum';
 

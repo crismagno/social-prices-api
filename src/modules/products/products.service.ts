@@ -11,7 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { FilesService } from '../../infra/services/files/files-service';
-import { createUniqueSuffix } from '../../shared/utils/global';
+import { createUniqueSuffix } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,

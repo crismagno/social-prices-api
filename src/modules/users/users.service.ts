@@ -17,7 +17,7 @@ import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
-import { createUsernameByEmail } from '../../shared/utils/global';
+import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';

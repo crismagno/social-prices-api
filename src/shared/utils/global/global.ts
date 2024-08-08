@@ -1,6 +1,7 @@
 import { extname } from 'path';
 
 import AppEnum from '../../enums/app.enum';
+import GlobalEnum from './global-enum';
 
 export const isValidEmail = (email: string): boolean => {
 	const regexEmail: RegExp =
@@ -10,7 +11,7 @@ export const isValidEmail = (email: string): boolean => {
 
 export const makeRandomCode = (lengthCode: number = 6): string => {
 	if (process.env.ENVIRONMENT === AppEnum.Environment.DEVELOPMENT) {
-		return 'TEST';
+		return GlobalEnum.RandomCodeTest;
 	}
 
 	let result: string = '';
