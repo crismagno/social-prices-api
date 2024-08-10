@@ -36,4 +36,6 @@ export default class UpdateProductDto {
 	deletedFilesUrl: string[];
 
 	categoriesIds: string[];
+
+	tagsIds: string[];
 }

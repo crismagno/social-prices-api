@@ -47,6 +47,9 @@ export class Product extends Document implements IProduct {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	tagsIds: mongoose.Schema.Types.ObjectId[];
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

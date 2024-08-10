@@ -113,6 +113,10 @@ export class ProductsService {
 			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
 		}
 
+		if (tableState?.filters?.tagsIds?.length) {
+			filter.tagsIds = { $in: tableState.filters.tagsIds };
+		}
+
 		const response: ITableStateResponse<IProduct[]> = {
 			data: [],
 			total: 0,
@@ -148,6 +152,10 @@ export class ProductsService {
 			);
 		}
 
+		if (typeof createProductDto.tagsIds === 'string') {
+			createProductDto.tagsIds = JSON.parse(createProductDto.tagsIds);
+		}
+
 		const now: Date = new Date();
 
 		const product = new this._productModel({
@@ -160,6 +168,7 @@ export class ProductsService {
 			details: createProductDto.details,
 			storeIds: createProductDto.storeIds,
 			categoriesIds: createProductDto.categoriesIds,
+			tagsIds: createProductDto.tagsIds,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
 			barCode: createProductDto.barCode ?? createUniqueSuffix(),
@@ -206,6 +215,10 @@ export class ProductsService {
 			);
 		}
 
+		if (typeof updateProductDto.tagsIds === 'string') {
+			updateProductDto.tagsIds = JSON.parse(updateProductDto.tagsIds);
+		}
+
 		const filesUrl: string[] =
 			await this._filesService.getUploadFilesUrl(files);
 
@@ -233,6 +246,7 @@ export class ProductsService {
 					details: updateProductDto.details,
 					storeIds: updateProductDto.storeIds,
 					categoriesIds: updateProductDto.categoriesIds,
+					tagsIds: updateProductDto.tagsIds,
 					barCode: updateProductDto.barCode ?? createUniqueSuffix(),
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
