@@ -274,6 +274,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: SoftDeleteSchema, _id: false })
 	softDelete: ISoftDelete | null;
 
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	tagsIds: mongoose.Schema.Types.ObjectId[];
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

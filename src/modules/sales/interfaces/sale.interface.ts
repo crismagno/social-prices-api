@@ -27,6 +27,7 @@ export interface ISale
 	payments: ISalePayment[];
 	stores: ISaleStore[];
 	paymentStatus: SalesEnum.PaymentStatus;
+	tagsIds: mongoose.Schema.Types.ObjectId[];
 }
 
 export interface ISaleStore {

@@ -176,6 +176,10 @@ export class SalesService {
 			filter.createdAt = { $gte: startDate, $lte: endDate };
 		}
 
+		if (tableState?.filters?.tagsIds?.length) {
+			filter.tagsIds = { $in: tableState.filters.tagsIds };
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
@@ -285,6 +289,7 @@ export class SalesService {
 				totals: createSaleDto.totals,
 				type: createSaleDto.type,
 				paymentStatus: createSaleDto.paymentStatus,
+				tagsIds: createSaleDto.tagsIds,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -367,6 +372,7 @@ export class SalesService {
 				totals: updateSaleDto.totals,
 				type: updateSaleDto.type,
 				paymentStatus: updateSaleDto.paymentStatus,
+				tagsIds: updateSaleDto.tagsIds,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(

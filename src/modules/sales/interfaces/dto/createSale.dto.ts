@@ -199,4 +199,8 @@ export default class CreateSaleDto {
 
 	@IsBoolean()
 	isCreateQuote: boolean;
+
+	@IsArray()
+	@Type(() => String)
+	tagsIds: string[];
 }

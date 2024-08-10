@@ -59,4 +59,8 @@ export default class UpdateSaleDto {
 	@Type(() => SaleStoreDto)
 	@ValidateNested({ each: true })
 	stores: SaleStoreDto[];
+
+	@IsArray()
+	@Type(() => String)
+	tagsIds: string[];
 }
