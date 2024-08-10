@@ -18,4 +18,5 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	gender: UsersEnum.Gender | null;
 	about: string | null;
 	phoneNumbers: IPhoneNumber[];
+	tagsIds: mongoose.Schema.Types.ObjectId[];
 }

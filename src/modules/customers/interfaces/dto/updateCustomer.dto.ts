@@ -30,4 +30,6 @@ export default class UpdateCustomerDto {
 	addresses: any[];
 
 	phoneNumbers: any[];
+
+	tagsIds: string[];
 }

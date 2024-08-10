@@ -521,6 +521,7 @@ export class SalesService {
 						name: createSaleDto.buyer.name,
 						phoneNumbers: [createSaleDto.buyer.phoneNumber],
 						userId: buyerUserId,
+						tagsIds: [],
 					};
 
 					const newCustomer: ICustomer = await this._customersService.create(

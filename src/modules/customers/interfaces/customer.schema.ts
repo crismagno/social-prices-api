@@ -1,10 +1,6 @@
 import mongoose, { Document } from 'mongoose';
 
-import {
-  Prop,
-  Schema,
-  SchemaFactory,
-} from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
@@ -52,6 +48,9 @@ export class Customer extends Document implements ICustomer {
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	ownerUserId: mongoose.Schema.Types.ObjectId;
+
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	tagsIds: mongoose.Schema.Types.ObjectId[];
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

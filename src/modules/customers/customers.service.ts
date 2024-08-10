@@ -130,6 +130,10 @@ export class CustomersService {
 			filter.gender = { $in: tableState.filters.gender as UsersEnum.Gender[] };
 		}
 
+		if (tableState?.filters?.tagsIds?.length) {
+			filter.tagsIds = { $in: tableState.filters.tagsIds };
+		}
+
 		const response: ITableStateResponse<ICustomer[]> = {
 			data: [],
 			total: 0,
@@ -169,6 +173,10 @@ export class CustomersService {
 			);
 		}
 
+		if (typeof createCustomerDto.tagsIds === 'string') {
+			createCustomerDto.tagsIds = JSON.parse(createCustomerDto.tagsIds);
+		}
+
 		const now: Date = new Date();
 
 		const customer = new this._customerModel({
@@ -180,6 +188,7 @@ export class CustomersService {
 			gender: createCustomerDto.gender,
 			about: createCustomerDto.about,
 			phoneNumbers: createCustomerDto.phoneNumbers,
+			tagsIds: createCustomerDto.tagsIds,
 			ownerUserId,
 			createdAt: now,
 			updatedAt: now,
@@ -214,6 +223,10 @@ export class CustomersService {
 			);
 		}
 
+		if (typeof updateCustomerDto.tagsIds === 'string') {
+			updateCustomerDto.tagsIds = JSON.parse(updateCustomerDto.tagsIds);
+		}
+
 		const now: Date = new Date();
 
 		const $set: AnyKeys<Customer> & AnyObject = {
@@ -224,6 +237,7 @@ export class CustomersService {
 			gender: updateCustomerDto.gender,
 			about: updateCustomerDto.about,
 			phoneNumbers: updateCustomerDto.phoneNumbers,
+			tagsIds: updateCustomerDto.tagsIds,
 			updatedAt: now,
 		};
 

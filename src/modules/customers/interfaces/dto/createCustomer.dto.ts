@@ -30,4 +30,6 @@ export default class CreateCustomerDto {
 	addresses: any[];
 
 	phoneNumbers: any[];
+
+	tagsIds: string[];
 }
