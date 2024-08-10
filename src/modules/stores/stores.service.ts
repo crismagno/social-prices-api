@@ -111,6 +111,10 @@ export class StoresService {
 			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
 		}
 
+		if (tableState?.filters?.tagsIds) {
+			filter.tagsIds = { $in: tableState.filters.tagsIds };
+		}
+
 		const response: ITableStateResponse<IStore[]> = {
 			data: [],
 			total: 0,
@@ -190,6 +194,10 @@ export class StoresService {
 			createStoreDto.categoriesIds = JSON.parse(createStoreDto.categoriesIds);
 		}
 
+		if (typeof createStoreDto.tagsIds === 'string') {
+			createStoreDto.tagsIds = JSON.parse(createStoreDto.tagsIds);
+		}
+
 		const now: Date = new Date();
 
 		const store = new this._storeModel({
@@ -204,6 +212,7 @@ export class StoresService {
 			startedAt: createStoreDto.startedAt,
 			about: createStoreDto.about,
 			categoriesIds: createStoreDto.categoriesIds,
+			tagsIds: createStoreDto.tagsIds,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -253,6 +262,10 @@ export class StoresService {
 			updateStoreDto.categoriesIds = JSON.parse(updateStoreDto.categoriesIds);
 		}
 
+		if (typeof updateStoreDto.tagsIds === 'string') {
+			updateStoreDto.tagsIds = JSON.parse(updateStoreDto.tagsIds);
+		}
+
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(
 			store.userId.toString(),
 		);
@@ -269,6 +282,7 @@ export class StoresService {
 			about: updateStoreDto.about,
 			status: updateStoreDto.status,
 			categoriesIds: updateStoreDto.categoriesIds,
+			tagsIds: updateStoreDto.tagsIds,
 			updatedAt: now,
 		};
 

@@ -28,6 +28,7 @@ const StoreSchema = new mongoose.Schema<IStore>(
 		},
 		description: { type: String, optional: true },
 		categoriesIds: { type: [mongoose.Schema.Types.ObjectId] },
+		tagsIds: { type: [mongoose.Schema.Types.ObjectId] },
 		phoneNumbers: {
 			type: [PhoneNumberSchema],
 			optional: true,

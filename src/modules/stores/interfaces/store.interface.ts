@@ -24,4 +24,5 @@ export interface IStore
 	phoneNumbers: IPhoneNumber[];
 	about: string | null;
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
+	tagsIds: mongoose.Schema.Types.ObjectId[];
 }
