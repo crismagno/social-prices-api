@@ -1,11 +1,7 @@
 import { IAddress } from '../../../shared/interfaces/address.interface';
-import {
-  ICreatedAtEntity,
-} from '../../../shared/interfaces/created-at.interface';
+import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import {
-  IUpdatedAtEntity,
-} from '../../../shared/interfaces/updated-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import UsersEnum from './users.enum';
 
 export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -24,4 +20,5 @@ export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	addresses: IAddress[] | null;
 	gender: UsersEnum.Gender | null;
 	about: string | null;
+	type: UsersEnum.Type;
 }

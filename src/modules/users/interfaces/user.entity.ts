@@ -37,6 +37,8 @@ export default class UserEntity implements IUserEntity {
 
 	public about: string | null;
 
+	public type: UsersEnum.Type;
+
 	public createdAt: Date;
 
 	public updatedAt: Date;
@@ -61,6 +63,7 @@ export default class UserEntity implements IUserEntity {
 		this.name = _user.name;
 		this.gender = _user.gender;
 		this.about = _user.about;
+		this.type = _user.type;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
 	}

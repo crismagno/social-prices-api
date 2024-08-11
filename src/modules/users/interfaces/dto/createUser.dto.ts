@@ -43,4 +43,7 @@ export default class CreateUserDto {
 	@IsOptional()
 	@IsString()
 	about: string | null;
+
+	@IsEnum(UsersEnum.Type)
+	type: UsersEnum.Type;
 }

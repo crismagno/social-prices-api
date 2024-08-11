@@ -150,6 +150,7 @@ export class UsersService {
 				about: createUserDto.about,
 				createdAt: now,
 				updatedAt: now,
+				type: createUserDto.type,
 			});
 
 			const user: IUser = await newUser.save();

@@ -1,27 +1,21 @@
-import { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import UsersEnum from './users.enum';
+import UsersEnum from '../../users/interfaces/users.enum';
 
-export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity {
+export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
-	uid: string;
-	email: string;
-	username: string;
-	password: string;
 	avatar: string | null;
-	authToken: string | null;
-	authProvider: UsersEnum.Provider;
-	phoneNumbers: IPhoneNumber[];
-	extraDataProvider: any | null;
-	status: UsersEnum.Status;
+	userId: mongoose.Schema.Types.ObjectId | null;
+	email: string | null;
 	name: string | null;
 	birthDate: Date | null;
-	addresses: IAddress[] | null;
+	addresses: IAddress[];
 	gender: UsersEnum.Gender | null;
 	about: string | null;
-	type: UsersEnum.Type;
+	phoneNumbers: IPhoneNumber[];
+	tagsIds: mongoose.Schema.Types.ObjectId[];
 }

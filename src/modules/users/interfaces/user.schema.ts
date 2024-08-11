@@ -51,6 +51,13 @@ const UserSchema = new mongoose.Schema<IUser>(
 			},
 			optional: true,
 		},
+		type: {
+			type: String,
+			enum: {
+				values: Object.keys(UsersEnum.Type),
+				message: '{VALUE} is not supported',
+			},
+		},
 	},
 	{ timestamps: true, collection: 'users' },
 );
