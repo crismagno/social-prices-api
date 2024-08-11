@@ -5,17 +5,20 @@ import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interfac
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import UsersEnum from '../../users/interfaces/users.enum';
+import EmployeeEnum from './employee.enum';
 
 export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
+	userId: mongoose.Schema.Types.ObjectId;
 	avatar: string | null;
-	userId: mongoose.Schema.Types.ObjectId | null;
-	email: string | null;
-	name: string | null;
+	name: string;
+	email: string;
+	password: string;
 	birthDate: Date | null;
-	addresses: IAddress[];
 	gender: UsersEnum.Gender | null;
-	about: string | null;
+	addresses: IAddress[];
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+	about: string | null;
+	level: EmployeeEnum.Level;
 }

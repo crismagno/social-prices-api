@@ -13,6 +13,7 @@ import {
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
+import { IEmployee } from '../employees/interfaces/employee.interface';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ISale } from '../sales/interfaces/sale.interface';
 import { IStore } from '../stores/interfaces/store.interface';
@@ -339,6 +340,42 @@ export class NotificationsService {
 			subtitle: null,
 			title: 'Sale Deleted',
 			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
+	}
+
+	public async createdEmployee(
+		user: IUser,
+		employee: IEmployee,
+	): Promise<void> {
+		const userId: string = user._id;
+
+		const content: string = `Hi! ${user.name}, you have created a new employee <b>${employee.name}</b>. Congratulation!!!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'New Employee',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
+	public async updatedEmployee(
+		user: IUser,
+		employee: IEmployee,
+	): Promise<void> {
+		const userId: string = user._id;
+
+		const content: string = `Hi! ${user.name}, you have updated employee <b>${employee.name}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Employee Updated',
+			type: NotificationsEnum.Type.DEFAULT,
 			userId,
 		});
 	}

@@ -4,6 +4,7 @@ import { CategorySchema } from '../../../modules/categories/interfaces/category.
 import CodeSchema from '../../../modules/codes/interfaces/code.schema';
 import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
 import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
+import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';
 import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
@@ -22,6 +23,7 @@ export const schemasName = {
 	sale: 'Sale',
 	counter: 'Counter',
 	tag: 'Tag',
+	employee: 'Employee',
 };
 
 export const schemasModule = {
@@ -54,5 +56,8 @@ export const schemasModule = {
 	]),
 	tag: MongooseModule.forFeature([
 		{ name: schemasName.tag, schema: TagSchema },
+	]),
+	employee: MongooseModule.forFeature([
+		{ name: schemasName.employee, schema: EmployeeSchema },
 	]),
 };

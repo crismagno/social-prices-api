@@ -1,11 +1,16 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import UsersEnum from '../../../users/interfaces/users.enum';
+import EmployeeEnum from '../employee.enum';
 
-export default class UpdateCustomerDto {
+export default class UpdateEmployeeDto {
 	@IsString()
 	@IsNotEmpty()
-	customerId: string;
+	employeeId: string;
+
+	@IsString()
+	@IsOptional()
+	name: string | null;
 
 	@IsString()
 	@IsOptional()
@@ -13,23 +18,24 @@ export default class UpdateCustomerDto {
 
 	@IsString()
 	@IsOptional()
-	name: string | null;
+	password: string | null;
 
 	@IsOptional()
 	birthDate: Date | null;
 
-	@IsString()
 	@IsOptional()
 	@IsEnum(UsersEnum.Gender)
 	gender: UsersEnum.Gender | null;
 
-	@IsString()
-	@IsOptional()
-	about: string | null;
+	@IsEnum(EmployeeEnum.Level)
+	level: EmployeeEnum.Level;
 
 	addresses: any[];
 
 	phoneNumbers: any[];
 
 	tagsIds: string[];
+
+	@IsOptional()
+	about: string | null;
 }
