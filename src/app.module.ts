@@ -20,6 +20,7 @@ import { SalesModule } from './modules/sales/sales.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { EmployeesModule } from './modules/employees/employees.module';
 
 @Module({
 	imports: [
@@ -42,6 +43,7 @@ import { TagsModule } from './modules/tags/tags.module';
 		CustomersModule,
 		CountersModule,
 		TagsModule,
+		EmployeesModule,
 	],
 	controllers: [AppController],
 	providers: [
