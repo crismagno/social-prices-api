@@ -17,6 +17,7 @@ import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
+import PersonEnum from '../../shared/enums/person.enum';
 import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
@@ -146,7 +147,7 @@ export class UsersService {
 				addresses: [],
 				name: null,
 				birthDate: null,
-				gender: UsersEnum.Gender.OTHER,
+				gender: PersonEnum.Gender.OTHER,
 				about: createUserDto.about,
 				createdAt: now,
 				updatedAt: now,

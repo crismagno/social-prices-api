@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
@@ -14,7 +15,7 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	email: string;
 	password: string;
 	birthDate: Date | null;
-	gender: EmployeeEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	addresses: IAddress[];
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];

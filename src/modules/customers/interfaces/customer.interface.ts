@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import UsersEnum from '../../users/interfaces/users.enum';
 
 export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
@@ -15,7 +15,7 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	name: string | null;
 	birthDate: Date | null;
 	addresses: IAddress[];
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	about: string | null;
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];

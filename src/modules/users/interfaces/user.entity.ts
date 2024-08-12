@@ -1,3 +1,4 @@
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUser } from './user.interface';
@@ -33,7 +34,7 @@ export default class UserEntity implements IUserEntity {
 
 	public addresses: IAddress[];
 
-	public gender: UsersEnum.Gender;
+	public gender: PersonEnum.Gender;
 
 	public about: string | null;
 

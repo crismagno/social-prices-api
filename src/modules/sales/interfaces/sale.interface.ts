@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
@@ -7,7 +8,6 @@ import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interf
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
-import UsersEnum from '../../users/interfaces/users.enum';
 import SalesEnum from './sales.enum';
 
 export interface ISale
@@ -86,7 +86,7 @@ export interface ISaleBuyer {
 	email: string;
 	name: string;
 	birthDate: Date | null;
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	phoneNumber: IPhoneNumber | null;
 	address: IAddress | null;
 }

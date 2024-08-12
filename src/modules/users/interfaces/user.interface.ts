@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
@@ -21,7 +22,7 @@ export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity {
 	name: string | null;
 	birthDate: Date | null;
 	addresses: IAddress[] | null;
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	about: string | null;
 	type: UsersEnum.Type;
 }

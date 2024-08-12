@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
+import PersonEnum from '../../shared/enums/person.enum';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -120,7 +121,7 @@ export class EmployeesService {
 
 		if (tableState?.filters?.gender) {
 			filter.gender = {
-				$in: tableState.filters.gender as EmployeeEnum.Gender[],
+				$in: tableState.filters.gender as PersonEnum.Gender[],
 			};
 		}
 

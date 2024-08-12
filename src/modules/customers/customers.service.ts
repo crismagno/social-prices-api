@@ -6,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { FilesService } from '../../infra/services/files/files-service';
+import PersonEnum from '../../shared/enums/person.enum';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -13,7 +14,6 @@ import {
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
-import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
@@ -127,7 +127,7 @@ export class CustomersService {
 		}
 
 		if (tableState?.filters?.gender) {
-			filter.gender = { $in: tableState.filters.gender as UsersEnum.Gender[] };
+			filter.gender = { $in: tableState.filters.gender as PersonEnum.Gender[] };
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {

@@ -10,12 +10,6 @@ namespace UsersEnum {
 		STOPPED = 'STOPPED',
 	}
 
-	export enum Gender {
-		FEMALE = 'FEMALE',
-		MALE = 'MALE',
-		OTHER = 'OTHER',
-	}
-
 	export enum Type {
 		COMPANY = 'COMPANY',
 		COMMON = 'COMMON',

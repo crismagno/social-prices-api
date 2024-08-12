@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import { IUser } from './user.interface';
@@ -45,9 +46,9 @@ const UserSchema = new mongoose.Schema<IUser>(
 		gender: {
 			type: String,
 			enum: {
-				values: Object.keys(UsersEnum.Gender),
+				values: Object.keys(PersonEnum.Gender),
 				message: '{VALUE} is not supported',
-				default: UsersEnum.Gender.OTHER,
+				default: PersonEnum.Gender.OTHER,
 			},
 			optional: true,
 		},

@@ -1,11 +1,6 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import UsersEnum from '../users.enum';
+import PersonEnum from '../../../../shared/enums/person.enum';
 
 export default class UpdateUserDto {
 	@IsString()
@@ -17,8 +12,8 @@ export default class UpdateUserDto {
 
 	@IsString()
 	@IsOptional()
-	@IsEnum(UsersEnum.Gender)
-	gender: UsersEnum.Gender | null;
+	@IsEnum(PersonEnum.Gender)
+	gender: PersonEnum.Gender | null;
 
 	@IsString()
 	@IsOptional()

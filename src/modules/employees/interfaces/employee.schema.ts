@@ -2,6 +2,7 @@ import mongoose, { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
+import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
@@ -34,11 +35,11 @@ export class Employee extends Document implements IEmployee {
 	@Prop({
 		type: String,
 		enum: {
-			values: Object.keys(EmployeeEnum.Gender),
+			values: Object.keys(PersonEnum.Gender),
 			message: '{VALUE} is not supported',
 		},
 	})
-	gender: EmployeeEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 
 	@Prop({
 		required: true,

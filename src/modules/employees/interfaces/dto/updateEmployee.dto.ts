@@ -1,5 +1,6 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+import PersonEnum from '../../../../shared/enums/person.enum';
 import EmployeeEnum from '../employee.enum';
 
 export default class UpdateEmployeeDto {
@@ -23,8 +24,8 @@ export default class UpdateEmployeeDto {
 	birthDate: Date | null;
 
 	@IsOptional()
-	@IsEnum(EmployeeEnum.Gender)
-	gender: EmployeeEnum.Gender | null;
+	@IsEnum(PersonEnum.Gender)
+	gender: PersonEnum.Gender | null;
 
 	@IsEnum(EmployeeEnum.Level)
 	level: EmployeeEnum.Level;

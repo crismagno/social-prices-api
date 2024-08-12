@@ -13,7 +13,7 @@ import {
 
 import { CreateAddressDto } from '../../../../shared/dtos/CreateAddress.dto';
 import { CreatePhoneNumberDto } from '../../../../shared/dtos/CreatePhoneNumber.dto';
-import UsersEnum from '../../../users/interfaces/users.enum';
+import PersonEnum from '../../../../shared/enums/person.enum';
 import SalesEnum from '../sales.enum';
 
 export class SaleAmountNoteDto {
@@ -128,8 +128,8 @@ export class SaleBuyerDto {
 
 	@IsString()
 	@IsOptional()
-	@IsEnum(UsersEnum.Gender)
-	gender: UsersEnum.Gender | null;
+	@IsEnum(PersonEnum.Gender)
+	gender: PersonEnum.Gender | null;
 
 	@Type(() => CreatePhoneNumberDto)
 	@IsOptional()
