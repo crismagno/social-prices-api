@@ -87,7 +87,7 @@ export class EmployeesService {
 		if (employeeId && employeeId === employee._id.toString()) return;
 
 		throw new Error(
-			`Already exists a employee by same name and email in your account!`,
+			`Already exists a employee by same name and email in account!`,
 		);
 	}
 
