@@ -131,7 +131,7 @@ export class TagsService {
 	): Promise<ITag[]> {
 		return this._tagModel.find({
 			userId,
-			type,
+			type: { $in: [TagsEnum.Type.ANY, type] },
 		});
 	}
 

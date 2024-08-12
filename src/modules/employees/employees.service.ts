@@ -71,7 +71,7 @@ export class EmployeesService {
 		});
 	}
 
-	public async validateByUserIdAndSameNameEmail(
+	public async validateCreateOrUpdate(
 		userId: string,
 		name: string,
 		email: string,
@@ -152,7 +152,7 @@ export class EmployeesService {
 		file: Express.Multer.File | null,
 		createEmployeeDto: CreateEmployeeDto,
 	): Promise<IEmployee> {
-		await this.validateByUserIdAndSameNameEmail(
+		await this.validateCreateOrUpdate(
 			createEmployeeDto.userId,
 			createEmployeeDto.name,
 			createEmployeeDto.email,
@@ -221,7 +221,7 @@ export class EmployeesService {
 			updateEmployeeDto.employeeId,
 		);
 
-		await this.validateByUserIdAndSameNameEmail(
+		await this.validateCreateOrUpdate(
 			employee.userId.toString(),
 			updateEmployeeDto.name,
 			updateEmployeeDto.email,
