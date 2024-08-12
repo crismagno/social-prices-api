@@ -6,7 +6,6 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
-import UsersEnum from '../../users/interfaces/users.enum';
 import EmployeeEnum from './employee.enum';
 import { IEmployee } from './employee.interface';
 
@@ -35,11 +34,11 @@ export class Employee extends Document implements IEmployee {
 	@Prop({
 		type: String,
 		enum: {
-			values: Object.keys(UsersEnum.Gender),
+			values: Object.keys(EmployeeEnum.Gender),
 			message: '{VALUE} is not supported',
 		},
 	})
-	gender: UsersEnum.Gender | null;
+	gender: EmployeeEnum.Gender | null;
 
 	@Prop({
 		required: true,
@@ -62,6 +61,16 @@ export class Employee extends Document implements IEmployee {
 
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+
+	@Prop({
+		required: true,
+		type: String,
+		enum: {
+			values: Object.keys(EmployeeEnum.Status),
+			message: '{VALUE} is not supported',
+		},
+	})
+	status: EmployeeEnum.Status;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

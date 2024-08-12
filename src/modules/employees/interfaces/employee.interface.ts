@@ -4,7 +4,6 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import UsersEnum from '../../users/interfaces/users.enum';
 import EmployeeEnum from './employee.enum';
 
 export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -15,10 +14,11 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	email: string;
 	password: string;
 	birthDate: Date | null;
-	gender: UsersEnum.Gender | null;
+	gender: EmployeeEnum.Gender | null;
 	addresses: IAddress[];
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	about: string | null;
 	level: EmployeeEnum.Level;
+	status: EmployeeEnum.Status;
 }

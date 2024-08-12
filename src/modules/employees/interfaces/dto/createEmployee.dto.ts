@@ -1,31 +1,30 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import UsersEnum from '../../../users/interfaces/users.enum';
 import EmployeeEnum from '../employee.enum';
 
 export default class CreateEmployeeDto {
 	@IsString()
-	@IsOptional()
-	userId: string | null;
+	@IsNotEmpty()
+	userId: string;
 
 	@IsString()
-	@IsOptional()
-	name: string | null;
+	@IsNotEmpty()
+	name: string;
 
 	@IsString()
-	@IsOptional()
-	email: string | null;
+	@IsNotEmpty()
+	email: string;
 
 	@IsString()
-	@IsOptional()
-	password: string | null;
+	@IsNotEmpty()
+	password: string;
 
 	@IsOptional()
 	birthDate: Date | null;
 
 	@IsOptional()
-	@IsEnum(UsersEnum.Gender)
-	gender: UsersEnum.Gender | null;
+	@IsEnum(EmployeeEnum.Gender)
+	gender: EmployeeEnum.Gender | null;
 
 	@IsEnum(EmployeeEnum.Level)
 	level: EmployeeEnum.Level;

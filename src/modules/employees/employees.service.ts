@@ -14,10 +14,10 @@ import {
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
-import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
 import UpdateEmployeeDto from './interfaces/dto/updateEmployee.dto';
+import EmployeeEnum from './interfaces/employee.enum';
 import { IEmployee } from './interfaces/employee.interface';
 import { Employee } from './interfaces/employee.schema';
 
@@ -98,7 +98,9 @@ export class EmployeesService {
 		}
 
 		if (tableState?.filters?.gender) {
-			filter.gender = { $in: tableState.filters.gender as UsersEnum.Gender[] };
+			filter.gender = {
+				$in: tableState.filters.gender as EmployeeEnum.Gender[],
+			};
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {
