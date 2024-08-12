@@ -1,6 +1,12 @@
 import { FilterQuery, Model } from 'mongoose';
 
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+	BadRequestException,
+	forwardRef,
+	Inject,
+	Injectable,
+	Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -141,6 +147,12 @@ export class NotificationsService {
 				subject: `Sign In Code`,
 				html: `Hi! here is your signIn code: <b>${code.value}</b>`,
 			});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to user',
+			);
+		}
 
 		return {
 			email: emailResponse,
@@ -347,10 +359,11 @@ export class NotificationsService {
 	public async createdEmployee(
 		user: IUser,
 		employee: IEmployee,
-	): Promise<void> {
+	): Promise<INotificationResponse> {
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.name}, you have created a new employee <b>${employee.name}</b>. Congratulation!!!`;
+		const content: string = `
+			Hi! ${user.name}, you have created a new employee <b>${employee.name}</b>.`;
 
 		await this.create({
 			content,
@@ -360,6 +373,35 @@ export class NotificationsService {
 			type: NotificationsEnum.Type.NEWS,
 			userId,
 		});
+
+		return await this.sendSignInEmployeeCode(user, employee);
+	}
+
+	public async sendSignInEmployeeCode(
+		user: IUser,
+		employee: IEmployee,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createSignInEmployee(
+			user._id,
+			employee._id,
+		);
+
+		const emailResponse: string | null =
+			await this._emailTransportService.sendEmail({
+				to: employee.email,
+				subject: `SignIn Employee Confirmation Code`,
+				html: `Hi! ${employee.name} here is your signIn employee confirmation code: <b>${code.value}</b>. To access account: <b>${user.name}</b>".`,
+			});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to user',
+			);
+		}
+
+		return {
+			email: emailResponse,
+		};
 	}
 
 	public async updatedEmployee(
@@ -375,7 +417,7 @@ export class NotificationsService {
 			createdByUserId: userId,
 			subtitle: null,
 			title: 'Employee Updated',
-			type: NotificationsEnum.Type.DEFAULT,
+			type: NotificationsEnum.Type.NEWS,
 			userId,
 		});
 	}

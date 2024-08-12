@@ -173,6 +173,7 @@ export class EmployeesService {
 			tagsIds: createEmployeeDto.tagsIds,
 			about: createEmployeeDto.about,
 			level: createEmployeeDto.level,
+			status: createEmployeeDto.status ?? EmployeeEnum.Status.PENDING,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -209,16 +210,12 @@ export class EmployeesService {
 		if (typeof updateEmployeeDto.tagsIds === 'string') {
 			updateEmployeeDto.tagsIds = JSON.parse(updateEmployeeDto.tagsIds);
 		}
-		const hashPassword: string = await this._hashCrypt.generateHash(
-			updateEmployeeDto.password,
-		);
 
 		const now: Date = new Date();
 
 		const $set: AnyKeys<Employee> & AnyObject = {
 			name: updateEmployeeDto.name,
 			email: updateEmployeeDto.email,
-			password: hashPassword,
 			birthDate: updateEmployeeDto.birthDate,
 			addresses: updateEmployeeDto.addresses,
 			gender: updateEmployeeDto.gender,
@@ -228,6 +225,14 @@ export class EmployeesService {
 			level: updateEmployeeDto.level,
 			updatedAt: now,
 		};
+
+		if (!updateEmployeeDto.password) {
+			const hashPassword: string = await this._hashCrypt.generateHash(
+				updateEmployeeDto.password,
+			);
+
+			$set.password = hashPassword;
+		}
 
 		let responseFile: ManagedUpload.SendData | null = null;
 

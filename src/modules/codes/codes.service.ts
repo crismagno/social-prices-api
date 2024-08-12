@@ -73,17 +73,36 @@ export class CodesService {
 		return await this._validateCode(userId, type, value);
 	}
 
+	public async createSignInEmployee(
+		userId: string,
+		employeeId: string,
+	): Promise<ICode> {
+		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
+		return await this._getByUserIdAndType(userId, type, employeeId);
+	}
+
+	public async validateCreateSignInEmployee(
+		userId: string,
+		employeeId: string,
+		value: string,
+	): Promise<boolean> {
+		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
+		return await this._validateCode(userId, type, value, employeeId);
+	}
+
 	public async findOneByUserIdAndCode(
 		userId: string,
 		type: CodesEnum.Type,
+		employeeId: string | null = null,
 	): Promise<ICode> {
 		const code: ICode | undefined = await this._codeModel.findOne({
 			userId,
 			type,
+			employeeId,
 		});
 
 		if (!code) {
-			this._logger.warn('Code not found!', { userId, type });
+			this._logger.warn('Code not found!', { userId, type, employeeId });
 
 			throw new NotFoundException('Code not found!');
 		}
@@ -98,10 +117,12 @@ export class CodesService {
 	private async _getByUserIdAndType(
 		userId: string,
 		type: CodesEnum.Type,
+		employeeId: string | null = null,
 	): Promise<ICode> {
 		const findCodeByUserAndType: ICode = await this._codeModel.findOne({
 			userId,
 			type,
+			employeeId,
 		});
 
 		const value: string = makeRandomCode();
@@ -133,6 +154,7 @@ export class CodesService {
 			value,
 			type,
 			expiresIn,
+			employeeId,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -144,8 +166,13 @@ export class CodesService {
 		userId: string,
 		type: CodesEnum.Type,
 		value: string,
+		employeeId: string | null = null,
 	): Promise<boolean> {
-		const code: ICode = await this.findOneByUserIdAndCode(userId, type);
+		const code: ICode = await this.findOneByUserIdAndCode(
+			userId,
+			type,
+			employeeId,
+		);
 
 		if (moment().isAfter(code.expiresIn)) {
 			throw new BadRequestException('Code expired!');
@@ -162,8 +189,13 @@ export class CodesService {
 	private async _updateCode(
 		userId: string,
 		type: CodesEnum.Type,
+		employeeId: string | null = null,
 	): Promise<ICode> {
-		const code: ICode = await this.findOneByUserIdAndCode(userId, type);
+		const code: ICode = await this.findOneByUserIdAndCode(
+			userId,
+			type,
+			employeeId,
+		);
 
 		const value: string = makeRandomCode();
 		const expiresIn: Date = moment()

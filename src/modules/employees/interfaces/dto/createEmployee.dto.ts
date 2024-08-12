@@ -37,4 +37,8 @@ export default class CreateEmployeeDto {
 
 	@IsOptional()
 	about: string | null;
+
+	@IsEnum(EmployeeEnum.Status)
+	@IsOptional()
+	status: EmployeeEnum.Status | null;
 }

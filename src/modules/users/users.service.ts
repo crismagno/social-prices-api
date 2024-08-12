@@ -103,7 +103,7 @@ export class UsersService {
 			throw new UnauthorizedException();
 		}
 
-		await this._notificationSendSignInCode(user);
+		await this._notificationsService.sendSignInCode(user);
 
 		return this._getUserEntityWithToken(user);
 	}
@@ -118,7 +118,7 @@ export class UsersService {
 			 * This part is when user tries to create a new user by Google
 			 */
 			if (findUserByEmail && createUserDto.authProvider) {
-				await this._notificationSendSignInCode(findUserByEmail);
+				await this._notificationsService.sendSignInCode(findUserByEmail);
 
 				return await this._getUserEntityWithToken(findUserByEmail);
 			} else if (findUserByEmail) {
@@ -155,7 +155,7 @@ export class UsersService {
 
 			const user: IUser = await newUser.save();
 
-			await this._notificationSendSignInCode(user);
+			await this._notificationsService.sendSignInCode(user);
 
 			return await this._getUserEntityWithToken(user);
 		} catch (error: any) {
@@ -433,17 +433,6 @@ export class UsersService {
 	//#rendegion
 
 	//#region Private Methods
-
-	private async _notificationSendSignInCode(user: IUser): Promise<void> {
-		const notificationResponse: INotificationResponse =
-			await this._notificationsService.sendSignInCode(user);
-
-		if (!notificationResponse.email) {
-			throw new BadRequestException(
-				'Error when attempt to send signIn code to user',
-			);
-		}
-	}
 
 	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
 		const payload: IAuthPayload = {
