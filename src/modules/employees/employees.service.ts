@@ -70,6 +70,27 @@ export class EmployeesService {
 		});
 	}
 
+	public async validateByUserIdAndSameNameEmail(
+		userId: string,
+		name: string,
+		email: string,
+		employeeId?: string,
+	): Promise<void> {
+		const employee: IEmployee | null = await this._employeeModel.findOne({
+			userId,
+			name,
+			email,
+		});
+
+		if (!employee) return;
+
+		if (employeeId && employeeId === employee._id.toString()) return;
+
+		throw new Error(
+			`Already exists a employee by same name and email in your account!`,
+		);
+	}
+
 	public async findByIds(employeeIds: string[]): Promise<IEmployee[]> {
 		return this._employeeModel.find({
 			_id: { $in: employeeIds },
@@ -130,6 +151,12 @@ export class EmployeesService {
 		file: Express.Multer.File | null,
 		createEmployeeDto: CreateEmployeeDto,
 	): Promise<IEmployee> {
+		await this.validateByUserIdAndSameNameEmail(
+			createEmployeeDto.userId,
+			createEmployeeDto.name,
+			createEmployeeDto.email,
+		);
+
 		const user: IUser = await this._usersService.findOneByUserIdOrFail(
 			createEmployeeDto.userId,
 		);
@@ -190,6 +217,13 @@ export class EmployeesService {
 		updateEmployeeDto: UpdateEmployeeDto,
 	): Promise<IEmployee> {
 		const employee: IEmployee = await this.findByIdOrFail(
+			updateEmployeeDto.employeeId,
+		);
+
+		await this.validateByUserIdAndSameNameEmail(
+			employee.userId.toString(),
+			updateEmployeeDto.name,
+			updateEmployeeDto.email,
 			updateEmployeeDto.employeeId,
 		);
 
