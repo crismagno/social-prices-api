@@ -143,7 +143,7 @@ export class UsersService {
 
 			const name: string = createNameByEmail(createUserDto.email);
 
-			const newUser: IUser = new this._userModel({
+			const newUser = new this._userModel({
 				email: createUserDto.email,
 				username,
 				password: hashPassword,
