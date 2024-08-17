@@ -5,7 +5,7 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import EmployeeEnum from './employee.enum';
+import EmployeesEnum from './employees.enum';
 
 export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
@@ -21,6 +21,6 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	about: string | null;
-	level: EmployeeEnum.Level;
-	status: EmployeeEnum.Status;
+	level: EmployeesEnum.Level;
+	status: EmployeesEnum.Status;
 }

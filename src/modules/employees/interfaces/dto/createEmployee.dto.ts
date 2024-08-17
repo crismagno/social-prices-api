@@ -1,7 +1,7 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import PersonEnum from '../../../../shared/enums/person.enum';
-import EmployeeEnum from '../employee.enum';
+import EmployeesEnum from '../employees.enum';
 
 export default class CreateEmployeeDto {
 	@IsString()
@@ -27,8 +27,8 @@ export default class CreateEmployeeDto {
 	@IsEnum(PersonEnum.Gender)
 	gender: PersonEnum.Gender | null;
 
-	@IsEnum(EmployeeEnum.Level)
-	level: EmployeeEnum.Level;
+	@IsEnum(EmployeesEnum.Level)
+	level: EmployeesEnum.Level;
 
 	addresses: any[];
 
@@ -44,7 +44,7 @@ export default class CreateEmployeeDto {
 	@IsString()
 	username: string | null;
 
-	@IsEnum(EmployeeEnum.Status)
+	@IsEnum(EmployeesEnum.Status)
 	@IsOptional()
-	status: EmployeeEnum.Status | null;
+	status: EmployeesEnum.Status | null;
 }

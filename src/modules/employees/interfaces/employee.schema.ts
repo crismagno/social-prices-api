@@ -7,8 +7,8 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
-import EmployeeEnum from './employee.enum';
 import { IEmployee } from './employee.interface';
+import EmployeesEnum from './employees.enum';
 
 @Schema()
 export class Employee implements IEmployee {
@@ -48,11 +48,11 @@ export class Employee implements IEmployee {
 		required: true,
 		type: String,
 		enum: {
-			values: Object.keys(EmployeeEnum.Level),
+			values: Object.keys(EmployeesEnum.Level),
 			message: '{VALUE} is not supported',
 		},
 	})
-	level: EmployeeEnum.Level;
+	level: EmployeesEnum.Level;
 
 	@Prop({ type: String })
 	about: string | null;
@@ -70,11 +70,11 @@ export class Employee implements IEmployee {
 		required: true,
 		type: String,
 		enum: {
-			values: Object.keys(EmployeeEnum.Status),
+			values: Object.keys(EmployeesEnum.Status),
 			message: '{VALUE} is not supported',
 		},
 	})
-	status: EmployeeEnum.Status;
+	status: EmployeesEnum.Status;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

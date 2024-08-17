@@ -25,8 +25,8 @@ import {
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { EmployeesService } from '../employees/employees.service';
-import EmployeeEnum from '../employees/interfaces/employee.enum';
 import { IEmployee } from '../employees/interfaces/employee.interface';
+import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from './interfaces/dto/createUser.dto';
@@ -177,11 +177,11 @@ export class UsersService {
 					birthDate: null,
 					email: createUserDto.email,
 					gender: PersonEnum.Gender.OTHER,
-					level: EmployeeEnum.Level.ADMIN,
+					level: EmployeesEnum.Level.ADMIN,
 					name,
 					password: createUserDto.password,
 					phoneNumbers: createUserDto.phoneNumbers ?? [],
-					status: EmployeeEnum.Status.PENDING,
+					status: EmployeesEnum.Status.PENDING,
 					tagsIds: [],
 					username,
 					avatar: createUserDto.avatar,

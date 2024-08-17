@@ -25,9 +25,9 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
 import UpdateEmployeeDto from './interfaces/dto/updateEmployee.dto';
-import EmployeeEnum from './interfaces/employee.enum';
 import { IEmployee } from './interfaces/employee.interface';
 import { Employee } from './interfaces/employee.schema';
+import EmployeesEnum from './interfaces/employees.enum';
 
 @Injectable()
 export class EmployeesService {
@@ -211,7 +211,7 @@ export class EmployeesService {
 			tagsIds: createEmployeeDto.tagsIds,
 			about: createEmployeeDto.about,
 			level: createEmployeeDto.level,
-			status: createEmployeeDto.status ?? EmployeeEnum.Status.PENDING,
+			status: createEmployeeDto.status ?? EmployeesEnum.Status.PENDING,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -307,11 +307,11 @@ export class EmployeesService {
 		await this._employeeModel.findOneAndUpdate(
 			{
 				userId,
-				level: EmployeeEnum.Level.ADMIN,
-				status: EmployeeEnum.Status.PENDING,
+				level: EmployeesEnum.Level.ADMIN,
+				status: EmployeesEnum.Status.PENDING,
 			},
 			{
-				$set: { status: EmployeeEnum.Status.ACTIVE },
+				$set: { status: EmployeesEnum.Status.ACTIVE },
 			},
 			{ new: true },
 		);
@@ -320,7 +320,7 @@ export class EmployeesService {
 	public async findAdminByUserId(userId: string): Promise<IEmployee> {
 		const employee: IEmployee | null = await this._employeeModel.findOne({
 			userId,
-			level: EmployeeEnum.Level.ADMIN,
+			level: EmployeesEnum.Level.ADMIN,
 		});
 
 		if (!employee) {

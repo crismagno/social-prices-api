@@ -1,4 +1,4 @@
-namespace EmployeeEnum {
+namespace EmployeesEnum {
 	export enum Level {
 		ADMIN = 'ADMIN',
 		MASTER = 'MASTER',
@@ -12,4 +12,4 @@ namespace EmployeeEnum {
 	}
 }
 
-export default EmployeeEnum;
+export default EmployeesEnum;
