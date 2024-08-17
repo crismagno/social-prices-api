@@ -472,6 +472,7 @@ export class UsersService {
 		const employee: IEmployee = await this._employeesService.findAdminByUserId(
 			user._id,
 		);
+
 		const payload: IAuthPayload = {
 			_id: user._id,
 			uid: user.uid,
@@ -481,11 +482,15 @@ export class UsersService {
 
 		const token: string = await this._authorizationToken.generateToken(payload);
 
-		return new UserEntity(user).addToken(token);
+		return (await new UserEntity(user).addToken(token)).addEmployee(employee);
 	}
 
-	private _getUserEntity(user: IUser): IUserEntity {
-		return new UserEntity(user);
+	private async _getUserEntity(user: IUser): Promise<IUserEntity> {
+		const employee: IEmployee = await this._employeesService.findAdminByUserId(
+			user._id,
+		);
+
+		return new UserEntity(user).addEmployee(employee);
 	}
 
 	//#rendegion

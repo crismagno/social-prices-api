@@ -1,6 +1,7 @@
 import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { IEmployee } from '../../employees/interfaces/employee.interface';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 import { IUserEntity } from './users.types';
@@ -44,6 +45,8 @@ export default class UserEntity implements IUserEntity {
 
 	public updatedAt: Date;
 
+	public employee: IEmployee;
+
 	//#endregion
 
 	//#region Constructor
@@ -71,6 +74,12 @@ export default class UserEntity implements IUserEntity {
 
 	public async addToken(token: string): Promise<this> {
 		this.authToken = token;
+
+		return this;
+	}
+
+	public async addEmployee(employee: IEmployee): Promise<this> {
+		this.employee = employee;
 
 		return this;
 	}
