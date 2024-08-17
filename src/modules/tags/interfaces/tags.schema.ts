@@ -1,4 +1,4 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -6,7 +6,7 @@ import TagsEnum from './tags.enum';
 import { ITag } from './tags.interface';
 
 @Schema()
-export class Tag extends Document implements ITag {
+export class Tag implements ITag {
 	readonly _id: string;
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })

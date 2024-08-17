@@ -19,6 +19,7 @@ import CreateTagMultiDto from './interfaces/dto/createTagMulti.dto';
 import UpdateTagDto from './interfaces/dto/updateTag.dto';
 import TagsEnum from './interfaces/tags.enum';
 import { ITag } from './interfaces/tags.interface';
+import { Tag } from './interfaces/tags.schema';
 
 @Injectable()
 export class TagsService {
@@ -32,7 +33,7 @@ export class TagsService {
 
 	constructor(
 		@InjectModel(schemasName.tag)
-		private readonly _tagModel: Model<ITag>,
+		private readonly _tagModel: Model<Tag>,
 	) {
 		this._logger = new Logger(TagsService.name);
 	}

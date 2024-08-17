@@ -12,6 +12,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { makeRandomCode } from '../../shared/utils/global/global';
 import { ICode } from './interfaces/code.interface';
+import { Code } from './interfaces/code.schema';
 import CodesEnum from './interfaces/codes.enum';
 
 @Injectable()
@@ -28,7 +29,7 @@ export class CodesService {
 	// #region Constructor
 
 	constructor(
-		@InjectModel(schemasName.code) private readonly _codeModel: Model<ICode>,
+		@InjectModel(schemasName.code) private readonly _codeModel: Model<Code>,
 	) {
 		this._logger = new Logger(CodesService.name);
 	}
@@ -149,7 +150,7 @@ export class CodesService {
 
 		const now: Date = new Date();
 
-		const newCode: ICode = new this._codeModel({
+		const newCode = new this._codeModel({
 			userId,
 			value,
 			type,

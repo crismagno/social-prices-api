@@ -1,4 +1,4 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -6,7 +6,7 @@ import CategoriesEnum from './categories.enum';
 import { ICategory } from './category.interface';
 
 @Schema()
-export class Category extends Document implements ICategory {
+export class Category implements ICategory {
 	readonly _id: string;
 
 	@Prop({ required: true, type: String })

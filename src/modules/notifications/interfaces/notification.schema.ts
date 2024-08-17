@@ -1,4 +1,4 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -6,7 +6,7 @@ import { INotification } from './notification.interface';
 import NotificationsEnum from './notifications.enum';
 
 @Schema()
-export class Notification extends Document implements INotification {
+export class Notification implements INotification {
 	readonly _id: string;
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })

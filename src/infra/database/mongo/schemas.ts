@@ -1,7 +1,7 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
-import CodeSchema from '../../../modules/codes/interfaces/code.schema';
+import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
 import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
 import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
 import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';

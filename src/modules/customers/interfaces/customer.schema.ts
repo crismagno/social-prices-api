@@ -1,4 +1,4 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -10,7 +10,7 @@ import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import { ICustomer } from './customer.interface';
 
 @Schema()
-export class Customer extends Document implements ICustomer {
+export class Customer implements ICustomer {
 	readonly _id: string;
 
 	@Prop({ type: String })
