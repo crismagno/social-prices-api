@@ -219,7 +219,11 @@ export class EmployeesService {
 
 		const newEmployee: IEmployee = await employee.save();
 
-		await this._notificationsService.createdEmployee(user, newEmployee);
+		await this._notificationsService.createdEmployee(
+			user,
+			newEmployee,
+			createEmployeeDto.password,
+		);
 
 		return newEmployee;
 	}
@@ -272,7 +276,7 @@ export class EmployeesService {
 			updatedAt: now,
 		};
 
-		if (!updateEmployeeDto.password) {
+		if (updateEmployeeDto.password) {
 			const hashPassword: string = await this._hashCrypt.generateHash(
 				updateEmployeeDto.password,
 			);

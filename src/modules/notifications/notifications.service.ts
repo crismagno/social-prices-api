@@ -350,6 +350,7 @@ export class NotificationsService {
 	public async createdEmployee(
 		user: IUser,
 		employee: IEmployee,
+		password: string,
 	): Promise<INotificationResponse> {
 		const userId: string = user._id;
 
@@ -365,12 +366,13 @@ export class NotificationsService {
 			userId,
 		});
 
-		return await this.sendSignInEmployeeCode(user, employee);
+		return await this.sendSignInEmployeeCode(user, employee, password);
 	}
 
 	public async sendSignInEmployeeCode(
 		user: IUser,
 		employee: IEmployee,
+		password: string,
 	): Promise<INotificationResponse> {
 		const code: ICode = await this._codesService.createSignInEmployee(
 			user._id,
@@ -381,7 +383,7 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: employee.email,
 				subject: `SignIn Employee Confirmation Code`,
-				html: `Hi! ${employee.name} here is your signIn employee username: ${employee.username},
+				html: `Hi! ${employee.name} here is your signIn employee username: <b>${employee.username}</b> and password: <b>${password}</b>,
 				 and confirmation code: <b>${code.value}</b>. To access account: <b>${user.name}</b>".`,
 			});
 
