@@ -6,7 +6,7 @@ import EmployeesEnum from '../employees.enum';
 export default class CreateEmployeeDto {
 	@IsString()
 	@IsOptional()
-	avatar: string | undefined;
+	avatar: string | null;
 
 	@IsString()
 	@IsNotEmpty()
