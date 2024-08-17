@@ -84,7 +84,7 @@ export class EmployeesController {
 		);
 	}
 
-	@Get('/count/user')
+	@Get('/user/count')
 	@UsePipes(ValidationPipe)
 	public async countByUserId(@Request() request: any): Promise<number> {
 		const authPayload: IAuthPayload =
