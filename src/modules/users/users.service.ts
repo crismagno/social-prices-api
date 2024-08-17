@@ -4,8 +4,6 @@ import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
-	forwardRef,
-	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -48,7 +46,6 @@ export class UsersService {
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
-		@Inject(forwardRef(() => NotificationsService))
 		private readonly _notificationsService: NotificationsService,
 		private readonly _codesService: CodesService,
 		private readonly _filesService: FilesService,

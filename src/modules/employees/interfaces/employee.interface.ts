@@ -12,6 +12,7 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	userId: mongoose.Schema.Types.ObjectId;
 	avatar: string | null;
 	name: string;
+	username: string;
 	email: string;
 	password: string;
 	birthDate: Date | null;

@@ -1,12 +1,6 @@
 import { FilterQuery, Model } from 'mongoose';
 
-import {
-	BadRequestException,
-	forwardRef,
-	Inject,
-	Injectable,
-	Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -24,7 +18,6 @@ import { IProduct } from '../products/interfaces/product.interface';
 import { ISale } from '../sales/interfaces/sale.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
-import { UsersService } from '../users/users.service';
 import { INotification } from './interfaces/notification.interface';
 import { Notification } from './interfaces/notification.schema';
 import { INotificationResponse } from './interfaces/notification.types';
@@ -45,8 +38,6 @@ export class NotificationsService {
 		private readonly _notificationModel: Model<Notification>,
 		private readonly _emailTransportService: EmailTransportService,
 		private readonly _codesService: CodesService,
-		@Inject(forwardRef(() => UsersService))
-		private readonly _usersService: UsersService,
 	) {
 		this._logger = new Logger(NotificationsService.name);
 	}
@@ -363,7 +354,7 @@ export class NotificationsService {
 		const userId: string = user._id;
 
 		const content: string = `
-			Hi! ${user.name}, you have created a new employee <b>${employee.name}</b>.`;
+			Hi! ${user.name}, you have created a new employee <b>${employee.name}</b> and username for this employee: <b>${employee.username}</b>.`;
 
 		await this.create({
 			content,
@@ -390,7 +381,8 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: employee.email,
 				subject: `SignIn Employee Confirmation Code`,
-				html: `Hi! ${employee.name} here is your signIn employee confirmation code: <b>${code.value}</b>. To access account: <b>${user.name}</b>".`,
+				html: `Hi! ${employee.name} here is your signIn employee username: ${employee.username},
+				 and confirmation code: <b>${code.value}</b>. To access account: <b>${user.name}</b>".`,
 			});
 
 		if (!emailResponse) {

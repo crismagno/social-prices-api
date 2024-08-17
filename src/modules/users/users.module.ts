@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
 import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasModule } from '../../infra/database/mongo/schemas';
@@ -10,11 +10,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 @Module({
-	imports: [
-		schemasModule.user,
-		forwardRef(() => NotificationsModule),
-		CodesModule,
-	],
+	imports: [schemasModule.user, NotificationsModule, CodesModule],
 	providers: [UsersService, AuthorizationToken, HashCrypt, FilesService],
 	exports: [UsersService],
 	controllers: [UsersController],

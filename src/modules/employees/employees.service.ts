@@ -8,6 +8,7 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
 import PersonEnum from '../../shared/enums/person.enum';
+import { createUsernameByName } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -35,10 +36,10 @@ export class EmployeesService {
 	constructor(
 		@InjectModel(schemasName.employee)
 		private readonly _employeeModel: Model<Employee>,
-		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _hashCrypt: HashCrypt,
+		private readonly _usersService: UsersService,
 	) {
 		this._logger = new Logger(EmployeesService.name);
 	}
@@ -192,6 +193,7 @@ export class EmployeesService {
 			userId: createEmployeeDto.userId,
 			avatar: responseFile?.Key ?? null,
 			name: createEmployeeDto.name,
+			username: createUsernameByName(createEmployeeDto.name),
 			email: createEmployeeDto.email,
 			password: hashPassword,
 			birthDate: createEmployeeDto.birthDate,

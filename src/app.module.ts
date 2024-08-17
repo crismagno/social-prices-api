@@ -14,13 +14,13 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { CodesModule } from './modules/codes/codes.module';
 import { CountersModule } from './modules/counters/counters.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { EmployeesModule } from './modules/employees/employees.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { StoresModule } from './modules/stores/stores.module';
-import { UsersModule } from './modules/users/users.module';
 import { TagsModule } from './modules/tags/tags.module';
-import { EmployeesModule } from './modules/employees/employees.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
 	imports: [
@@ -34,16 +34,16 @@ import { EmployeesModule } from './modules/employees/employees.module';
 		JwtModuleRegister(),
 		AuthModule,
 		UsersModule,
-		CodesModule,
-		NotificationsModule,
-		SalesModule,
-		StoresModule,
-		ProductsModule,
 		CategoriesModule,
+		CodesModule,
 		CustomersModule,
 		CountersModule,
-		TagsModule,
 		EmployeesModule,
+		NotificationsModule,
+		ProductsModule,
+		SalesModule,
+		StoresModule,
+		TagsModule,
 	],
 	controllers: [AppController],
 	providers: [
