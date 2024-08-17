@@ -317,5 +317,18 @@ export class EmployeesService {
 		);
 	}
 
+	public async findAdminByUserId(userId: string): Promise<IEmployee> {
+		const employee: IEmployee | null = await this._employeeModel.findOne({
+			userId,
+			level: EmployeeEnum.Level.ADMIN,
+		});
+
+		if (!employee) {
+			throw new NotFoundException('Employee not found!');
+		}
+
+		return employee;
+	}
+
 	// #endregion
 }

@@ -26,6 +26,7 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { EmployeesService } from '../employees/employees.service';
 import EmployeeEnum from '../employees/interfaces/employee.enum';
+import { IEmployee } from '../employees/interfaces/employee.interface';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from './interfaces/dto/createUser.dto';
@@ -468,10 +469,14 @@ export class UsersService {
 	//#region Private Methods
 
 	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
+		const employee: IEmployee = await this._employeesService.findAdminByUserId(
+			user._id,
+		);
 		const payload: IAuthPayload = {
 			_id: user._id,
 			uid: user.uid,
 			email: user.email,
+			employeeId: employee._id,
 		};
 
 		const token: string = await this._authorizationToken.generateToken(payload);
