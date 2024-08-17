@@ -159,16 +159,15 @@ export class EmployeesService {
 	public async create(
 		file: Express.Multer.File | null,
 		createEmployeeDto: CreateEmployeeDto,
+		userId: string,
 	): Promise<IEmployee> {
 		await this.validateCreateOrUpdate(
-			createEmployeeDto.userId,
+			userId,
 			createEmployeeDto.name,
 			createEmployeeDto.email,
 		);
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(
-			createEmployeeDto.userId,
-		);
+		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -197,7 +196,7 @@ export class EmployeesService {
 		);
 
 		const employee = new this._employeeModel({
-			userId: createEmployeeDto.userId,
+			userId,
 			avatar: createEmployeeDto.avatar || responseFile?.Key || null,
 			name: createEmployeeDto.name,
 			username:

@@ -168,22 +168,25 @@ export class UsersService {
 
 			await this._notificationsService.sendSignInCode(user);
 
-			await this._employeesService.create(null, {
-				about: createUserDto.about,
-				addresses: [],
-				birthDate: null,
-				email: createUserDto.email,
-				gender: PersonEnum.Gender.OTHER,
-				level: EmployeeEnum.Level.ADMIN,
-				name,
-				password: createUserDto.password,
-				phoneNumbers: createUserDto.phoneNumbers ?? [],
-				status: EmployeeEnum.Status.PENDING,
-				tagsIds: [],
-				userId: user._id,
-				username,
-				avatar: createUserDto.avatar,
-			});
+			await this._employeesService.create(
+				null,
+				{
+					about: createUserDto.about,
+					addresses: [],
+					birthDate: null,
+					email: createUserDto.email,
+					gender: PersonEnum.Gender.OTHER,
+					level: EmployeeEnum.Level.ADMIN,
+					name,
+					password: createUserDto.password,
+					phoneNumbers: createUserDto.phoneNumbers ?? [],
+					status: EmployeeEnum.Status.PENDING,
+					tagsIds: [],
+					username,
+					avatar: createUserDto.avatar,
+				},
+				user._id,
+			);
 
 			return await this._getUserEntityWithToken(user);
 		} catch (error: any) {

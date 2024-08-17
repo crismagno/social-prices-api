@@ -5,6 +5,7 @@ import {
 	Param,
 	Post,
 	Put,
+	Request,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -18,6 +19,8 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import AuthEnum from '../auth/interfaces/auth.enum';
+import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { EmployeesService } from './employees.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
 import UpdateEmployeeDto from './interfaces/dto/updateEmployee.dto';
@@ -34,8 +37,16 @@ export class EmployeesController {
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
 		@Body() createEmployeeDto: CreateEmployeeDto,
+		@Request() request: any,
 	): Promise<IEmployee> {
-		return await this._employeesService.create(file, createEmployeeDto);
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._employeesService.create(
+			file,
+			createEmployeeDto,
+			authPayload._id,
+		);
 	}
 
 	@Put('/')
@@ -49,32 +60,37 @@ export class EmployeesController {
 		return await this._employeesService.update(file, updateEmployeeDto);
 	}
 
-	@Get('/user/:userId')
+	@Get('/user')
 	@UsePipes(ValidationPipe)
-	public async findByUserId(
-		@Param('userId', ValidationParamsPipe) userId: string,
-	): Promise<IEmployee[]> {
-		return await this._employeesService.findByUserId(userId);
+	public async findByUserId(@Request() request: any): Promise<IEmployee[]> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._employeesService.findByUserId(authPayload._id);
 	}
 
-	@Post('/userTableState/user/:userId')
+	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@Param('userId', ValidationParamsPipe) userId: string,
+		@Request() request: any,
 		@Body() tableState: ITableStateRequest<IEmployee>,
 	): Promise<ITableStateResponse<IEmployee[]>> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
 		return await this._employeesService.findByUserTableState(
-			userId,
+			authPayload._id,
 			tableState,
 		);
 	}
 
-	@Get('/count/user/:userId')
+	@Get('/count/user')
 	@UsePipes(ValidationPipe)
-	public async countByUserId(
-		@Param('userId', ValidationParamsPipe) userId: string,
-	): Promise<number> {
-		return await this._employeesService.countByUserId(userId);
+	public async countByUserId(@Request() request: any): Promise<number> {
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._employeesService.countByUserId(authPayload._id);
 	}
 
 	@Get('/:employeeId')
