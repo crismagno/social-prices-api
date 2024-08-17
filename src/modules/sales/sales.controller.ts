@@ -74,12 +74,15 @@ export class SalesController {
 		return await this._salesService.updateManual(updateSaleDto);
 	}
 
-	@Delete('/deleteManual/:saleId/userId/:userId')
+	@Delete('/deleteManual/:saleId')
 	@UsePipes(ValidationPipe)
 	public async deleteManual(
+		@Request() request: any,
 		@Param('saleId', ValidationParamsPipe) saleId: string,
-		@Param('userId', ValidationParamsPipe) userId: string,
 	): Promise<ISale> {
-		return await this._salesService.deleteManual(saleId, userId);
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._salesService.deleteManual(saleId, authPayload._id);
 	}
 }

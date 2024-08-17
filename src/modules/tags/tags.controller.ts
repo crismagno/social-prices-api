@@ -5,6 +5,7 @@ import {
 	Param,
 	Post,
 	Put,
+	Request,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -14,6 +15,8 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import AuthEnum from '../auth/interfaces/auth.enum';
+import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateTagDto from './interfaces/dto/createTag.dto';
 import CreateTagMultiDto from './interfaces/dto/createTagMulti.dto';
 import UpdateTagDto from './interfaces/dto/updateTag.dto';
@@ -25,21 +28,30 @@ import { TagsService } from './tags.service';
 export class TagsController {
 	constructor(private _tagsService: TagsService) {}
 
-	@Post('/userTableState/user/:userId')
+	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Param('userId', ValidationParamsPipe) userId: string,
+		@Request() request: any,
 		@Body() tableState: ITableStateRequest<ITag>,
 	): Promise<ITableStateResponse<ITag[]>> {
-		return await this._tagsService.findByUserTableState(userId, tableState);
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._tagsService.findByUserTableState(
+			authPayload._id,
+			tableState,
+		);
 	}
 
-	@Get('/user/:userId/type/:type')
+	@Get('/type/:type')
 	public async findByType(
-		@Param('userId', ValidationParamsPipe) userId: string,
+		@Request() request: any,
 		@Param('type', ValidationParamsPipe) type: TagsEnum.Type,
 	): Promise<ITag[]> {
-		return await this._tagsService.findByType(userId, type);
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return await this._tagsService.findByType(authPayload._id, type);
 	}
 
 	@Get('/:tagId')
