@@ -9,6 +9,10 @@ export default class CreateEmployeeDto {
 	userId: string;
 
 	@IsString()
+	@IsOptional()
+	avatar: string | undefined;
+
+	@IsString()
 	@IsNotEmpty()
 	name: string;
 
@@ -37,7 +41,12 @@ export default class CreateEmployeeDto {
 	tagsIds: string[];
 
 	@IsOptional()
+	@IsString()
 	about: string | null;
+
+	@IsOptional()
+	@IsString()
+	username: string | null;
 
 	@IsEnum(EmployeeEnum.Status)
 	@IsOptional()

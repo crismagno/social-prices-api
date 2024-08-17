@@ -41,6 +41,11 @@ export const createUsernameByName = (name: string): string => {
 	return `${name}${uniqueSuffix}`;
 };
 
+export const createNameByEmail = (email: string): string => {
+	const firstPartEmail: string = email.split('@')[0];
+	return firstPartEmail;
+};
+
 export const newFileOriginalname = (fileOriginalname: string): string => {
 	if (!fileOriginalname?.trim()) throw new Error('invalid fileOriginalname');
 

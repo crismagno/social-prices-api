@@ -1,7 +1,13 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	forwardRef,
+	Inject,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -39,6 +45,7 @@ export class EmployeesService {
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _hashCrypt: HashCrypt,
+		@Inject(forwardRef(() => UsersService))
 		private readonly _usersService: UsersService,
 	) {
 		this._logger = new Logger(EmployeesService.name);
@@ -191,9 +198,11 @@ export class EmployeesService {
 
 		const employee = new this._employeeModel({
 			userId: createEmployeeDto.userId,
-			avatar: responseFile?.Key ?? null,
+			avatar: createEmployeeDto.avatar || responseFile?.Key || null,
 			name: createEmployeeDto.name,
-			username: createUsernameByName(createEmployeeDto.name),
+			username:
+				createEmployeeDto.username ||
+				createUsernameByName(createEmployeeDto.name),
 			email: createEmployeeDto.email,
 			password: hashPassword,
 			birthDate: createEmployeeDto.birthDate,
@@ -289,6 +298,20 @@ export class EmployeesService {
 		await this._notificationsService.updatedEmployee(user, employeeUpdated);
 
 		return employeeUpdated;
+	}
+
+	public async activeAdminByUserId(userId: string): Promise<void> {
+		await this._employeeModel.findOneAndUpdate(
+			{
+				userId,
+				level: EmployeeEnum.Level.ADMIN,
+				status: EmployeeEnum.Status.PENDING,
+			},
+			{
+				$set: { status: EmployeeEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
 	}
 
 	// #endregion

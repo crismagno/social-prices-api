@@ -4,6 +4,8 @@ import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
+	forwardRef,
+	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -16,9 +18,14 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
 import PersonEnum from '../../shared/enums/person.enum';
-import { createUsernameByEmail } from '../../shared/utils/global/global';
+import {
+	createNameByEmail,
+	createUsernameByEmail,
+} from '../../shared/utils/global/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
+import { EmployeesService } from '../employees/employees.service';
+import EmployeeEnum from '../employees/interfaces/employee.enum';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from './interfaces/dto/createUser.dto';
@@ -49,6 +56,8 @@ export class UsersService {
 		private readonly _notificationsService: NotificationsService,
 		private readonly _codesService: CodesService,
 		private readonly _filesService: FilesService,
+		@Inject(forwardRef(() => EmployeesService))
+		private readonly _employeesService: EmployeesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -130,9 +139,13 @@ export class UsersService {
 
 			const now: Date = new Date();
 
+			const username: string = createUsernameByEmail(createUserDto.email);
+
+			const name: string = createNameByEmail(createUserDto.email);
+
 			const newUser: IUser = new this._userModel({
 				email: createUserDto.email,
-				username: createUsernameByEmail(createUserDto.email),
+				username,
 				password: hashPassword,
 				authProvider:
 					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
@@ -142,7 +155,7 @@ export class UsersService {
 				avatar: createUserDto.avatar,
 				extraDataProvider: createUserDto.extraDataProvider,
 				addresses: [],
-				name: null,
+				name,
 				birthDate: null,
 				gender: PersonEnum.Gender.OTHER,
 				about: createUserDto.about,
@@ -154,6 +167,23 @@ export class UsersService {
 			const user: IUser = await newUser.save();
 
 			await this._notificationsService.sendSignInCode(user);
+
+			await this._employeesService.create(null, {
+				about: createUserDto.about,
+				addresses: [],
+				birthDate: null,
+				email: createUserDto.email,
+				gender: PersonEnum.Gender.OTHER,
+				level: EmployeeEnum.Level.ADMIN,
+				name,
+				password: createUserDto.password,
+				phoneNumbers: createUserDto.phoneNumbers ?? [],
+				status: EmployeeEnum.Status.PENDING,
+				tagsIds: [],
+				userId: user._id,
+				username,
+				avatar: createUserDto.avatar,
+			});
 
 			return await this._getUserEntityWithToken(user);
 		} catch (error: any) {
@@ -186,6 +216,8 @@ export class UsersService {
 			},
 			{ new: true },
 		);
+
+		await this._employeesService.activeAdminByUserId(userId);
 
 		return true;
 	}
