@@ -141,6 +141,10 @@ export class EmployeesService {
 			filter.level = { $in: tableState.filters.level };
 		}
 
+		if (tableState?.filters?.status?.length) {
+			filter.status = { $in: tableState.filters.status };
+		}
+
 		const response: ITableStateResponse<IEmployee[]> = {
 			data: [],
 			total: 0,

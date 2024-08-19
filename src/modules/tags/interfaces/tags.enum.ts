@@ -5,6 +5,7 @@ namespace TagsEnum {
 		ANY = 'ANY',
 		PRODUCT = 'PRODUCT',
 		CUSTOMER = 'CUSTOMER',
+		EMPLOYEE = 'EMPLOYEE',
 	}
 
 	export const TypeLabels = {
@@ -12,7 +13,7 @@ namespace TagsEnum {
 		[Type.SALE]: 'Sale',
 		[Type.ANY]: 'Any',
 		[Type.PRODUCT]: 'Product',
-		[Type.CUSTOMER]: 'Customer',
+		[Type.EMPLOYEE]: 'Employee',
 	};
 }
 
