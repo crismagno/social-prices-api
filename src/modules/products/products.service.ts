@@ -137,7 +137,7 @@ export class ProductsService {
 		createProductDto: CreateProductDto,
 		userId: string,
 	): Promise<IProduct> {
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		const filesUrl: string[] =
 			await this._filesService.getUploadFilesUrl(files);
@@ -189,7 +189,7 @@ export class ProductsService {
 		updateProductDto: UpdateProductDto,
 		userId: string,
 	): Promise<IProduct> {
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		const product: IProduct = await this.findByIdOrFail(
 			updateProductDto.productId,

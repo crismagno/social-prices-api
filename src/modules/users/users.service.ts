@@ -85,12 +85,12 @@ export class UsersService {
 		return user;
 	}
 
-	public async findOneByUserId(userId: string): Promise<IUser | undefined> {
+	public async findOneById(userId: string): Promise<IUser | undefined> {
 		return this._userModel.findById(userId);
 	}
 
-	public async findOneByUserIdOrFail(userId: string): Promise<IUser> {
-		const user: IUser | undefined = await this.findOneByUserId(userId);
+	public async findOneByIdOrFail(userId: string): Promise<IUser> {
+		const user: IUser | undefined = await this.findOneById(userId);
 
 		if (!user) {
 			throw new NotFoundException('User not found!');
@@ -207,7 +207,7 @@ export class UsersService {
 			return false;
 		}
 
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		if (user.status === UsersEnum.Status.ACTIVE) {
 			return true;
@@ -227,13 +227,13 @@ export class UsersService {
 	}
 
 	public async getUserWIthTokenByUserId(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		return this._getUserEntityWithToken(user);
 	}
 
 	public async getUserByUserId(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		return this._getUserEntity(user);
 	}
@@ -284,7 +284,7 @@ export class UsersService {
 		userId: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
+		await this.findOneByIdOrFail(userId);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -309,7 +309,7 @@ export class UsersService {
 		userId: string,
 		updateUserAddressesDto: UpdateUserAddressesDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
+		await this.findOneByIdOrFail(userId);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -331,7 +331,7 @@ export class UsersService {
 		userId: string,
 		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
+		await this.findOneByIdOrFail(userId);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -353,7 +353,7 @@ export class UsersService {
 		userId: string,
 		file: Express.Multer.File,
 	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		const response: ManagedUpload.SendData =
 			await this._filesService.uploadFile(file);
@@ -377,7 +377,7 @@ export class UsersService {
 	}
 
 	public async removeAvatar(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		await this._filesService.deleteFile(user.avatar);
 
@@ -401,7 +401,7 @@ export class UsersService {
 		userId: string,
 		email: string,
 	): Promise<void> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		if (user.email != email) {
 			throw new BadRequestException('Incorrect user email.');
@@ -421,7 +421,7 @@ export class UsersService {
 		userId: string,
 		updateEmailDto: UpdateEmailDto,
 	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		if (user.email != updateEmailDto.email) {
 			throw new BadRequestException('Incorrect user email.');

@@ -8,7 +8,7 @@ import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.s
 import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
-import StoreSchema from '../../../modules/stores/interfaces/store.schema';
+import { StoreSchema } from '../../../modules/stores/interfaces/store.schema';
 import { TagSchema } from '../../../modules/tags/interfaces/tags.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
 

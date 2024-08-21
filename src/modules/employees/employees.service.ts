@@ -171,7 +171,7 @@ export class EmployeesService {
 			createEmployeeDto.email,
 		);
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -246,7 +246,7 @@ export class EmployeesService {
 			updateEmployeeDto.employeeId,
 		);
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(
+		const user: IUser = await this._usersService.findOneByIdOrFail(
 			employee.userId.toString(),
 		);
 

@@ -301,7 +301,7 @@ export class SalesService {
 			const userIdByStores: string = stores[0].userId.toString();
 
 			const user: IUser =
-				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userIdByStores);
 
 			await this._notificationsService.createdManualSale(newSale, user);
 
@@ -391,7 +391,7 @@ export class SalesService {
 			const userIdByStores: string = stores[0].userId.toString();
 
 			const user: IUser =
-				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userIdByStores);
 
 			await this._notificationsService.updatedManualSale(updatedSale, user);
 
@@ -434,7 +434,7 @@ export class SalesService {
 			const userIdByStores: string = stores[0].userId.toString();
 
 			const userIdOwnerStore: IUser =
-				await this._usersService.findOneByUserIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userIdByStores);
 
 			await this._notificationsService.deletedSale(sale, userIdOwnerStore);
 

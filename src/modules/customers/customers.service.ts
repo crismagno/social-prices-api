@@ -154,8 +154,7 @@ export class CustomersService {
 		createCustomerDto: CreateCustomerDto,
 		ownerUserId: string,
 	): Promise<ICustomer> {
-		const user: IUser =
-			await this._usersService.findOneByUserIdOrFail(ownerUserId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(ownerUserId);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -207,7 +206,7 @@ export class CustomersService {
 		updateCustomerDto: UpdateCustomerDto,
 		userId: string,
 	): Promise<ICustomer> {
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		const customer: ICustomer = await this.findByIdOrFail(
 			updateCustomerDto.customerId,

@@ -172,7 +172,7 @@ export class StoresService {
 	): Promise<IStore> {
 		await this.validateCreate(createStoreDto.name, createStoreDto.email);
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		let logo: string | null = null;
 
@@ -267,7 +267,7 @@ export class StoresService {
 			updateStoreDto.tagsIds = JSON.parse(updateStoreDto.tagsIds);
 		}
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(
+		const user: IUser = await this._usersService.findOneByIdOrFail(
 			store.userId.toString(),
 		);
 
