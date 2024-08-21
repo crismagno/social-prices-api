@@ -4,7 +4,7 @@ export const SoftDeleteSchema = new mongoose.Schema(
 	{
 		isDeleted: Boolean,
 		deletedAt: Date,
-		deletedBy: mongoose.Schema.Types.ObjectId,
+		deletedByUserId: mongoose.Schema.Types.ObjectId,
 		deletedByEmployeeId: {
 			type: mongoose.Schema.Types.ObjectId,
 			optional: true,
