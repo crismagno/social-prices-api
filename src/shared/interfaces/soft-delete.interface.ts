@@ -7,5 +7,6 @@ export interface ISoftDeleteEntity {
 export interface ISoftDelete {
 	isDeleted: boolean;
 	deletedAt: Date;
-	deletedBy: mongoose.Schema.Types.ObjectId;
+	deletedByUserId: mongoose.Schema.Types.ObjectId;
+	deletedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 }

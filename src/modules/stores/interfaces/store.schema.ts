@@ -58,7 +58,7 @@ export class Store implements IStore {
 	@Prop({ type: [AddressSchema] })
 	addresses: IAddress[];
 
-	@Prop({ type: SoftDeleteSchema, _id: false })
+	@Prop({ type: SoftDeleteSchema })
 	softDelete: ISoftDelete;
 
 	@Prop({ required: true, type: Date })

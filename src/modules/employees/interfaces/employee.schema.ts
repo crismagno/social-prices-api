@@ -23,7 +23,7 @@ export class Employee implements IEmployee {
 	@Prop({ required: true, type: String })
 	name: string;
 
-	@Prop({ required: true, type: String })
+	@Prop({ required: true, type: String, unique: true })
 	username: string;
 
 	@Prop({ required: true, type: String })

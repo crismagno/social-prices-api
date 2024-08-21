@@ -284,8 +284,6 @@ export class UsersService {
 		userId: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
-		await this.findOneByIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
@@ -309,8 +307,6 @@ export class UsersService {
 		userId: string,
 		updateUserAddressesDto: UpdateUserAddressesDto,
 	): Promise<IUserEntity> {
-		await this.findOneByIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
@@ -331,8 +327,6 @@ export class UsersService {
 		userId: string,
 		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
 	): Promise<IUserEntity> {
-		await this.findOneByIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{

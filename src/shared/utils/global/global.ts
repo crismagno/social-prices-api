@@ -33,12 +33,12 @@ export const createUniqueSuffix = (length: number = 1e9): string =>
 export const createUsernameByEmail = (email: string): string => {
 	const firstPartEmail: string = email.split('@')[0];
 	const uniqueSuffix: string = createUniqueSuffix(10);
-	return `${firstPartEmail}${uniqueSuffix}`;
+	return `${firstPartEmail}${uniqueSuffix}`.replace(' ', '');
 };
 
 export const createUsernameByName = (name: string): string => {
 	const uniqueSuffix: string = createUniqueSuffix(10);
-	return `${name}${uniqueSuffix}`;
+	return `${name}${uniqueSuffix}`.replace(' ', '');
 };
 
 export const createNameByEmail = (email: string): string => {

@@ -271,7 +271,7 @@ export class Sale extends Document implements ISale {
 	})
 	paymentStatus: SalesEnum.PaymentStatus;
 
-	@Prop({ type: SoftDeleteSchema, _id: false })
+	@Prop({ type: SoftDeleteSchema })
 	softDelete: ISoftDelete | null;
 
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
