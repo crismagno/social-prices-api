@@ -8,8 +8,7 @@ import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interfac
 import StoresEnum from './stores.enum';
 
 export interface IStore
-	extends Document,
-		ISoftDeleteEntity,
+	extends ISoftDeleteEntity,
 		ICreatedAtEntity,
 		IUpdatedAtEntity {
 	readonly _id: string;

@@ -22,6 +22,7 @@ import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
 import { IStore } from './interfaces/store.interface';
+import { Store } from './interfaces/store.schema';
 import StoresEnum from './interfaces/stores.enum';
 
 @Injectable()
@@ -35,7 +36,7 @@ export class StoresService {
 	// #region Constructor
 
 	constructor(
-		@InjectModel(schemasName.store) private readonly _storeModel: Model<IStore>,
+		@InjectModel(schemasName.store) private readonly _storeModel: Model<Store>,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,

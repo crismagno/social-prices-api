@@ -33,5 +33,5 @@ export default class CreateStoreDto {
 
 	@IsString()
 	@IsOptional()
-	status: StoresEnum.Status;
+	status: StoresEnum.Status | null;
 }

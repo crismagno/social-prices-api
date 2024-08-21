@@ -37,5 +37,5 @@ export default class UpdateStoreDto {
 
 	@IsString()
 	@IsOptional()
-	status: StoresEnum.Status;
+	status: StoresEnum.Status | null;
 }
