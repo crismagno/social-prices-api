@@ -403,7 +403,11 @@ export class SalesService {
 		}
 	}
 
-	public async deleteManual(saleId: string, userId: string): Promise<ISale> {
+	public async deleteManual(
+		saleId: string,
+		userId: string,
+		employeeId?: string,
+	): Promise<ISale> {
 		try {
 			if (!saleId) {
 				throw new BadRequestException('SaleId is required!');
@@ -416,7 +420,10 @@ export class SalesService {
 						softDelete: {
 							isDeleted: true,
 							deletedAt: new Date(),
-							deletedBy: new mongoose.Types.ObjectId(userId),
+							deletedByUserId: new mongoose.Types.ObjectId(userId),
+							deletedByEmployeeId: employeeId
+								? new mongoose.Types.ObjectId(employeeId)
+								: null,
 						},
 					},
 				},

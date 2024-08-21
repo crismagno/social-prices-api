@@ -83,6 +83,10 @@ export class SalesController {
 		const authPayload: IAuthPayload =
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
 
-		return await this._salesService.deleteManual(saleId, authPayload._id);
+		return await this._salesService.deleteManual(
+			saleId,
+			authPayload._id,
+			authPayload.employeeId,
+		);
 	}
 }
