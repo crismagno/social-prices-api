@@ -76,6 +76,9 @@ export class Employee implements IEmployee {
 	})
 	status: EmployeesEnum.Status;
 
+	@Prop({ type: Boolean })
+	isMain: boolean;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

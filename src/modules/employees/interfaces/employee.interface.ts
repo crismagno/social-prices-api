@@ -23,4 +23,5 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	about: string | null;
 	level: EmployeesEnum.Level;
 	status: EmployeesEnum.Status;
+	isMain: boolean;
 }

@@ -1,4 +1,10 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+	IsBoolean,
+	IsEnum,
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+} from 'class-validator';
 
 import PersonEnum from '../../../../shared/enums/person.enum';
 import EmployeesEnum from '../employees.enum';
@@ -47,4 +53,8 @@ export default class CreateEmployeeDto {
 	@IsEnum(EmployeesEnum.Status)
 	@IsOptional()
 	status: EmployeesEnum.Status | null;
+
+	@IsOptional()
+	@IsBoolean()
+	isMain: boolean | null;
 }

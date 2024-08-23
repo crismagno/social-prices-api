@@ -185,6 +185,7 @@ export class UsersService {
 					tagsIds: [],
 					username,
 					avatar: createUserDto.avatar,
+					isMain: true,
 				},
 				user._id,
 			);

@@ -216,6 +216,7 @@ export class EmployeesService {
 			about: createEmployeeDto.about,
 			level: createEmployeeDto.level,
 			status: createEmployeeDto.status ?? EmployeesEnum.Status.PENDING,
+			isMain: !!createEmployeeDto.isMain,
 			createdAt: now,
 			updatedAt: now,
 		});
