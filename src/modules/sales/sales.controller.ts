@@ -5,7 +5,6 @@ import {
 	Get,
 	Param,
 	Post,
-	Request,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -15,7 +14,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
@@ -29,12 +28,9 @@ export class SalesController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ISale>,
 	): Promise<ITableStateResponse<ISale[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._salesService.findByUserTableState(
 			authPayload._id,
 			tableState,
@@ -43,10 +39,9 @@ export class SalesController {
 
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
-	public async countByUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._salesService.countByUserId(authPayload._id);
 	}
 
@@ -77,12 +72,9 @@ export class SalesController {
 	@Delete('/deleteManual/:saleId')
 	@UsePipes(ValidationPipe)
 	public async deleteManual(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Param('saleId', ValidationParamsPipe) saleId: string,
 	): Promise<ISale> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._salesService.deleteManual(
 			saleId,
 			authPayload._id,

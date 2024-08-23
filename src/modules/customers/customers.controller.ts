@@ -5,7 +5,6 @@ import {
 	Param,
 	Post,
 	Put,
-	Request,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -19,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CustomersService } from './customers.service';
 import { ICustomer } from './interfaces/customer.interface';
@@ -36,12 +35,9 @@ export class CustomersController {
 	public async create(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() createCustomerDto: CreateCustomerDto,
 	): Promise<ICustomer> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.create(
 			file,
 			createCustomerDto,
@@ -55,12 +51,9 @@ export class CustomersController {
 	public async update(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() updateCustomerDto: UpdateCustomerDto,
 	): Promise<ICustomer> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.update(
 			file,
 			updateCustomerDto,
@@ -71,23 +64,17 @@ export class CustomersController {
 	@Get('/ownerUserId')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserId(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 	): Promise<ICustomer[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.findByOwnerUserId(authPayload._id);
 	}
 
 	@Post('/ownerUserTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ICustomer>,
 	): Promise<ITableStateResponse<ICustomer[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.findByOwnerUserTableState(
 			authPayload._id,
 			tableState,
@@ -96,10 +83,9 @@ export class CustomersController {
 
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
-	public async countByOwnerUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByOwnerUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._customersService.countByOwnerUserId(authPayload._id);
 	}
 

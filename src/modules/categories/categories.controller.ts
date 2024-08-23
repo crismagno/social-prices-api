@@ -5,7 +5,6 @@ import {
 	Param,
 	Post,
 	Put,
-	Request,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -15,7 +14,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CategoriesService } from './categories.service';
 import CategoriesEnum from './interfaces/categories.enum';
@@ -31,12 +30,9 @@ export class CategoriesController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ICategory>,
 	): Promise<ITableStateResponse<ICategory[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._categoriesService.findByUserTableState(
 			authPayload._id,
 			tableState,
@@ -45,20 +41,16 @@ export class CategoriesController {
 
 	@Get('type/:type')
 	public async findByType(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Param('type', ValidationParamsPipe) type: CategoriesEnum.Type,
 	): Promise<ICategory[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._categoriesService.findByType(type, authPayload._id);
 	}
 
 	@Get('/user/count')
-	public async countByUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._categoriesService.countByUserId(authPayload._id);
 	}
 
@@ -72,12 +64,9 @@ export class CategoriesController {
 	@Post('/')
 	@UsePipes(ValidationPipe)
 	public async create(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() createCategoryDto: CreateCategoryDto,
 	): Promise<ICategory> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._categoriesService.create(
 			createCategoryDto,
 			authPayload._id,
@@ -87,12 +76,9 @@ export class CategoriesController {
 	@Put('/')
 	@UsePipes(ValidationPipe)
 	public async update(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() updateCategoryDto: UpdateCategoryDto,
 	): Promise<ICategory> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._categoriesService.update(
 			updateCategoryDto,
 			authPayload._id,
@@ -102,12 +88,9 @@ export class CategoriesController {
 	@Post('/multi')
 	@UsePipes(ValidationPipe)
 	public async createMulti(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() createCategoriesDto: CreateCategoryMultiDto,
 	): Promise<void> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		await this._categoriesService.createMulti(
 			createCategoriesDto,
 			authPayload._id,

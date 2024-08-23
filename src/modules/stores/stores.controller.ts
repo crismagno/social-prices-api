@@ -7,7 +7,6 @@ import {
 	ParseFilePipeBuilder,
 	Post,
 	Put,
-	Request,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -21,7 +20,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
@@ -38,12 +37,9 @@ export class StoresController {
 	public async create(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() createStoreDto: CreateStoreDto,
 	): Promise<IStore> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._storesService.create(
 			file,
 			createStoreDto,
@@ -76,22 +72,18 @@ export class StoresController {
 
 	@Get('/user')
 	@UsePipes(ValidationPipe)
-	public async findByUserId(@Request() request: any): Promise<IStore[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async findByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<IStore[]> {
 		return await this._storesService.findByUserId(authPayload._id);
 	}
 
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IStore>,
 	): Promise<ITableStateResponse<IStore[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._storesService.findByUserTableState(
 			authPayload._id,
 			tableState,

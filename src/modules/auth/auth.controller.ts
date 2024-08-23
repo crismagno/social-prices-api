@@ -1,22 +1,19 @@
 import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Request,
-  UsePipes,
-  ValidationPipe,
+	Body,
+	Controller,
+	Get,
+	Param,
+	Post,
+	UsePipes,
+	ValidationPipe,
 } from '@nestjs/common';
 
 import { Public } from '../../shared/decorators/custom.decorator';
-import {
-  ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
-import AuthEnum from './interfaces/auth.enum';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { IAuthPayload } from './interfaces/auth.types';
 
 @Controller('api/v1/auth')
@@ -50,12 +47,9 @@ export class AuthController {
 	@Get('/validateSignInCode/:codeValue')
 	@UsePipes(ValidationPipe)
 	public async validateSignInCode(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Param('codeValue', ValidationParamsPipe) codeValue: string,
 	): Promise<boolean> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._authService.validateSignInCode(
 			authPayload._id,
 			codeValue,

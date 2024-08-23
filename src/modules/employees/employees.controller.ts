@@ -5,7 +5,6 @@ import {
 	Param,
 	Post,
 	Put,
-	Request,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -19,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { EmployeesService } from './employees.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
@@ -37,11 +36,8 @@ export class EmployeesController {
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
 		@Body() createEmployeeDto: CreateEmployeeDto,
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 	): Promise<IEmployee> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._employeesService.create(
 			file,
 			createEmployeeDto,
@@ -62,22 +58,18 @@ export class EmployeesController {
 
 	@Get('/user')
 	@UsePipes(ValidationPipe)
-	public async findByUserId(@Request() request: any): Promise<IEmployee[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async findByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<IEmployee[]> {
 		return await this._employeesService.findByUserId(authPayload._id);
 	}
 
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IEmployee>,
 	): Promise<ITableStateResponse<IEmployee[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._employeesService.findByUserTableState(
 			authPayload._id,
 			tableState,
@@ -86,10 +78,9 @@ export class EmployeesController {
 
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
-	public async countByUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._employeesService.countByUserId(authPayload._id);
 	}
 

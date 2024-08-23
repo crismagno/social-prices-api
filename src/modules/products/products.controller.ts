@@ -5,7 +5,6 @@ import {
 	Param,
 	Post,
 	Put,
-	Request,
 	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
@@ -19,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
@@ -36,12 +35,9 @@ export class ProductsController {
 	public async create(
 		@UploadedFiles(parseFilePipeBuilder())
 		files: Express.Multer.File[],
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() createProductDto: CreateProductDto,
 	): Promise<IProduct> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._productsService.create(
 			files,
 			createProductDto,
@@ -55,12 +51,9 @@ export class ProductsController {
 	public async update(
 		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		files: Express.Multer.File[],
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() updateProductDto: UpdateProductDto,
 	): Promise<IProduct> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._productsService.update(
 			files,
 			updateProductDto,
@@ -70,31 +63,26 @@ export class ProductsController {
 
 	@Get('/user')
 	@UsePipes(ValidationPipe)
-	public async findByUserId(@Request() request: any): Promise<IProduct[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async findByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<IProduct[]> {
 		return await this._productsService.findByUserId(authPayload._id);
 	}
 
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
-	public async countByUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByUserId(
+		@CurrentUser() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._productsService.countByUserId(authPayload._id);
 	}
 
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Request() request: any,
+		@CurrentUser() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IProduct>,
 	): Promise<ITableStateResponse<IProduct[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._productsService.findByUserTableState(
 			authPayload._id,
 			tableState,

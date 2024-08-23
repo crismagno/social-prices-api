@@ -1,13 +1,15 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+import AuthEnum from '../interfaces/auth.enum';
+import { IAuthPayload } from '../interfaces/auth.types';
+
 export const CurrentUser = createParamDecorator(
 	(data: unknown, context: ExecutionContext) => {
 		const request = context.switchToHttp().getRequest<any>();
-		const dataUser = {
-			_id: request?.AUTH_PAYLOAD?._id,
-			uid: request?.AUTH_PAYLOAD?.uid,
-			email: request?.AUTH_PAYLOAD?.email,
-		};
-		return dataUser;
+
+		const authPayload: IAuthPayload =
+			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
+
+		return authPayload;
 	},
 );
