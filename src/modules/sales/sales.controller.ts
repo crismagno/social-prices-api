@@ -14,7 +14,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
@@ -28,7 +28,7 @@ export class SalesController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ISale>,
 	): Promise<ITableStateResponse<ISale[]>> {
 		return await this._salesService.findByUserTableState(
@@ -40,7 +40,7 @@ export class SalesController {
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
 	public async countByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<number> {
 		return await this._salesService.countByUserId(authPayload._id);
 	}
@@ -72,7 +72,7 @@ export class SalesController {
 	@Delete('/deleteManual/:saleId')
 	@UsePipes(ValidationPipe)
 	public async deleteManual(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Param('saleId', ValidationParamsPipe) saleId: string,
 	): Promise<ISale> {
 		return await this._salesService.deleteManual(

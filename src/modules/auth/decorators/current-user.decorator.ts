@@ -3,7 +3,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import AuthEnum from '../interfaces/auth.enum';
 import { IAuthPayload } from '../interfaces/auth.types';
 
-export const CurrentUser = createParamDecorator(
+export const AuthPayload = createParamDecorator(
 	(data: unknown, context: ExecutionContext) => {
 		const request = context.switchToHttp().getRequest<any>();
 

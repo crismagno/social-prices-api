@@ -20,7 +20,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
@@ -37,7 +37,7 @@ export class StoresController {
 	public async create(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createStoreDto: CreateStoreDto,
 	): Promise<IStore> {
 		return await this._storesService.create(
@@ -73,7 +73,7 @@ export class StoresController {
 	@Get('/user')
 	@UsePipes(ValidationPipe)
 	public async findByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IStore[]> {
 		return await this._storesService.findByUserId(authPayload._id);
 	}
@@ -81,7 +81,7 @@ export class StoresController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IStore>,
 	): Promise<ITableStateResponse<IStore[]>> {
 		return await this._storesService.findByUserTableState(

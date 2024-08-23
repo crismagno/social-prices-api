@@ -18,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
@@ -35,7 +35,7 @@ export class ProductsController {
 	public async create(
 		@UploadedFiles(parseFilePipeBuilder())
 		files: Express.Multer.File[],
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createProductDto: CreateProductDto,
 	): Promise<IProduct> {
 		return await this._productsService.create(
@@ -51,7 +51,7 @@ export class ProductsController {
 	public async update(
 		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		files: Express.Multer.File[],
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateProductDto: UpdateProductDto,
 	): Promise<IProduct> {
 		return await this._productsService.update(
@@ -64,7 +64,7 @@ export class ProductsController {
 	@Get('/user')
 	@UsePipes(ValidationPipe)
 	public async findByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IProduct[]> {
 		return await this._productsService.findByUserId(authPayload._id);
 	}
@@ -72,7 +72,7 @@ export class ProductsController {
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
 	public async countByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<number> {
 		return await this._productsService.countByUserId(authPayload._id);
 	}
@@ -80,7 +80,7 @@ export class ProductsController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IProduct>,
 	): Promise<ITableStateResponse<IProduct[]>> {
 		return await this._productsService.findByUserTableState(

@@ -13,7 +13,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import UpdateToSeenDto from './interfaces/dto/updateToSeen.dto';
 import { INotification } from './interfaces/notification.interface';
@@ -26,7 +26,7 @@ export class NotificationsController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<INotification>,
 	): Promise<ITableStateResponse<INotification[]>> {
 		return await this._notificationsService.findByUserTableState(
@@ -38,7 +38,7 @@ export class NotificationsController {
 	@Get('/countNotSeenByUser')
 	@UsePipes(ValidationPipe)
 	public async countNotSeenByUser(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<number> {
 		return await this._notificationsService.countNotSeenByUser(authPayload._id);
 	}

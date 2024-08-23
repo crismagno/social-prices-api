@@ -14,7 +14,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateTagDto from './interfaces/dto/createTag.dto';
 import CreateTagMultiDto from './interfaces/dto/createTagMulti.dto';
@@ -30,7 +30,7 @@ export class TagsController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ITag>,
 	): Promise<ITableStateResponse<ITag[]>> {
 		return await this._tagsService.findByUserTableState(
@@ -41,7 +41,7 @@ export class TagsController {
 
 	@Get('/type/:type')
 	public async findByType(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Param('type', ValidationParamsPipe) type: TagsEnum.Type,
 	): Promise<ITag[]> {
 		return await this._tagsService.findByType(authPayload._id, type);

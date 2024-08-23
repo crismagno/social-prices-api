@@ -18,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { EmployeesService } from './employees.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
@@ -36,7 +36,7 @@ export class EmployeesController {
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
 		@Body() createEmployeeDto: CreateEmployeeDto,
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IEmployee> {
 		return await this._employeesService.create(
 			file,
@@ -59,7 +59,7 @@ export class EmployeesController {
 	@Get('/user')
 	@UsePipes(ValidationPipe)
 	public async findByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IEmployee[]> {
 		return await this._employeesService.findByUserId(authPayload._id);
 	}
@@ -67,7 +67,7 @@ export class EmployeesController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<IEmployee>,
 	): Promise<ITableStateResponse<IEmployee[]>> {
 		return await this._employeesService.findByUserTableState(
@@ -79,7 +79,7 @@ export class EmployeesController {
 	@Get('/user/count')
 	@UsePipes(ValidationPipe)
 	public async countByUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<number> {
 		return await this._employeesService.countByUserId(authPayload._id);
 	}

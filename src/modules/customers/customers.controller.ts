@@ -18,7 +18,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CustomersService } from './customers.service';
 import { ICustomer } from './interfaces/customer.interface';
@@ -35,7 +35,7 @@ export class CustomersController {
 	public async create(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createCustomerDto: CreateCustomerDto,
 	): Promise<ICustomer> {
 		return await this._customersService.create(
@@ -51,7 +51,7 @@ export class CustomersController {
 	public async update(
 		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		file: Express.Multer.File,
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateCustomerDto: UpdateCustomerDto,
 	): Promise<ICustomer> {
 		return await this._customersService.update(
@@ -64,7 +64,7 @@ export class CustomersController {
 	@Get('/ownerUserId')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<ICustomer[]> {
 		return await this._customersService.findByOwnerUserId(authPayload._id);
 	}
@@ -72,7 +72,7 @@ export class CustomersController {
 	@Post('/ownerUserTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ICustomer>,
 	): Promise<ITableStateResponse<ICustomer[]>> {
 		return await this._customersService.findByOwnerUserTableState(
@@ -84,7 +84,7 @@ export class CustomersController {
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
 	public async countByOwnerUserId(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<number> {
 		return await this._customersService.countByOwnerUserId(authPayload._id);
 	}

@@ -13,7 +13,7 @@ import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe'
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthPayload } from './decorators/current-user.decorator';
 import { IAuthPayload } from './interfaces/auth.types';
 
 @Controller('api/v1/auth')
@@ -47,7 +47,7 @@ export class AuthController {
 	@Get('/validateSignInCode/:codeValue')
 	@UsePipes(ValidationPipe)
 	public async validateSignInCode(
-		@CurrentUser() authPayload: IAuthPayload,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Param('codeValue', ValidationParamsPipe) codeValue: string,
 	): Promise<boolean> {
 		return await this._authService.validateSignInCode(
