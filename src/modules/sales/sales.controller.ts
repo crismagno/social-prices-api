@@ -19,6 +19,10 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import { ISale } from './interfaces/sale.interface';
+import {
+	IGetSalesAnalyticsParams,
+	IGetSalesAnalyticsResponse,
+} from './interfaces/sales.type';
 import { SalesService } from './sales.service';
 
 @Controller('api/v1/sales')
@@ -80,5 +84,14 @@ export class SalesController {
 			authPayload._id,
 			authPayload.employeeId,
 		);
+	}
+
+	@Post('/getSalesAnalytics')
+	@UsePipes(ValidationPipe)
+	public async getSalesAnalytics(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() params: IGetSalesAnalyticsParams,
+	): Promise<IGetSalesAnalyticsResponse> {
+		return await this._salesService.getSalesAnalytics(authPayload._id, params);
 	}
 }

@@ -102,11 +102,11 @@ export class ProductsService {
 		}
 
 		if (tableState.filters?.isActive?.length === 1) {
-			filter.isActive = tableState.filters?.isActive[0];
+			filter.isActive = tableState.filters.isActive[0];
 		}
 
 		if (tableState.filters?.storeIds?.length) {
-			filter.storeIds = { $in: tableState.filters?.storeIds as string[] };
+			filter.storeIds = { $in: tableState.filters.storeIds as string[] };
 		}
 
 		if (tableState?.filters?.categoriesIds?.length) {

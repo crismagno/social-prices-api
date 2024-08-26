@@ -76,7 +76,7 @@ export class NotificationsService {
 
 		if (tableState.filters?.type?.length) {
 			filter.type = {
-				$in: tableState.filters?.type as NotificationsEnum.Type[],
+				$in: tableState.filters.type as NotificationsEnum.Type[],
 			};
 		}
 

@@ -1,5 +1,5 @@
 import { isNumber } from 'class-validator';
-import { find, forEach, map, reduce } from 'lodash';
+import { find, forEach, includes, map, reduce } from 'lodash';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 
 import {
@@ -11,6 +11,12 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
+import { parseToChartDataPeriodTypeItem } from '../../shared/charts/charts';
+import ChartsEnum from '../../shared/charts/charts-enum';
+import {
+	IChartDataPeriodTypeItem,
+	IChartDateTotalItem,
+} from '../../shared/charts/charts-types';
 import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
 import { IAddress } from '../../shared/interfaces/address.interface';
 import { queryOptions } from '../../shared/utils/table/table-state';
@@ -39,7 +45,12 @@ import {
 	ISaleStoreProduct,
 } from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
-import { IProductQuantity, IProductToSubtract } from './interfaces/sales.type';
+import {
+	IGetSalesAnalyticsParams,
+	IGetSalesAnalyticsResponse,
+	IProductQuantity,
+	IProductToSubtract,
+} from './interfaces/sales.type';
 
 @Injectable()
 export class SalesService {
@@ -152,27 +163,27 @@ export class SalesService {
 		}
 
 		if (tableState.filters?.type?.length) {
-			filter.type = { $in: tableState.filters?.type };
+			filter.type = { $in: tableState.filters.type };
 		}
 
 		if (tableState.filters?.status?.length) {
-			filter.status = { $in: tableState.filters?.status };
+			filter.status = { $in: tableState.filters.status };
 		}
 
 		if (tableState.filters?.paymentStatus?.length) {
-			filter.paymentStatus = { $in: tableState.filters?.paymentStatus };
+			filter.paymentStatus = { $in: tableState.filters.paymentStatus };
 		}
 
 		if (tableState.filters?.deliveryType?.length) {
-			filter['header.deliveryType'] = { $in: tableState.filters?.deliveryType };
+			filter['header.deliveryType'] = { $in: tableState.filters.deliveryType };
 		}
 
 		if (tableState.filters?.stores?.length) {
-			filter['stores.storeId'] = { $in: tableState.filters?.stores };
+			filter['stores.storeId'] = { $in: tableState.filters.stores };
 		}
 
 		if (tableState.filters?.createdAtRange) {
-			const { startDate, endDate } = tableState.filters?.createdAtRange;
+			const { startDate, endDate } = tableState.filters.createdAtRange;
 			filter.createdAt = { $gte: startDate, $lte: endDate };
 		}
 
@@ -451,6 +462,49 @@ export class SalesService {
 
 			throw new BadRequestException(error);
 		}
+	}
+
+	public async getSalesAnalytics(
+		userId: string,
+		params: IGetSalesAnalyticsParams,
+	): Promise<IGetSalesAnalyticsResponse> {
+		let storesIds: string[] = params.storesIds?.length
+			? params.storesIds
+			: await this._storesService.findStoreIdsByUserId(userId);
+
+		const filter: FilterQuery<ISale> = {
+			'stores.storeId': { $in: storesIds },
+		};
+
+		if (params.types?.length) {
+			filter.type = { $in: params.types };
+		}
+
+		if (params.status?.length) {
+			filter.status = { $in: params.status };
+		}
+
+		if (params.rangeDate) {
+			const { startDate, endDate } = params.rangeDate;
+			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
+		if (params.tagsIds?.length) {
+			filter.tagsIds = { $in: params.tagsIds };
+		}
+
+		let sales: ISale[] = await this._saleModel.find(filter);
+
+		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
+			this._parseSalesToIChartDataPeriodType(
+				sales,
+				storesIds,
+				params.periodType,
+			);
+
+		return {
+			chartDataPeriodType,
+		};
 	}
 
 	// #endregion
@@ -768,6 +822,37 @@ export class SalesService {
 				},
 			);
 		}
+	}
+
+	private _parseSalesToIChartDataPeriodType(
+		sales: ISale[],
+		storeIds: string[],
+		periodType: ChartsEnum.PeriodType,
+	): IChartDataPeriodTypeItem[] {
+		const chartDataItems: IChartDateTotalItem[] = sales.reduce(
+			(acc: IChartDateTotalItem[], sale: ISale) => {
+				const total: number = sale.stores.reduce(
+					(accTotal: number, saleStore: ISaleStore) => {
+						if (includes(storeIds, saleStore.storeId.toString())) {
+							accTotal += saleStore.totals.totalFinalAmount;
+						}
+
+						return accTotal;
+					},
+					0,
+				);
+
+				acc.push({
+					date: sale.createdAt,
+					total,
+				});
+
+				return acc;
+			},
+			[],
+		);
+
+		return parseToChartDataPeriodTypeItem(chartDataItems, periodType);
 	}
 
 	// #endregion

@@ -80,7 +80,7 @@ export class StoresService {
 
 		const storesIds: string[] = stores.map((store: IStore) => store._id);
 
-		return storesIds;
+		return storesIds.map((storeId) => storeId.toString());
 	}
 
 	public async findByUserTableState(
