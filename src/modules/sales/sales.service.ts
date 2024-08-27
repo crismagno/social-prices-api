@@ -955,9 +955,10 @@ export class SalesService {
 					return item;
 				}
 
-				const product: IProduct | undefined = find(products, {
-					_id: new mongoose.Types.ObjectId(item.productId),
-				}) as IProduct | undefined;
+				const product: IProduct | undefined = find(
+					products,
+					(x) => x._id.toString() === item.productId,
+				);
 
 				if (product) {
 					return {
