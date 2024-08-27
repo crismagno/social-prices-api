@@ -98,8 +98,12 @@ export const SaleTotalsSchema = SchemaFactory.createForClass(SaleTotals);
 
 @Schema()
 export class SaleStoreProduct implements ISaleStoreProduct {
-	@Prop({ required: true, type: String, ref: 'Product' })
-	productId: string;
+	@Prop({
+		required: true,
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Product',
+	})
+	productId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: Number })
 	price: number;

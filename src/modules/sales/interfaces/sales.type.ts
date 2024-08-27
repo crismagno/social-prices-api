@@ -18,6 +18,7 @@ export interface IGetSalesAnalyticsParams {
 	status?: SalesEnum.Status[];
 	types?: SalesEnum.Type[];
 	tagsIds?: string[];
+	productIds?: string[];
 	rangeDate?: IRangeDate;
 	periodType?: ChartsEnum.PeriodType;
 }

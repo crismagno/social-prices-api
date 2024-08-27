@@ -493,6 +493,10 @@ export class SalesService {
 			filter.tagsIds = { $in: params.tagsIds };
 		}
 
+		if (params.productIds?.length) {
+			filter['stores.products.productId'] = { $in: params.productIds };
+		}
+
 		let sales: ISale[] = await this._saleModel.find(filter);
 
 		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
@@ -623,7 +627,7 @@ export class SalesService {
 				customerId: saleStoreDto.customerId as any,
 				number: saleNumber,
 				storeId: saleStoreDto.storeId as any,
-				products: saleStoreDto.products,
+				products: saleStoreDto.products as any,
 				totals: saleStoreDto.totals,
 			}),
 		);
@@ -663,13 +667,13 @@ export class SalesService {
 							{
 								productId: saleStoreProduct.productId,
 							},
-						);
+						) as IProductToSubtract | undefined;
 
 						if (findProductToSubtract) {
 							findProductToSubtract.quantity += saleStoreProduct.quantity;
 						} else {
 							acc.push({
-								productId: saleStoreProduct.productId,
+								productId: saleStoreProduct.productId.toString(),
 								quantity: saleStoreProduct.quantity,
 							});
 						}
@@ -712,13 +716,13 @@ export class SalesService {
 							{
 								productId: saleStoreProduct.productId,
 							},
-						);
+						) as IProductToSubtract | undefined;
 
 						if (findProductToSubtract) {
 							findProductToSubtract.quantity += saleStoreProduct.quantity;
 						} else {
 							acc.push({
-								productId: saleStoreProduct.productId,
+								productId: saleStoreProduct.productId.toString(),
 								quantity: saleStoreProduct.quantity,
 							});
 						}

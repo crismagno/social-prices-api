@@ -60,7 +60,7 @@ export interface ISalePayment {
 
 export interface ISaleStoreProduct {
 	product?: IProduct;
-	productId: string;
+	productId: mongoose.Schema.Types.ObjectId;
 	price: number;
 	quantity: number;
 	barCode: string;
