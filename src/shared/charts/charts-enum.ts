@@ -5,6 +5,10 @@ namespace ChartsEnum {
 		MONTH = 'MONTH',
 		YEAR = 'YEAR',
 	}
+
+	export const OthersName: string = 'Others';
+
+	export const DefaultItemsLength: number = 5;
 }
 
 export default ChartsEnum;

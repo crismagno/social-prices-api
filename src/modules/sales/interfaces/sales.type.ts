@@ -1,5 +1,8 @@
 import ChartsEnum from '../../../shared/charts/charts-enum';
-import { IChartDataPeriodTypeItem } from '../../../shared/charts/charts-types';
+import {
+	IChartDataPeriodTypeItem,
+	IChartDataProductItem,
+} from '../../../shared/charts/charts-types';
 import { IRangeDate } from '../../../shared/interfaces/global';
 import SalesEnum from './sales.enum';
 
@@ -25,4 +28,13 @@ export interface IGetSalesAnalyticsParams {
 
 export interface IGetSalesAnalyticsResponse {
 	chartDataPeriodType: IChartDataPeriodTypeItem[];
+	chartDataProducts: IChartDataProductItem[];
+}
+
+export interface ISaleStoreProductString {
+	productId: string;
+	price: number;
+	quantity: number;
+	barCode: string;
+	note: string | null;
 }

@@ -1,5 +1,5 @@
 import { isNumber } from 'class-validator';
-import { find, forEach, includes, map, reduce } from 'lodash';
+import { find, flatMap, forEach, includes, map, orderBy, reduce } from 'lodash';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 
 import {
@@ -15,6 +15,7 @@ import { parseToChartDataPeriodTypeItem } from '../../shared/charts/charts';
 import ChartsEnum from '../../shared/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
+	IChartDataProductItem,
 	IChartDateTotalItem,
 } from '../../shared/charts/charts-types';
 import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
@@ -29,6 +30,7 @@ import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
@@ -50,6 +52,7 @@ import {
 	IGetSalesAnalyticsResponse,
 	IProductQuantity,
 	IProductToSubtract,
+	ISaleStoreProductString,
 } from './interfaces/sales.type';
 
 @Injectable()
@@ -500,14 +503,18 @@ export class SalesService {
 		let sales: ISale[] = await this._saleModel.find(filter);
 
 		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
-			this._parseSalesToIChartDataPeriodType(
+			this._parseSalesToChartDataPeriodType(
 				sales,
 				storesIds,
 				params.periodType,
 			);
 
+		const chartDataProducts: IChartDataProductItem[] =
+			await this._parseSalesToChartProducts(sales, storesIds);
+
 		return {
 			chartDataPeriodType,
+			chartDataProducts,
 		};
 	}
 
@@ -828,7 +835,7 @@ export class SalesService {
 		}
 	}
 
-	private _parseSalesToIChartDataPeriodType(
+	private _parseSalesToChartDataPeriodType(
 		sales: ISale[],
 		storeIds: string[],
 		periodType: ChartsEnum.PeriodType,
@@ -857,6 +864,113 @@ export class SalesService {
 		);
 
 		return parseToChartDataPeriodTypeItem(chartDataItems, periodType);
+	}
+
+	private async _parseSalesToChartProducts(
+		sales: ISale[],
+		storeIds: string[],
+	): Promise<IChartDataProductItem[]> {
+		let salesStoresProducts: ISaleStoreProduct[] = flatMap(
+			sales,
+			(sale: ISale) =>
+				flatMap(sale.stores, (saleStore: ISaleStore) => {
+					if (includes(storeIds, saleStore.storeId.toString())) {
+						return saleStore.products;
+					}
+
+					return [];
+				}),
+		);
+
+		const salesStoresProductsString: ISaleStoreProductString[] = map(
+			salesStoresProducts,
+			(saleStoreProduct: ISaleStoreProduct): ISaleStoreProductString => ({
+				barCode: saleStoreProduct.barCode,
+				note: saleStoreProduct.note,
+				price: saleStoreProduct.price,
+				quantity: saleStoreProduct.quantity,
+				productId: saleStoreProduct.productId.toString(),
+			}),
+		);
+
+		let chartDataProductItems: IChartDataProductItem[] = reduce(
+			salesStoresProductsString,
+			(
+				acc: IChartDataProductItem[],
+				saleStoreProduct: ISaleStoreProductString,
+			) => {
+				const findChartDataProductItem: IChartDataProductItem | undefined =
+					find(acc, {
+						productId: saleStoreProduct.productId,
+					}) as IChartDataProductItem | undefined;
+
+				if (findChartDataProductItem) {
+					findChartDataProductItem.total +=
+						saleStoreProduct.price * saleStoreProduct.quantity;
+				} else {
+					acc.push({
+						name: saleStoreProduct.barCode,
+						productId: saleStoreProduct.productId.toString(),
+						total: saleStoreProduct.price * saleStoreProduct.quantity,
+						mainUrl: '',
+					});
+				}
+
+				return acc;
+			},
+			[],
+		);
+
+		chartDataProductItems = orderBy(chartDataProductItems, 'total', 'desc');
+
+		chartDataProductItems = reduce(
+			chartDataProductItems,
+			(acc: IChartDataProductItem[], curr: IChartDataProductItem) => {
+				if (acc.length <= ChartsEnum.DefaultItemsLength) {
+					acc.push(curr);
+				} else if (acc.length === ChartsEnum.DefaultItemsLength + 1) {
+					acc.push({
+						name: ChartsEnum.OthersName,
+						productId: curr.productId,
+						total: curr.total,
+						mainUrl: curr.mainUrl,
+					});
+				} else {
+					acc[ChartsEnum.DefaultItemsLength + 1].total += curr.total;
+				}
+
+				return acc;
+			},
+			[],
+		);
+
+		const products: IProduct[] = await this._productsService.findByIds(
+			map(chartDataProductItems, 'productId'),
+		);
+
+		chartDataProductItems = map(
+			chartDataProductItems,
+			(item): IChartDataProductItem => {
+				if (item.name === ChartsEnum.OthersName) {
+					return item;
+				}
+
+				const product: IProduct | undefined = find(products, {
+					_id: new mongoose.Types.ObjectId(item.productId),
+				}) as IProduct | undefined;
+
+				if (product) {
+					return {
+						...item,
+						name: product.name,
+						mainUrl: product.mainUrl,
+					};
+				}
+				return item;
+			},
+		);
+
+		return chartDataProductItems;
 	}
 
 	// #endregion
