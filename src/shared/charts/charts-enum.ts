@@ -8,7 +8,7 @@ namespace ChartsEnum {
 
 	export const OthersName: string = 'Others';
 
-	export const DefaultItemsLength: number = 5;
+	export const DefaultItemsLength: number = 4;
 }
 
 export default ChartsEnum;

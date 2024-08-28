@@ -10,13 +10,24 @@ export const parseToChartDataPeriodTypeItemByHour = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let hour = 0; hour < 24; hour += 1) {
-		const total: number = items
-			.filter((item) => moment.utc(item.date).hour() === hour)
-			.reduce((acc, item) => (acc += item.total), 0);
+		const itemsFiltered: IChartDateTotalItem[] = items.filter(
+			(item) => moment.utc(item.date).hour() === hour,
+		);
+
+		const total: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.total),
+			0,
+		);
+
+		const quantity: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.quantity),
+			0,
+		);
 
 		const data: IChartDataPeriodTypeItem = {
 			total,
 			name: hour + 1,
+			quantity,
 		};
 
 		result.push(data);
@@ -31,13 +42,24 @@ export const parseToChartDataPeriodTypeItemByDay = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let day = 0; day < 31; day += 1) {
-		const total: number = items
-			.filter((item) => moment.utc(item.date).day() === day)
-			.reduce((acc, item) => (acc += item.total), 0);
+		const itemsFiltered: IChartDateTotalItem[] = items.filter(
+			(item) => moment.utc(item.date).day() === day,
+		);
+
+		const total: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.total),
+			0,
+		);
+
+		const quantity: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.quantity),
+			0,
+		);
 
 		const data: IChartDataPeriodTypeItem = {
 			total,
 			name: day + 1,
+			quantity,
 		};
 
 		result.push(data);
@@ -52,13 +74,24 @@ export const parseToChartDataPeriodTypeItemByMonth = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let month = 0; month < 12; month += 1) {
-		const total: number = items
-			.filter((item) => moment(item.date).month() === month)
-			.reduce((acc, item) => (acc += item.total), 0);
+		const itemsFiltered: IChartDateTotalItem[] = items.filter(
+			(item) => moment.utc(item.date).day() === month,
+		);
+
+		const total: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.total),
+			0,
+		);
+
+		const quantity: number = itemsFiltered.reduce(
+			(acc, item) => (acc += item.quantity),
+			0,
+		);
 
 		const data: IChartDataPeriodTypeItem = {
 			total,
 			name: month + 1,
+			quantity,
 		};
 
 		result.push(data);
@@ -80,10 +113,12 @@ export const parseToChartDataPeriodTypeItemByYear = (
 
 			if (findByItemYear) {
 				findByItemYear.total += item.total;
+				findByItemYear.quantity += item.quantity;
 			} else {
 				acc.push({
 					name: itemYear,
 					total: item.total,
+					quantity: item.quantity,
 				});
 			}
 

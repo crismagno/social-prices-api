@@ -509,12 +509,14 @@ export class SalesService {
 				params.periodType,
 			);
 
-		const chartDataProducts: IChartDataProductItem[] =
-			await this._parseSalesToChartProducts(sales, storesIds);
+		const chartDataProducts = await this._parseSalesToChartDataProducts(
+			sales,
+			storesIds,
+		);
 
 		return {
 			chartDataPeriodType,
-			chartDataProducts,
+			...chartDataProducts,
 		};
 	}
 
@@ -840,22 +842,31 @@ export class SalesService {
 		storeIds: string[],
 		periodType: ChartsEnum.PeriodType,
 	): IChartDataPeriodTypeItem[] {
-		const chartDataItems: IChartDateTotalItem[] = sales.reduce(
+		const chartDataItems: IChartDateTotalItem[] = reduce(
+			sales,
 			(acc: IChartDateTotalItem[], sale: ISale) => {
-				const total: number = sale.stores.reduce(
-					(accTotal: number, saleStore: ISaleStore) => {
+				const totalAndQuantity = sale.stores.reduce(
+					(acc: { total: number; quantity: number }, saleStore: ISaleStore) => {
 						if (includes(storeIds, saleStore.storeId.toString())) {
-							accTotal += saleStore.totals.totalFinalAmount;
+							acc.total += saleStore.totals.totalFinalAmount;
+							acc.quantity += reduce(
+								saleStore.products,
+								(acc2, curr2) => (acc2 += curr2.quantity),
+								0,
+							);
 						}
 
-						return accTotal;
+						return acc;
 					},
-					0,
+					{
+						total: 0,
+						quantity: 0,
+					},
 				);
 
 				acc.push({
 					date: sale.createdAt,
-					total,
+					...totalAndQuantity,
 				});
 
 				return acc;
@@ -866,10 +877,13 @@ export class SalesService {
 		return parseToChartDataPeriodTypeItem(chartDataItems, periodType);
 	}
 
-	private async _parseSalesToChartProducts(
+	private async _parseSalesToChartDataProducts(
 		sales: ISale[],
 		storeIds: string[],
-	): Promise<IChartDataProductItem[]> {
+	): Promise<{
+		chartDataProductsByTotal: IChartDataProductItem[];
+		chartDataProductsByQuantity: IChartDataProductItem[];
+	}> {
 		let salesStoresProducts: ISaleStoreProduct[] = flatMap(
 			sales,
 			(sale: ISale) =>
@@ -907,8 +921,10 @@ export class SalesService {
 				if (findChartDataProductItem) {
 					findChartDataProductItem.total +=
 						saleStoreProduct.price * saleStoreProduct.quantity;
+					findChartDataProductItem.quantity += saleStoreProduct.quantity;
 				} else {
 					acc.push({
+						quantity: saleStoreProduct.quantity,
 						name: saleStoreProduct.barCode,
 						productId: saleStoreProduct.productId.toString(),
 						total: saleStoreProduct.price * saleStoreProduct.quantity,
@@ -921,22 +937,49 @@ export class SalesService {
 			[],
 		);
 
-		chartDataProductItems = orderBy(chartDataProductItems, 'total', 'desc');
+		let chartDataProductsByTotal: IChartDataProductItem[] =
+			await this._chartDataProductItemsByOrderProperty(
+				chartDataProductItems,
+				'total',
+			);
+		let chartDataProductsByQuantity: IChartDataProductItem[] =
+			await this._chartDataProductItemsByOrderProperty(
+				chartDataProductItems,
+				'quantity',
+			);
 
-		chartDataProductItems = reduce(
+		return {
+			chartDataProductsByTotal,
+			chartDataProductsByQuantity,
+		};
+	}
+
+	private async _chartDataProductItemsByOrderProperty(
+		chartDataProductItems: IChartDataProductItem[],
+		keyOrder: keyof IChartDataProductItem,
+	) {
+		let chartDataProductItemsByOrder: IChartDataProductItem[] = orderBy(
 			chartDataProductItems,
+			keyOrder,
+			'desc',
+		);
+
+		chartDataProductItemsByOrder = reduce(
+			chartDataProductItemsByOrder,
 			(acc: IChartDataProductItem[], curr: IChartDataProductItem) => {
-				if (acc.length <= ChartsEnum.DefaultItemsLength) {
+				if (acc.length < ChartsEnum.DefaultItemsLength) {
 					acc.push(curr);
-				} else if (acc.length === ChartsEnum.DefaultItemsLength + 1) {
+				} else if (acc.length === ChartsEnum.DefaultItemsLength) {
 					acc.push({
+						quantity: curr.quantity,
 						name: ChartsEnum.OthersName,
 						productId: curr.productId,
 						total: curr.total,
 						mainUrl: curr.mainUrl,
 					});
 				} else {
-					acc[ChartsEnum.DefaultItemsLength + 1].total += curr.total;
+					acc[ChartsEnum.DefaultItemsLength].total += curr.total;
+					acc[ChartsEnum.DefaultItemsLength].quantity += curr.quantity;
 				}
 
 				return acc;
@@ -945,11 +988,11 @@ export class SalesService {
 		);
 
 		const products: IProduct[] = await this._productsService.findByIds(
-			map(chartDataProductItems, 'productId'),
+			map(chartDataProductItemsByOrder, 'productId'),
 		);
 
-		chartDataProductItems = map(
-			chartDataProductItems,
+		chartDataProductItemsByOrder = map(
+			chartDataProductItemsByOrder,
 			(item): IChartDataProductItem => {
 				if (item.name === ChartsEnum.OthersName) {
 					return item;
@@ -971,7 +1014,7 @@ export class SalesService {
 			},
 		);
 
-		return chartDataProductItems;
+		return chartDataProductItemsByOrder;
 	}
 
 	// #endregion
