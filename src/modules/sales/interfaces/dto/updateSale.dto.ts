@@ -26,6 +26,10 @@ export default class UpdateSaleDto {
 	@IsNotEmpty()
 	updatedByUserId: string;
 
+	@IsString()
+	@IsNotEmpty()
+	updatedByEmployeeId: string;
+
 	@Type(() => SaleBuyerDto)
 	@IsOptional()
 	buyer: SaleBuyerDto | null;

@@ -2,7 +2,11 @@ import { find, sortBy } from 'lodash';
 import * as moment from 'moment';
 
 import ChartsEnum from './charts-enum';
-import { IChartDataPeriodTypeItem, IChartDateTotalItem } from './charts-types';
+import {
+	IChartDataPeriodTypeItem,
+	IChartDateTotalItem,
+	IChartTotalAndQuantity,
+} from './charts-types';
 
 export const parseToChartDataPeriodTypeItemByHour = (
 	items: IChartDateTotalItem[],
@@ -10,24 +14,24 @@ export const parseToChartDataPeriodTypeItemByHour = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let hour = 0; hour < 24; hour += 1) {
-		const itemsFiltered: IChartDateTotalItem[] = items.filter(
-			(item) => moment.utc(item.date).hour() === hour,
-		);
+		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
+			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
+				if (moment.utc(item.date).hour() === hour) {
+					acc.total += item.total;
+					acc.quantity += item.quantity;
+				}
 
-		const total: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.total),
-			0,
-		);
-
-		const quantity: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.quantity),
-			0,
+				return acc;
+			},
+			{
+				total: 0,
+				quantity: 0,
+			},
 		);
 
 		const data: IChartDataPeriodTypeItem = {
-			total,
 			name: hour + 1,
-			quantity,
+			...totalAndQuantity,
 		};
 
 		result.push(data);
@@ -42,24 +46,24 @@ export const parseToChartDataPeriodTypeItemByDay = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let day = 0; day < 31; day += 1) {
-		const itemsFiltered: IChartDateTotalItem[] = items.filter(
-			(item) => moment.utc(item.date).day() === day,
-		);
+		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
+			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
+				if (moment.utc(item.date).day() === day) {
+					acc.total += item.total;
+					acc.quantity += item.quantity;
+				}
 
-		const total: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.total),
-			0,
-		);
-
-		const quantity: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.quantity),
-			0,
+				return acc;
+			},
+			{
+				total: 0,
+				quantity: 0,
+			},
 		);
 
 		const data: IChartDataPeriodTypeItem = {
-			total,
 			name: day + 1,
-			quantity,
+			...totalAndQuantity,
 		};
 
 		result.push(data);
@@ -74,24 +78,24 @@ export const parseToChartDataPeriodTypeItemByMonth = (
 	const result: IChartDataPeriodTypeItem[] = [];
 
 	for (let month = 0; month < 12; month += 1) {
-		const itemsFiltered: IChartDateTotalItem[] = items.filter(
-			(item) => moment.utc(item.date).day() === month,
-		);
+		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
+			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
+				if (moment.utc(item.date).month() === month) {
+					acc.total += item.total;
+					acc.quantity += item.quantity;
+				}
 
-		const total: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.total),
-			0,
-		);
-
-		const quantity: number = itemsFiltered.reduce(
-			(acc, item) => (acc += item.quantity),
-			0,
+				return acc;
+			},
+			{
+				total: 0,
+				quantity: 0,
+			},
 		);
 
 		const data: IChartDataPeriodTypeItem = {
-			total,
 			name: month + 1,
-			quantity,
+			...totalAndQuantity,
 		};
 
 		result.push(data);

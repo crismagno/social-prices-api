@@ -17,6 +17,8 @@ export interface ISale
 	readonly _id: string;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
+	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
 	number: number;
 	type: SalesEnum.Type;

@@ -17,6 +17,7 @@ import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 	IChartDateTotalItem,
+	IChartTotalAndQuantity,
 } from '../../shared/charts/charts-types';
 import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
 import { IAddress } from '../../shared/interfaces/address.interface';
@@ -242,7 +243,13 @@ export class SalesService {
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
 		try {
 			if (!createSaleDto.createdByUserId) {
-				throw new BadRequestException('user which created sale is required!');
+				throw new BadRequestException('User which created sale is required!');
+			}
+
+			if (!createSaleDto.createdByEmployeeId) {
+				throw new BadRequestException(
+					'Employee which created sale is required!',
+				);
 			}
 
 			const saleNumber: number =
@@ -304,6 +311,7 @@ export class SalesService {
 				type: createSaleDto.type,
 				paymentStatus: createSaleDto.paymentStatus,
 				tagsIds: createSaleDto.tagsIds,
+				createdByEmployeeId: createSaleDto.createdByEmployeeId,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -331,6 +339,12 @@ export class SalesService {
 		try {
 			if (!updateSaleDto.updatedByUserId) {
 				throw new BadRequestException('User which updated sale is required!');
+			}
+
+			if (!updateSaleDto.updatedByEmployeeId) {
+				throw new BadRequestException(
+					'Employee which updated sale is required!',
+				);
 			}
 
 			const sale: ISale = await this.findByIdOrFail(updateSaleDto.saleId);
@@ -387,6 +401,7 @@ export class SalesService {
 				type: updateSaleDto.type,
 				paymentStatus: updateSaleDto.paymentStatus,
 				tagsIds: updateSaleDto.tagsIds,
+				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -846,7 +861,7 @@ export class SalesService {
 			sales,
 			(acc: IChartDateTotalItem[], sale: ISale) => {
 				const totalAndQuantity = sale.stores.reduce(
-					(acc: { total: number; quantity: number }, saleStore: ISaleStore) => {
+					(acc: IChartTotalAndQuantity, saleStore: ISaleStore) => {
 						if (includes(storeIds, saleStore.storeId.toString())) {
 							acc.total += saleStore.totals.totalFinalAmount;
 							acc.quantity += reduce(

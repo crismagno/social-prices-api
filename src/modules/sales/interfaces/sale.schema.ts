@@ -224,6 +224,12 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+
 	@Prop({ type: SaleBuyerSchema, _id: false })
 	buyer: ISaleBuyer | null;
 

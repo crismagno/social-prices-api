@@ -163,6 +163,10 @@ export default class CreateSaleDto {
 	@IsNotEmpty()
 	createdByUserId: string;
 
+	@IsString()
+	@IsNotEmpty()
+	createdByEmployeeId: string;
+
 	@Type(() => SaleBuyerDto)
 	@IsOptional()
 	buyer: SaleBuyerDto | null;
