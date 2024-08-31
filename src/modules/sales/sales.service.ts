@@ -11,16 +11,16 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { parseToChartDataPeriodTypeItem } from '../../shared/charts/charts';
-import ChartsEnum from '../../shared/charts/charts-enum';
+import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
+import { IAddress } from '../../shared/interfaces/address.interface';
+import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
+import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
-} from '../../shared/charts/charts-types';
-import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
-import { IAddress } from '../../shared/interfaces/address.interface';
+} from '../../shared/utils/charts/charts-types';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,

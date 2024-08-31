@@ -1,9 +1,9 @@
-import ChartsEnum from '../../../shared/charts/charts-enum';
+import { IRangeDate } from '../../../shared/interfaces/global.interface';
+import ChartsEnum from '../../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
-} from '../../../shared/charts/charts-types';
-import { IRangeDate } from '../../../shared/interfaces/global';
+} from '../../../shared/utils/charts/charts-types';
 import SalesEnum from './sales.enum';
 
 export interface IProductToSubtract {

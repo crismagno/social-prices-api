@@ -4,7 +4,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
 import { AddressSchema } from '../../../shared/schemas/address.schema';
 import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
 import { IEmployee } from './employee.interface';

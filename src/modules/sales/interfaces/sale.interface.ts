@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
 import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
