@@ -195,6 +195,12 @@ export class SalesService {
 			filter.tagsIds = { $in: tableState.filters.tagsIds };
 		}
 
+		if (tableState.filters?.productIds?.length) {
+			filter['stores.products.productId'] = {
+				$in: tableState.filters?.productIds,
+			};
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
