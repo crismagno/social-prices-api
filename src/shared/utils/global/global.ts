@@ -1,3 +1,4 @@
+import { isNil } from 'lodash';
 import { extname } from 'path';
 
 import AppEnum from '../../enums/app.enum';
@@ -58,4 +59,12 @@ export const newFileOriginalname = (fileOriginalname: string): string => {
 	const filename: string = `${name}-${uniqueSuffix}${ext}`;
 
 	return filename;
+};
+
+export const valueOrCreateUniqueSuffix = (value: any): string => {
+	if (isNil(value) || value === '') {
+		return createUniqueSuffix();
+	}
+
+	return value;
 };

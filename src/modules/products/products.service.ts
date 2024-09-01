@@ -11,7 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { FilesService } from '../../infra/services/files/files-service';
-import { createUniqueSuffix } from '../../shared/utils/global/global';
+import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -171,7 +171,7 @@ export class ProductsService {
 			tagsIds: createProductDto.tagsIds,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barCode: createProductDto.barCode ?? createUniqueSuffix(),
+			barCode: valueOrCreateUniqueSuffix(createProductDto.barCode),
 			QRCode: createProductDto.QRCode,
 			createdAt: now,
 			updatedAt: now,
@@ -247,7 +247,7 @@ export class ProductsService {
 					storeIds: updateProductDto.storeIds,
 					categoriesIds: updateProductDto.categoriesIds,
 					tagsIds: updateProductDto.tagsIds,
-					barCode: updateProductDto.barCode ?? createUniqueSuffix(),
+					barCode: valueOrCreateUniqueSuffix(updateProductDto.barCode),
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
 					updatedAt: now,

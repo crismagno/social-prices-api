@@ -109,7 +109,7 @@ export const parseToChartDataPeriodTypeItemByYear = (
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = items.reduce(
 		(acc: IChartDataPeriodTypeItem[], item: IChartDateTotalItem) => {
-			const itemYear: number = moment(item.date).year();
+			const itemYear: number = moment.utc(item.date).year();
 
 			const findByItemYear: IChartDataPeriodTypeItem = find(acc, {
 				name: itemYear,
