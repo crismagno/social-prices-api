@@ -16,6 +16,8 @@ export const parseToChartDataPeriodTypeItemByHour = (
 	for (let hour = 0; hour < 24; hour += 1) {
 		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
 			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
+				console.log('MOMENT: ', moment(item.date).local());
+				console.log('HOUR: ', hour);
 				if (moment.utc(item.date).hour() === hour) {
 					acc.total += item.total;
 					acc.quantity += item.quantity;
