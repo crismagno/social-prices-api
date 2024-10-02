@@ -26,7 +26,10 @@ export class AuthController {
 	public async signIn(
 		@Body() signInDto: Record<string, string>,
 	): Promise<IUserEntity> {
-		return await this._authService.signIn(signInDto.email, signInDto.password);
+		return await this._authService.signIn(
+			signInDto.emailOrUsername,
+			signInDto.password,
+		);
 	}
 
 	@Public()

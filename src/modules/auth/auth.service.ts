@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
@@ -25,8 +22,11 @@ export class AuthService {
 
 	// #region Public Methods
 
-	public async signIn(email: string, password: string): Promise<IUserEntity> {
-		return this._usersService.signIn(email, password);
+	public async signIn(
+		emailOrUsername: string,
+		password: string,
+	): Promise<IUserEntity> {
+		return this._usersService.signIn(emailOrUsername, password);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {

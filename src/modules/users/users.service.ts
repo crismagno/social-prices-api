@@ -85,6 +85,20 @@ export class UsersService {
 		return user;
 	}
 
+	public async findOneByEmailOrUsernameOrFail(
+		emailOrUsername: string,
+	): Promise<IUser> {
+		const user: IUser | undefined = await this._userModel.findOne({
+			$or: [{ email: emailOrUsername }, { username: emailOrUsername }],
+		});
+
+		if (!user) {
+			throw new NotFoundException('User not found!');
+		}
+
+		return user;
+	}
+
 	public async findOneById(userId: string): Promise<IUser | undefined> {
 		return this._userModel.findById(userId);
 	}
@@ -99,8 +113,12 @@ export class UsersService {
 		return user;
 	}
 
-	public async signIn(email: string, password: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByEmailOrFail(email);
+	public async signIn(
+		emailOrUsername: string,
+		password: string,
+	): Promise<IUserEntity> {
+		const user: IUser =
+			await this.findOneByEmailOrUsernameOrFail(emailOrUsername);
 
 		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
 			password,
