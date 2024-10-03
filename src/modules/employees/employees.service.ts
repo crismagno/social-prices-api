@@ -28,6 +28,7 @@ import UpdateEmployeeDto from './interfaces/dto/updateEmployee.dto';
 import { IEmployee } from './interfaces/employee.interface';
 import { Employee } from './interfaces/employee.schema';
 import EmployeesEnum from './interfaces/employees.enum';
+import { ISearchEmployee } from './interfaces/employees.types';
 
 @Injectable()
 export class EmployeesService {
@@ -333,6 +334,43 @@ export class EmployeesService {
 		}
 
 		return employee;
+	}
+
+	public async searchEmployees(
+		emailOrUsername: string,
+	): Promise<ISearchEmployee[]> {
+		const employees: IEmployee[] = await this._employeeModel.find({
+			$or: [
+				{
+					email: emailOrUsername,
+				},
+				{
+					username: emailOrUsername,
+				},
+			],
+		});
+
+		const employeesSearched: ISearchEmployee[] = await Promise.all(
+			employees.map(async (employee: IEmployee): Promise<ISearchEmployee> => {
+				const user: IUser = await this._usersService.findOneById(
+					employee.userId.toString(),
+				);
+
+				return {
+					employeeName: employee.name,
+					employeeUsername: employee.username,
+					employeeAvatar: employee.avatar,
+					employeeEmail: employee.email,
+					employeeLevel: employee.level,
+					employeeStatus: employee.status,
+					userName: user.name,
+					userUsername: user.username,
+					userAvatar: user.avatar,
+				};
+			}),
+		);
+
+		return employeesSearched;
 	}
 
 	// #endregion

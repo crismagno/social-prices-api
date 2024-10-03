@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
@@ -38,6 +39,14 @@ export class AuthService {
 		value: string,
 	): Promise<boolean> {
 		return this._usersService.validateSignInCode(userId, value);
+	}
+
+	public async searchEmployees(
+		emailOrUsername: string,
+	): Promise<ISearchEmployee[]> {
+		return await this._usersService.employeesService.searchEmployees(
+			emailOrUsername,
+		);
 	}
 
 	// #endregion

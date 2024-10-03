@@ -10,6 +10,7 @@ import {
 
 import { Public } from '../../shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
@@ -57,5 +58,14 @@ export class AuthController {
 			authPayload._id,
 			codeValue,
 		);
+	}
+
+	@Public()
+	@Get('/searchEmployees/:emailOrUsername')
+	@UsePipes(ValidationPipe)
+	public async searchEmployees(
+		@Param('emailOrUsername', ValidationParamsPipe) emailOrUsername: string,
+	): Promise<ISearchEmployee[]> {
+		return await this._authService.searchEmployees(emailOrUsername);
 	}
 }

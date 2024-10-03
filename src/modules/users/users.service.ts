@@ -58,7 +58,7 @@ export class UsersService {
 		private readonly _codesService: CodesService,
 		private readonly _filesService: FilesService,
 		@Inject(forwardRef(() => EmployeesService))
-		private readonly _employeesService: EmployeesService,
+		public readonly employeesService: EmployeesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -187,7 +187,7 @@ export class UsersService {
 
 			await this._notificationsService.sendSignInCode(user);
 
-			await this._employeesService.create(
+			await this.employeesService.create(
 				null,
 				{
 					about: createUserDto.about,
@@ -240,7 +240,7 @@ export class UsersService {
 			{ new: true },
 		);
 
-		await this._employeesService.activeAdminByUserId(userId);
+		await this.employeesService.activeAdminByUserId(userId);
 
 		return true;
 	}
@@ -482,7 +482,7 @@ export class UsersService {
 	//#region Private Methods
 
 	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
-		const employee: IEmployee = await this._employeesService.findAdminByUserId(
+		const employee: IEmployee = await this.employeesService.findAdminByUserId(
 			user._id,
 		);
 
@@ -499,7 +499,7 @@ export class UsersService {
 	}
 
 	private async _getUserEntity(user: IUser): Promise<IUserEntity> {
-		const employee: IEmployee = await this._employeesService.findAdminByUserId(
+		const employee: IEmployee = await this.employeesService.findAdminByUserId(
 			user._id,
 		);
 
