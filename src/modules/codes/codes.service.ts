@@ -82,6 +82,15 @@ export class CodesService {
 		return await this._getByUserIdAndType(userId, type, employeeId);
 	}
 
+	public async validateSignInEmployee(
+		userId: string,
+		value: string,
+		employeeId: string,
+	): Promise<boolean> {
+		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
+		return await this._validateCode(userId, type, value, employeeId);
+	}
+
 	public async validateCreateSignInEmployee(
 		userId: string,
 		employeeId: string,
@@ -180,7 +189,7 @@ export class CodesService {
 		}
 
 		if (code.value === value) {
-			await this._updateCode(userId, type);
+			await this._updateCode(userId, type, employeeId);
 			return true;
 		}
 

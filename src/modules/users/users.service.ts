@@ -55,10 +55,10 @@ export class UsersService {
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
 		private readonly _notificationsService: NotificationsService,
-		private readonly _codesService: CodesService,
 		private readonly _filesService: FilesService,
 		@Inject(forwardRef(() => EmployeesService))
 		public readonly employeesService: EmployeesService,
+		public readonly codesService: CodesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -131,7 +131,7 @@ export class UsersService {
 
 		await this._notificationsService.sendSignInCode(user);
 
-		return this._getUserEntityWithToken(user);
+		return this.getUserEntityWithToken(user);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
@@ -146,7 +146,7 @@ export class UsersService {
 			if (findUserByEmail && createUserDto.authProvider) {
 				await this._notificationsService.sendSignInCode(findUserByEmail);
 
-				return await this._getUserEntityWithToken(findUserByEmail);
+				return await this.getUserEntityWithToken(findUserByEmail);
 			} else if (findUserByEmail) {
 				this._logger.warn('signUp', createUserDto);
 				throw new BadRequestException('User credentials error.');
@@ -208,7 +208,7 @@ export class UsersService {
 				user._id,
 			);
 
-			return await this._getUserEntityWithToken(user);
+			return await this.getUserEntityWithToken(user);
 		} catch (error: any) {
 			this._logger.error(error);
 			throw error;
@@ -220,7 +220,7 @@ export class UsersService {
 		value: string,
 	): Promise<boolean> {
 		const isValidatedSignInCode: boolean =
-			await this._codesService.validateSignIn(userId, value);
+			await this.codesService.validateSignIn(userId, value);
 
 		if (!isValidatedSignInCode) {
 			return false;
@@ -245,16 +245,22 @@ export class UsersService {
 		return true;
 	}
 
-	public async getUserWIthTokenByUserId(userId: string): Promise<IUserEntity> {
+	public async getUserWIthTokenByUserId(
+		userId: string,
+		employeeId: string,
+	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
 
-		return this._getUserEntityWithToken(user);
+		return this.getUserEntityWithToken(user, employeeId);
 	}
 
-	public async getUserByUserId(userId: string): Promise<IUserEntity> {
+	public async getUserByUserId(
+		userId: string,
+		employeeId?: string,
+	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
 
-		return this._getUserEntity(user);
+		return this._getUserEntity(user, employeeId);
 	}
 
 	public async sendRecoverPasswordCode(email: string): Promise<void> {
@@ -278,7 +284,7 @@ export class UsersService {
 		);
 
 		const isValidatedRecoverPassword: boolean =
-			await this._codesService.validateRecoverPassword(
+			await this.codesService.validateRecoverPassword(
 				user._id,
 				recoverPasswordDto.codeValue,
 			);
@@ -301,6 +307,7 @@ export class UsersService {
 
 	public async updateUser(
 		userId: string,
+		employeeId: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -319,11 +326,12 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return this._getUserEntity(userUpdated, employeeId);
 	}
 
 	public async updateUserAddresses(
 		userId: string,
+		employeeId: string,
 		updateUserAddressesDto: UpdateUserAddressesDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -339,11 +347,12 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return this._getUserEntity(userUpdated, employeeId);
 	}
 
 	public async updateUserPhoneNumbers(
 		userId: string,
+		employeeId: string,
 		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -359,11 +368,12 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return this._getUserEntity(userUpdated, employeeId);
 	}
 
 	public async updateAvatar(
 		userId: string,
+		employeeId: string,
 		file: Express.Multer.File,
 	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
@@ -386,10 +396,13 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return this._getUserEntity(userUpdated, employeeId);
 	}
 
-	public async removeAvatar(userId: string): Promise<IUserEntity> {
+	public async removeAvatar(
+		userId: string,
+		employeeId: string,
+	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		await this._filesService.deleteFile(user.avatar);
@@ -407,7 +420,7 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return this._getUserEntity(userUpdated, employeeId);
 	}
 
 	public async sendUpdateEmailCode(
@@ -432,6 +445,7 @@ export class UsersService {
 
 	public async updateEmail(
 		userId: string,
+		employeeId: string,
 		updateEmailDto: UpdateEmailDto,
 	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
@@ -451,7 +465,7 @@ export class UsersService {
 		}
 
 		const isValidatedUpdateCodeEmail: boolean =
-			await this._codesService.validateUpdateEmail(
+			await this.codesService.validateUpdateEmail(
 				user._id,
 				updateEmailDto.codeValue,
 			);
@@ -474,17 +488,16 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntityWithToken(newUser);
+		return this.getUserEntityWithToken(newUser, employeeId);
 	}
 
-	//#rendegion
-
-	//#region Private Methods
-
-	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
-		const employee: IEmployee = await this.employeesService.findAdminByUserId(
-			user._id,
-		);
+	public async getUserEntityWithToken(
+		user: IUser,
+		employeeId?: string,
+	): Promise<IUserEntity> {
+		const employee: IEmployee = employeeId
+			? await this.employeesService.findByIdOrFail(employeeId)
+			: await this.employeesService.findAdminByUserId(user._id);
 
 		const payload: IAuthPayload = {
 			_id: user._id,
@@ -498,10 +511,17 @@ export class UsersService {
 		return (await new UserEntity(user).addToken(token)).addEmployee(employee);
 	}
 
-	private async _getUserEntity(user: IUser): Promise<IUserEntity> {
-		const employee: IEmployee = await this.employeesService.findAdminByUserId(
-			user._id,
-		);
+	//#rendegion
+
+	//#region Private Methods
+
+	private async _getUserEntity(
+		user: IUser,
+		employeeId?: string,
+	): Promise<IUserEntity> {
+		const employee: IEmployee = employeeId
+			? await this.employeesService.findByIdOrFail(employeeId)
+			: await this.employeesService.findAdminByUserId(user._id);
 
 		return new UserEntity(user).addEmployee(employee);
 	}

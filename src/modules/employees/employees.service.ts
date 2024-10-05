@@ -1,5 +1,5 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
+import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
 
 import {
 	forwardRef,
@@ -66,6 +66,18 @@ export class EmployeesService {
 
 	public async findByIdOrFail(employeeId: string): Promise<IEmployee> {
 		const employee: IEmployee | null = await this.findById(employeeId);
+
+		if (!employee) {
+			throw new NotFoundException('Employee not found!');
+		}
+
+		return employee;
+	}
+
+	public async findByUsernameOrFail(username: string): Promise<IEmployee> {
+		const employee: IEmployee | null = await this._employeeModel.findOne({
+			username,
+		});
 
 		if (!employee) {
 			throw new NotFoundException('Employee not found!');
@@ -371,6 +383,16 @@ export class EmployeesService {
 		);
 
 		return employeesSearched;
+	}
+
+	public async findByIdAndActive(employeeId: string): Promise<void> {
+		await this._employeeModel.findByIdAndUpdate(
+			new Types.ObjectId(employeeId),
+			{
+				$set: { status: EmployeesEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
 	}
 
 	// #endregion

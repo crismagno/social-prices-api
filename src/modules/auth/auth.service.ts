@@ -1,7 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
+import HashCrypt from '../../infra/hash-crypt/hash-crypt';
+import { IEmployee } from '../employees/interfaces/employee.interface';
+import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
+import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
+import { IUser } from '../users/interfaces/user.interface';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
 
@@ -15,7 +20,11 @@ export class AuthService {
 
 	//#region Constructor
 
-	constructor(private _usersService: UsersService) {
+	constructor(
+		private _usersService: UsersService,
+		private readonly _notificationsService: NotificationsService,
+		private readonly _hashCrypt: HashCrypt,
+	) {
 		this._logger = new Logger(AuthService.name);
 	}
 
@@ -47,6 +56,63 @@ export class AuthService {
 		return await this._usersService.employeesService.searchEmployees(
 			emailOrUsername,
 		);
+	}
+
+	public async signInEmployee(
+		username: string,
+		password: string,
+	): Promise<IUserEntity> {
+		const employee: IEmployee =
+			await this._usersService.employeesService.findByUsernameOrFail(username);
+
+		const user: IUser = await this._usersService.findOneByIdOrFail(
+			employee.userId.toString(),
+		);
+
+		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
+			password,
+			employee.password,
+		);
+
+		if (!isPasswordMatch) {
+			throw new UnauthorizedException();
+		}
+
+		await this._notificationsService.sendSignInEmployeeCode(
+			user,
+			employee,
+			password,
+		);
+
+		return this._usersService.getUserEntityWithToken(user, employee._id);
+	}
+
+	public async validateSignInEmployeeCode(
+		userId: string,
+		employeeId: string,
+		value: string,
+	): Promise<boolean> {
+		const isValidatedSignInCode: boolean =
+			await this._usersService.codesService.validateSignInEmployee(
+				userId,
+				value,
+				employeeId,
+			);
+
+		if (!isValidatedSignInCode) {
+			return false;
+		}
+
+		const employee: IEmployee =
+			await this._usersService.employeesService.findByIdOrFail(employeeId);
+
+		if (employee.status === EmployeesEnum.Status.ACTIVE) {
+			return true;
+		}
+
+		await this._usersService.employeesService.findByIdAndActive(employeeId);
+
+		return true;
 	}
 
 	// #endregion

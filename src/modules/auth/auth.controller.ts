@@ -68,4 +68,29 @@ export class AuthController {
 	): Promise<ISearchEmployee[]> {
 		return await this._authService.searchEmployees(emailOrUsername);
 	}
+
+	@Public()
+	@Post('/signInEmployee')
+	@UsePipes(ValidationPipe)
+	public async signInEmployee(
+		@Body() signInDto: Record<string, string>,
+	): Promise<IUserEntity> {
+		return await this._authService.signInEmployee(
+			signInDto.username,
+			signInDto.password,
+		);
+	}
+
+	@Get('/validateSignInEmployeeCode/:codeValue')
+	@UsePipes(ValidationPipe)
+	public async validateSignInEmployeeCode(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('codeValue', ValidationParamsPipe) codeValue: string,
+	): Promise<boolean> {
+		return await this._authService.validateSignInEmployeeCode(
+			authPayload._id,
+			authPayload.employeeId,
+			codeValue,
+		);
+	}
 }
