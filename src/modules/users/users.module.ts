@@ -1,6 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
 
-import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
@@ -18,7 +17,7 @@ import { UsersService } from './users.service';
 		EmployeesModule,
 		forwardRef(() => EmployeesModule),
 	],
-	providers: [UsersService, AuthorizationToken, HashCrypt, FilesService],
+	providers: [UsersService, HashCrypt, FilesService],
 	exports: [UsersService],
 	controllers: [UsersController],
 })

@@ -155,7 +155,24 @@ export class AuthService {
 		userId: string,
 		value: string,
 	): Promise<boolean> {
-		return this._usersService.validateSignInCode(userId, value);
+		const isValidatedSignInCode: boolean =
+			await this._usersService.codesService.validateSignIn(userId, value);
+
+		if (!isValidatedSignInCode) {
+			return false;
+		}
+
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		if (user.status === UsersEnum.Status.ACTIVE) {
+			return true;
+		}
+
+		await this._usersService.findByIdAndActive(userId);
+
+		await this._usersService.employeesService.activeAdminByUserId(userId);
+
+		return true;
 	}
 
 	public async searchEmployees(

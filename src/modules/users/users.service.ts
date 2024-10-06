@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
@@ -43,7 +42,6 @@ export class UsersService {
 	constructor(
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
-		private readonly _authorizationToken: AuthorizationToken,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _filesService: FilesService,
 		@Inject(forwardRef(() => EmployeesService))
@@ -102,40 +100,11 @@ export class UsersService {
 
 		return user;
 	}
+
 	public async insert(user: any): Promise<IUser> {
 		const newUser = new this._userModel(user);
 
 		return await newUser.save();
-	}
-
-	public async validateSignInCode(
-		userId: string,
-		value: string,
-	): Promise<boolean> {
-		const isValidatedSignInCode: boolean =
-			await this.codesService.validateSignIn(userId, value);
-
-		if (!isValidatedSignInCode) {
-			return false;
-		}
-
-		const user: IUser = await this.findOneByIdOrFail(userId);
-
-		if (user.status === UsersEnum.Status.ACTIVE) {
-			return true;
-		}
-
-		await this._userModel.findByIdAndUpdate(
-			userId,
-			{
-				$set: { status: UsersEnum.Status.ACTIVE },
-			},
-			{ new: true },
-		);
-
-		await this.employeesService.activeAdminByUserId(userId);
-
-		return true;
 	}
 
 	public async sendRecoverPasswordCode(email: string): Promise<void> {
@@ -356,6 +325,16 @@ export class UsersService {
 		);
 
 		return new UserEntity(newUser);
+	}
+
+	public async findByIdAndActive(userId: string): Promise<void> {
+		await this._userModel.findByIdAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: { status: UsersEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
 	}
 
 	//#rendegion
