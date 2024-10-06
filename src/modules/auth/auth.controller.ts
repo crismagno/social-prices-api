@@ -12,7 +12,6 @@ import { Public } from '../../shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
-import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
 import { AuthPayload } from './decorators/current-user.decorator';
 import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
@@ -74,7 +73,7 @@ export class AuthController {
 	@UsePipes(ValidationPipe)
 	public async signInEmployee(
 		@Body() signInDto: Record<string, string>,
-	): Promise<IUserEntity> {
+	): Promise<IAuthLogin> {
 		return await this._authService.signInEmployee(
 			signInDto.username,
 			signInDto.password,

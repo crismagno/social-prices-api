@@ -22,7 +22,6 @@ import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import UserEntity from '../users/interfaces/user.entity';
 import { IUser } from '../users/interfaces/user.interface';
 import UsersEnum from '../users/interfaces/users.enum';
-import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
 import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
 
@@ -166,7 +165,7 @@ export class AuthService {
 	public async signInEmployee(
 		username: string,
 		password: string,
-	): Promise<IUserEntity> {
+	): Promise<IAuthLogin> {
 		const employee: IEmployee =
 			await this._usersService.employeesService.findByUsernameOrFail(username);
 
@@ -189,7 +188,7 @@ export class AuthService {
 			password,
 		);
 
-		return this._usersService.getUserEntityWithToken(user, employee._id);
+		return this.getAuthLogin(user, employee._id);
 	}
 
 	public async validateSignInEmployeeCode(
