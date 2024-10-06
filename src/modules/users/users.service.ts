@@ -1,5 +1,4 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { randomUUID } from 'crypto';
 import { Model, Types } from 'mongoose';
 
 import {
@@ -9,7 +8,6 @@ import {
 	Injectable,
 	Logger,
 	NotFoundException,
-	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
@@ -17,19 +15,13 @@ import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
-import PersonEnum from '../../shared/enums/person.enum';
-import {
-	createNameByEmail,
-	createUsernameByEmail,
-} from '../../shared/utils/global/global';
+import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { EmployeesService } from '../employees/employees.service';
 import { IEmployee } from '../employees/interfaces/employee.interface';
-import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
-import CreateUserDto from './interfaces/dto/createUser.dto';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
@@ -112,107 +104,10 @@ export class UsersService {
 
 		return user;
 	}
+	public async insert(user: any): Promise<IUser> {
+		const newUser = new this._userModel(user);
 
-	public async signIn(
-		emailOrUsername: string,
-		password: string,
-	): Promise<IUserEntity> {
-		const user: IUser =
-			await this.findOneByEmailOrUsernameOrFail(emailOrUsername);
-
-		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
-			password,
-			user.password,
-		);
-
-		if (!isPasswordMatch) {
-			throw new UnauthorizedException();
-		}
-
-		await this._notificationsService.sendSignInCode(user);
-
-		return this.getUserEntityWithToken(user);
-	}
-
-	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
-		try {
-			const findUserByEmail: IUser | undefined = await this.findOneByEmail(
-				createUserDto.email,
-			);
-
-			/**
-			 * This part is when user tries to create a new user by Google
-			 */
-			if (findUserByEmail && createUserDto.authProvider) {
-				await this._notificationsService.sendSignInCode(findUserByEmail);
-
-				return await this.getUserEntityWithToken(findUserByEmail);
-			} else if (findUserByEmail) {
-				this._logger.warn('signUp', createUserDto);
-				throw new BadRequestException('User credentials error.');
-			}
-
-			const hashPassword: string = await this._hashCrypt.generateHash(
-				createUserDto.password,
-			);
-
-			const now: Date = new Date();
-
-			const username: string = createUsernameByEmail(createUserDto.email);
-
-			const name: string = createNameByEmail(createUserDto.email);
-
-			const newUser = new this._userModel({
-				email: createUserDto.email,
-				username,
-				password: hashPassword,
-				authProvider:
-					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
-				phoneNumbers: createUserDto.phoneNumbers ?? [],
-				status: UsersEnum.Status.PENDING,
-				uid: createUserDto.uid ?? randomUUID(),
-				avatar: createUserDto.avatar,
-				extraDataProvider: createUserDto.extraDataProvider,
-				addresses: [],
-				name,
-				birthDate: null,
-				gender: PersonEnum.Gender.OTHER,
-				about: createUserDto.about,
-				createdAt: now,
-				updatedAt: now,
-				type: createUserDto.type,
-			});
-
-			const user: IUser = await newUser.save();
-
-			await this._notificationsService.sendSignInCode(user);
-
-			await this.employeesService.create(
-				null,
-				{
-					about: createUserDto.about,
-					addresses: [],
-					birthDate: null,
-					email: createUserDto.email,
-					gender: PersonEnum.Gender.OTHER,
-					level: EmployeesEnum.Level.ADMIN,
-					name,
-					password: createUserDto.password,
-					phoneNumbers: createUserDto.phoneNumbers ?? [],
-					status: EmployeesEnum.Status.PENDING,
-					tagsIds: [],
-					username,
-					avatar: createUserDto.avatar,
-					isMain: true,
-				},
-				user._id,
-			);
-
-			return await this.getUserEntityWithToken(user);
-		} catch (error: any) {
-			this._logger.error(error);
-			throw error;
-		}
+		return await newUser.save();
 	}
 
 	public async validateSignInCode(

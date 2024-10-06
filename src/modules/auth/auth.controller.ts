@@ -38,7 +38,7 @@ export class AuthController {
 	@UsePipes(ValidationPipe)
 	public async signUp(
 		@Body() createUserDto: CreateUserDto,
-	): Promise<IUserEntity> {
+	): Promise<IAuthLogin> {
 		return await this._authService.signUp(createUserDto);
 	}
 
