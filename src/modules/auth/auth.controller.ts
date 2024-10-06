@@ -15,7 +15,7 @@ import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { AuthService } from './auth.service';
 import { AuthPayload } from './decorators/current-user.decorator';
-import { IAuthPayload } from './interfaces/auth.types';
+import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -26,7 +26,7 @@ export class AuthController {
 	@UsePipes(ValidationPipe)
 	public async signIn(
 		@Body() signInDto: Record<string, string>,
-	): Promise<IUserEntity> {
+	): Promise<IAuthLogin> {
 		return await this._authService.signIn(
 			signInDto.emailOrUsername,
 			signInDto.password,

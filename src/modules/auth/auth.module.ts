@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
+import AuthorizationToken from '../../infra/authorization/authorization-token';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
@@ -10,7 +11,7 @@ import { LoginValidationMiddleware } from './middlewares/login-validation.middle
 @Module({
 	imports: [UsersModule, NotificationsModule],
 	controllers: [AuthController],
-	providers: [AuthService, HashCrypt],
+	providers: [AuthService, HashCrypt, AuthorizationToken],
 	exports: [AuthService],
 })
 export class AuthModule implements NestModule {

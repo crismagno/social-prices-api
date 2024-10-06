@@ -1,14 +1,17 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
+import AuthorizationToken from '../../infra/authorization/authorization-token';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { IEmployee } from '../employees/interfaces/employee.interface';
 import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
+import UserEntity from '../users/interfaces/user.entity';
 import { IUser } from '../users/interfaces/user.interface';
 import { IUserEntity } from '../users/interfaces/users.types';
 import { UsersService } from '../users/users.service';
+import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +27,7 @@ export class AuthService {
 		private _usersService: UsersService,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _hashCrypt: HashCrypt,
+		private readonly _authorizationToken: AuthorizationToken,
 	) {
 		this._logger = new Logger(AuthService.name);
 	}
@@ -35,8 +39,22 @@ export class AuthService {
 	public async signIn(
 		emailOrUsername: string,
 		password: string,
-	): Promise<IUserEntity> {
-		return this._usersService.signIn(emailOrUsername, password);
+	): Promise<IAuthLogin> {
+		const user: IUser =
+			await this._usersService.findOneByEmailOrUsernameOrFail(emailOrUsername);
+
+		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
+			password,
+			user.password,
+		);
+
+		if (!isPasswordMatch) {
+			throw new UnauthorizedException();
+		}
+
+		await this._notificationsService.sendSignInCode(user);
+
+		return this.getAuthLogin(user);
 	}
 
 	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
@@ -113,6 +131,31 @@ export class AuthService {
 		await this._usersService.employeesService.findByIdAndActive(employeeId);
 
 		return true;
+	}
+
+	public async getAuthLogin(
+		user: IUser,
+		employeeId?: string,
+	): Promise<IAuthLogin> {
+		const employee: IEmployee = employeeId
+			? await this._usersService.employeesService.findByIdOrFail(employeeId)
+			: await this._usersService.employeesService.findAdminByUserId(user._id);
+
+		const payload: IAuthPayload = {
+			_id: user._id,
+			uid: user.uid,
+			email: user.email,
+			employeeId: employee._id,
+		};
+
+		const authToken: string =
+			await this._authorizationToken.generateToken(payload);
+
+		return {
+			authToken,
+			employee,
+			user: new UserEntity(user),
+		};
 	}
 
 	// #endregion
