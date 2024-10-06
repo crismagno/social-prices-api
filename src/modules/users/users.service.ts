@@ -16,10 +16,8 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
 import { createUsernameByEmail } from '../../shared/utils/global/global';
-import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CodesService } from '../codes/codes.service';
 import { EmployeesService } from '../employees/employees.service';
-import { IEmployee } from '../employees/interfaces/employee.interface';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
@@ -184,7 +182,6 @@ export class UsersService {
 
 	public async updateUser(
 		userId: string,
-		employeeId: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -203,12 +200,11 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated, employeeId);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateUserAddresses(
 		userId: string,
-		employeeId: string,
 		updateUserAddressesDto: UpdateUserAddressesDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -224,12 +220,11 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated, employeeId);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateUserPhoneNumbers(
 		userId: string,
-		employeeId: string,
 		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
 	): Promise<IUserEntity> {
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
@@ -245,12 +240,11 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated, employeeId);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateAvatar(
 		userId: string,
-		employeeId: string,
 		file: Express.Multer.File,
 	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
@@ -273,13 +267,10 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated, employeeId);
+		return new UserEntity(userUpdated);
 	}
 
-	public async removeAvatar(
-		userId: string,
-		employeeId: string,
-	): Promise<IUserEntity> {
+	public async removeAvatar(userId: string): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		await this._filesService.deleteFile(user.avatar);
@@ -297,7 +288,7 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated, employeeId);
+		return new UserEntity(userUpdated);
 	}
 
 	public async sendUpdateEmailCode(
@@ -322,7 +313,6 @@ export class UsersService {
 
 	public async updateEmail(
 		userId: string,
-		employeeId: string,
 		updateEmailDto: UpdateEmailDto,
 	): Promise<IUserEntity> {
 		const user: IUser = await this.findOneByIdOrFail(userId);
@@ -365,42 +355,7 @@ export class UsersService {
 			},
 		);
 
-		return this.getUserEntityWithToken(newUser, employeeId);
-	}
-
-	public async getUserEntityWithToken(
-		user: IUser,
-		employeeId?: string,
-	): Promise<IUserEntity> {
-		const employee: IEmployee = employeeId
-			? await this.employeesService.findByIdOrFail(employeeId)
-			: await this.employeesService.findAdminByUserId(user._id);
-
-		const payload: IAuthPayload = {
-			_id: user._id,
-			uid: user.uid,
-			email: user.email,
-			employeeId: employee._id,
-		};
-
-		const token: string = await this._authorizationToken.generateToken(payload);
-
-		return (await new UserEntity(user).addToken(token)).addEmployee(employee);
-	}
-
-	//#rendegion
-
-	//#region Private Methods
-
-	private async _getUserEntity(
-		user: IUser,
-		employeeId?: string,
-	): Promise<IUserEntity> {
-		const employee: IEmployee = employeeId
-			? await this.employeesService.findByIdOrFail(employeeId)
-			: await this.employeesService.findAdminByUserId(user._id);
-
-		return new UserEntity(user).addEmployee(employee);
+		return new UserEntity(newUser);
 	}
 
 	//#rendegion

@@ -3,7 +3,6 @@ import { IAddress } from '../../../shared/interfaces/address.interface';
 import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
 import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import { IEmployee } from '../../employees/interfaces/employee.interface';
 import UsersEnum from './users.enum';
 
 export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -12,7 +11,6 @@ export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	email: string;
 	username: string;
 	avatar: string | null;
-	authToken: string | null;
 	authProvider: UsersEnum.Provider;
 	phoneNumbers: IPhoneNumber[];
 	status: UsersEnum.Status;
@@ -23,5 +21,4 @@ export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	gender: PersonEnum.Gender | null;
 	about: string | null;
 	type: UsersEnum.Type;
-	employee: IEmployee;
 }

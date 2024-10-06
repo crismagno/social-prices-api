@@ -52,11 +52,7 @@ export class UsersController {
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
-		return await this._usersService.updateUser(
-			authPayload._id,
-			authPayload.employeeId,
-			updateUserDto,
-		);
+		return await this._usersService.updateUser(authPayload._id, updateUserDto);
 	}
 
 	@Post('/updateUserAddresses')
@@ -67,7 +63,6 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		return await this._usersService.updateUserAddresses(
 			authPayload._id,
-			authPayload.employeeId,
 			updateUserAddressesDto,
 		);
 	}
@@ -80,7 +75,6 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		return await this._usersService.updateUserPhoneNumbers(
 			authPayload._id,
-			authPayload.employeeId,
 			updateUserPhoneNumbersDto,
 		);
 	}
@@ -92,21 +86,14 @@ export class UsersController {
 		file: Express.Multer.File,
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IUserEntity> {
-		return await this._usersService.updateAvatar(
-			authPayload._id,
-			authPayload.employeeId,
-			file,
-		);
+		return await this._usersService.updateAvatar(authPayload._id, file);
 	}
 
 	@Delete('/removeAvatar')
 	public async removeAvatar(
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IUserEntity> {
-		return await this._usersService.removeAvatar(
-			authPayload._id,
-			authPayload.employeeId,
-		);
+		return await this._usersService.removeAvatar(authPayload._id);
 	}
 
 	@Get('/sendUpdateEmailCode/:email')
@@ -125,7 +112,6 @@ export class UsersController {
 	): Promise<IUserEntity> {
 		return await this._usersService.updateEmail(
 			authPayload._id,
-			authPayload.employeeId,
 			updateEmailDto,
 		);
 	}

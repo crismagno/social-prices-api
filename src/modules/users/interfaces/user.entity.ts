@@ -1,7 +1,6 @@
 import PersonEnum from '../../../shared/enums/person.enum';
 import { IAddress } from '../../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
-import { IEmployee } from '../../employees/interfaces/employee.interface';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 import { IUserEntity } from './users.types';
@@ -18,8 +17,6 @@ export default class UserEntity implements IUserEntity {
 	public username: string;
 
 	public avatar: string;
-
-	public authToken: string;
 
 	public authProvider: UsersEnum.Provider;
 
@@ -45,8 +42,6 @@ export default class UserEntity implements IUserEntity {
 
 	public updatedAt: Date;
 
-	public employee: IEmployee;
-
 	//#endregion
 
 	//#region Constructor
@@ -55,7 +50,6 @@ export default class UserEntity implements IUserEntity {
 		this._id = _user._id;
 		this.uid = _user.uid;
 		this.authProvider = _user.authProvider;
-		this.authToken = null;
 		this.avatar = _user.avatar;
 		this.email = _user.email;
 		this.phoneNumbers = _user.phoneNumbers;
@@ -70,18 +64,6 @@ export default class UserEntity implements IUserEntity {
 		this.type = _user.type;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
-	}
-
-	public async addToken(token: string): Promise<this> {
-		this.authToken = token;
-
-		return this;
-	}
-
-	public async addEmployee(employee: IEmployee): Promise<this> {
-		this.employee = employee;
-
-		return this;
 	}
 
 	//#endregion
