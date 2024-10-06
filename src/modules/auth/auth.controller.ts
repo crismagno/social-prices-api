@@ -14,7 +14,11 @@ import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import { AuthService } from './auth.service';
 import { AuthPayload } from './decorators/current-user.decorator';
-import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
+import {
+	IAuthLogin,
+	IAuthPayload,
+	IAuthUserEmployee,
+} from './interfaces/auth.types';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -90,6 +94,28 @@ export class AuthController {
 			authPayload._id,
 			authPayload.employeeId,
 			codeValue,
+		);
+	}
+
+	@Get('/getAuthUserEmployee')
+	@UsePipes(ValidationPipe)
+	public async getAuthUserEmployee(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<IAuthUserEmployee> {
+		return await this._authService.getAuthUserEmployee(
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Get('/getAuthLoginByToken')
+	@UsePipes(ValidationPipe)
+	public async getAuthLoginByToken(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<IAuthLogin> {
+		return await this._authService.getAuthLoginByToken(
+			authPayload._id,
+			authPayload.employeeId,
 		);
 	}
 }

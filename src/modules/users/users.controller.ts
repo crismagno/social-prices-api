@@ -29,26 +29,6 @@ import { UsersService } from './users.service';
 export class UsersController {
 	constructor(private _usersService: UsersService) {}
 
-	@Get('/getUser')
-	public async getUser(
-		@AuthPayload() authPayload: IAuthPayload,
-	): Promise<IUserEntity> {
-		return await this._usersService.getUserByUserId(
-			authPayload._id,
-			authPayload.employeeId,
-		);
-	}
-
-	@Get('/getUserByToken')
-	public async getUserWIthTokenByUserId(
-		@AuthPayload() authPayload: IAuthPayload,
-	): Promise<IUserEntity> {
-		return await this._usersService.getUserWIthTokenByUserId(
-			authPayload._id,
-			authPayload.employeeId,
-		);
-	}
-
 	@Public()
 	@Get('/sendRecoverPasswordCode/:email')
 	public async sendRecoverPasswordCode(

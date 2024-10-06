@@ -23,7 +23,11 @@ import UserEntity from '../users/interfaces/user.entity';
 import { IUser } from '../users/interfaces/user.interface';
 import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
-import { IAuthLogin, IAuthPayload } from './interfaces/auth.types';
+import {
+	IAuthLogin,
+	IAuthPayload,
+	IAuthUserEmployee,
+} from './interfaces/auth.types';
 
 @Injectable()
 export class AuthService {
@@ -226,6 +230,47 @@ export class AuthService {
 		const employee: IEmployee = employeeId
 			? await this._usersService.employeesService.findByIdOrFail(employeeId)
 			: await this._usersService.employeesService.findAdminByUserId(user._id);
+
+		const payload: IAuthPayload = {
+			_id: user._id,
+			uid: user.uid,
+			email: user.email,
+			employeeId: employee._id,
+		};
+
+		const authToken: string =
+			await this._authorizationToken.generateToken(payload);
+
+		return {
+			authToken,
+			employee,
+			user: new UserEntity(user),
+		};
+	}
+
+	public async getAuthUserEmployee(
+		userId: string,
+		employeeId: string,
+	): Promise<IAuthUserEmployee> {
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		const employee: IEmployee =
+			await this._usersService.employeesService.findByIdOrFail(employeeId);
+
+		return {
+			employee,
+			user: new UserEntity(user),
+		};
+	}
+
+	public async getAuthLoginByToken(
+		userId: string,
+		employeeId: string,
+	): Promise<IAuthLogin> {
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		const employee: IEmployee =
+			await this._usersService.employeesService.findByIdOrFail(employeeId);
 
 		const payload: IAuthPayload = {
 			_id: user._id,

@@ -15,3 +15,8 @@ export interface IAuthLogin {
 	employee: IEmployee;
 	authToken: string;
 }
+
+export interface IAuthUserEmployee {
+	user: IUserEntity;
+	employee: IEmployee;
+}

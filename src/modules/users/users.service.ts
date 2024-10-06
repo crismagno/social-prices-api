@@ -140,24 +140,6 @@ export class UsersService {
 		return true;
 	}
 
-	public async getUserWIthTokenByUserId(
-		userId: string,
-		employeeId: string,
-	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByIdOrFail(userId);
-
-		return this.getUserEntityWithToken(user, employeeId);
-	}
-
-	public async getUserByUserId(
-		userId: string,
-		employeeId?: string,
-	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByIdOrFail(userId);
-
-		return this._getUserEntity(user, employeeId);
-	}
-
 	public async sendRecoverPasswordCode(email: string): Promise<void> {
 		const user: IUser = await this.findOneByEmailOrFail(email);
 
