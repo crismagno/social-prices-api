@@ -14,6 +14,8 @@ import {
 	createNameByEmail,
 	createUsernameByEmail,
 } from '../../shared/utils/global/global';
+import { CodesService } from '../codes/codes.service';
+import { EmployeesService } from '../employees/employees.service';
 import { IEmployee } from '../employees/interfaces/employee.interface';
 import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
@@ -44,6 +46,8 @@ export class AuthService {
 		private readonly _notificationsService: NotificationsService,
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _authorizationToken: AuthorizationToken,
+		private readonly _employeesService: EmployeesService,
+		public readonly _codesService: CodesService,
 	) {
 		this._logger = new Logger(AuthService.name);
 	}
@@ -123,7 +127,7 @@ export class AuthService {
 
 			await this._notificationsService.sendSignInCode(user);
 
-			await this._usersService.employeesService.create(
+			await this._employeesService.create(
 				null,
 				{
 					about: createUserDto.about,
@@ -156,7 +160,7 @@ export class AuthService {
 		value: string,
 	): Promise<boolean> {
 		const isValidatedSignInCode: boolean =
-			await this._usersService.codesService.validateSignIn(userId, value);
+			await this._codesService.validateSignIn(userId, value);
 
 		if (!isValidatedSignInCode) {
 			return false;
@@ -170,7 +174,7 @@ export class AuthService {
 
 		await this._usersService.findByIdAndActive(userId);
 
-		await this._usersService.employeesService.activeAdminByUserId(userId);
+		await this._employeesService.activeAdminByUserId(userId);
 
 		return true;
 	}
@@ -178,9 +182,7 @@ export class AuthService {
 	public async searchEmployees(
 		emailOrUsername: string,
 	): Promise<ISearchEmployee[]> {
-		return await this._usersService.employeesService.searchEmployees(
-			emailOrUsername,
-		);
+		return await this._employeesService.searchEmployees(emailOrUsername);
 	}
 
 	public async signInEmployee(
@@ -188,7 +190,7 @@ export class AuthService {
 		password: string,
 	): Promise<IAuthLogin> {
 		const employee: IEmployee =
-			await this._usersService.employeesService.findByUsernameOrFail(username);
+			await this._employeesService.findByUsernameOrFail(username);
 
 		const user: IUser = await this._usersService.findOneByIdOrFail(
 			employee.userId.toString(),
@@ -218,7 +220,7 @@ export class AuthService {
 		value: string,
 	): Promise<boolean> {
 		const isValidatedSignInCode: boolean =
-			await this._usersService.codesService.validateSignInEmployee(
+			await this._codesService.validateSignInEmployee(
 				userId,
 				value,
 				employeeId,
@@ -229,13 +231,13 @@ export class AuthService {
 		}
 
 		const employee: IEmployee =
-			await this._usersService.employeesService.findByIdOrFail(employeeId);
+			await this._employeesService.findByIdOrFail(employeeId);
 
 		if (employee.status === EmployeesEnum.Status.ACTIVE) {
 			return true;
 		}
 
-		await this._usersService.employeesService.findByIdAndActive(employeeId);
+		await this._employeesService.findByIdAndActive(employeeId);
 
 		return true;
 	}
@@ -245,8 +247,8 @@ export class AuthService {
 		employeeId?: string,
 	): Promise<IAuthLogin> {
 		const employee: IEmployee = employeeId
-			? await this._usersService.employeesService.findByIdOrFail(employeeId)
-			: await this._usersService.employeesService.findAdminByUserId(user._id);
+			? await this._employeesService.findByIdOrFail(employeeId)
+			: await this._employeesService.findAdminByUserId(user._id);
 
 		const payload: IAuthPayload = {
 			_id: user._id,
@@ -272,7 +274,7 @@ export class AuthService {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		const employee: IEmployee =
-			await this._usersService.employeesService.findByIdOrFail(employeeId);
+			await this._employeesService.findByIdOrFail(employeeId);
 
 		return {
 			employee,
@@ -287,7 +289,7 @@ export class AuthService {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		const employee: IEmployee =
-			await this._usersService.employeesService.findByIdOrFail(employeeId);
+			await this._employeesService.findByIdOrFail(employeeId);
 
 		const payload: IAuthPayload = {
 			_id: user._id,

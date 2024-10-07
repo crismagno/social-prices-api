@@ -1,13 +1,7 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
 
-import {
-	forwardRef,
-	Inject,
-	Injectable,
-	Logger,
-	NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -46,7 +40,6 @@ export class EmployeesService {
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _hashCrypt: HashCrypt,
-		@Inject(forwardRef(() => UsersService))
 		private readonly _usersService: UsersService,
 	) {
 		this._logger = new Logger(EmployeesService.name);

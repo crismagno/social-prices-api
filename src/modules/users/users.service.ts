@@ -3,8 +3,6 @@ import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
-	forwardRef,
-	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -16,7 +14,6 @@ import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { FilesService } from '../../infra/services/files/files-service';
 import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { CodesService } from '../codes/codes.service';
-import { EmployeesService } from '../employees/employees.service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
@@ -44,9 +41,7 @@ export class UsersService {
 		private readonly _hashCrypt: HashCrypt,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _filesService: FilesService,
-		@Inject(forwardRef(() => EmployeesService))
-		public readonly employeesService: EmployeesService,
-		public readonly codesService: CodesService,
+		private readonly _codesService: CodesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -128,7 +123,7 @@ export class UsersService {
 		);
 
 		const isValidatedRecoverPassword: boolean =
-			await this.codesService.validateRecoverPassword(
+			await this._codesService.validateRecoverPassword(
 				user._id,
 				recoverPasswordDto.codeValue,
 			);
@@ -301,7 +296,7 @@ export class UsersService {
 		}
 
 		const isValidatedUpdateCodeEmail: boolean =
-			await this.codesService.validateUpdateEmail(
+			await this._codesService.validateUpdateEmail(
 				user._id,
 				updateEmailDto.codeValue,
 			);
