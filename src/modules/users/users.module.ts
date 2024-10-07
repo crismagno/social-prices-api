@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
@@ -15,7 +15,6 @@ import { UsersService } from './users.service';
 		NotificationsModule,
 		CodesModule,
 		EmployeesModule,
-		forwardRef(() => EmployeesModule),
 	],
 	providers: [UsersService, HashCrypt, FilesService],
 	exports: [UsersService],
