@@ -41,7 +41,11 @@ export class AuthGuard implements CanActivate {
 		const token: string = this._extractTokenFromHeader(request);
 
 		if (!token) {
-			throw new UnauthorizedException();
+			throw new UnauthorizedException({
+				error: AuthEnum.AuthErrors.UNAUTHORIZED,
+				type: AuthEnum.AuthTypes.NO_TOKEN,
+				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+			});
 		}
 
 		try {
@@ -50,7 +54,11 @@ export class AuthGuard implements CanActivate {
 
 			request[AuthEnum.RequestProps.AUTH_PAYLOAD] = payload;
 		} catch {
-			throw new UnauthorizedException();
+			throw new UnauthorizedException({
+				error: AuthEnum.AuthErrors.UNAUTHORIZED,
+				type: AuthEnum.AuthTypes.PAYLOAD_ERROR,
+				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+			});
 		}
 
 		return true;
