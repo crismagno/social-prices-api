@@ -1,10 +1,7 @@
 import * as AWS from 'aws-sdk';
 
 // file: aws-s3 > src > app.service.ts
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { AmazonFilesService } from './amazon-files-service';
 import { IFilesServiceFactory } from './files-service-factory.interface';
@@ -91,6 +88,16 @@ export class FilesService {
 		}
 
 		return result;
+	}
+
+	public getFilenameByFilename(filename: string): string {
+		return `${this._filesServiceFactory.filesFolderPath}${filename}`;
+	}
+
+	public async getFileBufferByFilename(
+		filename: string,
+	): Promise<Buffer | null> {
+		return this._filesServiceFactory.getFileBufferByFilename(filename);
 	}
 
 	//#endregion

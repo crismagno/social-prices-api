@@ -11,6 +11,14 @@ namespace DatesEnum {
 	export const Timezones = {
 		America_Sao_Paulo: 'America/Sao_Paulo',
 	};
+
+	export const ValidBirthDateFormat = [
+		Format.YYYYMMDD_DASHED,
+		Format.YYYYMMDDhhmmss_DASHED,
+		Format.DDMMYYYYhhmmss,
+		Format.MMDDYYYY,
+		Format.DDMMYYY,
+	];
 }
 
 export default DatesEnum;

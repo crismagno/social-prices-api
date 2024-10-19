@@ -6,11 +6,12 @@ import {
 	Post,
 	Put,
 	UploadedFile,
+	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
@@ -95,5 +96,20 @@ export class CustomersController {
 		@Param('customerId', ValidationParamsPipe) customerId: string,
 	): Promise<ICustomer | null> {
 		return await this._customersService.findById(customerId);
+	}
+
+	@Post('/uploadCustomers')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async uploadCustomers(
+		@UploadedFiles(parseFilePipeBuilder())
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		return await this._customersService.uploadCustomers(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
 	}
 }

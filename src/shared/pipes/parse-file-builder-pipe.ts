@@ -9,7 +9,7 @@ export const parseFilePipeBuilder = (params?: {
 }) =>
 	new ParseFilePipeBuilder()
 		.addFileTypeValidator({
-			fileType: /(jpg|jpeg|png|gif)$/,
+			fileType: /(jpg|jpeg|png|gif|xlsx|sheet)$/,
 		})
 		.addMaxSizeValidator({
 			maxSize: 5242880,

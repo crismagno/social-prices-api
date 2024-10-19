@@ -1,5 +1,7 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import { includes, isNil } from 'lodash';
 import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
+import * as xlsx from 'xlsx';
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -7,6 +9,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { FilesService } from '../../infra/services/files/files-service';
 import PersonEnum from '../../shared/enums/person.enum';
+import { parseToDate } from '../../shared/utils/dates/dates.utils';
+import { isValidEmail } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -17,7 +21,12 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
-import { IFindByOwnerUserIdAndPropertiesParams } from './interfaces/customers.type';
+import {
+	ICustomerUploadTemplateFileError,
+	ICustomerUploadTemplateRow,
+	ICustomerUploadTemplateRowError,
+	IFindByOwnerUserIdAndPropertiesParams,
+} from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
 
@@ -258,6 +267,126 @@ export class CustomersService {
 		await this._notificationsService.updatedCustomer(user, customerUpdated);
 
 		return customerUpdated;
+	}
+
+	public async uploadCustomers(
+		files: Express.Multer.File[],
+		userId: string,
+		employeeId: string,
+	): Promise<void> {
+		// Validar se tem arquivo processando ou a ser processado e somente passar pra processar se ja tiver nenhum
+		// e tbm criar a tabela de salvar os dados processados dos uploads
+		// a ideia vai ser todos os patients que passar e for ok serao criados, os que derem erro serao informados do erro
+		// lembrar de quebrar o metodo em pedacos e criar o service de validation
+
+		this._filesService
+			.getUploadFilesUrl(files)
+			.then(async (filesUrl: string[]) => {
+				const customerUploadTemplateFileErrors: ICustomerUploadTemplateFileError[] =
+					[];
+
+				for await (const [index, fileUrl] of filesUrl.entries()) {
+					const customerUploadTemplateFileError: ICustomerUploadTemplateFileError =
+						{
+							filename: fileUrl,
+							fileNumber: index + 1,
+							rowsError: [],
+						};
+
+					try {
+						const fileBuffer: Buffer | null =
+							await this._filesService.getFileBufferByFilename(fileUrl);
+
+						if (!fileBuffer) {
+							this._logger.error('File Error, no data in file: ', fileUrl);
+							continue;
+						}
+
+						const workbook: xlsx.WorkBook = xlsx.read(fileBuffer, {
+							type: 'buffer',
+						});
+
+						const sheetName: string = workbook.SheetNames[0];
+						const worksheet: xlsx.WorkSheet = workbook.Sheets[sheetName];
+
+						const rows: ICustomerUploadTemplateRow[] =
+							xlsx.utils.sheet_to_json<ICustomerUploadTemplateRow>(worksheet);
+
+						for await (const [index, row] of rows.entries()) {
+							const rowError: ICustomerUploadTemplateRowError = {
+								rowNumber: index + 1,
+								reasons: [],
+							};
+
+							const name: string = row['Name *']?.trim();
+							const email: string = row['Email']?.trim();
+							const birthDate: string = row['Birth Date']?.trim();
+							const gender: string = row['Gender']?.trim();
+
+							if (isNil(name) || !name) {
+								rowError.reasons.push({
+									message: 'Name is a required!',
+									property: 'Name *',
+								});
+							}
+
+							if (email && !isValidEmail(email)) {
+								rowError.reasons.push({
+									message: 'Invalid email!',
+									property: 'Email',
+								});
+							}
+
+							if (birthDate && !parseToDate(birthDate)) {
+								rowError.reasons.push({
+									message: 'Invalid Birth Date!',
+									property: 'Birth Date',
+								});
+							}
+
+							if (gender && !includes(PersonEnum.genderPascalList, gender)) {
+								rowError.reasons.push({
+									message: 'Invalid Gender!',
+									property: 'Gender',
+								});
+							}
+
+							if (rowError.reasons.length > 0) {
+								customerUploadTemplateFileError.rowsError.push(rowError);
+							}
+						}
+					} catch (error: any) {
+						console.log(error);
+						customerUploadTemplateFileError.processError =
+							'Error when attempt read customers upload file!';
+
+						this._logger.error(
+							'Error when attempt read customers upload file!',
+						);
+					} finally {
+						await this._filesService.deleteFile(fileUrl);
+					}
+
+					if (
+						customerUploadTemplateFileError.rowsError.length > 0 ||
+						customerUploadTemplateFileError.processError
+					) {
+						customerUploadTemplateFileErrors.push(
+							customerUploadTemplateFileError,
+						);
+					}
+				}
+
+				console.log(JSON.stringify(customerUploadTemplateFileErrors));
+
+				if (customerUploadTemplateFileErrors.length > 0) {
+					// processar dados syncrono e no final mandar via socket uma resposta ao usuario que fez o upload, e mandar uma notificacao dos errors ou email ou via notification
+				}
+			})
+			.catch((error: any) => {
+				this._logger.error(error);
+				throw new Error('Error when attempt process customers upload.');
+			});
 	}
 
 	// #endregion

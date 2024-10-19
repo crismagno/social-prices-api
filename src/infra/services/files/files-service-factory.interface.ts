@@ -4,4 +4,6 @@ export interface IFilesServiceFactory {
 	) => Promise<AWS.S3.ManagedUpload.SendData>;
 
 	deleteFile: (filename: string) => Promise<any>;
+	filesFolderPath: string;
+	getFileBufferByFilename: (filename: string) => Promise<Buffer | null>;
 }

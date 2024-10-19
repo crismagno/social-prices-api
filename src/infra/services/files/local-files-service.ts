@@ -17,10 +17,12 @@ export class LocalFilesService implements IFilesServiceFactory {
 	//#region Private properties
 
 	private readonly _logger: Logger;
-	private readonly _localFolderPath: any = path.join(
-		process.cwd(),
-		'/uploads/',
-	);
+
+	//#endregion
+
+	//#region Public properties
+
+	public readonly filesFolderPath: any = path.join(process.cwd(), '/uploads/');
 
 	//#endregion
 
@@ -40,7 +42,7 @@ export class LocalFilesService implements IFilesServiceFactory {
 		return new Promise((resolve, reject) => {
 			const filename: string = newFileOriginalname(file.originalname);
 
-			const filePath: string = `${this._localFolderPath}${filename}`;
+			const filePath: string = `${this.filesFolderPath}${filename}`;
 
 			fs.writeFile(filePath, file.buffer, (err: any) => {
 				if (err) {
@@ -55,7 +57,7 @@ export class LocalFilesService implements IFilesServiceFactory {
 					Bucket: 'uploads',
 					ETag: '',
 					Key: filename,
-					Location: this._localFolderPath,
+					Location: this.filesFolderPath,
 				});
 			});
 		});
@@ -65,7 +67,7 @@ export class LocalFilesService implements IFilesServiceFactory {
 		if (!filename) return null;
 
 		return new Promise((resolve) => {
-			const filePath: string = `${this._localFolderPath}${filename}`;
+			const filePath: string = `${this.filesFolderPath}${filename}`;
 
 			fs.unlink(filePath, (err: any) => {
 				if (err) {
@@ -76,6 +78,27 @@ export class LocalFilesService implements IFilesServiceFactory {
 
 				this._logger.log('File successfully removed');
 				resolve(true);
+			});
+		});
+	}
+
+	public async getFileBufferByFilename(
+		filename: string,
+	): Promise<Buffer | null> {
+		if (!filename) return null;
+
+		const filePath: string = `${this.filesFolderPath}${filename}`;
+
+		return new Promise((resolve) => {
+			fs.readFile(filePath, (err: any, data: Buffer) => {
+				if (err) {
+					this._logger.error('Error when attempt to read file:', err);
+					resolve(null);
+					return;
+				}
+
+				this._logger.log('File successfully read!');
+				resolve(data);
 			});
 		});
 	}

@@ -1,4 +1,5 @@
 import * as AWS from 'aws-sdk';
+import { PromiseResult } from 'aws-sdk/lib/request';
 
 // file: aws-s3 > src > app.service.ts
 import { Injectable, Logger } from '@nestjs/common';
@@ -13,6 +14,13 @@ export class AmazonFilesService implements IFilesServiceFactory {
 	private readonly _awsS3Bucket: string = process.env.AWS_S3_BUCKET;
 	private readonly _awsS3: AWS.S3;
 	private readonly _logger: Logger;
+
+	//#endregion
+
+	//#region Public  properties
+
+	public readonly filesFolderPath: string =
+		process.env.BUCKET_SOCIAL_PRICES_AWS_S3;
 
 	//#endregion
 
@@ -49,6 +57,22 @@ export class AmazonFilesService implements IFilesServiceFactory {
 		if (!filename) return null;
 
 		return this._s3delete(this._awsS3Bucket, filename);
+	}
+
+	public async getFileBufferByFilename(
+		filename: string,
+	): Promise<Buffer | null> {
+		if (!filename) return null;
+
+		const data: PromiseResult<AWS.S3.GetObjectOutput, AWS.AWSError> =
+			await this._awsS3
+				.getObject({
+					Bucket: this._awsS3Bucket,
+					Key: filename,
+				})
+				.promise();
+
+		return data.Body as Buffer;
 	}
 
 	//#endregion
