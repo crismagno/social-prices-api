@@ -11,6 +11,7 @@ export interface ICustomerUploadTemplateRow {
 	'Birth Date'?: string;
 	Gender?: string;
 	Tags?: string;
+	About?: string;
 	Country?: string;
 	State?: string;
 	City?: string;
@@ -18,6 +19,7 @@ export interface ICustomerUploadTemplateRow {
 	Address1?: string;
 	Address2?: string;
 	District?: string;
+	'Address Description'?: string;
 	'Address Types'?: string;
 	'Phone Type'?: string;
 	'Phone Number'?: string | number;
