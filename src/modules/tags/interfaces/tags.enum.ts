@@ -14,7 +14,10 @@ namespace TagsEnum {
 		[Type.ANY]: 'Any',
 		[Type.PRODUCT]: 'Product',
 		[Type.EMPLOYEE]: 'Employee',
+		[Type.CUSTOMER]: 'Customer',
 	};
+
+	export const tagDefaultColor: string = '#cccccc';
 }
 
 export default TagsEnum;

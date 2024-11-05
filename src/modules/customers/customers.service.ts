@@ -1,24 +1,42 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { includes, isNil } from 'lodash';
-import { AnyKeys, AnyObject, FilterQuery, Model } from 'mongoose';
-import * as xlsx from 'xlsx';
+import * as ExcelJS from 'exceljs';
+import { find, includes, some } from 'lodash';
+import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { FilesService } from '../../infra/services/files/files-service';
+import AddressEnum from '../../shared/enums/address.enum';
 import PersonEnum from '../../shared/enums/person.enum';
+import PhoneNumberEnum from '../../shared/enums/phone-number.enum';
+import { IAddress } from '../../shared/interfaces/address.interface';
+import { IPhoneNumber } from '../../shared/interfaces/phone-number.interface';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { isValidEmail } from '../../shared/utils/global/global';
+// import statesMockData from '../../shared/utils/mock-data/brazil-states.json';
+// import countriesMockData from '../../shared/utils/mock-data/countries.json';
+import {
+	ICountryMockData,
+	IStateMockData,
+} from '../../shared/utils/mock-data/interfaces';
+import {
+	arrayObjectIdToString,
+	arrayStringToObjectId,
+} from '../../shared/utils/strings/strings';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
+import TagsEnum from '../tags/interfaces/tags.enum';
+import { ITag } from '../tags/interfaces/tags.interface';
+import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
+import { CustomersValidationService } from './customers-validation.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
 import {
@@ -29,6 +47,10 @@ import {
 } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
+
+export const countries: ICountryMockData[] = [];
+
+export const states: IStateMockData[] = [];
 
 @Injectable()
 export class CustomersService {
@@ -46,6 +68,8 @@ export class CustomersService {
 		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
+		private readonly _customersValidationService: CustomersValidationService,
+		private readonly _tagsService: TagsService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -60,6 +84,15 @@ export class CustomersService {
 
 	public async countByOwnerUserId(ownerUserId: string): Promise<number> {
 		return this._customerModel.countDocuments({ ownerUserId });
+	}
+
+	public async findByMainPropertiesAndOwnerUserId(
+		name: string,
+		email: string,
+		birthDate: Date,
+		ownerUserId: string,
+	): Promise<ICustomer | null> {
+		return this._customerModel.findOne({ name, ownerUserId, email, birthDate });
 	}
 
 	public async findByIdOrFail(customerId: string): Promise<ICustomer> {
@@ -272,99 +305,51 @@ export class CustomersService {
 	public async uploadCustomers(
 		files: Express.Multer.File[],
 		userId: string,
-		employeeId: string,
+		// employeeId: string,
 	): Promise<void> {
 		// Validar se tem arquivo processando ou a ser processado e somente passar pra processar se ja tiver nenhum
 		// e tbm criar a tabela de salvar os dados processados dos uploads
 		// a ideia vai ser todos os patients que passar e for ok serao criados, os que derem erro serao informados do erro
 		// lembrar de quebrar o metodo em pedacos e criar o service de validation
 
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.CUSTOMER,
+		);
+
+		const now: Date = new Date();
+
 		this._filesService
 			.getUploadFilesUrl(files)
-			.then(async (filesUrl: string[]) => {
+			.then(async (filenames: string[]) => {
 				const customerUploadTemplateFileErrors: ICustomerUploadTemplateFileError[] =
 					[];
 
-				for await (const [index, fileUrl] of filesUrl.entries()) {
+				for await (const [index, filename] of filenames.entries()) {
 					const customerUploadTemplateFileError: ICustomerUploadTemplateFileError =
 						{
-							filename: fileUrl,
+							filename,
 							fileNumber: index + 1,
 							rowsError: [],
+							processError: undefined,
 						};
 
 					try {
-						const fileBuffer: Buffer | null =
-							await this._filesService.getFileBufferByFilename(fileUrl);
+						const customerUploadTemplateRows: ICustomerUploadTemplateRow[] =
+							await this._getCustomerUploadTemplateRowsByFilename(filename);
 
-						if (!fileBuffer) {
-							this._logger.error('File Error, no data in file: ', fileUrl);
-							continue;
-						}
-
-						const workbook: xlsx.WorkBook = xlsx.read(fileBuffer, {
-							type: 'buffer',
-						});
-
-						const sheetName: string = workbook.SheetNames[0];
-						const worksheet: xlsx.WorkSheet = workbook.Sheets[sheetName];
-
-						const rows: ICustomerUploadTemplateRow[] =
-							xlsx.utils.sheet_to_json<ICustomerUploadTemplateRow>(worksheet);
-
-						for await (const [index, row] of rows.entries()) {
-							const rowError: ICustomerUploadTemplateRowError = {
-								rowNumber: index + 1,
-								reasons: [],
-							};
-
-							const name: string = row['Name *']?.trim();
-							const email: string = row['Email']?.trim();
-							const birthDate: string = row['Birth Date']?.trim();
-							const gender: string = row['Gender']?.trim();
-
-							if (isNil(name) || !name) {
-								rowError.reasons.push({
-									message: 'Name is a required!',
-									property: 'Name *',
-								});
-							}
-
-							if (email && !isValidEmail(email)) {
-								rowError.reasons.push({
-									message: 'Invalid email!',
-									property: 'Email',
-								});
-							}
-
-							if (birthDate && !parseToDate(birthDate)) {
-								rowError.reasons.push({
-									message: 'Invalid Birth Date!',
-									property: 'Birth Date',
-								});
-							}
-
-							if (gender && !includes(PersonEnum.genderPascalList, gender)) {
-								rowError.reasons.push({
-									message: 'Invalid Gender!',
-									property: 'Gender',
-								});
-							}
-
-							if (rowError.reasons.length > 0) {
-								customerUploadTemplateFileError.rowsError.push(rowError);
-							}
-						}
+						customerUploadTemplateFileError.rowsError =
+							await this._processCustomerUploadTemplateRows(
+								customerUploadTemplateRows,
+								userId,
+								tags,
+								now,
+							);
 					} catch (error: any) {
-						console.log(error);
-						customerUploadTemplateFileError.processError =
-							'Error when attempt read customers upload file!';
-
-						this._logger.error(
-							'Error when attempt read customers upload file!',
-						);
+						customerUploadTemplateFileError.processError = error?.message;
+						this._logger.error(error);
 					} finally {
-						await this._filesService.deleteFile(fileUrl);
+						await this._filesService.deleteFile(filename);
 					}
 
 					if (
@@ -377,8 +362,6 @@ export class CustomersService {
 					}
 				}
 
-				console.log(JSON.stringify(customerUploadTemplateFileErrors));
-
 				if (customerUploadTemplateFileErrors.length > 0) {
 					// processar dados syncrono e no final mandar via socket uma resposta ao usuario que fez o upload, e mandar uma notificacao dos errors ou email ou via notification
 				}
@@ -387,6 +370,446 @@ export class CustomersService {
 				this._logger.error(error);
 				throw new Error('Error when attempt process customers upload.');
 			});
+	}
+
+	// #endregion
+
+	// #region Private Methods
+
+	public async _getCustomerUploadTemplateRowsByFilename(
+		filename: string,
+	): Promise<ICustomerUploadTemplateRow[]> {
+		const fileBuffer: Buffer | null =
+			await this._filesService.getFileBufferByFilename(filename);
+
+		if (!fileBuffer) {
+			throw new Error(`File Error, no data in file: ${filename}`);
+		}
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		await workbook.xlsx.load(fileBuffer);
+
+		const worksheet = workbook.getWorksheet('Template');
+
+		this._customersValidationService.validateCustomersUploadTemplate(
+			worksheet.getRow(1),
+		);
+
+		const worksheetRowsCountToIterate: number = worksheet.rowCount + 1;
+
+		const customerUploadTemplateRows: ICustomerUploadTemplateRow[] = [];
+
+		for (
+			let rowNumber = 2;
+			rowNumber < worksheetRowsCountToIterate;
+			rowNumber++
+		) {
+			if (worksheetRowsCountToIterate === rowNumber) {
+				break;
+			}
+
+			const row: ExcelJS.Row = worksheet.getRow(rowNumber);
+
+			const name: string = row.getCell('A')?.text?.trim();
+			const email: string = row.getCell('B')?.text?.trim();
+			const birthDate: string = row.getCell('C')?.text?.trim();
+			const gender: string = row.getCell('D')?.text?.trim();
+			const tags: string = row.getCell('E')?.text?.trim();
+			const about: string = row.getCell('F')?.text?.trim();
+			const country: string = row.getCell('G')?.text?.trim();
+			const state: string = row.getCell('H')?.text?.trim();
+			const city: string = row.getCell('I')?.text?.trim();
+			const zipCode: string = row.getCell('J')?.text?.trim();
+			const address1: string = row.getCell('K')?.text?.trim();
+			const address2: string = row.getCell('L')?.text?.trim();
+			const district: string = row.getCell('M')?.text?.trim();
+			const addressDescription: string = row.getCell('N')?.text?.trim();
+			const addressTypes: string = row.getCell('O')?.text?.trim();
+			const phoneType: string = row.getCell('P')?.text?.trim();
+			const phoneNumber: string = row.getCell('Q')?.text?.trim();
+			const phoneMessengers: string = row.getCell('R')?.text?.trim();
+
+			customerUploadTemplateRows.push({
+				name,
+				about,
+				address1,
+				address2,
+				addressDescription,
+				addressTypes,
+				birthDate,
+				city,
+				country,
+				district,
+				email,
+				gender,
+				phoneMessengers,
+				phoneNumber,
+				phoneType,
+				state,
+				tags,
+				zipCode,
+			});
+		}
+
+		return customerUploadTemplateRows;
+	}
+
+	public async _processCustomerUploadTemplateRows(
+		customerUploadTemplateRows: ICustomerUploadTemplateRow[],
+		ownerUserId: string,
+		tags: ITag[],
+		now: Date,
+	): Promise<ICustomerUploadTemplateRowError[]> {
+		const customersToCreate: ICustomer[] = [];
+
+		const customerUploadTemplateRowsError: ICustomerUploadTemplateRowError[] =
+			[];
+
+		for await (const [
+			index,
+			customerUploadTemplateRow,
+		] of customerUploadTemplateRows.entries()) {
+			const customerUploadTemplateRowError: ICustomerUploadTemplateRowError = {
+				rowNumber: index + 1,
+				reasons: [],
+			};
+
+			try {
+				if (!customerUploadTemplateRow.name?.trim()) {
+					customerUploadTemplateRowError.reasons.push({
+						message: 'Name is required!',
+						property: 'name',
+					});
+				}
+
+				if (
+					customerUploadTemplateRow.email &&
+					!isValidEmail(customerUploadTemplateRow.email)
+				) {
+					customerUploadTemplateRowError.reasons.push({
+						message: 'Email invalid format!',
+						property: 'email',
+					});
+				}
+
+				const birthDate: Date | null = customerUploadTemplateRow.birthDate
+					? parseToDate(customerUploadTemplateRow.birthDate)
+					: null;
+
+				if (customerUploadTemplateRow.birthDate) {
+					if (!birthDate) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'Birth Date invalid format!',
+							property: 'birthDate',
+						});
+					}
+				}
+
+				if (
+					customerUploadTemplateRow.gender &&
+					!includes(
+						Object.keys(PersonEnum.Gender),
+						customerUploadTemplateRow.gender.toUpperCase(),
+					)
+				) {
+					customerUploadTemplateRowError.reasons.push({
+						message: 'Gender invalid!',
+						property: 'gender',
+					});
+				}
+
+				if (
+					customerUploadTemplateRow.address1 ||
+					customerUploadTemplateRow.country ||
+					customerUploadTemplateRow.state ||
+					customerUploadTemplateRow.city ||
+					customerUploadTemplateRow.zipCode ||
+					customerUploadTemplateRow.district
+				) {
+					if (!customerUploadTemplateRow.address1?.trim()) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'Address1 invalid!',
+							property: 'address1',
+						});
+					}
+
+					if (!customerUploadTemplateRow.country?.trim()) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'Country invalid!',
+							property: 'country',
+						});
+					}
+
+					if (!customerUploadTemplateRow.state?.trim()) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'State invalid!',
+							property: 'state',
+						});
+					}
+
+					if (!customerUploadTemplateRow.city?.trim()) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'City invalid!',
+							property: 'city',
+						});
+					}
+
+					if (!customerUploadTemplateRow.zipCode) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'Zip Code invalid!',
+							property: 'zipCode',
+						});
+					}
+
+					if (!customerUploadTemplateRow.district?.trim()) {
+						customerUploadTemplateRowError.reasons.push({
+							message: 'District invalid!',
+							property: 'district',
+						});
+					}
+				}
+
+				if (customerUploadTemplateRowError.reasons.length > 0) {
+					customerUploadTemplateRowsError.push(customerUploadTemplateRowError);
+					continue;
+				}
+
+				const customerToUpdate: ICustomer | null =
+					customerUploadTemplateRow.email && birthDate
+						? await this.findByMainPropertiesAndOwnerUserId(
+								customerUploadTemplateRow.name,
+								customerUploadTemplateRow.email,
+								birthDate,
+								ownerUserId,
+						  )
+						: null;
+
+				const tagsByCustomerUploadTemplateRow: string[] =
+					await this._getTagsByCustomerUploadTemplateRow(
+						customerUploadTemplateRow.tags,
+						ownerUserId,
+						tags,
+						arrayObjectIdToString(customerToUpdate?.tagsIds as any[]),
+					);
+
+				const tagsIds: Types.ObjectId[] = arrayStringToObjectId(
+					tagsByCustomerUploadTemplateRow,
+				);
+
+				const phoneNumbers: IPhoneNumber[] =
+					this._getPhoneNumbersByCustomerUploadTemplateRow(
+						customerUploadTemplateRow,
+						customerToUpdate?.phoneNumbers,
+					);
+
+				const addresses: IAddress[] =
+					this._getAddressesByCustomerUploadTemplateRow(
+						customerUploadTemplateRow,
+						customerToUpdate?.addresses,
+					);
+
+				if (customerToUpdate) {
+					customerToUpdate.gender = customerUploadTemplateRow.gender
+						? (customerUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+						: customerToUpdate.gender;
+					customerToUpdate.tagsIds = tagsIds as any[];
+					customerToUpdate.about =
+						customerUploadTemplateRow.about ?? customerToUpdate.about;
+					customerToUpdate.phoneNumbers = phoneNumbers;
+					customerToUpdate.addresses = addresses;
+
+					await this._customerModel.updateOne(
+						{
+							_id: new Types.ObjectId(customerToUpdate._id),
+						},
+						{
+							$set: customerToUpdate,
+						},
+					);
+				} else {
+					customersToCreate.push({
+						avatar: null,
+						name: customerUploadTemplateRow.name,
+						email: customerUploadTemplateRow.email,
+						birthDate: birthDate,
+						addresses,
+						gender: customerUploadTemplateRow.gender
+							? (customerUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+							: PersonEnum.Gender.OTHER,
+						about: customerUploadTemplateRow.about,
+						phoneNumbers,
+						tagsIds: tagsIds as any[],
+						ownerUserId: ownerUserId as any,
+						createdAt: now,
+						updatedAt: now,
+						userId: null,
+						_id: null,
+					});
+				}
+			} catch (error) {
+				customerUploadTemplateRowError.reasons.push({
+					message: 'Error when attempt process row',
+					property: 'other',
+				});
+
+				customerUploadTemplateRowsError.push(customerUploadTemplateRowError);
+			}
+		}
+
+		if (customersToCreate.length > 0) {
+			await this._customerModel.create(customersToCreate);
+		}
+
+		return customerUploadTemplateRowsError;
+	}
+
+	public async _getTagsByCustomerUploadTemplateRow(
+		tagsFromRow: string,
+		userId: string,
+		tagsFromUser: ITag[] = [],
+		tagsIdsFromCustomer: string[] = [],
+	): Promise<string[]> {
+		if (!tagsFromRow?.trim()) {
+			return tagsIdsFromCustomer;
+		}
+
+		for await (const tagFromRow of tagsFromRow.split(',')) {
+			try {
+				const tagFromUser: ITag | null = find(tagsFromUser, {
+					name: tagFromRow,
+				});
+
+				if (tagFromUser) {
+					const tagIdFromUser: string = tagFromUser._id.toString();
+					if (!includes(tagsIdsFromCustomer, tagIdFromUser)) {
+						tagsIdsFromCustomer.push(tagIdFromUser);
+					}
+				} else {
+					const tagCreated: ITag = await this._tagsService.create({
+						color: TagsEnum.tagDefaultColor,
+						description: null,
+						name: tagFromRow,
+						type: TagsEnum.Type.CUSTOMER,
+						userId,
+					});
+
+					tagsFromUser.push(tagCreated);
+					tagsIdsFromCustomer.push(tagCreated._id);
+				}
+			} catch (error) {
+				this._logger.error(error);
+			}
+		}
+
+		return tagsIdsFromCustomer;
+	}
+
+	public _getPhoneNumbersByCustomerUploadTemplateRow(
+		customerUploadTemplateRow: ICustomerUploadTemplateRow,
+		phoneNumbers: IPhoneNumber[] = [],
+	): IPhoneNumber[] {
+		const phoneNumber: string | null = customerUploadTemplateRow.phoneNumber
+			? customerUploadTemplateRow.phoneNumber.toString()
+			: null;
+
+		let phoneType: string | null = customerUploadTemplateRow.phoneType
+			? customerUploadTemplateRow.phoneType?.toUpperCase()
+			: null;
+
+		if (!phoneNumber) {
+			return phoneNumbers;
+		}
+
+		phoneType = includes(Object.keys(PhoneNumberEnum.Type), phoneType)
+			? phoneType
+			: PhoneNumberEnum.Type.OTHER;
+
+		if (some(phoneNumbers, { number: phoneNumber, type: phoneType })) {
+			return phoneNumbers;
+		}
+
+		const messengers: PhoneNumberEnum.PhoneNumberMessenger[] = (
+			customerUploadTemplateRow.phoneMessengers?.trim()
+				? customerUploadTemplateRow.phoneMessengers
+						.toUpperCase()
+						.split(',')
+						.filter((x) =>
+							includes(Object.keys(PhoneNumberEnum.PhoneNumberMessenger), x),
+						)
+				: []
+		) as PhoneNumberEnum.PhoneNumberMessenger[];
+
+		phoneNumbers.push({
+			messengers,
+			number: phoneNumber,
+			type: phoneType as PhoneNumberEnum.Type,
+			uid: Date.now().toString(),
+		});
+
+		return phoneNumbers;
+	}
+
+	public _getAddressesByCustomerUploadTemplateRow(
+		customerUploadTemplateRow: ICustomerUploadTemplateRow,
+		addresses: IAddress[] = [],
+	): IAddress[] {
+		if (
+			!(
+				customerUploadTemplateRow.address1 ||
+				customerUploadTemplateRow.country ||
+				customerUploadTemplateRow.state ||
+				customerUploadTemplateRow.city ||
+				customerUploadTemplateRow.zipCode ||
+				customerUploadTemplateRow.district
+			)
+		) {
+			return addresses;
+		}
+
+		const country: ICountryMockData = find(
+			countries,
+			(country: ICountryMockData) =>
+				country.code === customerUploadTemplateRow.country ||
+				country.name === customerUploadTemplateRow.country,
+		) ?? {
+			code: customerUploadTemplateRow.country,
+			name: customerUploadTemplateRow.country,
+		};
+
+		const state: IStateMockData = find(
+			states,
+			(state: IStateMockData) =>
+				state.code === customerUploadTemplateRow.state ||
+				state.name === customerUploadTemplateRow.state,
+		) ?? {
+			code: customerUploadTemplateRow.state,
+			name: customerUploadTemplateRow.state,
+		};
+
+		const types: AddressEnum.Type[] = (
+			customerUploadTemplateRow.addressTypes
+				? customerUploadTemplateRow.addressTypes
+						.toUpperCase()
+						.split(',')
+						.filter((x) => includes(Object.keys(AddressEnum.Type), x))
+				: []
+		) as AddressEnum.Type[];
+
+		addresses.push({
+			address1: customerUploadTemplateRow.address1,
+			address2: customerUploadTemplateRow.address2,
+			city: customerUploadTemplateRow.city,
+			country,
+			description: customerUploadTemplateRow.addressDescription,
+			district: customerUploadTemplateRow.district,
+			isValid: true,
+			state,
+			uid: Date.now().toString(),
+			zip: customerUploadTemplateRow.zipCode.toString(),
+			types,
+		});
+
+		return addresses;
 	}
 
 	// #endregion
