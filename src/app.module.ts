@@ -19,6 +19,7 @@ import { FilesModule } from './modules/files/files.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { SocketsModule } from './modules/sockets/sockets.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { UsersModule } from './modules/users/users.module';
@@ -46,6 +47,7 @@ import { UsersModule } from './modules/users/users.module';
 		StoresModule,
 		TagsModule,
 		FilesModule,
+		SocketsModule,
 	],
 	controllers: [AppController],
 	providers: [
