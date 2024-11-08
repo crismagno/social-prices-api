@@ -31,7 +31,7 @@ export class SocketsGateway
 		console.log(`Client disconnected: ${client.id}`);
 	}
 
-	@SubscribeMessage('sendUploadCustomersToEmployee')
+	@SubscribeMessage('uploadCustomersResponseToEmployee')
 	handleUploadCustomersResponseToEmployee(
 		@MessageBody()
 		data: ICustomerUploadTemplateFileError[],
