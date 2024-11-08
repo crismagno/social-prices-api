@@ -31,6 +31,7 @@ import {
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SocketsGateway } from '../sockets/sockets.gateway';
 import TagsEnum from '../tags/interfaces/tags.enum';
 import { ITag } from '../tags/interfaces/tags.interface';
 import { TagsService } from '../tags/tags.service';
@@ -70,6 +71,7 @@ export class CustomersService {
 		private readonly _notificationsService: NotificationsService,
 		private readonly _customersValidationService: CustomersValidationService,
 		private readonly _tagsService: TagsService,
+		private readonly _socketsGateway: SocketsGateway,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -305,7 +307,7 @@ export class CustomersService {
 	public async uploadCustomers(
 		files: Express.Multer.File[],
 		userId: string,
-		// employeeId: string,
+		employeeId: string,
 	): Promise<void> {
 		// Validar se tem arquivo processando ou a ser processado e somente passar pra processar se ja tiver nenhum
 		// e tbm criar a tabela de salvar os dados processados dos uploads
@@ -362,9 +364,10 @@ export class CustomersService {
 					}
 				}
 
-				if (customerUploadTemplateFileErrors.length > 0) {
-					// processar dados syncrono e no final mandar via socket uma resposta ao usuario que fez o upload, e mandar uma notificacao dos errors ou email ou via notification
-				}
+				this._socketsGateway.handleUploadCustomersResponseToEmployee(
+					customerUploadTemplateFileErrors,
+					employeeId,
+				);
 			})
 			.catch((error: any) => {
 				this._logger.error(error);

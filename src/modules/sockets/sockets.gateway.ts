@@ -9,11 +9,12 @@ import {
 	WebSocketServer,
 } from '@nestjs/websockets';
 
+import { ICustomerUploadTemplateFileError } from '../customers/interfaces/customers.type';
+
 @WebSocketGateway({
 	cors: {
 		origin: '*',
 	},
-	// transports: ['websocket'],
 	transports: ['websocket', 'polling'],
 })
 export class SocketsGateway
@@ -24,17 +25,21 @@ export class SocketsGateway
 
 	handleConnection(client: Socket) {
 		console.log(`Client connected: ${client.id}`);
-		this.server.emit('message', 'A new client has connected');
 	}
 
 	handleDisconnect(client: Socket) {
 		console.log(`Client disconnected: ${client.id}`);
 	}
 
-	@SubscribeMessage('sendMessage')
-	handleMessage(@MessageBody() message: string): void {
-		console.log(`Message received: ${message}`);
-		// Envia o evento 'message' com o conteúdo recebido para todos os clientes conectados
-		this.server.emit('message', message);
+	@SubscribeMessage('sendUploadCustomersToEmployee')
+	handleUploadCustomersResponseToEmployee(
+		@MessageBody()
+		data: ICustomerUploadTemplateFileError[],
+		employeeId: string,
+	): void {
+		this.server.emit(
+			`upload-customers-response-to-employee-${employeeId}`,
+			data,
+		);
 	}
 }

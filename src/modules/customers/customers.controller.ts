@@ -106,6 +106,10 @@ export class CustomersController {
 		files: Express.Multer.File[],
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<void> {
-		return await this._customersService.uploadCustomers(files, authPayload._id);
+		return await this._customersService.uploadCustomers(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
 	}
 }
