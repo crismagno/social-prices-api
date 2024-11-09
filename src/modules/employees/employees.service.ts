@@ -6,7 +6,6 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import { FilesService } from '../../infra/services/files/files-service';
 import PersonEnum from '../../shared/enums/person.enum';
 import { createUsernameByName } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
@@ -14,6 +13,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';

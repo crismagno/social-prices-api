@@ -4,8 +4,8 @@ import { PromiseResult } from 'aws-sdk/lib/request';
 // file: aws-s3 > src > app.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 
-import { newFileOriginalname } from '../../../shared/utils/global/global';
-import { IFilesServiceFactory } from './files-service-factory.interface';
+import { newFileOriginalname } from '../../shared/utils/global/global';
+import { IFilesServiceFactory } from './interfaces/files-service-factory.interface';
 
 @Injectable()
 export class AmazonFilesService implements IFilesServiceFactory {

@@ -4,7 +4,7 @@ import * as AWS from 'aws-sdk';
 import { Injectable, Logger } from '@nestjs/common';
 
 import { AmazonFilesService } from './amazon-files-service';
-import { IFilesServiceFactory } from './files-service-factory.interface';
+import { IFilesServiceFactory } from './interfaces/files-service-factory.interface';
 import { LocalFilesService } from './local-files-service';
 
 @Injectable()

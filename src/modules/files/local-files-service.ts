@@ -3,8 +3,8 @@ import * as AWS from 'aws-sdk';
 // file: aws-s3 > src > app.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 
-import { newFileOriginalname } from '../../../shared/utils/global/global';
-import { IFilesServiceFactory } from './files-service-factory.interface';
+import { newFileOriginalname } from '../../shared/utils/global/global';
+import { IFilesServiceFactory } from './interfaces/files-service-factory.interface';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');

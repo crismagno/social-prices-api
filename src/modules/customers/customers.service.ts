@@ -7,7 +7,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { FilesService } from '../../infra/services/files/files-service';
 import AddressEnum from '../../shared/enums/address.enum';
 import PersonEnum from '../../shared/enums/person.enum';
 import PhoneNumberEnum from '../../shared/enums/phone-number.enum';
@@ -30,6 +29,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import TagsEnum from '../tags/interfaces/tags.enum';

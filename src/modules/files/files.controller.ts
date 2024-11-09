@@ -10,8 +10,8 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
-import { FilesService } from '../../infra/services/files/files-service';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import { FilesService } from './files-service';
 
 @Controller('api/v1/files')
 export class FilesController {

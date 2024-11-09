@@ -11,9 +11,9 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import { FilesService } from '../../infra/services/files/files-service';
 import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { CodesService } from '../codes/codes.service';
+import { FilesService } from '../files/files-service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
