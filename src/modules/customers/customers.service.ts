@@ -433,6 +433,7 @@ export class CustomersService {
 			const phoneMessengers: string = row.getCell('R')?.text?.trim();
 
 			customerUploadTemplateRows.push({
+				rowNumber,
 				name,
 				about,
 				address1,
@@ -468,12 +469,9 @@ export class CustomersService {
 		const customerUploadTemplateRowsError: ICustomerUploadTemplateRowError[] =
 			[];
 
-		for await (const [
-			index,
-			customerUploadTemplateRow,
-		] of customerUploadTemplateRows.entries()) {
+		for await (const customerUploadTemplateRow of customerUploadTemplateRows) {
 			const customerUploadTemplateRowError: ICustomerUploadTemplateRowError = {
-				rowNumber: index + 1,
+				rowNumber: customerUploadTemplateRow.rowNumber,
 				reasons: [],
 			};
 

@@ -6,6 +6,7 @@ export interface IFindByOwnerUserIdAndPropertiesParams {
 }
 
 export interface ICustomerUploadTemplateRow {
+	rowNumber: number;
 	name: string;
 	email?: string;
 	birthDate?: string;
