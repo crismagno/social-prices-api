@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
+import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
 import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SocketsModule } from '../sockets/sockets.module';
@@ -18,6 +19,7 @@ import { CustomersService } from './customers.service';
 		TagsModule,
 		SocketsModule,
 		FilesModule,
+		FilesUploadsModule,
 	],
 	controllers: [CustomersController],
 	providers: [CustomersService, CustomersValidationService],

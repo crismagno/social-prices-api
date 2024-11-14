@@ -79,10 +79,7 @@ export class CategoriesController {
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateCategoryDto: UpdateCategoryDto,
 	): Promise<ICategory> {
-		return await this._categoriesService.update(
-			updateCategoryDto,
-			authPayload._id,
-		);
+		return await this._categoriesService.update(updateCategoryDto);
 	}
 
 	@Post('/multi')

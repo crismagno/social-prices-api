@@ -15,6 +15,7 @@ import { CodesModule } from './modules/codes/codes.module';
 import { CountersModule } from './modules/counters/counters.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { EmployeesModule } from './modules/employees/employees.module';
+import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module';
 import { FilesModule } from './modules/files/files.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -48,6 +49,7 @@ import { UsersModule } from './modules/users/users.module';
 		TagsModule,
 		FilesModule,
 		SocketsModule,
+		FilesUploadsModule,
 	],
 	controllers: [AppController],
 	providers: [

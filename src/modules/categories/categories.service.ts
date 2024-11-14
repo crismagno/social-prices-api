@@ -148,8 +148,6 @@ export class CategoriesService {
 		createCategoryDto: CreateCategoryDto,
 		userId: string,
 	): Promise<ICategory> {
-		await this._usersService.findOneByIdOrFail(userId);
-
 		const now: Date = new Date();
 
 		await this.validateCreateOrUpdate(
@@ -176,10 +174,7 @@ export class CategoriesService {
 
 	public async update(
 		updateCategoryDto: UpdateCategoryDto,
-		userId: string,
 	): Promise<ICategory> {
-		await this._usersService.findOneByIdOrFail(userId);
-
 		await this.validateCreateOrUpdate(
 			updateCategoryDto.ownerUserId,
 			updateCategoryDto.type,
@@ -210,8 +205,6 @@ export class CategoriesService {
 		createCategoriesDto: CreateCategoryMultiDto,
 		userId: string,
 	): Promise<void> {
-		await this._usersService.findOneByIdOrFail(userId);
-
 		const now: Date = new Date();
 
 		const categoriesToCreate = await Promise.all(

@@ -3,7 +3,12 @@ import * as ExcelJS from 'exceljs';
 import { find, includes, some } from 'lodash';
 import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -29,6 +34,9 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { FilesUploadsService } from '../files-uploads/files-uploads.service';
+import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
+import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
@@ -72,6 +80,7 @@ export class CustomersService {
 		private readonly _customersValidationService: CustomersValidationService,
 		private readonly _tagsService: TagsService,
 		private readonly _socketsGateway: SocketsGateway,
+		private readonly _filesUploadsService: FilesUploadsService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -309,10 +318,16 @@ export class CustomersService {
 		userId: string,
 		employeeId: string,
 	): Promise<void> {
-		// Validar se tem arquivo processando ou a ser processado e somente passar pra processar se ja tiver nenhum
-		// e tbm criar a tabela de salvar os dados processados dos uploads
-		// a ideia vai ser todos os patients que passar e for ok serao criados, os que derem erro serao informados do erro
-		// lembrar de quebrar o metodo em pedacos e criar o service de validation
+		const hasUploadCustomersProcessing: boolean =
+			await this._filesUploadsService.hasUploadCustomersProcessingByUserId(
+				userId,
+			);
+
+		if (hasUploadCustomersProcessing) {
+			throw new InternalServerErrorException(
+				'In the moment you have upload customers files processing. please wait finish to try upload new files.',
+			);
+		}
 
 		const tags: ITag[] = await this._tagsService.findByType(
 			userId,
@@ -324,10 +339,28 @@ export class CustomersService {
 		this._filesService
 			.getUploadFilesUrl(files)
 			.then(async (filenames: string[]) => {
+				const filesUploads: IFileUpload[] =
+					await this._filesUploadsService.createMulti({
+						employeeId,
+						filenames,
+						type: FilesUploadsEnum.Type.UPLOAD_CUSTOMERS,
+						userId,
+					});
+
 				const customerUploadTemplateFileErrors: ICustomerUploadTemplateFileError[] =
 					[];
 
-				for await (const [index, filename] of filenames.entries()) {
+				for await (const [
+					index,
+					{ filename, _id: fileUploadId },
+				] of filesUploads.entries()) {
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: {
+							status: FilesUploadsEnum.Status.PROCESSING,
+							updatedAt: new Date(),
+						},
+					});
+
 					const customerUploadTemplateFileError: ICustomerUploadTemplateFileError =
 						{
 							filename,
@@ -340,6 +373,13 @@ export class CustomersService {
 						const customerUploadTemplateRows: ICustomerUploadTemplateRow[] =
 							await this._getCustomerUploadTemplateRowsByFilename(filename);
 
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalToProcess: customerUploadTemplateRows.length,
+							},
+						});
+
 						customerUploadTemplateFileError.rowsError =
 							await this._processCustomerUploadTemplateRows(
 								customerUploadTemplateRows,
@@ -347,12 +387,28 @@ export class CustomersService {
 								tags,
 								now,
 							);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalError: customerUploadTemplateFileError.rowsError.length,
+								totalSuccess:
+									customerUploadTemplateRows.length -
+									customerUploadTemplateFileError.rowsError.length,
+								totalProcessed: customerUploadTemplateRows.length,
+							},
+						});
 					} catch (error: any) {
 						customerUploadTemplateFileError.processError = error?.message;
 						this._logger.error(error);
 					} finally {
 						await this._filesService.deleteFile(filename);
 					}
+
+					const fileUploadSet: Partial<IFileUpload> = {
+						updatedAt: new Date(),
+						status: FilesUploadsEnum.Status.COMPLETED,
+					};
 
 					if (
 						customerUploadTemplateFileError.rowsError.length > 0 ||
@@ -361,7 +417,15 @@ export class CustomersService {
 						customerUploadTemplateFileErrors.push(
 							customerUploadTemplateFileError,
 						);
+
+						fileUploadSet.errors = customerUploadTemplateFileError;
+						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
+					} else {
 					}
+
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: fileUploadSet,
+					});
 				}
 
 				this._socketsGateway.handleUploadCustomersResponseToEmployee(
