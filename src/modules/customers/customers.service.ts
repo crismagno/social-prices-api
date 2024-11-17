@@ -420,7 +420,6 @@ export class CustomersService {
 
 						fileUploadSet.errors = customerUploadTemplateFileError;
 						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
-					} else {
 					}
 
 					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
@@ -738,8 +737,14 @@ export class CustomersService {
 			return tagsIdsFromCustomer;
 		}
 
-		for await (const tagFromRow of tagsFromRow.split(',')) {
+		for await (let tagFromRow of tagsFromRow.split(',')) {
 			try {
+				tagFromRow = tagFromRow?.trim();
+
+				if (!tagFromRow) {
+					continue;
+				}
+
 				const tagFromUser: ITag | null = find(tagsFromUser, {
 					name: tagFromRow,
 				});
