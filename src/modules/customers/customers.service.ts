@@ -425,6 +425,8 @@ export class CustomersService {
 					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 						$set: fileUploadSet,
 					});
+
+					this._socketsGateway.handleResponseUploadCustomersFileToUser(userId);
 				}
 
 				this._socketsGateway.handleUploadCustomersResponseToEmployee(

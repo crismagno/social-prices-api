@@ -42,4 +42,12 @@ export class SocketsGateway
 			data,
 		);
 	}
+
+	@SubscribeMessage('responseFromUploadCustomersFile')
+	handleResponseUploadCustomersFileToUser(
+		@MessageBody()
+		userId: string,
+	): void {
+		this.server.emit(`response-upload-customers-file-to-user-${userId}`);
+	}
 }
