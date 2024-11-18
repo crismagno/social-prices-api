@@ -37,6 +37,10 @@ import {
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
 import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
+import {
+	IFileUploadTemplateError,
+	IFileUploadTemplateErrorRow,
+} from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
@@ -49,9 +53,7 @@ import { CustomersValidationService } from './customers-validation.service';
 import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
 import {
-	ICustomerUploadTemplateFileError,
-	ICustomerUploadTemplateRow,
-	ICustomerUploadTemplateRowError,
+	ICustomerFileUploadTemplateRow,
 	IFindByOwnerUserIdAndPropertiesParams,
 } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
@@ -347,7 +349,7 @@ export class CustomersService {
 						userId,
 					});
 
-				const customerUploadTemplateFileErrors: ICustomerUploadTemplateFileError[] =
+				const fileUploadTemplateErrors: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[] =
 					[];
 
 				for await (const [
@@ -361,7 +363,7 @@ export class CustomersService {
 						},
 					});
 
-					const customerUploadTemplateFileError: ICustomerUploadTemplateFileError =
+					const fileUploadTemplateError: IFileUploadTemplateError<ICustomerFileUploadTemplateRow> =
 						{
 							filename,
 							fileNumber: index + 1,
@@ -370,19 +372,19 @@ export class CustomersService {
 						};
 
 					try {
-						const customerUploadTemplateRows: ICustomerUploadTemplateRow[] =
-							await this._getCustomerUploadTemplateRowsByFilename(filename);
+						const customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[] =
+							await this._getCustomerFileUploadTemplateRowsByFilename(filename);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 							$set: {
 								updatedAt: new Date(),
-								totalToProcess: customerUploadTemplateRows.length,
+								totalToProcess: customerFileUploadTemplateRows.length,
 							},
 						});
 
-						customerUploadTemplateFileError.rowsError =
-							await this._processCustomerUploadTemplateRows(
-								customerUploadTemplateRows,
+						fileUploadTemplateError.rowsError =
+							await this._processCustomerFileUploadTemplateRows(
+								customerFileUploadTemplateRows,
 								userId,
 								tags,
 								now,
@@ -391,15 +393,15 @@ export class CustomersService {
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 							$set: {
 								updatedAt: new Date(),
-								totalError: customerUploadTemplateFileError.rowsError.length,
+								totalError: fileUploadTemplateError.rowsError.length,
 								totalSuccess:
-									customerUploadTemplateRows.length -
-									customerUploadTemplateFileError.rowsError.length,
-								totalProcessed: customerUploadTemplateRows.length,
+									customerFileUploadTemplateRows.length -
+									fileUploadTemplateError.rowsError.length,
+								totalProcessed: customerFileUploadTemplateRows.length,
 							},
 						});
 					} catch (error: any) {
-						customerUploadTemplateFileError.processError = error?.message;
+						fileUploadTemplateError.processError = error?.message;
 						this._logger.error(error);
 					} finally {
 						await this._filesService.deleteFile(filename);
@@ -411,14 +413,12 @@ export class CustomersService {
 					};
 
 					if (
-						customerUploadTemplateFileError.rowsError.length > 0 ||
-						customerUploadTemplateFileError.processError
+						fileUploadTemplateError.rowsError.length > 0 ||
+						fileUploadTemplateError.processError
 					) {
-						customerUploadTemplateFileErrors.push(
-							customerUploadTemplateFileError,
-						);
+						fileUploadTemplateErrors.push(fileUploadTemplateError);
 
-						fileUploadSet.errors = customerUploadTemplateFileError;
+						fileUploadSet.errors = JSON.stringify(fileUploadTemplateError);
 						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
 					}
 
@@ -430,7 +430,7 @@ export class CustomersService {
 				}
 
 				this._socketsGateway.handleUploadCustomersResponseToEmployee(
-					customerUploadTemplateFileErrors,
+					fileUploadTemplateErrors,
 					employeeId,
 				);
 			})
@@ -444,9 +444,9 @@ export class CustomersService {
 
 	// #region Private Methods
 
-	public async _getCustomerUploadTemplateRowsByFilename(
+	public async _getCustomerFileUploadTemplateRowsByFilename(
 		filename: string,
-	): Promise<ICustomerUploadTemplateRow[]> {
+	): Promise<ICustomerFileUploadTemplateRow[]> {
 		const fileBuffer: Buffer | null =
 			await this._filesService.getFileBufferByFilename(filename);
 
@@ -465,7 +465,7 @@ export class CustomersService {
 
 		const worksheetRowsCountToIterate: number = worksheet.rowCount + 1;
 
-		const customerUploadTemplateRows: ICustomerUploadTemplateRow[] = [];
+		const customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[] = [];
 
 		for (
 			let rowNumber = 2;
@@ -497,7 +497,7 @@ export class CustomersService {
 			const phoneNumber: string = row.getCell('Q')?.text?.trim();
 			const phoneMessengers: string = row.getCell('R')?.text?.trim();
 
-			customerUploadTemplateRows.push({
+			customerFileUploadTemplateRows.push({
 				rowNumber,
 				name,
 				about,
@@ -520,51 +520,52 @@ export class CustomersService {
 			});
 		}
 
-		return customerUploadTemplateRows;
+		return customerFileUploadTemplateRows;
 	}
 
-	public async _processCustomerUploadTemplateRows(
-		customerUploadTemplateRows: ICustomerUploadTemplateRow[],
+	public async _processCustomerFileUploadTemplateRows(
+		customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[],
 		ownerUserId: string,
 		tags: ITag[],
 		now: Date,
-	): Promise<ICustomerUploadTemplateRowError[]> {
+	): Promise<IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[]> {
 		const customersToCreate: ICustomer[] = [];
 
-		const customerUploadTemplateRowsError: ICustomerUploadTemplateRowError[] =
+		const customerFileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[] =
 			[];
 
-		for await (const customerUploadTemplateRow of customerUploadTemplateRows) {
-			const customerUploadTemplateRowError: ICustomerUploadTemplateRowError = {
-				rowNumber: customerUploadTemplateRow.rowNumber,
-				reasons: [],
-			};
+		for await (const customerFileUploadTemplateRow of customerFileUploadTemplateRows) {
+			const customerUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow> =
+				{
+					rowNumber: customerFileUploadTemplateRow.rowNumber,
+					reasons: [],
+				};
 
 			try {
-				if (!customerUploadTemplateRow.name?.trim()) {
-					customerUploadTemplateRowError.reasons.push({
+				if (!customerFileUploadTemplateRow.name?.trim()) {
+					customerUploadTemplateErrorRow.reasons.push({
 						message: 'Name is required!',
 						property: 'name',
 					});
 				}
 
 				if (
-					customerUploadTemplateRow.email &&
-					!isValidEmail(customerUploadTemplateRow.email)
+					customerFileUploadTemplateRow.email &&
+					!isValidEmail(customerFileUploadTemplateRow.email)
 				) {
-					customerUploadTemplateRowError.reasons.push({
+					customerUploadTemplateErrorRow.reasons.push({
 						message: 'Email invalid format!',
 						property: 'email',
 					});
 				}
 
-				const birthDate: Date | null = customerUploadTemplateRow.birthDate
-					? parseToDate(customerUploadTemplateRow.birthDate)
+				const birthDate: Date | null = customerFileUploadTemplateRow.birthDate
+					? parseToDate(customerFileUploadTemplateRow.birthDate)
 					: null;
 
-				if (customerUploadTemplateRow.birthDate) {
+				if (customerFileUploadTemplateRow.birthDate) {
 					if (!birthDate) {
-						customerUploadTemplateRowError.reasons.push({
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'Birth Date invalid format!',
 							property: 'birthDate',
 						});
@@ -572,87 +573,89 @@ export class CustomersService {
 				}
 
 				if (
-					customerUploadTemplateRow.gender &&
+					customerFileUploadTemplateRow.gender &&
 					!includes(
 						Object.keys(PersonEnum.Gender),
-						customerUploadTemplateRow.gender.toUpperCase(),
+						customerFileUploadTemplateRow.gender.toUpperCase(),
 					)
 				) {
-					customerUploadTemplateRowError.reasons.push({
+					customerUploadTemplateErrorRow.reasons.push({
 						message: 'Gender invalid!',
 						property: 'gender',
 					});
 				}
 
 				if (
-					customerUploadTemplateRow.address1 ||
-					customerUploadTemplateRow.country ||
-					customerUploadTemplateRow.state ||
-					customerUploadTemplateRow.city ||
-					customerUploadTemplateRow.zipCode ||
-					customerUploadTemplateRow.district
+					customerFileUploadTemplateRow.address1 ||
+					customerFileUploadTemplateRow.country ||
+					customerFileUploadTemplateRow.state ||
+					customerFileUploadTemplateRow.city ||
+					customerFileUploadTemplateRow.zipCode ||
+					customerFileUploadTemplateRow.district
 				) {
-					if (!customerUploadTemplateRow.address1?.trim()) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.address1?.trim()) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'Address1 invalid!',
 							property: 'address1',
 						});
 					}
 
-					if (!customerUploadTemplateRow.country?.trim()) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.country?.trim()) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'Country invalid!',
 							property: 'country',
 						});
 					}
 
-					if (!customerUploadTemplateRow.state?.trim()) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.state?.trim()) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'State invalid!',
 							property: 'state',
 						});
 					}
 
-					if (!customerUploadTemplateRow.city?.trim()) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.city?.trim()) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'City invalid!',
 							property: 'city',
 						});
 					}
 
-					if (!customerUploadTemplateRow.zipCode) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.zipCode) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'Zip Code invalid!',
 							property: 'zipCode',
 						});
 					}
 
-					if (!customerUploadTemplateRow.district?.trim()) {
-						customerUploadTemplateRowError.reasons.push({
+					if (!customerFileUploadTemplateRow.district?.trim()) {
+						customerUploadTemplateErrorRow.reasons.push({
 							message: 'District invalid!',
 							property: 'district',
 						});
 					}
 				}
 
-				if (customerUploadTemplateRowError.reasons.length > 0) {
-					customerUploadTemplateRowsError.push(customerUploadTemplateRowError);
+				if (customerUploadTemplateErrorRow.reasons.length > 0) {
+					customerFileUploadTemplateErrorRows.push(
+						customerUploadTemplateErrorRow,
+					);
 					continue;
 				}
 
 				const customerToUpdate: ICustomer | null =
-					customerUploadTemplateRow.email && birthDate
+					customerFileUploadTemplateRow.email && birthDate
 						? await this.findByMainPropertiesAndOwnerUserId(
-								customerUploadTemplateRow.name,
-								customerUploadTemplateRow.email,
+								customerFileUploadTemplateRow.name,
+								customerFileUploadTemplateRow.email,
 								birthDate,
 								ownerUserId,
 						  )
 						: null;
 
 				const tagsByCustomerUploadTemplateRow: string[] =
-					await this._getTagsByCustomerUploadTemplateRow(
-						customerUploadTemplateRow.tags,
+					await this._getTagsByCustomerFileUploadTemplateRow(
+						customerFileUploadTemplateRow.tags,
 						ownerUserId,
 						tags,
 						arrayObjectIdToString(customerToUpdate?.tagsIds as any[]),
@@ -663,24 +666,24 @@ export class CustomersService {
 				);
 
 				const phoneNumbers: IPhoneNumber[] =
-					this._getPhoneNumbersByCustomerUploadTemplateRow(
-						customerUploadTemplateRow,
+					this._getPhoneNumbersByCustomerFileUploadTemplateRow(
+						customerFileUploadTemplateRow,
 						customerToUpdate?.phoneNumbers,
 					);
 
 				const addresses: IAddress[] =
-					this._getAddressesByCustomerUploadTemplateRow(
-						customerUploadTemplateRow,
+					this._getAddressesByCustomerFileUploadTemplateRow(
+						customerFileUploadTemplateRow,
 						customerToUpdate?.addresses,
 					);
 
 				if (customerToUpdate) {
-					customerToUpdate.gender = customerUploadTemplateRow.gender
-						? (customerUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+					customerToUpdate.gender = customerFileUploadTemplateRow.gender
+						? (customerFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
 						: customerToUpdate.gender;
 					customerToUpdate.tagsIds = tagsIds as any[];
 					customerToUpdate.about =
-						customerUploadTemplateRow.about ?? customerToUpdate.about;
+						customerFileUploadTemplateRow.about ?? customerToUpdate.about;
 					customerToUpdate.phoneNumbers = phoneNumbers;
 					customerToUpdate.addresses = addresses;
 
@@ -695,14 +698,14 @@ export class CustomersService {
 				} else {
 					customersToCreate.push({
 						avatar: null,
-						name: customerUploadTemplateRow.name,
-						email: customerUploadTemplateRow.email,
+						name: customerFileUploadTemplateRow.name,
+						email: customerFileUploadTemplateRow.email,
 						birthDate: birthDate,
 						addresses,
-						gender: customerUploadTemplateRow.gender
-							? (customerUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+						gender: customerFileUploadTemplateRow.gender
+							? (customerFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
 							: PersonEnum.Gender.OTHER,
-						about: customerUploadTemplateRow.about,
+						about: customerFileUploadTemplateRow.about,
 						phoneNumbers,
 						tagsIds: tagsIds as any[],
 						ownerUserId: ownerUserId as any,
@@ -713,12 +716,14 @@ export class CustomersService {
 					});
 				}
 			} catch (error) {
-				customerUploadTemplateRowError.reasons.push({
+				customerUploadTemplateErrorRow.reasons.push({
 					message: 'Error when attempt process row',
 					property: 'other',
 				});
 
-				customerUploadTemplateRowsError.push(customerUploadTemplateRowError);
+				customerFileUploadTemplateErrorRows.push(
+					customerUploadTemplateErrorRow,
+				);
 			}
 		}
 
@@ -726,10 +731,10 @@ export class CustomersService {
 			await this._customerModel.create(customersToCreate);
 		}
 
-		return customerUploadTemplateRowsError;
+		return customerFileUploadTemplateErrorRows;
 	}
 
-	public async _getTagsByCustomerUploadTemplateRow(
+	public async _getTagsByCustomerFileUploadTemplateRow(
 		tagsFromRow: string,
 		userId: string,
 		tagsFromUser: ITag[] = [],
@@ -776,16 +781,16 @@ export class CustomersService {
 		return tagsIdsFromCustomer;
 	}
 
-	public _getPhoneNumbersByCustomerUploadTemplateRow(
-		customerUploadTemplateRow: ICustomerUploadTemplateRow,
+	public _getPhoneNumbersByCustomerFileUploadTemplateRow(
+		customerFileUploadTemplateRow: ICustomerFileUploadTemplateRow,
 		phoneNumbers: IPhoneNumber[] = [],
 	): IPhoneNumber[] {
-		const phoneNumber: string | null = customerUploadTemplateRow.phoneNumber
-			? customerUploadTemplateRow.phoneNumber.toString()
+		const phoneNumber: string | null = customerFileUploadTemplateRow.phoneNumber
+			? customerFileUploadTemplateRow.phoneNumber.toString()
 			: null;
 
-		let phoneType: string | null = customerUploadTemplateRow.phoneType
-			? customerUploadTemplateRow.phoneType?.toUpperCase()
+		let phoneType: string | null = customerFileUploadTemplateRow.phoneType
+			? customerFileUploadTemplateRow.phoneType?.toUpperCase()
 			: null;
 
 		if (!phoneNumber) {
@@ -801,8 +806,8 @@ export class CustomersService {
 		}
 
 		const messengers: PhoneNumberEnum.PhoneNumberMessenger[] = (
-			customerUploadTemplateRow.phoneMessengers?.trim()
-				? customerUploadTemplateRow.phoneMessengers
+			customerFileUploadTemplateRow.phoneMessengers?.trim()
+				? customerFileUploadTemplateRow.phoneMessengers
 						.toUpperCase()
 						.split(',')
 						.filter((x) =>
@@ -821,18 +826,18 @@ export class CustomersService {
 		return phoneNumbers;
 	}
 
-	public _getAddressesByCustomerUploadTemplateRow(
-		customerUploadTemplateRow: ICustomerUploadTemplateRow,
+	public _getAddressesByCustomerFileUploadTemplateRow(
+		customerFileUploadTemplateRow: ICustomerFileUploadTemplateRow,
 		addresses: IAddress[] = [],
 	): IAddress[] {
 		if (
 			!(
-				customerUploadTemplateRow.address1 ||
-				customerUploadTemplateRow.country ||
-				customerUploadTemplateRow.state ||
-				customerUploadTemplateRow.city ||
-				customerUploadTemplateRow.zipCode ||
-				customerUploadTemplateRow.district
+				customerFileUploadTemplateRow.address1 ||
+				customerFileUploadTemplateRow.country ||
+				customerFileUploadTemplateRow.state ||
+				customerFileUploadTemplateRow.city ||
+				customerFileUploadTemplateRow.zipCode ||
+				customerFileUploadTemplateRow.district
 			)
 		) {
 			return addresses;
@@ -841,26 +846,26 @@ export class CustomersService {
 		const country: ICountryMockData = find(
 			countries,
 			(country: ICountryMockData) =>
-				country.code === customerUploadTemplateRow.country ||
-				country.name === customerUploadTemplateRow.country,
+				country.code === customerFileUploadTemplateRow.country ||
+				country.name === customerFileUploadTemplateRow.country,
 		) ?? {
-			code: customerUploadTemplateRow.country,
-			name: customerUploadTemplateRow.country,
+			code: customerFileUploadTemplateRow.country,
+			name: customerFileUploadTemplateRow.country,
 		};
 
 		const state: IStateMockData = find(
 			states,
 			(state: IStateMockData) =>
-				state.code === customerUploadTemplateRow.state ||
-				state.name === customerUploadTemplateRow.state,
+				state.code === customerFileUploadTemplateRow.state ||
+				state.name === customerFileUploadTemplateRow.state,
 		) ?? {
-			code: customerUploadTemplateRow.state,
-			name: customerUploadTemplateRow.state,
+			code: customerFileUploadTemplateRow.state,
+			name: customerFileUploadTemplateRow.state,
 		};
 
 		const types: AddressEnum.Type[] = (
-			customerUploadTemplateRow.addressTypes
-				? customerUploadTemplateRow.addressTypes
+			customerFileUploadTemplateRow.addressTypes
+				? customerFileUploadTemplateRow.addressTypes
 						.toUpperCase()
 						.split(',')
 						.filter((x) => includes(Object.keys(AddressEnum.Type), x))
@@ -868,16 +873,16 @@ export class CustomersService {
 		) as AddressEnum.Type[];
 
 		addresses.push({
-			address1: customerUploadTemplateRow.address1,
-			address2: customerUploadTemplateRow.address2,
-			city: customerUploadTemplateRow.city,
+			address1: customerFileUploadTemplateRow.address1,
+			address2: customerFileUploadTemplateRow.address2,
+			city: customerFileUploadTemplateRow.city,
 			country,
-			description: customerUploadTemplateRow.addressDescription,
-			district: customerUploadTemplateRow.district,
+			description: customerFileUploadTemplateRow.addressDescription,
+			district: customerFileUploadTemplateRow.district,
 			isValid: true,
 			state,
 			uid: Date.now().toString(),
-			zip: customerUploadTemplateRow.zipCode.toString(),
+			zip: customerFileUploadTemplateRow.zipCode.toString(),
 			types,
 		});
 

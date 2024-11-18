@@ -1,6 +1,6 @@
 import { FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -37,6 +37,17 @@ export class FilesUploadsService {
 
 	public async findById(fileUploadId: string): Promise<IFileUpload | null> {
 		return this._fileUploadModel.findById(fileUploadId);
+	}
+
+	public async findByIdOrFail(fileUploadId: string): Promise<IFileUpload> {
+		const fileUpload: IFileUpload | undefined =
+			await this.findById(fileUploadId);
+
+		if (!fileUpload) {
+			throw new NotFoundException('File Upload not found!');
+		}
+
+		return fileUpload;
 	}
 
 	public async findByUserId(userId: string): Promise<IFileUpload[]> {
@@ -96,7 +107,7 @@ export class FilesUploadsService {
 		response.total = await this._fileUploadModel.countDocuments(filter);
 		response.data = await this._fileUploadModel.find(
 			filter,
-			null,
+			{ errors: 0 },
 			queryOptions<IFileUpload>(tableState),
 		);
 
@@ -145,6 +156,11 @@ export class FilesUploadsService {
 			update,
 			options,
 		);
+	}
+
+	public async downloadErrors(fileUploadId: string): Promise<any> {
+		const fileUpload: IFileUpload = await this.findByIdOrFail(fileUploadId);
+		return fileUpload;
 	}
 
 	// #endregion

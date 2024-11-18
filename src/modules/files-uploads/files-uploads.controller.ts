@@ -18,7 +18,7 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { FilesUploadsService } from './files-uploads.service';
 import { IFileUpload } from './interfaces/file-upload.interface';
 
-@Controller('api/v1/files-uploads')
+@Controller('api/v1/filesUploads')
 export class FilesUploadsController {
 	constructor(private _filesUploadsService: FilesUploadsService) {}
 
@@ -39,5 +39,12 @@ export class FilesUploadsController {
 		@Param('fileUploadId', ValidationParamsPipe) fileUploadId: string,
 	): Promise<IFileUpload | null> {
 		return await this._filesUploadsService.findById(fileUploadId);
+	}
+
+	@Get('/downloadErrors/:fileUploadId')
+	public async downloadErrors(
+		@Param('fileUploadId', ValidationParamsPipe) fileUploadId: string,
+	): Promise<IFileUpload | null> {
+		return await this._filesUploadsService.downloadErrors(fileUploadId);
 	}
 }

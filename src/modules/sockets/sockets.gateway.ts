@@ -9,7 +9,8 @@ import {
 	WebSocketServer,
 } from '@nestjs/websockets';
 
-import { ICustomerUploadTemplateFileError } from '../customers/interfaces/customers.type';
+import { ICustomerFileUploadTemplateRow } from '../customers/interfaces/customers.type';
+import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
 
 @WebSocketGateway({
 	cors: {
@@ -34,7 +35,7 @@ export class SocketsGateway
 	@SubscribeMessage('uploadCustomersResponseToEmployee')
 	handleUploadCustomersResponseToEmployee(
 		@MessageBody()
-		data: ICustomerUploadTemplateFileError[],
+		data: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[],
 		employeeId: string,
 	): void {
 		this.server.emit(
