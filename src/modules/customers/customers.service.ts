@@ -531,11 +531,11 @@ export class CustomersService {
 	): Promise<IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[]> {
 		const customersToCreate: ICustomer[] = [];
 
-		const customerFileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[] =
+		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[] =
 			[];
 
 		for await (const customerFileUploadTemplateRow of customerFileUploadTemplateRows) {
-			const customerUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow> =
+			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow> =
 				{
 					rowNumber: customerFileUploadTemplateRow.rowNumber,
 					reasons: [],
@@ -543,7 +543,7 @@ export class CustomersService {
 
 			try {
 				if (!customerFileUploadTemplateRow.name?.trim()) {
-					customerUploadTemplateErrorRow.reasons.push({
+					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Name is required!',
 						property: 'name',
 					});
@@ -553,7 +553,7 @@ export class CustomersService {
 					customerFileUploadTemplateRow.email &&
 					!isValidEmail(customerFileUploadTemplateRow.email)
 				) {
-					customerUploadTemplateErrorRow.reasons.push({
+					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Email invalid format!',
 						property: 'email',
 					});
@@ -565,7 +565,7 @@ export class CustomersService {
 
 				if (customerFileUploadTemplateRow.birthDate) {
 					if (!birthDate) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Birth Date invalid format!',
 							property: 'birthDate',
 						});
@@ -579,7 +579,7 @@ export class CustomersService {
 						customerFileUploadTemplateRow.gender.toUpperCase(),
 					)
 				) {
-					customerUploadTemplateErrorRow.reasons.push({
+					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Gender invalid!',
 						property: 'gender',
 					});
@@ -594,52 +594,50 @@ export class CustomersService {
 					customerFileUploadTemplateRow.district
 				) {
 					if (!customerFileUploadTemplateRow.address1?.trim()) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Address1 invalid!',
 							property: 'address1',
 						});
 					}
 
 					if (!customerFileUploadTemplateRow.country?.trim()) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Country invalid!',
 							property: 'country',
 						});
 					}
 
 					if (!customerFileUploadTemplateRow.state?.trim()) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'State invalid!',
 							property: 'state',
 						});
 					}
 
 					if (!customerFileUploadTemplateRow.city?.trim()) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'City invalid!',
 							property: 'city',
 						});
 					}
 
 					if (!customerFileUploadTemplateRow.zipCode) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Zip Code invalid!',
 							property: 'zipCode',
 						});
 					}
 
 					if (!customerFileUploadTemplateRow.district?.trim()) {
-						customerUploadTemplateErrorRow.reasons.push({
+						fileUploadTemplateErrorRow.reasons.push({
 							message: 'District invalid!',
 							property: 'district',
 						});
 					}
 				}
 
-				if (customerUploadTemplateErrorRow.reasons.length > 0) {
-					customerFileUploadTemplateErrorRows.push(
-						customerUploadTemplateErrorRow,
-					);
+				if (fileUploadTemplateErrorRow.reasons.length > 0) {
+					fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
 					continue;
 				}
 
@@ -716,14 +714,12 @@ export class CustomersService {
 					});
 				}
 			} catch (error) {
-				customerUploadTemplateErrorRow.reasons.push({
+				fileUploadTemplateErrorRow.reasons.push({
 					message: 'Error when attempt process row',
 					property: 'other',
 				});
 
-				customerFileUploadTemplateErrorRows.push(
-					customerUploadTemplateErrorRow,
-				);
+				fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
 			}
 		}
 
@@ -731,7 +727,7 @@ export class CustomersService {
 			await this._customerModel.create(customersToCreate);
 		}
 
-		return customerFileUploadTemplateErrorRows;
+		return fileUploadTemplateErrorRows;
 	}
 
 	public async _getTagsByCustomerFileUploadTemplateRow(
