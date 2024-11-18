@@ -369,6 +369,28 @@ export class CustomersService {
 							fileNumber: index + 1,
 							rowsError: [],
 							processError: undefined,
+							fileColumns: {
+								rowNumber: 'Row Number',
+								name: 'Name',
+								email: 'Email',
+								birthDate: 'Birth Date',
+								gender: 'Gender',
+								tags: 'Tags',
+								about: 'About',
+								country: 'Country',
+								state: 'State',
+								city: 'City',
+								zipCode: 'Zip Code',
+								address1: 'Address1',
+								address2: 'Address2',
+								district: 'District',
+								addressDescription: 'Address Description',
+								addressTypes: 'Address Types',
+								phoneType: 'Phone Type',
+								phoneNumber: 'Phone Number',
+								phoneMessengers: 'Phone Messengers',
+								other: 'Other',
+							},
 						};
 
 					try {

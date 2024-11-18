@@ -1,6 +1,13 @@
+import * as ExcelJS from 'exceljs';
+import { reduce } from 'lodash';
 import { FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
@@ -13,6 +20,10 @@ import CreateFileUploadDto from './interfaces/dto/createFileUpload.dto';
 import { IFileUpload } from './interfaces/file-upload.interface';
 import { FileUpload } from './interfaces/file-upload.schema';
 import FilesUploadsEnum from './interfaces/files-uploads.enum';
+import {
+	IFileUploadTemplateError,
+	IFileUploadTemplateRowErrorReason,
+} from './interfaces/files-uploads.type';
 
 @Injectable()
 export class FilesUploadsService {
@@ -158,9 +169,57 @@ export class FilesUploadsService {
 		);
 	}
 
-	public async downloadErrors(fileUploadId: string): Promise<any> {
+	public async downloadErrors(fileUploadId: string): Promise<Buffer> {
 		const fileUpload: IFileUpload = await this.findByIdOrFail(fileUploadId);
-		return fileUpload;
+
+		if (!fileUpload.errors) {
+			throw new InternalServerErrorException('There are no errors to download');
+		}
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		const worksheet = workbook.addWorksheet('Errors');
+
+		const fileUploadErrors: IFileUploadTemplateError<any> = JSON.parse(
+			fileUpload.errors,
+		);
+
+		worksheet.columns = [];
+
+		if (fileUploadErrors.rowsError.length) {
+			for (const fileColumnKey in fileUploadErrors.fileColumns) {
+				worksheet.columns.push({
+					header: fileUploadErrors.fileColumns[fileColumnKey],
+					key: fileColumnKey,
+					width: 20,
+				});
+			}
+
+			for (const rowError of fileUploadErrors.rowsError) {
+				const rowErrorReasonsObj = reduce(
+					rowError.reasons,
+					(acc, rowErrorReason: IFileUploadTemplateRowErrorReason<any>) => {
+						acc[rowErrorReason.property] = rowErrorReason.message;
+						return acc;
+					},
+					{},
+				);
+
+				rowErrorReasonsObj['rowNumber'] = rowError.rowNumber;
+
+				worksheet.addRow(rowErrorReasonsObj);
+			}
+		} else {
+			worksheet.columns.push({
+				header: 'Other',
+				key: 'other',
+				width: 10,
+			});
+
+			worksheet.addRow({ other: fileUploadErrors.processError });
+		}
+
+		const buffer = await workbook.xlsx.writeBuffer();
+		return buffer as Buffer;
 	}
 
 	// #endregion

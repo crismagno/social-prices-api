@@ -1,9 +1,13 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
+	Res,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -44,7 +48,21 @@ export class FilesUploadsController {
 	@Get('/downloadErrors/:fileUploadId')
 	public async downloadErrors(
 		@Param('fileUploadId', ValidationParamsPipe) fileUploadId: string,
-	): Promise<IFileUpload | null> {
-		return await this._filesUploadsService.downloadErrors(fileUploadId);
+		@Res() res: Response,
+	): Promise<any> {
+		const buffer: Buffer =
+			await this._filesUploadsService.downloadErrors(fileUploadId);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download file upload errors',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileUploadErrors.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }
