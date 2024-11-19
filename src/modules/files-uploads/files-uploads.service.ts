@@ -179,9 +179,7 @@ export class FilesUploadsService {
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
 		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
 
-		const fileUploadErrors: IFileUploadTemplateError<any> = JSON.parse(
-			fileUpload.errors,
-		);
+		const fileUploadErrors: IFileUploadTemplateError<any> = fileUpload.errors;
 
 		const sheetColumns: any[] = [];
 

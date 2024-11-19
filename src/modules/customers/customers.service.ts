@@ -439,8 +439,7 @@ export class CustomersService {
 						fileUploadTemplateError.processError
 					) {
 						fileUploadTemplateErrors.push(fileUploadTemplateError);
-
-						fileUploadSet.errors = JSON.stringify(fileUploadTemplateError);
+						fileUploadSet.errors = fileUploadTemplateError;
 						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
 					}
 
