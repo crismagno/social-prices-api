@@ -177,22 +177,24 @@ export class FilesUploadsService {
 		}
 
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
-		const worksheet = workbook.addWorksheet('Errors');
+		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
 
 		const fileUploadErrors: IFileUploadTemplateError<any> = JSON.parse(
 			fileUpload.errors,
 		);
 
-		worksheet.columns = [];
+		const sheetColumns: any[] = [];
 
 		if (fileUploadErrors.rowsError.length) {
 			for (const fileColumnKey in fileUploadErrors.fileColumns) {
-				worksheet.columns.push({
+				sheetColumns.push({
 					header: fileUploadErrors.fileColumns[fileColumnKey],
 					key: fileColumnKey,
-					width: 20,
+					width: 30,
 				});
 			}
+
+			worksheet.columns = sheetColumns;
 
 			for (const rowError of fileUploadErrors.rowsError) {
 				const rowErrorReasonsObj = reduce(
@@ -201,19 +203,19 @@ export class FilesUploadsService {
 						acc[rowErrorReason.property] = rowErrorReason.message;
 						return acc;
 					},
-					{},
+					{ rowNumber: rowError.rowNumber },
 				);
-
-				rowErrorReasonsObj['rowNumber'] = rowError.rowNumber;
 
 				worksheet.addRow(rowErrorReasonsObj);
 			}
 		} else {
-			worksheet.columns.push({
+			sheetColumns.push({
 				header: 'Other',
 				key: 'other',
-				width: 10,
+				width: 30,
 			});
+
+			worksheet.columns = sheetColumns;
 
 			worksheet.addRow({ other: fileUploadErrors.processError });
 		}

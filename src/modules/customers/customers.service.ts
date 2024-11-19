@@ -479,7 +479,7 @@ export class CustomersService {
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
 		await workbook.xlsx.load(fileBuffer);
 
-		const worksheet = workbook.getWorksheet('Template');
+		const worksheet: ExcelJS.Worksheet = workbook.getWorksheet('Template');
 
 		this._customersValidationService.validateCustomersUploadTemplate(
 			worksheet.getRow(1),
