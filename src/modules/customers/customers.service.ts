@@ -860,6 +860,20 @@ export class CustomersService {
 			return addresses;
 		}
 
+		customerFileUploadTemplateRow.address1 =
+			customerFileUploadTemplateRow.address1?.trim();
+		customerFileUploadTemplateRow.country =
+			customerFileUploadTemplateRow.country?.trim();
+		customerFileUploadTemplateRow.state =
+			customerFileUploadTemplateRow.state?.trim();
+		customerFileUploadTemplateRow.city =
+			customerFileUploadTemplateRow.city?.trim();
+		customerFileUploadTemplateRow.zipCode =
+			customerFileUploadTemplateRow.zipCode &&
+			String(customerFileUploadTemplateRow.zipCode)?.trim();
+		customerFileUploadTemplateRow.district =
+			customerFileUploadTemplateRow.district?.trim();
+
 		const country: ICountryMockData = find(
 			countries,
 			(country: ICountryMockData) =>
@@ -885,7 +899,10 @@ export class CustomersService {
 				? customerFileUploadTemplateRow.addressTypes
 						.toUpperCase()
 						.split(',')
-						.filter((x) => includes(Object.keys(AddressEnum.Type), x))
+						.map((addressType: string) => addressType.trim())
+						.filter((addressType: string) =>
+							includes(Object.keys(AddressEnum.Type), addressType),
+						)
 				: []
 		) as AddressEnum.Type[];
 
