@@ -19,12 +19,12 @@ import { IAddress } from '../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../shared/interfaces/phone-number.interface';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { isValidEmail } from '../../shared/utils/global/global';
-// import statesMockData from '../../shared/utils/mock-data/brazil-states.json';
-// import countriesMockData from '../../shared/utils/mock-data/countries.json';
+import { countries } from '../../shared/utils/mock-data/countries';
 import {
 	ICountryMockData,
 	IStateMockData,
 } from '../../shared/utils/mock-data/interfaces';
+import { states } from '../../shared/utils/mock-data/states';
 import {
 	arrayObjectIdToString,
 	arrayStringToObjectId,
@@ -58,10 +58,6 @@ import {
 } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
-
-export const countries: ICountryMockData[] = [];
-
-export const states: IStateMockData[] = [];
 
 @Injectable()
 export class CustomersService {
@@ -803,11 +799,11 @@ export class CustomersService {
 		phoneNumbers: IPhoneNumber[] = [],
 	): IPhoneNumber[] {
 		const phoneNumber: string | null = customerFileUploadTemplateRow.phoneNumber
-			? customerFileUploadTemplateRow.phoneNumber.toString()
+			? customerFileUploadTemplateRow.phoneNumber.toString().trim()
 			: null;
 
 		let phoneType: string | null = customerFileUploadTemplateRow.phoneType
-			? customerFileUploadTemplateRow.phoneType?.toUpperCase()
+			? customerFileUploadTemplateRow.phoneType?.toUpperCase().trim()
 			: null;
 
 		if (!phoneNumber) {
@@ -827,8 +823,12 @@ export class CustomersService {
 				? customerFileUploadTemplateRow.phoneMessengers
 						.toUpperCase()
 						.split(',')
-						.filter((x) =>
-							includes(Object.keys(PhoneNumberEnum.PhoneNumberMessenger), x),
+						.map((phoneMessenger: string) => phoneMessenger.trim())
+						.filter((phoneMessenger: string) =>
+							includes(
+								Object.keys(PhoneNumberEnum.PhoneNumberMessenger),
+								phoneMessenger,
+							),
 						)
 				: []
 		) as PhoneNumberEnum.PhoneNumberMessenger[];
