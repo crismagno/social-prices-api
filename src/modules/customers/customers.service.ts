@@ -730,7 +730,7 @@ export class CustomersService {
 						_id: null,
 					});
 				}
-			} catch (error) {
+			} catch (error: any) {
 				fileUploadTemplateErrorRow.reasons.push({
 					message: 'Error when attempt process row',
 					property: 'other',
@@ -786,7 +786,7 @@ export class CustomersService {
 					tagsFromUser.push(tagCreated);
 					tagsIdsFromCustomer.push(tagCreated._id);
 				}
-			} catch (error) {
+			} catch (error: any) {
 				this._logger.error(error);
 			}
 		}
