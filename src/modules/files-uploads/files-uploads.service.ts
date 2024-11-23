@@ -188,7 +188,7 @@ export class FilesUploadsService {
 				sheetColumns.push({
 					header: fileUploadErrors.fileColumns[fileColumnKey],
 					key: fileColumnKey,
-					width: 30,
+					width: fileColumnKey === 'rowNumber' ? 10 : 30,
 				});
 			}
 
