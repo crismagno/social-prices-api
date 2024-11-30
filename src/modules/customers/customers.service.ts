@@ -28,11 +28,14 @@ import { states } from '../../shared/utils/mock-data/states';
 import {
 	arrayObjectIdToString,
 	arrayStringToObjectId,
+	createAddressName,
+	createPhoneNumberName,
 } from '../../shared/utils/strings/strings';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
+	TTableStateSortOrder,
 } from '../../shared/utils/table/table-state.interface';
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
@@ -54,6 +57,7 @@ import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
 import {
 	ICustomerFileUploadTemplateRow,
+	IFiltersDownloadCustomers,
 	IFindByOwnerUserIdAndPropertiesParams,
 } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
@@ -457,11 +461,138 @@ export class CustomersService {
 			});
 	}
 
+	public async downloadCustomers(
+		ownerUserId: string,
+		filters: IFiltersDownloadCustomers,
+	): Promise<Buffer> {
+		const filter: FilterQuery<ICustomer> = {
+			ownerUserId,
+		};
+
+		if (filters.search) {
+			const search = new RegExp(filters.search, 'ig');
+
+			filter.$or = [
+				{
+					name: search,
+				},
+				{
+					email: search,
+				},
+			];
+		}
+
+		if (filters.gender) {
+			filter.gender = { $in: filters.gender };
+		}
+
+		if (filters.tagsIds?.length) {
+			filter.tagsIds = { $in: filters.tagsIds };
+		}
+
+		const customers: ICustomer[] = await this._customerModel.find(
+			filter,
+			null,
+			queryOptions<ICustomer>({
+				sort: {
+					field: filters.sortField as any,
+					order: filters.sortOrder as TTableStateSortOrder,
+				},
+			}),
+		);
+
+		const tags: ITag[] = await this._tagsService.findByType(
+			ownerUserId,
+			TagsEnum.Type.CUSTOMER,
+		);
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
+
+		const columns = {
+			name: 'Name',
+			email: 'Email',
+			birthDate: 'Birth Date',
+			gender: 'Gender',
+			tags: 'Tags',
+			about: 'About',
+			addresses: 'Addresses',
+			phones: 'Phones',
+			createdAt: 'Created At',
+		};
+
+		const sheetColumns: any[] = [];
+
+		for (const columnKey in columns) {
+			sheetColumns.push({
+				header: columns[columnKey],
+				key: columnKey,
+				width: columnKey === 'addresses' ? 50 : 30,
+			});
+		}
+
+		worksheet.columns = sheetColumns;
+
+		for (const customer of customers) {
+			const tagsNames: string = customer.tagsIds.reduce(
+				(acc: string, tagId, index: number) => {
+					const tag = find(tags, { _id: tagId }) as ITag | undefined;
+
+					const isLastIndex: boolean = customer.tagsIds.length - 1 === index;
+
+					if (tag) {
+						acc += `${tag.name}${isLastIndex ? '' : ', '}`;
+					}
+
+					return acc;
+				},
+				'',
+			);
+
+			const addresses: string = customer.addresses.reduce(
+				(acc: string, address: IAddress, index: number) => {
+					acc += `${index === 0 ? '' : '\n'}(${index + 1}) ${createAddressName(
+						address,
+					)}`;
+
+					return acc;
+				},
+				'',
+			);
+
+			const phones: string = customer.phoneNumbers.reduce(
+				(acc: string, phone: IPhoneNumber, index: number) => {
+					acc += `${index === 0 ? '' : '\n'}(${
+						index + 1
+					}) ${createPhoneNumberName(phone)}`;
+
+					return acc;
+				},
+				'',
+			);
+
+			worksheet.addRow({
+				name: customer.name,
+				email: customer.email,
+				birthDate: customer.birthDate,
+				gender: PersonEnum.GenderLabels[customer.gender],
+				tags: tagsNames,
+				about: customer.about,
+				addresses: addresses,
+				phones: phones,
+				createdAt: customer.createdAt,
+			});
+		}
+
+		const buffer = await workbook.xlsx.writeBuffer();
+		return buffer as Buffer;
+	}
+
 	// #endregion
 
 	// #region Private Methods
 
-	public async _getCustomerFileUploadTemplateRowsByFilename(
+	private async _getCustomerFileUploadTemplateRowsByFilename(
 		filename: string,
 	): Promise<ICustomerFileUploadTemplateRow[]> {
 		const fileBuffer: Buffer | null =
@@ -540,7 +671,7 @@ export class CustomersService {
 		return customerFileUploadTemplateRows;
 	}
 
-	public async _processCustomerFileUploadTemplateRows(
+	private async _processCustomerFileUploadTemplateRows(
 		customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[],
 		ownerUserId: string,
 		tags: ITag[],
@@ -747,7 +878,7 @@ export class CustomersService {
 		return fileUploadTemplateErrorRows;
 	}
 
-	public async _getTagsByCustomerFileUploadTemplateRow(
+	private async _getTagsByCustomerFileUploadTemplateRow(
 		tagsFromRow: string,
 		userId: string,
 		tagsFromUser: ITag[] = [],
@@ -794,7 +925,7 @@ export class CustomersService {
 		return tagsIdsFromCustomer;
 	}
 
-	public _getPhoneNumbersByCustomerFileUploadTemplateRow(
+	private _getPhoneNumbersByCustomerFileUploadTemplateRow(
 		customerFileUploadTemplateRow: ICustomerFileUploadTemplateRow,
 		phoneNumbers: IPhoneNumber[] = [],
 	): IPhoneNumber[] {
@@ -843,7 +974,7 @@ export class CustomersService {
 		return phoneNumbers;
 	}
 
-	public _getAddressesByCustomerFileUploadTemplateRow(
+	private _getAddressesByCustomerFileUploadTemplateRow(
 		customerFileUploadTemplateRow: ICustomerFileUploadTemplateRow,
 		addresses: IAddress[] = [],
 	): IAddress[] {

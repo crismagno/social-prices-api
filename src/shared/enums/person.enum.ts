@@ -4,6 +4,12 @@ namespace PersonEnum {
 		MALE = 'MALE',
 		OTHER = 'OTHER',
 	}
+
+	export const GenderLabels = {
+		[Gender.OTHER]: 'Other',
+		[Gender.FEMALE]: 'Female',
+		[Gender.MALE]: 'Male',
+	};
 }
 
 export default PersonEnum;

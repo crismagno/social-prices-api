@@ -1,3 +1,5 @@
+import PersonEnum from '../../../shared/enums/person.enum';
+
 export interface IFindByOwnerUserIdAndPropertiesParams {
 	ownerUserId: string;
 	email: string;
@@ -25,4 +27,12 @@ export interface ICustomerFileUploadTemplateRow {
 	phoneType?: string;
 	phoneNumber?: string | number;
 	phoneMessengers?: string;
+}
+
+export interface IFiltersDownloadCustomers {
+	search: string;
+	gender: PersonEnum.Gender;
+	tagsIds: string[];
+	sortField: string;
+	sortOrder: string;
 }

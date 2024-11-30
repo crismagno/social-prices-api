@@ -1,10 +1,14 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
 	Put,
+	Res,
 	UploadedFile,
 	UploadedFiles,
 	UseInterceptors,
@@ -23,6 +27,7 @@ import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CustomersService } from './customers.service';
 import { ICustomer } from './interfaces/customer.interface';
+import { IFiltersDownloadCustomers } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
 
@@ -111,5 +116,30 @@ export class CustomersController {
 			authPayload._id,
 			authPayload.employeeId,
 		);
+	}
+
+	@Post('/downloadCustomers')
+	@UsePipes(ValidationPipe)
+	public async downloadErrors(
+		@Res() res: Response,
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() filters: IFiltersDownloadCustomers,
+	): Promise<any> {
+		const buffer: Buffer = await this._customersService.downloadCustomers(
+			authPayload._id,
+			filters,
+		);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download customers',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileDownloadCustomers.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }
