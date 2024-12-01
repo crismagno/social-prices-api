@@ -1,4 +1,5 @@
 import PersonEnum from '../../../shared/enums/person.enum';
+import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
 
 export interface IFindByOwnerUserIdAndPropertiesParams {
 	ownerUserId: string;
@@ -34,5 +35,5 @@ export interface IFiltersDownloadCustomers {
 	gender: PersonEnum.Gender;
 	tagsIds: string[];
 	sortField: string;
-	sortOrder: string;
+	sortOrder: TTableStateSortOrder;
 }

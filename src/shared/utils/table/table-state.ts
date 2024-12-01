@@ -3,6 +3,7 @@ import { QueryOptions } from 'mongoose';
 
 import {
 	ITableStateRequest,
+	ITableStateRequestSort,
 	TTableStateSortOrder,
 } from './table-state.interface';
 
@@ -33,6 +34,25 @@ export function queryOptions<T>(
 	if (tableStateRequest?.pagination?.pageSize) {
 		options.limit = tableStateRequest?.pagination?.pageSize;
 	}
+
+	return options;
+}
+
+export function queryOptionsBySort<T>(
+	tableStateRequestSort: ITableStateRequestSort<T>,
+): QueryOptions<T> {
+	const options: QueryOptions<T> = {};
+
+	const tableStateRequestSortField: keyof T | 'createdAt' =
+		tableStateRequestSort?.field ?? 'createdAt';
+
+	const tableStateRequestSortOrder: TTableStateSortOrder =
+		tableStateRequestSort?.order ?? 'ascend';
+
+	options.sort = {
+		[tableStateRequestSortField]:
+			tableStateRequestSortOrder === 'ascend' ? 1 : -1,
+	};
 
 	return options;
 }

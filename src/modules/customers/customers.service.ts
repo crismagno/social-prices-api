@@ -31,11 +31,13 @@ import {
 	createAddressName,
 	createPhoneNumberName,
 } from '../../shared/utils/strings/strings';
-import { queryOptions } from '../../shared/utils/table/table-state';
+import {
+	queryOptions,
+	queryOptionsBySort,
+} from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
-	TTableStateSortOrder,
 } from '../../shared/utils/table/table-state.interface';
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
@@ -493,11 +495,9 @@ export class CustomersService {
 		const customers: ICustomer[] = await this._customerModel.find(
 			filter,
 			null,
-			queryOptions<ICustomer>({
-				sort: {
-					field: filters.sortField as any,
-					order: filters.sortOrder as TTableStateSortOrder,
-				},
+			queryOptionsBySort<ICustomer>({
+				field: filters.sortField as any,
+				order: filters.sortOrder,
 			}),
 		);
 
