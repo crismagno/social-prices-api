@@ -274,7 +274,7 @@ export class SalesService {
 
 			const now: Date = new Date();
 
-			const saleToCreate = {
+			const saleToCreate: ISale = {
 				buyer: createSaleDto.buyer
 					? {
 							address: this._parseCreateAddressDtoToAddress(
@@ -316,8 +316,12 @@ export class SalesService {
 				totals: createSaleDto.totals,
 				type: createSaleDto.type,
 				paymentStatus: createSaleDto.paymentStatus,
-				tagsIds: createSaleDto.tagsIds,
-				createdByEmployeeId: createSaleDto.createdByEmployeeId,
+				tagsIds: createSaleDto.tagsIds as any[],
+				createdByEmployeeId: createSaleDto.createdByEmployeeId as any,
+				softDelete: null,
+				updatedByEmployeeId: null,
+				updatedByUserId: null,
+				_id: null,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -378,6 +382,7 @@ export class SalesService {
 							gender: updateSaleDto.buyer.gender,
 							name: updateSaleDto.buyer.name,
 							phoneNumber: updateSaleDto.buyer.phoneNumber,
+							userId: updateSaleDto.buyer.userId,
 					  }
 					: null,
 				updatedAt: now,
@@ -406,8 +411,8 @@ export class SalesService {
 				totals: updateSaleDto.totals,
 				type: updateSaleDto.type,
 				paymentStatus: updateSaleDto.paymentStatus,
-				tagsIds: updateSaleDto.tagsIds,
-				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId,
+				tagsIds: updateSaleDto.tagsIds as any[],
+				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId as any,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -561,13 +566,13 @@ export class SalesService {
 			);
 		}
 
-		const userByEmail: IUser | undefined =
-			createSaleDto.buyer && !createSaleDto.buyer?.userId
-				? await this._usersService.findOneByEmail(createSaleDto.buyer.email)
-				: undefined;
-
 		const createSaleDtoBuyerUserId: string | undefined =
 			createSaleDto.buyer?.userId;
+
+		const userByEmail: IUser | undefined =
+			createSaleDto.buyer && !createSaleDtoBuyerUserId
+				? await this._usersService.findOneByEmail(createSaleDto.buyer.email)
+				: undefined;
 
 		const buyerUserId: string | undefined =
 			createSaleDtoBuyerUserId ?? userByEmail?._id;
@@ -584,13 +589,14 @@ export class SalesService {
 
 			let customer: ICustomer | null = null;
 
-			// When created by owner of store and owner is making a buy in a shopping of another store users or in his own store
 			if (!createSaleDto.buyer) {
+				// This is get Customer when sale is been created by own customer
 				customer = await this._customersService.findByOwnerUserIdAndUserId(
 					storeUserId,
 					createSaleDto.createdByUserId,
 				);
 			} else {
+				// This is get customer or create when sale is created by manual by store
 				if (createSaleDtoBuyerUserId) {
 					customer = await this._customersService.findByOwnerUserIdAndUserId(
 						storeUserId,
