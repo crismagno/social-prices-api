@@ -88,7 +88,7 @@ export const parseToChartDataPeriodTypeItemByMonth = (
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = [];
 
-	for (let month = 1; month < 13; month += 1) {
+	for (let month = 0; month < 12; month += 1) {
 		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
 			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
 				if (

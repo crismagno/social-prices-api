@@ -492,7 +492,7 @@ export class SalesService {
 		userId: string,
 		params: IGetSalesAnalyticsParams,
 	): Promise<IGetSalesAnalyticsResponse> {
-		let storesIds: string[] = params.storesIds?.length
+		const storesIds: string[] = params.storesIds?.length
 			? params.storesIds
 			: await this._storesService.findStoreIdsByUserId(userId);
 
@@ -521,7 +521,7 @@ export class SalesService {
 			filter['stores.products.productId'] = { $in: params.productIds };
 		}
 
-		let sales: ISale[] = await this._saleModel.find(filter);
+		const sales: ISale[] = await this._saleModel.find(filter);
 
 		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
 			this._parseSalesToChartDataPeriodType(
@@ -905,7 +905,7 @@ export class SalesService {
 		chartDataProductsByTotal: IChartDataProductItem[];
 		chartDataProductsByQuantity: IChartDataProductItem[];
 	}> {
-		let salesStoresProducts: ISaleStoreProduct[] = flatMap(
+		const salesStoresProducts: ISaleStoreProduct[] = flatMap(
 			sales,
 			(sale: ISale) =>
 				flatMap(sale.stores, (saleStore: ISaleStore) => {
@@ -928,7 +928,7 @@ export class SalesService {
 			}),
 		);
 
-		let chartDataProductItems: IChartDataProductItem[] = reduce(
+		const chartDataProductItems: IChartDataProductItem[] = reduce(
 			salesStoresProductsString,
 			(
 				acc: IChartDataProductItem[],
@@ -958,12 +958,12 @@ export class SalesService {
 			[],
 		);
 
-		let chartDataProductsByTotal: IChartDataProductItem[] =
+		const chartDataProductsByTotal: IChartDataProductItem[] =
 			await this._chartDataProductItemsByOrderProperty(
 				chartDataProductItems,
 				'total',
 			);
-		let chartDataProductsByQuantity: IChartDataProductItem[] =
+		const chartDataProductsByQuantity: IChartDataProductItem[] =
 			await this._chartDataProductItemsByOrderProperty(
 				chartDataProductItems,
 				'quantity',
