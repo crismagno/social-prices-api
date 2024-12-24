@@ -25,6 +25,12 @@ export class SaleAmountNoteDto {
 	note: string | null;
 }
 
+export class SaleStoreProductDiscountDto {
+	@IsNumber()
+	@IsOptional()
+	distributedAmount: number | null;
+}
+
 export class SaleStoreProductDto {
 	@IsString()
 	@IsNotEmpty()
@@ -43,6 +49,10 @@ export class SaleStoreProductDto {
 	@IsString()
 	@IsOptional()
 	note: string | null;
+
+	@Type(() => SaleStoreProductDiscountDto)
+	@IsOptional()
+	discount: SaleStoreProductDiscountDto | null;
 }
 
 export class SaleTotalsDiscountDto {

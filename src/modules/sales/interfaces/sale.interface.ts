@@ -67,6 +67,7 @@ export interface ISaleStoreProduct {
 	quantity: number;
 	barCode: string;
 	note: string | null;
+	discount: ISaleStoreProductDiscount | null;
 }
 
 export interface ISaleHeader {
@@ -96,4 +97,8 @@ export interface ISaleBuyer {
 export interface ISaleAmountNote {
 	amount: number;
 	note: string | null;
+}
+
+export interface ISaleStoreProductDiscount {
+	distributedAmount: number | null;
 }

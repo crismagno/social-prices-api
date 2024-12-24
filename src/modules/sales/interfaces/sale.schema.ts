@@ -19,6 +19,7 @@ import {
 	ISalePayment,
 	ISaleStore,
 	ISaleStoreProduct,
+	ISaleStoreProductDiscount,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -77,6 +78,16 @@ export const SaleTotalsDiscountSchema =
 	SchemaFactory.createForClass(SaleTotalsDiscount);
 
 @Schema()
+export class SaleStoreProductDiscount implements ISaleStoreProductDiscount {
+	@Prop({ type: Number })
+	distributedAmount: number | null;
+}
+
+export const SaleStoreProductDiscountSchema = SchemaFactory.createForClass(
+	SaleStoreProductDiscount,
+);
+
+@Schema()
 export class SaleTotals implements ISaleTotals {
 	@Prop({ required: true, type: Number })
 	subtotalAmount: number;
@@ -116,6 +127,9 @@ export class SaleStoreProduct implements ISaleStoreProduct {
 
 	@Prop({ type: String })
 	note: string | null;
+
+	@Prop({ type: SaleStoreProductDiscountSchema, _id: false })
+	discount: ISaleStoreProductDiscount | null;
 }
 
 export const SaleStoreProductSchema =
