@@ -102,4 +102,19 @@ export class ProductsController {
 	): Promise<IProduct | null> {
 		return await this._productsService.findById(productId);
 	}
+
+	@Post('/uploadProducts')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async uploadProducts(
+		@UploadedFiles(parseFilePipeBuilder())
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		return await this._productsService.uploadProducts(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
 }

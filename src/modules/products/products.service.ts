@@ -268,5 +268,135 @@ export class ProductsService {
 		return this._productModel.findOneAndUpdate(filter, update, options);
 	}
 
+	public async uploadProducts(
+		files: Express.Multer.File[],
+		userId: string,
+		employeeId: string,
+	): Promise<void> {
+		// const hasUploadCustomersProcessing: boolean =
+		// 	await this._filesUploadsService.hasUploadCustomersProcessingByUserId(
+		// 		userId,
+		// 	);
+		// if (hasUploadCustomersProcessing) {
+		// 	throw new InternalServerErrorException(
+		// 		'In the moment you have upload customers files processing. please wait finish to try upload new files.',
+		// 	);
+		// }
+		// const tags: ITag[] = await this._tagsService.findByType(
+		// 	userId,
+		// 	TagsEnum.Type.CUSTOMER,
+		// );
+		// const now: Date = new Date();
+		// this._filesService
+		// 	.getUploadFilesUrl(files)
+		// 	.then(async (filenames: string[]) => {
+		// 		const filesUploads: IFileUpload[] =
+		// 			await this._filesUploadsService.createMulti({
+		// 				employeeId,
+		// 				filenames,
+		// 				type: FilesUploadsEnum.Type.UPLOAD_CUSTOMERS,
+		// 				userId,
+		// 			});
+		// 		const fileUploadTemplateErrors: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[] =
+		// 			[];
+		// 		for await (const [
+		// 			index,
+		// 			{ filename, _id: fileUploadId },
+		// 		] of filesUploads.entries()) {
+		// 			await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+		// 				$set: {
+		// 					status: FilesUploadsEnum.Status.PROCESSING,
+		// 					updatedAt: new Date(),
+		// 				},
+		// 			});
+		// 			const fileUploadTemplateError: IFileUploadTemplateError<ICustomerFileUploadTemplateRow> =
+		// 				{
+		// 					filename,
+		// 					fileNumber: index + 1,
+		// 					rowsError: [],
+		// 					processError: undefined,
+		// 					fileColumns: {
+		// 						rowNumber: 'Row Number',
+		// 						name: 'Name',
+		// 						email: 'Email',
+		// 						birthDate: 'Birth Date',
+		// 						gender: 'Gender',
+		// 						tags: 'Tags',
+		// 						about: 'About',
+		// 						country: 'Country',
+		// 						state: 'State',
+		// 						city: 'City',
+		// 						zipCode: 'Zip Code',
+		// 						address1: 'Address1',
+		// 						address2: 'Address2',
+		// 						district: 'District',
+		// 						addressDescription: 'Address Description',
+		// 						addressTypes: 'Address Types',
+		// 						phoneType: 'Phone Type',
+		// 						phoneNumber: 'Phone Number',
+		// 						phoneMessengers: 'Phone Messengers',
+		// 						other: 'Other',
+		// 					},
+		// 				};
+		// 			try {
+		// 				const customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[] =
+		// 					await this._getCustomerFileUploadTemplateRowsByFilename(filename);
+		// 				await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+		// 					$set: {
+		// 						updatedAt: new Date(),
+		// 						totalToProcess: customerFileUploadTemplateRows.length,
+		// 					},
+		// 				});
+		// 				fileUploadTemplateError.rowsError =
+		// 					await this._processCustomerFileUploadTemplateRows(
+		// 						customerFileUploadTemplateRows,
+		// 						userId,
+		// 						tags,
+		// 						now,
+		// 					);
+		// 				await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+		// 					$set: {
+		// 						updatedAt: new Date(),
+		// 						totalError: fileUploadTemplateError.rowsError.length,
+		// 						totalSuccess:
+		// 							customerFileUploadTemplateRows.length -
+		// 							fileUploadTemplateError.rowsError.length,
+		// 						totalProcessed: customerFileUploadTemplateRows.length,
+		// 					},
+		// 				});
+		// 			} catch (error: any) {
+		// 				fileUploadTemplateError.processError = error?.message;
+		// 				this._logger.error(error);
+		// 			} finally {
+		// 				await this._filesService.deleteFile(filename);
+		// 			}
+		// 			const fileUploadSet: Partial<IFileUpload> = {
+		// 				updatedAt: new Date(),
+		// 				status: FilesUploadsEnum.Status.COMPLETED,
+		// 			};
+		// 			if (
+		// 				fileUploadTemplateError.rowsError.length > 0 ||
+		// 				fileUploadTemplateError.processError
+		// 			) {
+		// 				fileUploadTemplateErrors.push(fileUploadTemplateError);
+		// 				fileUploadSet.errors = fileUploadTemplateError;
+		// 				fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
+		// 			}
+		// 			await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+		// 				$set: fileUploadSet,
+		// 			});
+		// 			this._socketsGateway.handleResponseUploadCustomersFileToUser(userId);
+		// 		}
+		// 		this._socketsGateway.handleUploadCustomersResponseToEmployee(
+		// 			fileUploadTemplateErrors,
+		// 			employeeId,
+		// 		);
+		// 	})
+		// 	.catch((error: any) => {
+		// 		this._logger.error(error);
+		// 		throw new Error('Error when attempt process customers upload.');
+		// 	});
+	}
+
 	// #endregion
 }
