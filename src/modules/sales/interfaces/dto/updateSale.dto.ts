@@ -67,4 +67,8 @@ export default class UpdateSaleDto {
 	@IsArray()
 	@Type(() => String)
 	tagsIds: string[];
+
+	@IsString()
+	@IsOptional()
+	deliveryAt: Date | null;
 }

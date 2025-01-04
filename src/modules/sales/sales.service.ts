@@ -322,6 +322,7 @@ export class SalesService {
 				updatedByEmployeeId: null,
 				updatedByUserId: null,
 				_id: null,
+				deliveryAt: createSaleDto.deliveryAt,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -413,6 +414,7 @@ export class SalesService {
 				paymentStatus: updateSaleDto.paymentStatus,
 				tagsIds: updateSaleDto.tagsIds as any[],
 				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId as any,
+				deliveryAt: updateSaleDto.deliveryAt,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(

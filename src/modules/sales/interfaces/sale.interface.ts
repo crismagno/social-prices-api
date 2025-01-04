@@ -30,6 +30,7 @@ export interface ISale
 	stores: ISaleStore[];
 	paymentStatus: SalesEnum.PaymentStatus;
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+	deliveryAt: Date | null;
 }
 
 export interface ISaleStore {

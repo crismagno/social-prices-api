@@ -301,6 +301,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: Date })
+	deliveryAt: Date | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

@@ -217,4 +217,8 @@ export default class CreateSaleDto {
 	@IsArray()
 	@Type(() => String)
 	tagsIds: string[];
+
+	@IsString()
+	@IsOptional()
+	deliveryAt: Date | null;
 }
