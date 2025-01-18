@@ -103,3 +103,11 @@ export const createPhoneNumberName = (phoneNumber: IPhoneNumber): string => {
 
 	return phoneNumberName;
 };
+
+export const hasSpecialCharacters = (value: string): boolean => {
+	const regex: RegExp = /^[a-zA-Z0-9 ]*$/;
+	return !regex.test(value);
+};
+
+export const parseToUpperAndUnderline = (value: string): string =>
+	value?.trim().toLocaleUpperCase().split(' ').join('_');

@@ -1,29 +1,62 @@
+import * as ExcelJS from 'exceljs';
+import { find, includes } from 'lodash';
 import {
 	FilterQuery,
 	Model,
 	QueryOptions,
+	Types,
 	UpdateQuery,
 	UpdateWithAggregationPipeline,
 } from 'mongoose';
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
+import {
+	arrayObjectIdToString,
+	arrayStringToObjectId,
+	hasSpecialCharacters,
+	parseToUpperAndUnderline,
+} from '../../shared/utils/strings/strings';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { CategoriesService } from '../categories/categories.service';
+import CategoriesEnum from '../categories/interfaces/categories.enum';
+import { ICategory } from '../categories/interfaces/category.interface';
+import { FilesUploadsService } from '../files-uploads/files-uploads.service';
+import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
+import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
+import {
+	IFileUploadTemplateError,
+	IFileUploadTemplateErrorRow,
+} from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SocketsGateway } from '../sockets/sockets.gateway';
+import { IStore } from '../stores/interfaces/store.interface';
+import { StoresService } from '../stores/stores.service';
+import TagsEnum from '../tags/interfaces/tags.enum';
+import { ITag } from '../tags/interfaces/tags.interface';
+import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
 import { IProduct } from './interfaces/product.interface';
 import { Product } from './interfaces/product.schema';
+import ProductsEnum from './interfaces/products.enum';
+import { IProductFileUploadTemplateRow } from './interfaces/products.type';
+import { ProductsValidationService } from './products-validation.service';
 
 @Injectable()
 export class ProductsService {
@@ -41,6 +74,12 @@ export class ProductsService {
 		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
+		private readonly _filesUploadsService: FilesUploadsService,
+		private readonly _tagsService: TagsService,
+		private readonly _categoriesService: CategoriesService,
+		private readonly _socketsGateway: SocketsGateway,
+		private readonly _productsValidationService: ProductsValidationService,
+		private readonly _storeService: StoresService,
 	) {
 		this._logger = new Logger(ProductsService.name);
 	}
@@ -130,6 +169,14 @@ export class ProductsService {
 		);
 
 		return response;
+	}
+
+	public async findByUserIdAndProperties(
+		userId: string,
+		name: string,
+		barCode: string,
+	): Promise<IProduct | null> {
+		return this._productModel.findOne({ name, userId, barCode: barCode });
 	}
 
 	public async create(
@@ -273,129 +320,539 @@ export class ProductsService {
 		userId: string,
 		employeeId: string,
 	): Promise<void> {
-		// const hasUploadCustomersProcessing: boolean =
-		// 	await this._filesUploadsService.hasUploadCustomersProcessingByUserId(
-		// 		userId,
-		// 	);
-		// if (hasUploadCustomersProcessing) {
-		// 	throw new InternalServerErrorException(
-		// 		'In the moment you have upload customers files processing. please wait finish to try upload new files.',
-		// 	);
-		// }
-		// const tags: ITag[] = await this._tagsService.findByType(
-		// 	userId,
-		// 	TagsEnum.Type.CUSTOMER,
-		// );
-		// const now: Date = new Date();
-		// this._filesService
-		// 	.getUploadFilesUrl(files)
-		// 	.then(async (filenames: string[]) => {
-		// 		const filesUploads: IFileUpload[] =
-		// 			await this._filesUploadsService.createMulti({
-		// 				employeeId,
-		// 				filenames,
-		// 				type: FilesUploadsEnum.Type.UPLOAD_CUSTOMERS,
-		// 				userId,
-		// 			});
-		// 		const fileUploadTemplateErrors: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[] =
-		// 			[];
-		// 		for await (const [
-		// 			index,
-		// 			{ filename, _id: fileUploadId },
-		// 		] of filesUploads.entries()) {
-		// 			await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-		// 				$set: {
-		// 					status: FilesUploadsEnum.Status.PROCESSING,
-		// 					updatedAt: new Date(),
-		// 				},
-		// 			});
-		// 			const fileUploadTemplateError: IFileUploadTemplateError<ICustomerFileUploadTemplateRow> =
-		// 				{
-		// 					filename,
-		// 					fileNumber: index + 1,
-		// 					rowsError: [],
-		// 					processError: undefined,
-		// 					fileColumns: {
-		// 						rowNumber: 'Row Number',
-		// 						name: 'Name',
-		// 						email: 'Email',
-		// 						birthDate: 'Birth Date',
-		// 						gender: 'Gender',
-		// 						tags: 'Tags',
-		// 						about: 'About',
-		// 						country: 'Country',
-		// 						state: 'State',
-		// 						city: 'City',
-		// 						zipCode: 'Zip Code',
-		// 						address1: 'Address1',
-		// 						address2: 'Address2',
-		// 						district: 'District',
-		// 						addressDescription: 'Address Description',
-		// 						addressTypes: 'Address Types',
-		// 						phoneType: 'Phone Type',
-		// 						phoneNumber: 'Phone Number',
-		// 						phoneMessengers: 'Phone Messengers',
-		// 						other: 'Other',
-		// 					},
-		// 				};
-		// 			try {
-		// 				const customerFileUploadTemplateRows: ICustomerFileUploadTemplateRow[] =
-		// 					await this._getCustomerFileUploadTemplateRowsByFilename(filename);
-		// 				await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-		// 					$set: {
-		// 						updatedAt: new Date(),
-		// 						totalToProcess: customerFileUploadTemplateRows.length,
-		// 					},
-		// 				});
-		// 				fileUploadTemplateError.rowsError =
-		// 					await this._processCustomerFileUploadTemplateRows(
-		// 						customerFileUploadTemplateRows,
-		// 						userId,
-		// 						tags,
-		// 						now,
-		// 					);
-		// 				await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-		// 					$set: {
-		// 						updatedAt: new Date(),
-		// 						totalError: fileUploadTemplateError.rowsError.length,
-		// 						totalSuccess:
-		// 							customerFileUploadTemplateRows.length -
-		// 							fileUploadTemplateError.rowsError.length,
-		// 						totalProcessed: customerFileUploadTemplateRows.length,
-		// 					},
-		// 				});
-		// 			} catch (error: any) {
-		// 				fileUploadTemplateError.processError = error?.message;
-		// 				this._logger.error(error);
-		// 			} finally {
-		// 				await this._filesService.deleteFile(filename);
-		// 			}
-		// 			const fileUploadSet: Partial<IFileUpload> = {
-		// 				updatedAt: new Date(),
-		// 				status: FilesUploadsEnum.Status.COMPLETED,
-		// 			};
-		// 			if (
-		// 				fileUploadTemplateError.rowsError.length > 0 ||
-		// 				fileUploadTemplateError.processError
-		// 			) {
-		// 				fileUploadTemplateErrors.push(fileUploadTemplateError);
-		// 				fileUploadSet.errors = fileUploadTemplateError;
-		// 				fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
-		// 			}
-		// 			await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-		// 				$set: fileUploadSet,
-		// 			});
-		// 			this._socketsGateway.handleResponseUploadCustomersFileToUser(userId);
-		// 		}
-		// 		this._socketsGateway.handleUploadCustomersResponseToEmployee(
-		// 			fileUploadTemplateErrors,
-		// 			employeeId,
-		// 		);
-		// 	})
-		// 	.catch((error: any) => {
-		// 		this._logger.error(error);
-		// 		throw new Error('Error when attempt process customers upload.');
-		// 	});
+		const hasUploadProcessing: boolean =
+			await this._filesUploadsService.hasUploadProductsProcessingByUserId(
+				userId,
+			);
+		if (hasUploadProcessing) {
+			throw new InternalServerErrorException(
+				'In the moment you have upload products files processing. please wait finish to try upload new files.',
+			);
+		}
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.PRODUCT,
+		);
+
+		const categories: ICategory[] = await this._categoriesService.findByType(
+			CategoriesEnum.Type.PRODUCT,
+			userId,
+		);
+
+		const stores: IStore[] = await this._storeService.findByUserId(userId);
+
+		const now: Date = new Date();
+
+		this._filesService
+			.getUploadFilesUrl(files)
+			.then(async (filenames: string[]) => {
+				const filesUploads: IFileUpload[] =
+					await this._filesUploadsService.createMulti({
+						employeeId,
+						filenames,
+						type: FilesUploadsEnum.Type.UPLOAD_PRODUCTS,
+						userId,
+					});
+
+				const fileUploadTemplateErrors: IFileUploadTemplateError<IProductFileUploadTemplateRow>[] =
+					[];
+
+				for await (const [
+					index,
+					{ filename, _id: fileUploadId },
+				] of filesUploads.entries()) {
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: {
+							status: FilesUploadsEnum.Status.PROCESSING,
+							updatedAt: new Date(),
+						},
+					});
+
+					const fileUploadTemplateError: IFileUploadTemplateError<IProductFileUploadTemplateRow> =
+						{
+							filename,
+							fileNumber: index + 1,
+							rowsError: [],
+							processError: undefined,
+							fileColumns: {
+								rowNumber: 'Row Number',
+								image: 'Image',
+								name: 'Name',
+								barcode: 'Barcode',
+								description: 'Description',
+								price: 'Price',
+								quantity: 'Quantity',
+								stores: 'Stores',
+								categories: 'Categories',
+								tags: 'Tags',
+								isActive: 'Is Active',
+								details: 'Details',
+								other: 'Other',
+							},
+						};
+					try {
+						const productFileUploadTemplateRows: IProductFileUploadTemplateRow[] =
+							await this._getProductFileUploadTemplateRowsByFilename(filename);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalToProcess: productFileUploadTemplateRows.length,
+							},
+						});
+
+						fileUploadTemplateError.rowsError =
+							await this._processProductFileUploadTemplateRows(
+								productFileUploadTemplateRows,
+								userId,
+								tags,
+								categories,
+								stores,
+								now,
+							);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalError: fileUploadTemplateError.rowsError.length,
+								totalSuccess:
+									productFileUploadTemplateRows.length -
+									fileUploadTemplateError.rowsError.length,
+								totalProcessed: productFileUploadTemplateRows.length,
+							},
+						});
+					} catch (error: any) {
+						fileUploadTemplateError.processError = error?.message;
+						this._logger.error(error);
+					} finally {
+						await this._filesService.deleteFile(filename);
+					}
+
+					const fileUploadSet: Partial<IFileUpload> = {
+						updatedAt: new Date(),
+						status: FilesUploadsEnum.Status.COMPLETED,
+					};
+
+					if (
+						fileUploadTemplateError.rowsError.length > 0 ||
+						fileUploadTemplateError.processError
+					) {
+						fileUploadTemplateErrors.push(fileUploadTemplateError);
+						fileUploadSet.errors = fileUploadTemplateError;
+						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
+					}
+
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: fileUploadSet,
+					});
+
+					this._socketsGateway.handleResponseUploadProductsFileToUser(userId);
+				}
+
+				this._socketsGateway.handleUploadProductsResponseToEmployee(
+					fileUploadTemplateErrors,
+					employeeId,
+				);
+			})
+			.catch((error: any) => {
+				this._logger.error(error);
+				throw new Error('Error when attempt process products upload.');
+			});
+	}
+
+	// #endregion
+
+	// #region Private Methods
+
+	private async _getProductFileUploadTemplateRowsByFilename(
+		filename: string,
+	): Promise<IProductFileUploadTemplateRow[]> {
+		const fileBuffer: Buffer | null =
+			await this._filesService.getFileBufferByFilename(filename);
+
+		if (!fileBuffer) {
+			throw new Error(`File Error, no data in file: ${filename}`);
+		}
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		await workbook.xlsx.load(fileBuffer);
+
+		const worksheet: ExcelJS.Worksheet = workbook.getWorksheet('Template');
+
+		this._productsValidationService.validateProductsUploadTemplate(
+			worksheet.getRow(1),
+		);
+
+		const worksheetRowsCountToIterate: number = worksheet.rowCount + 1;
+
+		const productFileUploadTemplateRows: IProductFileUploadTemplateRow[] = [];
+
+		for (
+			let rowNumber = 2;
+			rowNumber < worksheetRowsCountToIterate;
+			rowNumber++
+		) {
+			if (worksheetRowsCountToIterate === rowNumber) {
+				break;
+			}
+
+			const row: ExcelJS.Row = worksheet.getRow(rowNumber);
+
+			const image: string = row.getCell('A')?.text?.trim();
+			const name: string = row.getCell('B')?.text?.trim();
+			const barcode: string = row.getCell('C')?.text?.trim();
+			const description: string = row.getCell('D')?.text?.trim();
+			const price: string = row.getCell('E')?.text?.trim();
+			const quantity: string = row.getCell('F')?.text?.trim();
+			const stores: string = row.getCell('G')?.text?.trim();
+			const categories: string = row.getCell('H')?.text?.trim();
+			const tags: string = row.getCell('I')?.text?.trim();
+			const isActive: string = row.getCell('J')?.text?.trim();
+			const details: string = row.getCell('K')?.text?.trim();
+
+			productFileUploadTemplateRows.push({
+				rowNumber,
+				image,
+				name,
+				barcode,
+				description,
+				price,
+				quantity,
+				stores,
+				categories,
+				tags,
+				isActive,
+				details,
+			});
+		}
+
+		return productFileUploadTemplateRows;
+	}
+
+	private async _processProductFileUploadTemplateRows(
+		productFileUploadTemplateRows: IProductFileUploadTemplateRow[],
+		userId: string,
+		tags: ITag[],
+		categories: ICategory[],
+		stores: IStore[],
+		now: Date,
+	): Promise<IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[]> {
+		const productsToCreate: IProduct[] = [];
+
+		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[] =
+			[];
+
+		for await (const productFileUploadTemplateRow of productFileUploadTemplateRows) {
+			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow> =
+				{
+					rowNumber: productFileUploadTemplateRow.rowNumber,
+					reasons: [],
+				};
+
+			try {
+				if (!productFileUploadTemplateRow.name?.trim()) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Name is required!',
+						property: 'name',
+					});
+				}
+
+				if (
+					productFileUploadTemplateRow.barcode?.trim() &&
+					hasSpecialCharacters(productFileUploadTemplateRow.barcode)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Barcode invalid!',
+						property: 'barcode',
+					});
+				}
+
+				if (
+					productFileUploadTemplateRow.price?.toString()?.trim() &&
+					isNaN(+productFileUploadTemplateRow.price)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Price invalid!',
+						property: 'price',
+					});
+				}
+
+				if (
+					productFileUploadTemplateRow.quantity?.toString()?.trim() &&
+					isNaN(+productFileUploadTemplateRow.quantity)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Quantity invalid!',
+						property: 'quantity',
+					});
+				}
+
+				if (fileUploadTemplateErrorRow.reasons.length > 0) {
+					fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
+					continue;
+				}
+
+				const productToUpdate: IProduct | null =
+					productFileUploadTemplateRow.name &&
+					productFileUploadTemplateRow.barcode
+						? await this.findByUserIdAndProperties(
+								userId,
+								productFileUploadTemplateRow.name,
+								productFileUploadTemplateRow.barcode,
+						  )
+						: null;
+
+				const tagsByProductUploadTemplateRow: string[] =
+					await this._getTagsByProductFileUploadTemplateRow(
+						productFileUploadTemplateRow.tags,
+						userId,
+						tags,
+						arrayObjectIdToString(productToUpdate?.tagsIds as any[]),
+					);
+
+				const tagsIds: Types.ObjectId[] = arrayStringToObjectId(
+					tagsByProductUploadTemplateRow,
+				);
+
+				const categoriesByProductUploadTemplateRow: string[] =
+					await this._getCategoriesByProductFileUploadTemplateRow(
+						productFileUploadTemplateRow.categories,
+						userId,
+						categories,
+						arrayObjectIdToString(productToUpdate?.categoriesIds as any[]),
+					);
+
+				const categoriesIds: Types.ObjectId[] = arrayStringToObjectId(
+					categoriesByProductUploadTemplateRow,
+				);
+
+				const storesByProductUploadTemplateRow: string[] =
+					await this._getStoresByProductFileUploadTemplateRow(
+						productFileUploadTemplateRow.stores,
+						stores,
+						arrayObjectIdToString(productToUpdate?.storeIds as any[]),
+					);
+
+				const storeIds: Types.ObjectId[] = arrayStringToObjectId(
+					storesByProductUploadTemplateRow,
+				);
+
+				if (productToUpdate) {
+					productToUpdate.tagsIds = tagsIds as any[];
+
+					productToUpdate.categoriesIds = categoriesIds as any[];
+
+					productToUpdate.storeIds = storeIds as any[];
+
+					productToUpdate.description =
+						productFileUploadTemplateRow?.description ??
+						productToUpdate.description;
+
+					productToUpdate.details =
+						productFileUploadTemplateRow?.details ?? productToUpdate.details;
+
+					productToUpdate.price = productFileUploadTemplateRow.price?.toString()
+						?.length
+						? +productFileUploadTemplateRow.price
+						: productToUpdate.price;
+
+					productToUpdate.quantity =
+						productFileUploadTemplateRow.quantity?.toString()?.length
+							? +productFileUploadTemplateRow.quantity
+							: productToUpdate.quantity;
+
+					productToUpdate.isActive =
+						productFileUploadTemplateRow.isActive?.trim()
+							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
+							  ProductsEnum.YesOrNo.YES
+							: productToUpdate.isActive;
+
+					await this.updateOne(
+						{
+							_id: new Types.ObjectId(productToUpdate._id),
+						},
+						{
+							$set: productToUpdate,
+						},
+					);
+				} else {
+					productsToCreate.push({
+						name: productFileUploadTemplateRow.name,
+						tagsIds: tagsIds as any[],
+						storeIds: storeIds as any[],
+						createdAt: now,
+						updatedAt: now,
+						userId: userId as any,
+						_id: null,
+						price: productFileUploadTemplateRow.price?.toString()?.length
+							? +productFileUploadTemplateRow.price
+							: 0,
+
+						quantity: productFileUploadTemplateRow.quantity?.toString()?.length
+							? +productFileUploadTemplateRow.quantity
+							: 0,
+
+						isActive: productFileUploadTemplateRow.isActive?.trim()
+							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
+							  ProductsEnum.YesOrNo.YES
+							: productToUpdate.isActive,
+						barCode: productFileUploadTemplateRow.barcode,
+						categoriesIds: categoriesIds as any[],
+						description: productFileUploadTemplateRow.description,
+						details: productFileUploadTemplateRow.details,
+						filesUrl: [],
+						mainUrl: null,
+						QRCode: null,
+					});
+				}
+			} catch (error: any) {
+				fileUploadTemplateErrorRow.reasons.push({
+					message: 'Error when attempt process row',
+					property: 'other',
+				});
+
+				fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
+			}
+		}
+
+		if (productsToCreate.length > 0) {
+			await this._productModel.create(productsToCreate);
+		}
+
+		return fileUploadTemplateErrorRows;
+	}
+
+	private async _getTagsByProductFileUploadTemplateRow(
+		tagsFromRow: string,
+		userId: string,
+		tagsFromUser: ITag[] = [],
+		tagsIdsFromProduct: string[] = [],
+	): Promise<string[]> {
+		if (!tagsFromRow?.trim()) {
+			return tagsIdsFromProduct;
+		}
+
+		for await (let tagFromRow of tagsFromRow.split(',')) {
+			try {
+				tagFromRow = tagFromRow?.trim();
+
+				if (!tagFromRow) {
+					continue;
+				}
+
+				const tagFromUser: ITag | null = find(tagsFromUser, {
+					name: tagFromRow,
+				});
+
+				if (tagFromUser) {
+					const tagIdFromUser: string = tagFromUser._id.toString();
+					if (!includes(tagsIdsFromProduct, tagIdFromUser)) {
+						tagsIdsFromProduct.push(tagIdFromUser);
+					}
+				} else {
+					const tagCreated: ITag = await this._tagsService.create({
+						color: TagsEnum.tagDefaultColor,
+						description: null,
+						name: tagFromRow,
+						type: TagsEnum.Type.PRODUCT,
+						userId,
+					});
+
+					tagsFromUser.push(tagCreated);
+					tagsIdsFromProduct.push(tagCreated._id);
+				}
+			} catch (error: any) {
+				this._logger.error(error);
+			}
+		}
+
+		return tagsIdsFromProduct;
+	}
+
+	private async _getCategoriesByProductFileUploadTemplateRow(
+		categoriesFromRow: string,
+		userId: string,
+		categoriesFromUser: ICategory[] = [],
+		categoriesIdsFromProduct: string[] = [],
+	): Promise<string[]> {
+		if (!categoriesFromRow?.trim()) {
+			return categoriesIdsFromProduct;
+		}
+
+		for await (let categoryFromRow of categoriesFromRow.split(',')) {
+			try {
+				categoryFromRow = categoryFromRow?.trim();
+
+				if (!categoryFromRow) {
+					continue;
+				}
+
+				const categoryFromUser: ICategory | null = find(categoriesFromUser, {
+					name: categoryFromRow,
+				});
+
+				if (categoryFromUser) {
+					const categoryIdFromUser: string = categoryFromUser._id.toString();
+					if (!includes(categoriesIdsFromProduct, categoryIdFromUser)) {
+						categoriesIdsFromProduct.push(categoryIdFromUser);
+					}
+				} else {
+					const categoryCreated: ICategory =
+						await this._categoriesService.create(
+							{
+								description: '',
+								name: categoryFromRow,
+								type: CategoriesEnum.Type.PRODUCT,
+								ownerUserId: userId,
+								code: parseToUpperAndUnderline(categoryFromRow),
+							},
+							userId,
+						);
+
+					categoriesFromUser.push(categoryCreated);
+					categoriesIdsFromProduct.push(categoryCreated._id);
+				}
+			} catch (error: any) {
+				this._logger.error(error);
+			}
+		}
+
+		return categoriesIdsFromProduct;
+	}
+
+	private async _getStoresByProductFileUploadTemplateRow(
+		storesFromRow: string,
+		storesFromUser: IStore[] = [],
+		storesIdsFromProduct: string[] = [],
+	): Promise<string[]> {
+		if (!storesFromRow?.trim()) {
+			return storesIdsFromProduct;
+		}
+
+		for await (let storeFromRow of storesFromRow.split(',')) {
+			try {
+				storeFromRow = storeFromRow?.trim();
+
+				if (!storeFromRow) {
+					continue;
+				}
+
+				const storeFromUser: IStore | null = find(storesFromUser, {
+					name: storeFromRow,
+				});
+
+				if (storeFromUser) {
+					const storeIdFromUser: string = storeFromUser._id.toString();
+					if (!includes(storesIdsFromProduct, storeIdFromUser)) {
+						storesIdsFromProduct.push(storeIdFromUser);
+					}
+				}
+			} catch (error: any) {
+				this._logger.error(error);
+			}
+		}
+
+		return storesIdsFromProduct;
 	}
 
 	// #endregion

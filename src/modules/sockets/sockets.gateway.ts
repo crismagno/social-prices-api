@@ -32,6 +32,8 @@ export class SocketsGateway
 		console.log(`Client disconnected: ${client.id}`);
 	}
 
+	//#region Customers
+
 	@SubscribeMessage('uploadCustomersResponseToEmployee')
 	handleUploadCustomersResponseToEmployee(
 		@MessageBody()
@@ -51,4 +53,30 @@ export class SocketsGateway
 	): void {
 		this.server.emit(`response-upload-customers-file-to-user-${userId}`);
 	}
+
+	//#endregion
+
+	//#region Products
+
+	@SubscribeMessage('uploadProductsResponseToEmployee')
+	handleUploadProductsResponseToEmployee(
+		@MessageBody()
+		data: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[],
+		employeeId: string,
+	): void {
+		this.server.emit(
+			`upload-products-response-to-employee-${employeeId}`,
+			data,
+		);
+	}
+
+	@SubscribeMessage('responseFromUploadProductsFile')
+	handleResponseUploadProductsFileToUser(
+		@MessageBody()
+		userId: string,
+	): void {
+		this.server.emit(`response-upload-products-file-to-user-${userId}`);
+	}
+
+	//#endregion
 }

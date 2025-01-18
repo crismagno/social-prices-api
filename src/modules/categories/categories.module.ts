@@ -9,5 +9,6 @@ import { CategoriesService } from './categories.service';
 	imports: [schemasModule.category, UsersModule],
 	controllers: [CategoriesController],
 	providers: [CategoriesService],
+	exports: [CategoriesService],
 })
 export class CategoriesModule {}

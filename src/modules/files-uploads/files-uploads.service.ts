@@ -67,8 +67,9 @@ export class FilesUploadsService {
 		});
 	}
 
-	public async hasUploadCustomersProcessingByUserId(
+	public async hasUploadProcessingByUserIdAndType(
 		userId: string,
+		type: FilesUploadsEnum.Type,
 	): Promise<boolean> {
 		const count: number = await this._fileUploadModel.count({
 			userId,
@@ -78,10 +79,28 @@ export class FilesUploadsService {
 					FilesUploadsEnum.Status.PROCESSING,
 				],
 			},
-			type: FilesUploadsEnum.Type.UPLOAD_CUSTOMERS,
+			type,
 		});
 
 		return count > 0;
+	}
+
+	public async hasUploadCustomersProcessingByUserId(
+		userId: string,
+	): Promise<boolean> {
+		return await this.hasUploadProcessingByUserIdAndType(
+			userId,
+			FilesUploadsEnum.Type.UPLOAD_CUSTOMERS,
+		);
+	}
+
+	public async hasUploadProductsProcessingByUserId(
+		userId: string,
+	): Promise<boolean> {
+		return await this.hasUploadProcessingByUserIdAndType(
+			userId,
+			FilesUploadsEnum.Type.UPLOAD_PRODUCTS,
+		);
 	}
 
 	public async findByIds(fileUploadIds: string[]): Promise<IFileUpload[]> {
