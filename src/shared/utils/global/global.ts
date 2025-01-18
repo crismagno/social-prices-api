@@ -62,7 +62,7 @@ export const newFileOriginalname = (fileOriginalname: string): string => {
 };
 
 export const valueOrCreateUniqueSuffix = (value: any): string => {
-	if (isNil(value) || value === '') {
+	if (isNil(value) || value?.trim() === '') {
 		return createUniqueSuffix();
 	}
 

@@ -36,6 +36,6 @@ export interface ISaleStoreProductString {
 	productId: string;
 	price: number;
 	quantity: number;
-	barCode: string;
+	barcode: string;
 	note: string | null;
 }

@@ -7,7 +7,7 @@ export default class UpdateProductDto {
 
 	@IsString()
 	@IsOptional()
-	barCode: string | null;
+	barcode: string | null;
 
 	@IsString()
 	@IsOptional()

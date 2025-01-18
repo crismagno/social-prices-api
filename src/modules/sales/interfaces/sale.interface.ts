@@ -66,7 +66,7 @@ export interface ISaleStoreProduct {
 	productId: mongoose.Schema.Types.ObjectId;
 	price: number;
 	quantity: number;
-	barCode: string;
+	barcode: string;
 	note: string | null;
 	discount: ISaleStoreProductDiscount | null;
 }

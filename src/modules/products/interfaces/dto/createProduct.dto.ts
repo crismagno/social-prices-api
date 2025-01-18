@@ -7,7 +7,7 @@ export default class CreateProductDto {
 
 	@IsString()
 	@IsOptional()
-	barCode: string | null;
+	barcode: string | null;
 
 	@IsString()
 	@IsOptional()

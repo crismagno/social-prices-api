@@ -123,7 +123,7 @@ export class SaleStoreProduct implements ISaleStoreProduct {
 	quantity: number;
 
 	@Prop({ required: true, type: String })
-	barCode: string;
+	barcode: string;
 
 	@Prop({ type: String })
 	note: string | null;

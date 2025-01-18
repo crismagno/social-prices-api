@@ -928,7 +928,7 @@ export class SalesService {
 		const salesStoresProductsString: ISaleStoreProductString[] = map(
 			salesStoresProducts,
 			(saleStoreProduct: ISaleStoreProduct): ISaleStoreProductString => ({
-				barCode: saleStoreProduct.barCode,
+				barcode: saleStoreProduct.barcode,
 				note: saleStoreProduct.note,
 				price: saleStoreProduct.price,
 				quantity: saleStoreProduct.quantity,
@@ -954,7 +954,7 @@ export class SalesService {
 				} else {
 					acc.push({
 						quantity: saleStoreProduct.quantity,
-						name: saleStoreProduct.barCode,
+						name: saleStoreProduct.barcode,
 						productId: saleStoreProduct.productId.toString(),
 						total: saleStoreProduct.price * saleStoreProduct.quantity,
 						mainUrl: '',

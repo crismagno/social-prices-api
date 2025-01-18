@@ -44,7 +44,7 @@ export class SaleStoreProductDto {
 
 	@IsString()
 	@IsNotEmpty()
-	barCode: string;
+	barcode: string;
 
 	@IsString()
 	@IsOptional()

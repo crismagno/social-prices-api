@@ -135,7 +135,7 @@ export class ProductsService {
 					description: search,
 				},
 				{
-					barCode: search,
+					barcode: search,
 				},
 			];
 		}
@@ -174,9 +174,9 @@ export class ProductsService {
 	public async findByUserIdAndProperties(
 		userId: string,
 		name: string,
-		barCode: string,
+		barcode: string,
 	): Promise<IProduct | null> {
-		return this._productModel.findOne({ name, userId, barCode: barCode });
+		return this._productModel.findOne({ name, userId, barcode: barcode });
 	}
 
 	public async create(
@@ -218,7 +218,7 @@ export class ProductsService {
 			tagsIds: createProductDto.tagsIds,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barCode: valueOrCreateUniqueSuffix(createProductDto.barCode),
+			barcode: valueOrCreateUniqueSuffix(createProductDto.barcode),
 			QRCode: createProductDto.QRCode,
 			createdAt: now,
 			updatedAt: now,
@@ -294,7 +294,7 @@ export class ProductsService {
 					storeIds: updateProductDto.storeIds,
 					categoriesIds: updateProductDto.categoriesIds,
 					tagsIds: updateProductDto.tagsIds,
-					barCode: valueOrCreateUniqueSuffix(updateProductDto.barCode),
+					barcode: valueOrCreateUniqueSuffix(updateProductDto.barcode),
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
 					updatedAt: now,
@@ -696,7 +696,9 @@ export class ProductsService {
 							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  ProductsEnum.YesOrNo.YES
 							: productToUpdate.isActive,
-						barCode: productFileUploadTemplateRow.barcode,
+						barcode: valueOrCreateUniqueSuffix(
+							productFileUploadTemplateRow.barcode,
+						),
 						categoriesIds: categoriesIds as any[],
 						description: productFileUploadTemplateRow.description,
 						details: productFileUploadTemplateRow.details,
