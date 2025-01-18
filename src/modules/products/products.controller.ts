@@ -1,10 +1,14 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
 	Put,
+	Res,
 	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
@@ -23,6 +27,7 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
 import { IProduct } from './interfaces/product.interface';
+import { IFiltersDownloadProducts } from './interfaces/products.type';
 import { ProductsService } from './products.service';
 
 @Controller('api/v1/products')
@@ -116,5 +121,30 @@ export class ProductsController {
 			authPayload._id,
 			authPayload.employeeId,
 		);
+	}
+
+	@Post('/downloadProducts')
+	@UsePipes(ValidationPipe)
+	public async downloadProducts(
+		@Res() res: Response,
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() filters: IFiltersDownloadProducts,
+	): Promise<any> {
+		const buffer: Buffer = await this._productsService.downloadProducts(
+			authPayload._id,
+			filters,
+		);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download products',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileDownloadProducts.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }

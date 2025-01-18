@@ -1,5 +1,5 @@
 import * as ExcelJS from 'exceljs';
-import { find, includes } from 'lodash';
+import { find, includes, isNil } from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -18,6 +18,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
+import CommonEnum from '../../shared/enums/common.enum';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import {
 	arrayObjectIdToString,
@@ -25,7 +26,10 @@ import {
 	hasSpecialCharacters,
 	parseToUpperAndUnderline,
 } from '../../shared/utils/strings/strings';
-import { queryOptions } from '../../shared/utils/table/table-state';
+import {
+	queryOptions,
+	queryOptionsBySort,
+} from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -54,8 +58,10 @@ import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
 import { IProduct } from './interfaces/product.interface';
 import { Product } from './interfaces/product.schema';
-import ProductsEnum from './interfaces/products.enum';
-import { IProductFileUploadTemplateRow } from './interfaces/products.type';
+import {
+	IFiltersDownloadProducts,
+	IProductFileUploadTemplateRow,
+} from './interfaces/products.type';
 import { ProductsValidationService } from './products-validation.service';
 
 @Injectable()
@@ -324,11 +330,13 @@ export class ProductsService {
 			await this._filesUploadsService.hasUploadProductsProcessingByUserId(
 				userId,
 			);
+
 		if (hasUploadProcessing) {
 			throw new InternalServerErrorException(
 				'In the moment you have upload products files processing. please wait finish to try upload new files.',
 			);
 		}
+
 		const tags: ITag[] = await this._tagsService.findByType(
 			userId,
 			TagsEnum.Type.PRODUCT,
@@ -458,6 +466,169 @@ export class ProductsService {
 				this._logger.error(error);
 				throw new Error('Error when attempt process products upload.');
 			});
+	}
+
+	public async downloadProducts(
+		userId: string,
+		filters: IFiltersDownloadProducts,
+	): Promise<Buffer> {
+		const filter: FilterQuery<IProduct> = {
+			userId,
+		};
+
+		if (filters.search) {
+			const search = new RegExp(filters.search, 'ig');
+
+			filter.$or = [
+				{
+					name: search,
+				},
+				{
+					barcode: search,
+				},
+				{
+					description: search,
+				},
+			];
+		}
+
+		if (filters.storeIds?.length) {
+			filter.storeIds = { $in: filters.storeIds };
+		}
+
+		if (filters.categoriesIds?.length) {
+			filter.categoriesIds = { $in: filters.categoriesIds };
+		}
+
+		if (filters.tagsIds?.length) {
+			filter.tagsIds = { $in: filters.tagsIds };
+		}
+
+		if (!isNil(filters.isActive)) {
+			filter.isActive = filters.isActive;
+		}
+
+		const products: IProduct[] = await this._productModel.find(
+			filter,
+			null,
+			queryOptionsBySort<IProduct>({
+				field: filters.sortField as any,
+				order: filters.sortOrder,
+			}),
+		);
+
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.PRODUCT,
+		);
+
+		const categories: ICategory[] = await this._categoriesService.findByType(
+			CategoriesEnum.Type.PRODUCT,
+			userId,
+		);
+
+		const stores: IStore[] = await this._storeService.findByUserId(userId);
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
+
+		const columns = {
+			image: 'Image',
+			name: 'Name',
+			barcode: 'Barcode',
+			description: 'Description',
+			price: 'Price',
+			quantity: 'Quantity',
+			stores: 'Stores',
+			categories: 'Categories',
+			tags: 'Tags',
+			QRCode: 'QRCode',
+			details: 'Details',
+			createdAt: 'Created At',
+			updatedAt: 'Created At',
+		};
+
+		const sheetColumns: any[] = [];
+
+		for (const columnKey in columns) {
+			sheetColumns.push({
+				header: columns[columnKey],
+				key: columnKey,
+				width: columnKey,
+			});
+		}
+
+		worksheet.columns = sheetColumns;
+
+		for (const product of products) {
+			const tagsNames: string = product.tagsIds.reduce(
+				(acc: string, tagId, index: number) => {
+					const tag = find(tags, { _id: tagId }) as ITag | undefined;
+
+					const isLastIndex: boolean = product.tagsIds.length - 1 === index;
+
+					if (tag) {
+						acc += `${tag.name}${isLastIndex ? '' : ', '}`;
+					}
+
+					return acc;
+				},
+				'',
+			);
+
+			const categoriesNames: string = product.categoriesIds.reduce(
+				(acc: string, categoryId, index: number) => {
+					const category = find(categories, { _id: categoryId }) as
+						| ICategory
+						| undefined;
+
+					const isLastIndex: boolean =
+						product.categoriesIds.length - 1 === index;
+
+					if (category) {
+						acc += `${category.name}${isLastIndex ? '' : ', '}`;
+					}
+
+					return acc;
+				},
+				'',
+			);
+
+			const storesNames: string = product.storeIds.reduce(
+				(acc: string, storeId, index: number) => {
+					const store = find(stores, { _id: storeId }) as IStore | undefined;
+
+					const isLastIndex: boolean =
+						product.categoriesIds.length - 1 === index;
+
+					if (store) {
+						acc += `${store.name}${isLastIndex ? '' : ', '}`;
+					}
+
+					return acc;
+				},
+				'',
+			);
+
+			worksheet.addRow({
+				image: '',
+				name: product.name,
+				tags: tagsNames,
+				createdAt: product.createdAt,
+				barcode: product.barcode,
+				description: product.description,
+				price: product.price,
+				quantity: product.quantity,
+				stores: storesNames,
+				categories: categoriesNames,
+				QRCode: product.QRCode,
+				details: product.details,
+				updatedAt: product.updatedAt,
+			});
+		}
+
+		const buffer = await workbook.xlsx.writeBuffer();
+		return buffer as Buffer;
 	}
 
 	// #endregion
@@ -664,7 +835,7 @@ export class ProductsService {
 					productToUpdate.isActive =
 						productFileUploadTemplateRow.isActive?.trim()
 							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
-							  ProductsEnum.YesOrNo.YES
+							  CommonEnum.YesNo.YES
 							: productToUpdate.isActive;
 
 					await this.updateOne(
@@ -694,7 +865,7 @@ export class ProductsService {
 
 						isActive: productFileUploadTemplateRow.isActive?.trim()
 							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
-							  ProductsEnum.YesOrNo.YES
+							  CommonEnum.YesNo.YES
 							: productToUpdate.isActive,
 						barcode: valueOrCreateUniqueSuffix(
 							productFileUploadTemplateRow.barcode,

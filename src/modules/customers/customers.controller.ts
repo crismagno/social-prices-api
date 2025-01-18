@@ -120,7 +120,7 @@ export class CustomersController {
 
 	@Post('/downloadCustomers')
 	@UsePipes(ValidationPipe)
-	public async downloadErrors(
+	public async downloadCustomers(
 		@Res() res: Response,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() filters: IFiltersDownloadCustomers,

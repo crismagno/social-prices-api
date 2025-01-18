@@ -1,3 +1,5 @@
+import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
+
 export interface IProductFileUploadTemplateRow {
 	rowNumber: number;
 	image?: string;
@@ -13,10 +15,12 @@ export interface IProductFileUploadTemplateRow {
 	details?: string;
 }
 
-// export interface IFiltersDownloadProduct {
-// 	search: string;
-// 	tagsIds: string[];
-// 	categoriesIds: string[];
-// 	sortField: string;
-// 	sortOrder: TTableStateSortOrder;
-// }
+export interface IFiltersDownloadProducts {
+	search: string;
+	tagsIds: string[];
+	categoriesIds: string[];
+	storeIds: string[];
+	isActive: boolean | null;
+	sortField: string;
+	sortOrder: TTableStateSortOrder;
+}
