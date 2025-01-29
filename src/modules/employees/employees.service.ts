@@ -114,11 +114,25 @@ export class EmployeesService {
 
 	public async findByUserTableState(
 		userId: string,
+		employeeId: string,
 		tableState: ITableStateRequest<IEmployee>,
 	): Promise<ITableStateResponse<IEmployee[]>> {
+		const employee: IEmployee = await this.findByIdOrFail(employeeId);
+
+		if (employee.level === EmployeesEnum.Level.EMPLOYEE) {
+			return {
+				data: [],
+				total: 0,
+			};
+		}
+
 		const filter: FilterQuery<IEmployee> = {
 			userId,
 		};
+
+		if (employee.level === EmployeesEnum.Level.MASTER) {
+			filter.level = EmployeesEnum.Level.EMPLOYEE;
+		}
 
 		if (tableState.search) {
 			const search = new RegExp(tableState.search, 'ig');
@@ -143,7 +157,10 @@ export class EmployeesService {
 			filter.tagsIds = { $in: tableState.filters.tagsIds };
 		}
 
-		if (tableState?.filters?.level?.length) {
+		if (
+			tableState?.filters?.level?.length &&
+			employee.level === EmployeesEnum.Level.ADMIN
+		) {
 			filter.level = { $in: tableState.filters.level };
 		}
 
@@ -159,7 +176,7 @@ export class EmployeesService {
 		response.total = await this._employeeModel.countDocuments(filter);
 		response.data = await this._employeeModel.find(
 			filter,
-			null,
+			{ password: 0 },
 			queryOptions<IEmployee>(tableState),
 		);
 

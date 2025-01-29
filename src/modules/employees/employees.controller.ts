@@ -72,6 +72,7 @@ export class EmployeesController {
 	): Promise<ITableStateResponse<IEmployee[]>> {
 		return await this._employeesService.findByUserTableState(
 			authPayload._id,
+			authPayload.employeeId,
 			tableState,
 		);
 	}
