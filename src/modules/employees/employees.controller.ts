@@ -116,7 +116,7 @@ export class EmployeesController {
 
 	@Post('/downloadEmployees')
 	@UsePipes(ValidationPipe)
-	public async downloadCustomers(
+	public async downloadEmployees(
 		@Res() res: Response,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() filters: IFiltersDownloadEmployees,
