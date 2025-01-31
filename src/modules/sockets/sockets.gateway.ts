@@ -10,7 +10,9 @@ import {
 } from '@nestjs/websockets';
 
 import { ICustomerFileUploadTemplateRow } from '../customers/interfaces/customers.type';
+import { IEmployeeFileUploadTemplateRow } from '../employees/interfaces/employees.types';
 import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
+import { IProductFileUploadTemplateRow } from '../products/interfaces/products.type';
 
 @WebSocketGateway({
 	cors: {
@@ -56,12 +58,36 @@ export class SocketsGateway
 
 	//#endregion
 
+	//#region Employees
+
+	@SubscribeMessage('uploadEmployeesResponseToEmployee')
+	handleUploadEmployeesResponseToEmployee(
+		@MessageBody()
+		data: IFileUploadTemplateError<IEmployeeFileUploadTemplateRow>[],
+		employeeId: string,
+	): void {
+		this.server.emit(
+			`upload-employees-response-to-employee-${employeeId}`,
+			data,
+		);
+	}
+
+	@SubscribeMessage('responseFromUploadEmployeesFile')
+	handleResponseUploadEmployeesFileToUser(
+		@MessageBody()
+		userId: string,
+	): void {
+		this.server.emit(`response-upload-employees-file-to-user-${userId}`);
+	}
+
+	//#endregion
+
 	//#region Products
 
 	@SubscribeMessage('uploadProductsResponseToEmployee')
 	handleUploadProductsResponseToEmployee(
 		@MessageBody()
-		data: IFileUploadTemplateError<ICustomerFileUploadTemplateRow>[],
+		data: IFileUploadTemplateError<IProductFileUploadTemplateRow>[],
 		employeeId: string,
 	): void {
 		this.server.emit(

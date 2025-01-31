@@ -1,16 +1,21 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
 	Put,
+	Res,
 	UploadedFile,
+	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
@@ -24,6 +29,7 @@ import { EmployeesService } from './employees.service';
 import CreateEmployeeDto from './interfaces/dto/createEmployee.dto';
 import UpdateEmployeeDto from './interfaces/dto/updateEmployee.dto';
 import { IEmployee } from './interfaces/employee.interface';
+import { IFiltersDownloadEmployees } from './interfaces/employees.types';
 
 @Controller('api/v1/employees')
 export class EmployeesController {
@@ -91,5 +97,45 @@ export class EmployeesController {
 		@Param('employeeId', ValidationParamsPipe) employeeId: string,
 	): Promise<IEmployee | null> {
 		return await this._employeesService.findById(employeeId);
+	}
+
+	@Post('/uploadEmployees')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async uploadEmployees(
+		@UploadedFiles(parseFilePipeBuilder())
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		return await this._employeesService.uploadEmployees(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Post('/downloadEmployees')
+	@UsePipes(ValidationPipe)
+	public async downloadCustomers(
+		@Res() res: Response,
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() filters: IFiltersDownloadEmployees,
+	): Promise<any> {
+		const buffer: Buffer = await this._employeesService.downloadEmployees(
+			authPayload._id,
+			filters,
+		);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download employees',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileDownloadEmployees.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }

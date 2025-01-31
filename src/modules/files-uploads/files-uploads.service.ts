@@ -103,6 +103,15 @@ export class FilesUploadsService {
 		);
 	}
 
+	public async hasUploadEmployeesProcessingByUserId(
+		userId: string,
+	): Promise<boolean> {
+		return await this.hasUploadProcessingByUserIdAndType(
+			userId,
+			FilesUploadsEnum.Type.UPLOAD_EMPLOYEES,
+		);
+	}
+
 	public async findByIds(fileUploadIds: string[]): Promise<IFileUpload[]> {
 		return this._fileUploadModel.find({
 			_id: { $in: fileUploadIds },
