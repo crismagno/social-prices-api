@@ -1,5 +1,14 @@
 import { isNumber } from 'class-validator';
-import { find, flatMap, forEach, includes, map, orderBy, reduce } from 'lodash';
+import {
+	find,
+	flatMap,
+	forEach,
+	includes,
+	map,
+	orderBy,
+	reduce,
+	uniq,
+} from 'lodash';
 import * as moment from 'moment-timezone';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 
@@ -22,7 +31,6 @@ import {
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
 } from '../../shared/utils/charts/charts-types';
-import DatesEnum from '../../shared/utils/dates/dates.enum';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -1082,17 +1090,17 @@ export class SalesService {
 				productsBalance: [],
 			},
 			day: {
-				quantity: 9,
+				quantity: 0,
 				total: 0,
 				productsBalance: [],
 			},
 			hour: {
-				quantity: 9,
+				quantity: 0,
 				total: 0,
 				productsBalance: [],
 			},
 			month: {
-				quantity: 9,
+				quantity: 0,
 				total: 0,
 				productsBalance: [],
 			},
@@ -1116,62 +1124,134 @@ export class SalesService {
 			const saleStoreProducts: ISaleStoreProduct[] =
 				this._getSaleStoreProducts(sale);
 
-			const saleCreatedAt = moment
-				.utc(sale.createdAt)
-				.tz(DatesEnum.Timezones.America_Sao_Paulo);
+			const saleCreatedAt = moment(sale.createdAt);
 
 			if (
-				startHour.isSameOrAfter(saleCreatedAt) &&
-				endHour.isSameOrBefore(saleCreatedAt)
+				saleCreatedAt.isSameOrAfter(startHour) &&
+				saleCreatedAt.isSameOrBefore(endHour)
 			) {
 				salesBalanceResponse.hour.productsBalance =
 					this._mergeSaleStoreProductsWithSalesBalance(
 						salesBalanceResponse.hour.productsBalance,
 						saleStoreProducts,
 					);
-				salesBalanceResponse.hour.total += quantity;
+				salesBalanceResponse.hour.quantity += quantity;
 				salesBalanceResponse.hour.total += sale.totals.totalFinalAmount;
 			}
 
 			if (
-				startDay.isSameOrAfter(saleCreatedAt) &&
-				endDay.isSameOrBefore(saleCreatedAt)
+				saleCreatedAt.isSameOrAfter(startDay) &&
+				saleCreatedAt.isSameOrBefore(endDay)
 			) {
 				salesBalanceResponse.day.productsBalance =
 					this._mergeSaleStoreProductsWithSalesBalance(
 						salesBalanceResponse.day.productsBalance,
 						saleStoreProducts,
 					);
-				salesBalanceResponse.day.total += quantity;
+				salesBalanceResponse.day.quantity += quantity;
 				salesBalanceResponse.day.total += sale.totals.totalFinalAmount;
 			}
 
 			if (
-				startMonth.isSameOrAfter(saleCreatedAt) &&
-				endMonth.isSameOrBefore(saleCreatedAt)
+				saleCreatedAt.isSameOrAfter(startMonth) &&
+				saleCreatedAt.isSameOrBefore(endMonth)
 			) {
 				salesBalanceResponse.month.productsBalance =
 					this._mergeSaleStoreProductsWithSalesBalance(
 						salesBalanceResponse.month.productsBalance,
 						saleStoreProducts,
 					);
-				salesBalanceResponse.month.total += quantity;
+				salesBalanceResponse.month.quantity += quantity;
 				salesBalanceResponse.month.total += sale.totals.totalFinalAmount;
 			}
 
 			if (
-				startYear.isSameOrAfter(saleCreatedAt) &&
-				endYear.isSameOrBefore(saleCreatedAt)
+				saleCreatedAt.isSameOrAfter(startYear) &&
+				saleCreatedAt.isSameOrBefore(endYear)
 			) {
 				salesBalanceResponse.annual.productsBalance =
 					this._mergeSaleStoreProductsWithSalesBalance(
 						salesBalanceResponse.annual.productsBalance,
 						saleStoreProducts,
 					);
-				salesBalanceResponse.annual.total += quantity;
+				salesBalanceResponse.annual.quantity += quantity;
 				salesBalanceResponse.annual.total += sale.totals.totalFinalAmount;
 			}
 		}
+
+		const productIds: string[] = uniq([
+			...map(salesBalanceResponse.hour.productsBalance, 'productId'),
+			...map(salesBalanceResponse.day.productsBalance, 'productId'),
+			...map(salesBalanceResponse.month.productsBalance, 'productId'),
+			...map(salesBalanceResponse.annual.productsBalance, 'productId'),
+		]);
+
+		const products: IProduct[] =
+			await this._productsService.findByIds(productIds);
+
+		salesBalanceResponse.hour.productsBalance = map(
+			orderBy(
+				salesBalanceResponse.hour.productsBalance,
+				['total', 'quantity'],
+				['desc'],
+			),
+			(productBalance: IGetSalesProductBalanceResponse) => ({
+				...productBalance,
+				product: find(
+					products,
+					(product: IProduct) =>
+						product._id.toString() === productBalance.productId,
+				),
+			}),
+		);
+
+		salesBalanceResponse.day.productsBalance = map(
+			orderBy(
+				salesBalanceResponse.day.productsBalance,
+				['total', 'quantity'],
+				['desc'],
+			),
+			(productBalance: IGetSalesProductBalanceResponse) => ({
+				...productBalance,
+				product: find(
+					products,
+					(product: IProduct) =>
+						product._id.toString() === productBalance.productId,
+				),
+			}),
+		);
+
+		salesBalanceResponse.month.productsBalance = map(
+			orderBy(
+				salesBalanceResponse.month.productsBalance,
+				['total', 'quantity'],
+				['desc'],
+			),
+			(productBalance: IGetSalesProductBalanceResponse) => ({
+				...productBalance,
+				product: find(
+					products,
+					(product: IProduct) =>
+						product._id.toString() === productBalance.productId,
+				),
+			}),
+		);
+
+		salesBalanceResponse.annual.productsBalance = map(
+			orderBy(
+				salesBalanceResponse.annual.productsBalance,
+				['total', 'quantity'],
+				['desc'],
+			),
+			(productBalance: IGetSalesProductBalanceResponse) => ({
+				...productBalance,
+				product: find(
+					products,
+					(product: IProduct) =>
+						product._id.toString() === productBalance.productId,
+				),
+			}),
+		);
 
 		return salesBalanceResponse;
 	}
@@ -1213,7 +1293,7 @@ export class SalesService {
 		for (const saleStoreProduct of saleStoreProducts) {
 			const findProductBalance: IGetSalesProductBalanceResponse | undefined =
 				productsBalance.find(
-					(productBalance) =>
+					(productBalance: IGetSalesProductBalanceResponse) =>
 						productBalance.productId === saleStoreProduct.productId.toString(),
 				);
 			if (findProductBalance) {
