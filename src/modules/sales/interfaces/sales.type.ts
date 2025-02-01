@@ -4,6 +4,7 @@ import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 } from '../../../shared/utils/charts/charts-types';
+import { IProduct } from '../../products/interfaces/product.interface';
 import SalesEnum from './sales.enum';
 
 export interface IProductToSubtract {
@@ -38,4 +39,23 @@ export interface ISaleStoreProductString {
 	quantity: number;
 	barcode: string;
 	note: string | null;
+}
+
+export interface IGetSalesBalanceParams {
+	rangeDate?: IRangeDate;
+}
+
+export interface IGetSalesBalanceResponse {
+	lastHour: IGetSalesBalanceTotalsResponse;
+	day: IGetSalesBalanceTotalsResponse;
+	month: IGetSalesBalanceTotalsResponse;
+	annual: IGetSalesBalanceTotalsResponse;
+}
+
+export interface IGetSalesBalanceTotalsResponse {
+	total: number;
+	quantity: number;
+	product?: IProduct;
+	productTotal: number;
+	productQuantity: number;
 }

@@ -22,6 +22,8 @@ import { ISale } from './interfaces/sale.interface';
 import {
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
+	IGetSalesBalanceParams,
+	IGetSalesBalanceResponse,
 } from './interfaces/sales.type';
 import { SalesService } from './sales.service';
 
@@ -93,5 +95,14 @@ export class SalesController {
 		@Body() params: IGetSalesAnalyticsParams,
 	): Promise<IGetSalesAnalyticsResponse> {
 		return await this._salesService.getSalesAnalytics(authPayload._id, params);
+	}
+
+	@Post('/getSalesBalance')
+	@UsePipes(ValidationPipe)
+	public async getSalesBalance(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() params: IGetSalesBalanceParams,
+	): Promise<IGetSalesBalanceResponse> {
+		return await this._salesService.getSalesBalance(authPayload._id, params);
 	}
 }

@@ -51,6 +51,8 @@ import { Sale } from './interfaces/sale.schema';
 import {
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
+	IGetSalesBalanceParams,
+	IGetSalesBalanceResponse,
 	IProductQuantity,
 	IProductToSubtract,
 	ISaleStoreProductString,
@@ -545,6 +547,56 @@ export class SalesService {
 		return {
 			chartDataPeriodType,
 			...chartDataProducts,
+		};
+	}
+
+	public async getSalesBalance(
+		userId: string,
+		params: IGetSalesBalanceParams,
+	): Promise<IGetSalesBalanceResponse> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		const filter: FilterQuery<ISale> = {
+			'stores.storeId': { $in: storesIds },
+		};
+
+		if (params.rangeDate) {
+			const { startDate, endDate } = params.rangeDate;
+			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
+		const sales: ISale[] = await this._saleModel.find(filter);
+
+		return {
+			annual: {
+				productQuantity: 0,
+				productTotal: 0,
+				quantity: 9,
+				total: 0,
+				product: undefined,
+			},
+			day: {
+				productQuantity: 0,
+				productTotal: 0,
+				quantity: 9,
+				total: 0,
+				product: undefined,
+			},
+			lastHour: {
+				productQuantity: 0,
+				productTotal: 0,
+				quantity: 9,
+				total: 0,
+				product: undefined,
+			},
+			month: {
+				productQuantity: 0,
+				productTotal: 0,
+				quantity: 9,
+				total: 0,
+				product: undefined,
+			},
 		};
 	}
 
