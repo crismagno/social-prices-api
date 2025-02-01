@@ -46,7 +46,7 @@ export interface IGetSalesBalanceParams {
 }
 
 export interface IGetSalesBalanceResponse {
-	lastHour: IGetSalesBalanceTotalsResponse;
+	hour: IGetSalesBalanceTotalsResponse;
 	day: IGetSalesBalanceTotalsResponse;
 	month: IGetSalesBalanceTotalsResponse;
 	annual: IGetSalesBalanceTotalsResponse;
@@ -55,7 +55,12 @@ export interface IGetSalesBalanceResponse {
 export interface IGetSalesBalanceTotalsResponse {
 	total: number;
 	quantity: number;
+	productsBalance: IGetSalesProductBalanceResponse[];
+}
+
+export interface IGetSalesProductBalanceResponse {
 	product?: IProduct;
-	productTotal: number;
-	productQuantity: number;
+	productId: string;
+	total: number;
+	quantity: number;
 }

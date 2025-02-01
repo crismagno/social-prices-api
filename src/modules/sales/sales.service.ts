@@ -1,5 +1,6 @@
 import { isNumber } from 'class-validator';
 import { find, flatMap, forEach, includes, map, orderBy, reduce } from 'lodash';
+import * as moment from 'moment-timezone';
 import mongoose, { FilterQuery, Model } from 'mongoose';
 
 import {
@@ -21,6 +22,7 @@ import {
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
 } from '../../shared/utils/charts/charts-types';
+import DatesEnum from '../../shared/utils/dates/dates.enum';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -53,6 +55,7 @@ import {
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
 	IGetSalesBalanceResponse,
+	IGetSalesProductBalanceResponse,
 	IProductQuantity,
 	IProductToSubtract,
 	ISaleStoreProductString,
@@ -566,38 +569,9 @@ export class SalesService {
 			filter.createdAt = { $gte: startDate, $lte: endDate };
 		}
 
-		const sales: ISale[] = await this._saleModel.find(filter);
+		const sales: ISale[] = await this._saleModel.find(filter).exec();
 
-		return {
-			annual: {
-				productQuantity: 0,
-				productTotal: 0,
-				quantity: 9,
-				total: 0,
-				product: undefined,
-			},
-			day: {
-				productQuantity: 0,
-				productTotal: 0,
-				quantity: 9,
-				total: 0,
-				product: undefined,
-			},
-			lastHour: {
-				productQuantity: 0,
-				productTotal: 0,
-				quantity: 9,
-				total: 0,
-				product: undefined,
-			},
-			month: {
-				productQuantity: 0,
-				productTotal: 0,
-				quantity: 9,
-				total: 0,
-				product: undefined,
-			},
-		};
+		return this._parseSalesToSalesBalance(sales);
 	}
 
 	// #endregion
@@ -1038,7 +1012,7 @@ export class SalesService {
 	private async _chartDataProductItemsByOrderProperty(
 		chartDataProductItems: IChartDataProductItem[],
 		keyOrder: keyof IChartDataProductItem,
-	) {
+	): Promise<IChartDataProductItem[]> {
 		let chartDataProductItemsByOrder: IChartDataProductItem[] = orderBy(
 			chartDataProductItems,
 			keyOrder,
@@ -1097,6 +1071,165 @@ export class SalesService {
 
 		return chartDataProductItemsByOrder;
 	}
+
+	private async _parseSalesToSalesBalance(
+		sales: ISale[],
+	): Promise<IGetSalesBalanceResponse> {
+		const salesBalanceResponse: IGetSalesBalanceResponse = {
+			annual: {
+				quantity: 0,
+				total: 0,
+				productsBalance: [],
+			},
+			day: {
+				quantity: 9,
+				total: 0,
+				productsBalance: [],
+			},
+			hour: {
+				quantity: 9,
+				total: 0,
+				productsBalance: [],
+			},
+			month: {
+				quantity: 9,
+				total: 0,
+				productsBalance: [],
+			},
+		};
+
+		const startHour = moment().startOf('hour');
+		const endHour = moment().endOf('hour');
+
+		const startDay = moment().startOf('day');
+		const endDay = moment().endOf('day');
+
+		const startMonth = moment().startOf('month');
+		const endMonth = moment().endOf('month');
+
+		const startYear = moment().startOf('year');
+		const endYear = moment().endOf('year');
+
+		for (const sale of sales) {
+			const quantity: number = this._getQuantityBySale(sale);
+
+			const saleStoreProducts: ISaleStoreProduct[] =
+				this._getSaleStoreProducts(sale);
+
+			const saleCreatedAt = moment
+				.utc(sale.createdAt)
+				.tz(DatesEnum.Timezones.America_Sao_Paulo);
+
+			if (
+				startHour.isSameOrAfter(saleCreatedAt) &&
+				endHour.isSameOrBefore(saleCreatedAt)
+			) {
+				salesBalanceResponse.hour.productsBalance =
+					this._mergeSaleStoreProductsWithSalesBalance(
+						salesBalanceResponse.hour.productsBalance,
+						saleStoreProducts,
+					);
+				salesBalanceResponse.hour.total += quantity;
+				salesBalanceResponse.hour.total += sale.totals.totalFinalAmount;
+			}
+
+			if (
+				startDay.isSameOrAfter(saleCreatedAt) &&
+				endDay.isSameOrBefore(saleCreatedAt)
+			) {
+				salesBalanceResponse.day.productsBalance =
+					this._mergeSaleStoreProductsWithSalesBalance(
+						salesBalanceResponse.day.productsBalance,
+						saleStoreProducts,
+					);
+				salesBalanceResponse.day.total += quantity;
+				salesBalanceResponse.day.total += sale.totals.totalFinalAmount;
+			}
+
+			if (
+				startMonth.isSameOrAfter(saleCreatedAt) &&
+				endMonth.isSameOrBefore(saleCreatedAt)
+			) {
+				salesBalanceResponse.month.productsBalance =
+					this._mergeSaleStoreProductsWithSalesBalance(
+						salesBalanceResponse.month.productsBalance,
+						saleStoreProducts,
+					);
+				salesBalanceResponse.month.total += quantity;
+				salesBalanceResponse.month.total += sale.totals.totalFinalAmount;
+			}
+
+			if (
+				startYear.isSameOrAfter(saleCreatedAt) &&
+				endYear.isSameOrBefore(saleCreatedAt)
+			) {
+				salesBalanceResponse.annual.productsBalance =
+					this._mergeSaleStoreProductsWithSalesBalance(
+						salesBalanceResponse.annual.productsBalance,
+						saleStoreProducts,
+					);
+				salesBalanceResponse.annual.total += quantity;
+				salesBalanceResponse.annual.total += sale.totals.totalFinalAmount;
+			}
+		}
+
+		return salesBalanceResponse;
+	}
+
+	private _getQuantityBySale = (sale: ISale): number => {
+		return reduce(
+			sale.stores,
+			(accStore: number, store: ISaleStore) => {
+				accStore += reduce(
+					store.products,
+					(accProduct: number, product: ISaleStoreProduct) => {
+						accProduct += product.quantity;
+						return accProduct;
+					},
+					0,
+				);
+
+				return accStore;
+			},
+			0,
+		);
+	};
+
+	private _getSaleStoreProducts = (sale: ISale): ISaleStoreProduct[] => {
+		return reduce(
+			sale.stores,
+			(accStore: ISaleStoreProduct[], store: ISaleStore) => {
+				accStore.push(...store.products);
+				return accStore;
+			},
+			[],
+		);
+	};
+
+	private _mergeSaleStoreProductsWithSalesBalance = (
+		productsBalance: IGetSalesProductBalanceResponse[],
+		saleStoreProducts: ISaleStoreProduct[],
+	): IGetSalesProductBalanceResponse[] => {
+		for (const saleStoreProduct of saleStoreProducts) {
+			const findProductBalance: IGetSalesProductBalanceResponse | undefined =
+				productsBalance.find(
+					(productBalance) =>
+						productBalance.productId === saleStoreProduct.productId.toString(),
+				);
+			if (findProductBalance) {
+				findProductBalance.quantity += saleStoreProduct.quantity;
+				findProductBalance.total += saleStoreProduct.price;
+			} else {
+				productsBalance.push({
+					productId: saleStoreProduct.productId.toString(),
+					quantity: saleStoreProduct.quantity,
+					total: saleStoreProduct.price,
+				});
+			}
+		}
+
+		return productsBalance;
+	};
 
 	// #endregion
 }
