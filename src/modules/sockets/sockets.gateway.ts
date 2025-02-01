@@ -13,6 +13,7 @@ import { ICustomerFileUploadTemplateRow } from '../customers/interfaces/customer
 import { IEmployeeFileUploadTemplateRow } from '../employees/interfaces/employees.types';
 import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
 import { IProductFileUploadTemplateRow } from '../products/interfaces/products.type';
+import SocketsEnum from './interfaces/sockets.enum';
 
 @WebSocketGateway({
 	cors: {
@@ -43,9 +44,11 @@ export class SocketsGateway
 		employeeId: string,
 	): void {
 		this.server.emit(
-			`upload-customers-response-to-employee-${employeeId}`,
+			SocketsEnum.EventNames.UPLOAD_CUSTOMERS_RESPONSE_TO_EMPLOYEE(employeeId),
 			data,
 		);
+
+		this.server.emit;
 	}
 
 	@SubscribeMessage('responseFromUploadCustomersFile')
@@ -53,7 +56,9 @@ export class SocketsGateway
 		@MessageBody()
 		userId: string,
 	): void {
-		this.server.emit(`response-upload-customers-file-to-user-${userId}`);
+		this.server.emit(
+			SocketsEnum.EventNames.RESPONSE_UPLOAD_CUSTOMERS_FILE_TO_USER(userId),
+		);
 	}
 
 	//#endregion
@@ -67,7 +72,7 @@ export class SocketsGateway
 		employeeId: string,
 	): void {
 		this.server.emit(
-			`upload-employees-response-to-employee-${employeeId}`,
+			SocketsEnum.EventNames.UPLOAD_EMPLOYEES_RESPONSE_TO_EMPLOYEE(employeeId),
 			data,
 		);
 	}
@@ -77,7 +82,9 @@ export class SocketsGateway
 		@MessageBody()
 		userId: string,
 	): void {
-		this.server.emit(`response-upload-employees-file-to-user-${userId}`);
+		this.server.emit(
+			SocketsEnum.EventNames.RESPONSE_UPLOAD_EMPLOYEES_FILE_TO_USER(userId),
+		);
 	}
 
 	//#endregion
@@ -91,7 +98,7 @@ export class SocketsGateway
 		employeeId: string,
 	): void {
 		this.server.emit(
-			`upload-products-response-to-employee-${employeeId}`,
+			SocketsEnum.EventNames.UPLOAD_PRODUCTS_RESPONSE_TO_EMPLOYEE(employeeId),
 			data,
 		);
 	}
@@ -101,7 +108,9 @@ export class SocketsGateway
 		@MessageBody()
 		userId: string,
 	): void {
-		this.server.emit(`response-upload-products-file-to-user-${userId}`);
+		this.server.emit(
+			SocketsEnum.EventNames.RESPONSE_UPLOAD_PRODUCTS_FILE_TO_USER(userId),
+		);
 	}
 
 	//#endregion
