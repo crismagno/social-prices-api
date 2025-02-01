@@ -643,11 +643,11 @@ export class EmployeesService {
 			filter.gender = { $in: filters.gender };
 		}
 
-		if (filters.level) {
+		if (filters.level?.length) {
 			filter.level = { $in: filters.level };
 		}
 
-		if (filters.status) {
+		if (filters.status?.length) {
 			filter.status = { $in: filters.status };
 		}
 

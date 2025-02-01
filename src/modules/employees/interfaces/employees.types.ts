@@ -43,7 +43,7 @@ export interface IFiltersDownloadEmployees {
 	gender: PersonEnum.Gender;
 	tagsIds: string[];
 	sortField: string;
-	level: EmployeesEnum.Level;
-	status: EmployeesEnum.Status;
+	level: EmployeesEnum.Level[];
+	status: EmployeesEnum.Status[];
 	sortOrder: TTableStateSortOrder;
 }
