@@ -577,7 +577,7 @@ export class SalesService {
 			filter.createdAt = { $gte: startDate, $lte: endDate };
 		}
 
-		const sales: ISale[] = await this._saleModel.find(filter).exec();
+		const sales: ISale[] = await this._saleModel.find(filter);
 
 		return this._parseSalesToSalesBalance(sales);
 	}
