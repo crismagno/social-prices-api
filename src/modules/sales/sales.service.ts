@@ -31,6 +31,7 @@ import {
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
 } from '../../shared/utils/charts/charts-types';
+import { createUsernameByName } from '../../shared/utils/global/global';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -665,6 +666,7 @@ export class SalesService {
 						phoneNumbers: [createSaleDto.buyer.phoneNumber],
 						userId: buyerUserId,
 						tagsIds: [],
+						uniqName: createUsernameByName(createSaleDto.buyer.name),
 					};
 
 					const newCustomer: ICustomer = await this._customersService.create(

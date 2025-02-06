@@ -52,6 +52,9 @@ export class Customer implements ICustomer {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: String })
+	uniqName: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

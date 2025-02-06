@@ -11,6 +11,10 @@ export default class CreateCustomerDto {
 	@IsOptional()
 	name: string | null;
 
+	@IsString()
+	@IsOptional()
+	uniqName: string | null;
+
 	@IsOptional()
 	birthDate: Date | null;
 

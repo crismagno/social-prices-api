@@ -18,7 +18,10 @@ import PhoneNumberEnum from '../../shared/enums/phone-number.enum';
 import { IAddress } from '../../shared/interfaces/address.interface';
 import { IPhoneNumber } from '../../shared/interfaces/phone-number.interface';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
-import { isValidEmail } from '../../shared/utils/global/global';
+import {
+	createUsernameByName,
+	isValidEmail,
+} from '../../shared/utils/global/global';
 import { countries } from '../../shared/utils/mock-data/countries';
 import {
 	ICountryMockData,
@@ -162,6 +165,25 @@ export class CustomersService {
 		return customer;
 	}
 
+	public async validateUniqName(
+		ownerUserId: string,
+		uniqName?: string,
+		customerId?: string,
+	): Promise<void> {
+		if (!uniqName?.trim()) {
+			return;
+		}
+
+		const customer: ICustomer = await this._customerModel.findOne({
+			ownerUserId,
+			uniqName,
+		});
+
+		if (customer && customer?._id.toString() !== customerId) {
+			throw new InternalServerErrorException('Uniq Name already exist!');
+		}
+	}
+
 	public async findByOwnerUserTableState(
 		ownerUserId: string,
 		tableState: ITableStateRequest<ICustomer>,
@@ -179,6 +201,9 @@ export class CustomersService {
 				},
 				{
 					email: search,
+				},
+				{
+					uniqName: search,
 				},
 			];
 		}
@@ -212,6 +237,8 @@ export class CustomersService {
 		ownerUserId: string,
 	): Promise<ICustomer> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(ownerUserId);
+
+		await this.validateUniqName(ownerUserId, createCustomerDto.uniqName);
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -249,6 +276,9 @@ export class CustomersService {
 			createdAt: now,
 			updatedAt: now,
 			userId: createCustomerDto.userId,
+			uniqName:
+				createCustomerDto.uniqName?.trim() ??
+				createUsernameByName(createCustomerDto.name),
 		});
 
 		const newCustomer: ICustomer = await customer.save();
@@ -264,6 +294,12 @@ export class CustomersService {
 		userId: string,
 	): Promise<ICustomer> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		await this.validateUniqName(
+			userId,
+			updateCustomerDto.uniqName,
+			updateCustomerDto.customerId,
+		);
 
 		const customer: ICustomer = await this.findByIdOrFail(
 			updateCustomerDto.customerId,
@@ -295,6 +331,9 @@ export class CustomersService {
 			phoneNumbers: updateCustomerDto.phoneNumbers,
 			tagsIds: updateCustomerDto.tagsIds,
 			updatedAt: now,
+			uniqName:
+				updateCustomerDto.uniqName?.trim() ??
+				createUsernameByName(updateCustomerDto.name),
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;
@@ -519,6 +558,7 @@ export class CustomersService {
 			addresses: 'Addresses',
 			phones: 'Phones',
 			createdAt: 'Created At',
+			uniqName: 'Uniq Name',
 		};
 
 		const sheetColumns: any[] = [];
@@ -581,6 +621,7 @@ export class CustomersService {
 				addresses: addresses,
 				phones: phones,
 				createdAt: customer.createdAt,
+				uniqName: customer.uniqName,
 			});
 		}
 
@@ -859,6 +900,7 @@ export class CustomersService {
 						updatedAt: now,
 						userId: null,
 						_id: null,
+						uniqName: createUsernameByName(customerFileUploadTemplateRow.name),
 					});
 				}
 			} catch (error: any) {
