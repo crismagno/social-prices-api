@@ -33,21 +33,33 @@ export interface ISale
 	deliveryAt: Date | null;
 }
 
-export interface ISaleStore {
-	storeId: mongoose.Schema.Types.ObjectId;
-	number: number;
-	products: ISaleStoreProduct[];
-	totals: ISaleTotals;
-	customerId: mongoose.Schema.Types.ObjectId | null;
-	customer?: ICustomer;
-}
-
 export interface ISaleTotals {
 	subtotalAmount: number;
 	discount: ISaleTotalsDiscount | null;
 	tax: ISaleAmountNote | null;
 	shipping: ISaleAmountNote | null;
 	totalFinalAmount: number;
+}
+
+export interface ISaleStore {
+	storeId: mongoose.Schema.Types.ObjectId;
+	number: number;
+	products: ISaleStoreProduct[];
+	totals: ISaleStoreTotals;
+	customerId: mongoose.Schema.Types.ObjectId | null;
+	customer?: ICustomer;
+}
+
+export interface ISaleStoreTotals {
+	subtotalAmount: number;
+	discount: ISaleStoreTotalsDiscount | null;
+	tax: ISaleAmountNote | null;
+	shipping: ISaleAmountNote | null;
+	totalFinalAmount: number;
+}
+
+export interface ISaleStoreTotalsDiscount {
+	distributedAmount: number | null;
 }
 
 export interface ISaleTotalsDiscount {

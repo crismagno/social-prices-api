@@ -20,6 +20,8 @@ import {
 	ISaleStore,
 	ISaleStoreProduct,
 	ISaleStoreProductDiscount,
+	ISaleStoreTotals,
+	ISaleStoreTotalsDiscount,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -108,6 +110,37 @@ export class SaleTotals implements ISaleTotals {
 export const SaleTotalsSchema = SchemaFactory.createForClass(SaleTotals);
 
 @Schema()
+export class SaleStoreTotalsDiscount implements ISaleStoreTotalsDiscount {
+	@Prop({ type: Number })
+	distributedAmount: number | null;
+}
+
+export const SaleStoreTotalsDiscountSchema = SchemaFactory.createForClass(
+	SaleStoreProductDiscount,
+);
+
+@Schema()
+export class SaleStoreTotals implements ISaleStoreTotals {
+	@Prop({ required: true, type: Number })
+	subtotalAmount: number;
+
+	@Prop({ type: SaleStoreTotalsDiscountSchema, _id: false })
+	discount: ISaleStoreTotalsDiscount | null;
+
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	tax: ISaleAmountNote | null;
+
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	shipping: ISaleAmountNote | null;
+
+	@Prop({ required: true, type: Number })
+	totalFinalAmount: number;
+}
+
+export const SaleStoreTotalsSchema =
+	SchemaFactory.createForClass(SaleStoreTotals);
+
+@Schema()
 export class SaleStoreProduct implements ISaleStoreProduct {
 	@Prop({
 		required: true,
@@ -181,8 +214,8 @@ export class SaleStore implements ISaleStore {
 	@Prop({ required: true, type: [SaleStoreProductSchema], _id: false })
 	products: ISaleStoreProduct[];
 
-	@Prop({ required: true, type: SaleTotalsSchema, _id: false })
-	totals: ISaleTotals;
+	@Prop({ required: true, type: SaleStoreTotalsSchema, _id: false })
+	totals: ISaleStoreTotals;
 
 	@Prop({
 		type: mongoose.Schema.Types.ObjectId,

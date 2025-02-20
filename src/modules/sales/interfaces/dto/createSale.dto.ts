@@ -94,6 +94,32 @@ export class SaleTotalsDto {
 	totalFinalAmount: number;
 }
 
+export class SaleStoreTotalsDiscountDto {
+	@IsNumber()
+	@IsOptional()
+	distributedAmount: number | null;
+}
+
+export class SaleStoreTotalsDto {
+	@IsNumber()
+	subtotalAmount: number;
+
+	@Type(() => SaleStoreTotalsDiscountDto)
+	@IsOptional()
+	discount: SaleStoreTotalsDiscountDto | null;
+
+	@IsOptional()
+	@Type(() => SaleAmountNoteDto)
+	tax: SaleAmountNoteDto | null;
+
+	@IsOptional()
+	@Type(() => SaleAmountNoteDto)
+	shipping: SaleAmountNoteDto | null;
+
+	@IsNumber()
+	totalFinalAmount: number;
+}
+
 export class SaleHeaderBillingDto {
 	@Type(() => CreateAddressDto)
 	@IsOptional()
@@ -164,8 +190,8 @@ export class SaleStoreDto {
 	@ValidateNested({ each: true })
 	products: SaleStoreProductDto[];
 
-	@Type(() => SaleTotalsDto)
-	totals: SaleTotalsDto;
+	@Type(() => SaleStoreTotalsDto)
+	totals: SaleStoreTotalsDto;
 }
 
 export default class CreateSaleDto {
