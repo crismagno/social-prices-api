@@ -17,6 +17,12 @@ namespace SocketsEnum {
 			`upload-products-response-to-employee-${employeeId}`,
 		RESPONSE_UPLOAD_PRODUCTS_FILE_TO_USER: (userId: string) =>
 			`response-upload-products-file-to-user-${userId}`,
+
+		// Sales
+		UPLOAD_SALES_RESPONSE_TO_EMPLOYEE: (employeeId: string): string =>
+			`upload-sales-response-to-employee-${employeeId}`,
+		RESPONSE_UPLOAD_SALES_FILE_TO_USER: (userId: string): string =>
+			`response-upload-sales-file-to-user-${userId}`,
 	};
 }
 

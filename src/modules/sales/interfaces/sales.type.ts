@@ -4,6 +4,7 @@ import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 } from '../../../shared/utils/charts/charts-types';
+import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 import SalesEnum from './sales.enum';
 
@@ -64,3 +65,47 @@ export interface IGetSalesProductBalanceResponse {
 	total: number;
 	quantity: number;
 }
+
+// #region Upload
+
+export interface ISaleFileUploadTemplateRow {
+	rowNumber: number;
+	uniqName?: string;
+	name?: string;
+	email?: string;
+	birthDate?: string;
+	gender?: string;
+	tags?: string;
+	about?: string;
+	country?: string;
+	state?: string;
+	city?: string;
+	zipCode?: string | number;
+	address1?: string;
+	address2?: string;
+	district?: string;
+	addressDescription?: string;
+	addressTypes?: string;
+	phoneType?: string;
+	phoneNumber?: string | number;
+	phoneMessengers?: string;
+	selectedProducts?: string;
+	discount?: string | number;
+	shipping?: string | number;
+	tax?: string | number;
+	payments?: string;
+	note?: string;
+	saleStatus?: string;
+	paymentStatus?: string;
+	deliveryDate?: string;
+}
+
+export interface IFiltersDownloadSales {
+	search: string;
+	type: SalesEnum.Type;
+	tagsIds: string[];
+	sortField: string;
+	sortOrder: TTableStateSortOrder;
+}
+
+// #endregion

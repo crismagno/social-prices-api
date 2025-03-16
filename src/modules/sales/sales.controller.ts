@@ -5,10 +5,14 @@ import {
 	Get,
 	Param,
 	Post,
+	UploadedFiles,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
@@ -104,5 +108,20 @@ export class SalesController {
 		@Body() params: IGetSalesBalanceParams,
 	): Promise<IGetSalesBalanceResponse> {
 		return await this._salesService.getSalesBalance(authPayload._id, params);
+	}
+
+	@Post('/uploadSales')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async uploadCustomers(
+		@UploadedFiles(parseFilePipeBuilder())
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		return await this._salesService.uploadSales(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
 	}
 }

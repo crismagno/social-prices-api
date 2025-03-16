@@ -13,6 +13,7 @@ import { ICustomerFileUploadTemplateRow } from '../customers/interfaces/customer
 import { IEmployeeFileUploadTemplateRow } from '../employees/interfaces/employees.types';
 import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
 import { IProductFileUploadTemplateRow } from '../products/interfaces/products.type';
+import { ISaleFileUploadTemplateRow } from '../sales/interfaces/sales.type';
 import SocketsEnum from './interfaces/sockets.enum';
 
 @WebSocketGateway({
@@ -110,6 +111,32 @@ export class SocketsGateway
 	): void {
 		this.server.emit(
 			SocketsEnum.EventNames.RESPONSE_UPLOAD_PRODUCTS_FILE_TO_USER(userId),
+		);
+	}
+
+	//#endregion
+
+	//#region Sales
+
+	@SubscribeMessage('uploadSalesResponseToEmployee')
+	handleUploadSalesResponseToEmployee(
+		@MessageBody()
+		data: IFileUploadTemplateError<ISaleFileUploadTemplateRow>[],
+		employeeId: string,
+	): void {
+		this.server.emit(
+			SocketsEnum.EventNames.UPLOAD_SALES_RESPONSE_TO_EMPLOYEE(employeeId),
+			data,
+		);
+	}
+
+	@SubscribeMessage('responseFromUploadSalesFile')
+	handleResponseUploadSalesFileToUser(
+		@MessageBody()
+		userId: string,
+	): void {
+		this.server.emit(
+			SocketsEnum.EventNames.RESPONSE_UPLOAD_SALES_FILE_TO_USER(userId),
 		);
 	}
 

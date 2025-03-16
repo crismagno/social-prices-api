@@ -15,6 +15,7 @@ import mongoose, { FilterQuery, Model } from 'mongoose';
 import {
 	BadRequestException,
 	Injectable,
+	InternalServerErrorException,
 	Logger,
 	NotFoundException,
 } from '@nestjs/common';
@@ -41,11 +42,20 @@ import { CountersService } from '../counters/counters.service';
 import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
+import { FilesUploadsService } from '../files-uploads/files-uploads.service';
+import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
+import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
+import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
+import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
+import { SocketsGateway } from '../sockets/sockets.gateway';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
+import TagsEnum from '../tags/interfaces/tags.enum';
+import { ITag } from '../tags/interfaces/tags.interface';
+import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateSaleDto, {
@@ -67,8 +77,10 @@ import {
 	IGetSalesProductBalanceResponse,
 	IProductQuantity,
 	IProductToSubtract,
+	ISaleFileUploadTemplateRow,
 	ISaleStoreProductString,
 } from './interfaces/sales.type';
+import { SalesValidationService } from './sales-validation.service';
 
 @Injectable()
 export class SalesService {
@@ -89,6 +101,11 @@ export class SalesService {
 		private readonly _customersService: CustomersService,
 		private readonly _productsService: ProductsService,
 		private readonly _countersService: CountersService,
+		private readonly _salesValidationService: SalesValidationService,
+		private readonly _tagsService: TagsService,
+		private readonly _socketsGateway: SocketsGateway,
+		private readonly _filesUploadsService: FilesUploadsService,
+		private readonly _filesService: FilesService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -581,6 +598,162 @@ export class SalesService {
 		const sales: ISale[] = await this._saleModel.find(filter);
 
 		return this._parseSalesToSalesBalance(sales);
+	}
+
+	public async uploadSales(
+		files: Express.Multer.File[],
+		userId: string,
+		employeeId: string,
+	): Promise<void> {
+		const hasUploadProcessing: boolean =
+			await this._filesUploadsService.hasUploadSalesProcessingByUserId(userId);
+
+		if (hasUploadProcessing) {
+			throw new InternalServerErrorException(
+				'In the moment you have upload sales files processing. please wait finish to try upload new files.',
+			);
+		}
+
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.SALE,
+		);
+
+		const now: Date = new Date();
+
+		this._filesService
+			.getUploadFilesUrl(files)
+			.then(async (filenames: string[]) => {
+				const filesUploads: IFileUpload[] =
+					await this._filesUploadsService.createMulti({
+						employeeId,
+						filenames,
+						type: FilesUploadsEnum.Type.UPLOAD_SALES,
+						userId,
+					});
+
+				const fileUploadTemplateErrors: IFileUploadTemplateError<ISaleFileUploadTemplateRow>[] =
+					[];
+
+				for await (const [
+					index,
+					{ filename, _id: fileUploadId },
+				] of filesUploads.entries()) {
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: {
+							status: FilesUploadsEnum.Status.PROCESSING,
+							updatedAt: new Date(),
+						},
+					});
+
+					const fileUploadTemplateError: IFileUploadTemplateError<ISaleFileUploadTemplateRow> =
+						{
+							filename,
+							fileNumber: index + 1,
+							rowsError: [],
+							processError: undefined,
+							fileColumns: {
+								rowNumber: 'Row Number',
+								name: 'Name',
+								email: 'Email',
+								birthDate: 'Birth Date',
+								gender: 'Gender',
+								tags: 'Tags',
+								about: 'About',
+								country: 'Country',
+								state: 'State',
+								city: 'City',
+								zipCode: 'Zip Code',
+								address1: 'Address1',
+								address2: 'Address2',
+								district: 'District',
+								addressDescription: 'Address Description',
+								addressTypes: 'Address Types',
+								phoneType: 'Phone Type',
+								phoneNumber: 'Phone Number',
+								phoneMessengers: 'Phone Messengers',
+								other: 'Other',
+								uniqName: 'Uniq Name',
+								selectedProducts: 'Selected Products',
+								discount: 'Discount',
+								shipping: 'Shipping',
+								tax: 'Tax',
+								payments: 'Payments',
+								note: 'Note',
+								saleStatus: 'Sale Status',
+								paymentStatus: 'Payment Status',
+								deliveryDate: 'Delivery Date',
+							},
+						};
+
+					try {
+						const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] = [];
+						// const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] =
+						// 	await this._getSaleFileUploadTemplateRowsByFilename(filename);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalToProcess: saleFileUploadTemplateRows.length,
+							},
+						});
+
+						fileUploadTemplateError.rowsError = {} as any;
+						// fileUploadTemplateError.rowsError =
+						// 	await this._processSaleFileUploadTemplateRows(
+						// 		saleFileUploadTemplateRows,
+						// 		userId,
+						// 		tags,
+						// 		now,
+						// 	);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalError: fileUploadTemplateError.rowsError.length,
+								totalSuccess:
+									saleFileUploadTemplateRows.length -
+									fileUploadTemplateError.rowsError.length,
+								totalProcessed: saleFileUploadTemplateRows.length,
+							},
+						});
+					} catch (error: any) {
+						fileUploadTemplateError.processError = error?.message;
+						this._logger.error(error);
+					} finally {
+						await this._filesService.deleteFile(filename);
+					}
+
+					const fileUploadSet: Partial<IFileUpload> = {
+						updatedAt: new Date(),
+						status: FilesUploadsEnum.Status.COMPLETED,
+					};
+
+					if (
+						fileUploadTemplateError.rowsError.length > 0 ||
+						fileUploadTemplateError.processError
+					) {
+						fileUploadTemplateErrors.push(fileUploadTemplateError);
+						fileUploadSet.errors = fileUploadTemplateError;
+						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
+					}
+
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: fileUploadSet,
+					});
+
+					this._socketsGateway.handleResponseUploadSalesFileToUser(userId);
+				}
+
+				this._socketsGateway.handleUploadSalesResponseToEmployee(
+					fileUploadTemplateErrors,
+					employeeId,
+				);
+			})
+			.catch((error: any) => {
+				this._logger.error(error);
+				throw new Error('Error when attempt process sales upload.');
+			});
 	}
 
 	// #endregion
