@@ -165,6 +165,16 @@ export class CustomersService {
 		return customer;
 	}
 
+	public async findByOwnerUserIdAndUniqName(
+		ownerUserId: string,
+		uniqName: string,
+	): Promise<ICustomer | undefined> {
+		return this._customerModel.findOne({
+			ownerUserId,
+			uniqName,
+		});
+	}
+
 	public async validateUniqName(
 		ownerUserId: string,
 		uniqName?: string,

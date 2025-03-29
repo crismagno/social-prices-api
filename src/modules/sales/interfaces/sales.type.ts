@@ -5,7 +5,11 @@ import {
 	IChartDataProductItem,
 } from '../../../shared/utils/charts/charts-types';
 import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
+import { ICustomer } from '../../customers/interfaces/customer.interface';
+import { IFileUploadTemplateErrorRow } from '../../files-uploads/interfaces/files-uploads.type';
 import { IProduct } from '../../products/interfaces/product.interface';
+import { ITag } from '../../tags/interfaces/tags.interface';
+import { ISale } from './sale.interface';
 import SalesEnum from './sales.enum';
 
 export interface IProductToSubtract {
@@ -98,6 +102,8 @@ export interface ISaleFileUploadTemplateRow {
 	saleStatus?: string;
 	paymentStatus?: string;
 	deliveryDate?: string;
+	deliveryType?: string;
+	createdDate?: string;
 }
 
 export interface IFiltersDownloadSales {
@@ -106,6 +112,46 @@ export interface IFiltersDownloadSales {
 	tagsIds: string[];
 	sortField: string;
 	sortOrder: TTableStateSortOrder;
+}
+
+export interface ISaleFileUploadTemplateSelectedProductFormat {
+	store: string;
+	products: ISaleFileUploadTemplateSelectedProductItemFormat[];
+}
+
+export interface ISaleFileUploadTemplateSelectedProductItemFormat {
+	barcode: string;
+	quantity: number;
+	price: number;
+}
+
+export interface ISaleFileUploadTemplateRowPaymentFormat {
+	type: SalesEnum.PaymentType;
+	amount: number;
+}
+
+export interface ISaleToCreateByUpload {
+	rowNumber: number;
+	sale: ISale;
+	customer: ICustomer;
+	tags: ITag[];
+}
+
+export interface ISaleStoresProductsTotals {
+	subtotal: number;
+	quantity: number;
+}
+
+export interface ISubtotalAndTotalFinalAmount {
+	subtotalAmount: number;
+	totalFinalAmount: number;
+}
+
+export interface ITotalsProcessedFileUploadTemplateRows {
+	rowsError: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow>[];
+	totalError: number;
+	totalSuccess: number;
+	totalProcessed: number;
 }
 
 // #endregion

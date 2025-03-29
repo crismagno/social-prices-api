@@ -40,7 +40,7 @@ export class SalesValidationService {
 			row.getCell('P')?.text?.trim() !== 'Phone Type' ||
 			row.getCell('Q')?.text?.trim() !== 'Phone Number' ||
 			row.getCell('R')?.text?.trim() !== 'Phone Messengers' ||
-			row.getCell('S')?.text?.trim() !== 'Selected Products' ||
+			row.getCell('S')?.text?.trim() !== 'Selected Products *' ||
 			row.getCell('T')?.text?.trim() !== 'Discount' ||
 			row.getCell('U')?.text?.trim() !== 'Shipping' ||
 			row.getCell('V')?.text?.trim() !== 'Tax' ||
@@ -49,7 +49,9 @@ export class SalesValidationService {
 			row.getCell('Y')?.text?.trim() !== 'Tags' ||
 			row.getCell('Z')?.text?.trim() !== 'Sale Status' ||
 			row.getCell('AA')?.text?.trim() !== 'Payment Status' ||
-			row.getCell('AB')?.text?.trim() !== 'Delivery Date'
+			row.getCell('AB')?.text?.trim() !== 'Delivery Date' ||
+			row.getCell('AC')?.text?.trim() !== 'Delivery Type' ||
+			row.getCell('AD')?.text?.trim() !== 'Created Date'
 		) {
 			throw new Error('Invalid template.');
 		}

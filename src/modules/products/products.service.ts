@@ -116,6 +116,16 @@ export class ProductsService {
 		return await this._productModel.find({ userId });
 	}
 
+	public async findByUserIdAndBarcodes(
+		userId: string,
+		barcodes: string[],
+	): Promise<IProduct[]> {
+		return await this._productModel.find({
+			userId,
+			barcode: { $in: barcodes },
+		});
+	}
+
 	public async countByUserId(userId: string): Promise<number> {
 		return await this._productModel.countDocuments({
 			userId,

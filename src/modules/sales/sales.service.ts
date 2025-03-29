@@ -1,4 +1,5 @@
 import { isNumber } from 'class-validator';
+import * as ExcelJS from 'exceljs';
 import {
 	find,
 	flatMap,
@@ -7,6 +8,7 @@ import {
 	map,
 	orderBy,
 	reduce,
+	some,
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
@@ -23,7 +25,11 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { CreateAddressDto } from '../../shared/dtos/CreateAddress.dto';
+import AddressEnum from '../../shared/enums/address.enum';
+import PersonEnum from '../../shared/enums/person.enum';
+import PhoneNumberEnum from '../../shared/enums/phone-number.enum';
 import { IAddress } from '../../shared/interfaces/address.interface';
+import { IPhoneNumber } from '../../shared/interfaces/phone-number.interface';
 import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
 import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
@@ -32,7 +38,22 @@ import {
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
 } from '../../shared/utils/charts/charts-types';
-import { createUsernameByName } from '../../shared/utils/global/global';
+import { parseToDate } from '../../shared/utils/dates/dates.utils';
+import {
+	createUsernameByName,
+	isValidEmail,
+} from '../../shared/utils/global/global';
+import { countries } from '../../shared/utils/mock-data/countries';
+import {
+	ICountryMockData,
+	IStateMockData,
+} from '../../shared/utils/mock-data/interfaces';
+import { states } from '../../shared/utils/mock-data/states';
+import {
+	getPercentageByValue,
+	getValueByPercentage,
+} from '../../shared/utils/numbers/numbers';
+import { parseAnyStringToObject } from '../../shared/utils/objects/objects';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -45,7 +66,10 @@ import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
 import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
-import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
+import {
+	IFileUploadTemplateError,
+	IFileUploadTemplateErrorRow,
+} from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IProduct } from '../products/interfaces/product.interface';
@@ -65,10 +89,12 @@ import CreateSaleDto, {
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import {
 	ISale,
+	ISalePayment,
 	ISaleStore,
 	ISaleStoreProduct,
 } from './interfaces/sale.interface';
 import { Sale } from './interfaces/sale.schema';
+import SalesEnum from './interfaces/sales.enum';
 import {
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
@@ -78,7 +104,14 @@ import {
 	IProductQuantity,
 	IProductToSubtract,
 	ISaleFileUploadTemplateRow,
+	ISaleFileUploadTemplateRowPaymentFormat,
+	ISaleFileUploadTemplateSelectedProductFormat,
+	ISaleFileUploadTemplateSelectedProductItemFormat,
 	ISaleStoreProductString,
+	ISaleStoresProductsTotals,
+	ISaleToCreateByUpload,
+	ISubtotalAndTotalFinalAmount,
+	ITotalsProcessedFileUploadTemplateRows,
 } from './interfaces/sales.type';
 import { SalesValidationService } from './sales-validation.service';
 
@@ -306,6 +339,7 @@ export class SalesService {
 			const now: Date = new Date();
 
 			const saleToCreate: ISale = {
+				createdDate: null,
 				buyer: createSaleDto.buyer
 					? {
 							address: this._parseCreateAddressDtoToAddress(
@@ -354,6 +388,7 @@ export class SalesService {
 				updatedByUserId: null,
 				_id: null,
 				deliveryAt: createSaleDto.deliveryAt,
+				isFromUpload: false,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -619,6 +654,8 @@ export class SalesService {
 			TagsEnum.Type.SALE,
 		);
 
+		const stores: IStore[] = await this._storesService.findByUserId(userId);
+
 		const now: Date = new Date();
 
 		this._filesService
@@ -654,11 +691,11 @@ export class SalesService {
 							processError: undefined,
 							fileColumns: {
 								rowNumber: 'Row Number',
+								uniqName: 'Uniq Name',
 								name: 'Name',
 								email: 'Email',
 								birthDate: 'Birth Date',
 								gender: 'Gender',
-								tags: 'Tags',
 								about: 'About',
 								country: 'Country',
 								state: 'State',
@@ -672,24 +709,25 @@ export class SalesService {
 								phoneType: 'Phone Type',
 								phoneNumber: 'Phone Number',
 								phoneMessengers: 'Phone Messengers',
-								other: 'Other',
-								uniqName: 'Uniq Name',
 								selectedProducts: 'Selected Products',
 								discount: 'Discount',
 								shipping: 'Shipping',
 								tax: 'Tax',
 								payments: 'Payments',
 								note: 'Note',
+								tags: 'Tags',
 								saleStatus: 'Sale Status',
 								paymentStatus: 'Payment Status',
 								deliveryDate: 'Delivery Date',
+								deliveryType: 'Delivery Type',
+								createdDate: 'Created Date',
+								other: 'Other',
 							},
 						};
 
 					try {
-						const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] = [];
-						// const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] =
-						// 	await this._getSaleFileUploadTemplateRowsByFilename(filename);
+						const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] =
+							await this._getSaleFileUploadTemplateRowsByFilename(filename);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 							$set: {
@@ -698,23 +736,24 @@ export class SalesService {
 							},
 						});
 
-						fileUploadTemplateError.rowsError = {} as any;
-						// fileUploadTemplateError.rowsError =
-						// 	await this._processSaleFileUploadTemplateRows(
-						// 		saleFileUploadTemplateRows,
-						// 		userId,
-						// 		tags,
-						// 		now,
-						// 	);
+						const { totalError, totalProcessed, totalSuccess, rowsError } =
+							await this._processSaleFileUploadTemplateRows(
+								saleFileUploadTemplateRows,
+								userId,
+								employeeId,
+								tags,
+								now,
+								stores,
+							);
+
+						fileUploadTemplateError.rowsError = rowsError;
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 							$set: {
 								updatedAt: new Date(),
-								totalError: fileUploadTemplateError.rowsError.length,
-								totalSuccess:
-									saleFileUploadTemplateRows.length -
-									fileUploadTemplateError.rowsError.length,
-								totalProcessed: saleFileUploadTemplateRows.length,
+								totalError,
+								totalSuccess,
+								totalProcessed,
 							},
 						});
 					} catch (error: any) {
@@ -1485,6 +1524,959 @@ export class SalesService {
 
 		return productsBalance;
 	};
+
+	private async _getSaleFileUploadTemplateRowsByFilename(
+		filename: string,
+	): Promise<ISaleFileUploadTemplateRow[]> {
+		const fileBuffer: Buffer | null =
+			await this._filesService.getFileBufferByFilename(filename);
+
+		if (!fileBuffer) {
+			throw new Error(`File Error, no data in file: ${filename}`);
+		}
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		await workbook.xlsx.load(fileBuffer);
+
+		const worksheet: ExcelJS.Worksheet = workbook.getWorksheet('Template');
+
+		this._salesValidationService.validateSalesUploadTemplate(
+			worksheet.getRow(1),
+		);
+
+		const worksheetRowsCountToIterate: number = worksheet.rowCount + 1;
+
+		const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] = [];
+
+		for (
+			let rowNumber = 2;
+			rowNumber < worksheetRowsCountToIterate;
+			rowNumber++
+		) {
+			if (worksheetRowsCountToIterate === rowNumber) {
+				break;
+			}
+
+			const row: ExcelJS.Row = worksheet.getRow(rowNumber);
+
+			const uniqName: string = row.getCell('A')?.text?.trim();
+			const name: string = row.getCell('B')?.text?.trim();
+			const email: string = row.getCell('C')?.text?.trim();
+			const birthDate: string = row.getCell('D')?.text?.trim();
+			const gender: string = row.getCell('E')?.text?.trim();
+			const about: string = row.getCell('F')?.text?.trim();
+			const country: string = row.getCell('G')?.text?.trim();
+			const state: string = row.getCell('H')?.text?.trim();
+			const city: string = row.getCell('I')?.text?.trim();
+			const zipCode: string = row.getCell('J')?.text?.trim();
+			const address1: string = row.getCell('K')?.text?.trim();
+			const address2: string = row.getCell('L')?.text?.trim();
+			const district: string = row.getCell('M')?.text?.trim();
+			const addressDescription: string = row.getCell('N')?.text?.trim();
+			const addressTypes: string = row.getCell('O')?.text?.trim();
+			const phoneType: string = row.getCell('P')?.text?.trim();
+			const phoneNumber: string = row.getCell('Q')?.text?.trim();
+			const phoneMessengers: string = row.getCell('R')?.text?.trim();
+			const selectedProducts: string = row.getCell('S')?.text?.trim();
+			const discount: string = row.getCell('T')?.text?.trim();
+			const shipping: string = row.getCell('U')?.text?.trim();
+			const tax: string = row.getCell('V')?.text?.trim();
+			const payments: string = row.getCell('W')?.text?.trim();
+			const note: string = row.getCell('X')?.text?.trim();
+			const tags: string = row.getCell('Y')?.text?.trim();
+			const saleStatus: string = row.getCell('Z')?.text?.trim();
+			const paymentStatus: string = row.getCell('AA')?.text?.trim();
+			const deliveryDate: string = row.getCell('AB')?.text?.trim();
+			const deliveryType: string = row.getCell('AC')?.text?.trim();
+			const createdDate: string = row.getCell('AD')?.text?.trim();
+
+			saleFileUploadTemplateRows.push({
+				rowNumber,
+				name,
+				about,
+				address1,
+				address2,
+				addressDescription,
+				addressTypes,
+				birthDate,
+				city,
+				country,
+				district,
+				email,
+				gender,
+				phoneMessengers,
+				phoneNumber,
+				phoneType,
+				state,
+				tags,
+				zipCode,
+				selectedProducts,
+				discount,
+				shipping,
+				tax,
+				payments,
+				note,
+				saleStatus,
+				paymentStatus,
+				deliveryDate,
+				uniqName,
+				deliveryType,
+				createdDate,
+			});
+		}
+
+		return saleFileUploadTemplateRows;
+	}
+
+	private async _processSaleFileUploadTemplateRows(
+		saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[],
+		ownerUserId: string,
+		employeeId: string,
+		tags: ITag[],
+		now: Date,
+		storesFromUser: IStore[],
+	): Promise<ITotalsProcessedFileUploadTemplateRows> {
+		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow>[] =
+			[];
+
+		const salesToCreateByUpload: ISaleToCreateByUpload[] = [];
+
+		for await (const saleFileUploadTemplateRow of saleFileUploadTemplateRows) {
+			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
+				{
+					rowNumber: saleFileUploadTemplateRow.rowNumber,
+					reasons: [],
+				};
+
+			let customer: ICustomer | undefined;
+
+			try {
+				const rowUniqName: string = saleFileUploadTemplateRow.uniqName?.trim();
+				if (rowUniqName) {
+					customer = await this._customersService.findByOwnerUserIdAndUniqName(
+						ownerUserId,
+						rowUniqName,
+					);
+				}
+
+				/**
+				 * Deve tentar encontrar o customer se nao encontrar no uniqName, se nao encontrar oelas propriedades, deve criar o customer
+				 * e so criar o customer se passar na validacao da sale
+				 */
+				const birthDate: Date | null = saleFileUploadTemplateRow.birthDate
+					? parseToDate(saleFileUploadTemplateRow.birthDate)
+					: null;
+
+				if (!customer) {
+					if (!saleFileUploadTemplateRow.name?.trim()) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message:
+								'"Name" is required if "Uniq Name" was not passed or if customer was not find by "Uniq Name"!',
+							property: 'name',
+						});
+
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Customer not found by "Uniq Name"',
+							property: 'uniqName',
+						});
+					}
+
+					if (
+						saleFileUploadTemplateRow.email &&
+						!isValidEmail(saleFileUploadTemplateRow.email)
+					) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Email invalid format!',
+							property: 'email',
+						});
+					}
+
+					if (birthDate) {
+						if (!birthDate) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Birth Date invalid format!',
+								property: 'birthDate',
+							});
+						}
+					}
+
+					if (
+						saleFileUploadTemplateRow.gender &&
+						!includes(
+							Object.keys(PersonEnum.Gender),
+							saleFileUploadTemplateRow.gender.toUpperCase(),
+						)
+					) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Gender invalid!',
+							property: 'gender',
+						});
+					}
+
+					if (
+						saleFileUploadTemplateRow.address1 ||
+						saleFileUploadTemplateRow.country ||
+						saleFileUploadTemplateRow.state ||
+						saleFileUploadTemplateRow.city ||
+						saleFileUploadTemplateRow.zipCode ||
+						saleFileUploadTemplateRow.district
+					) {
+						if (!saleFileUploadTemplateRow.address1?.trim()) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Address1 invalid!',
+								property: 'address1',
+							});
+						}
+
+						if (!saleFileUploadTemplateRow.country?.trim()) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Country invalid!',
+								property: 'country',
+							});
+						}
+
+						if (!saleFileUploadTemplateRow.state?.trim()) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'State invalid!',
+								property: 'state',
+							});
+						}
+
+						if (!saleFileUploadTemplateRow.city?.trim()) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'City invalid!',
+								property: 'city',
+							});
+						}
+
+						if (!saleFileUploadTemplateRow.zipCode) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Zip Code invalid!',
+								property: 'zipCode',
+							});
+						}
+
+						if (!saleFileUploadTemplateRow.district?.trim()) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'District invalid!',
+								property: 'district',
+							});
+						}
+					}
+
+					customer =
+						saleFileUploadTemplateRow.name &&
+						saleFileUploadTemplateRow.email &&
+						birthDate
+							? await this._customersService.findByMainPropertiesAndOwnerUserId(
+									saleFileUploadTemplateRow.name,
+									saleFileUploadTemplateRow.email,
+									birthDate,
+									ownerUserId,
+							  )
+							: null;
+				}
+
+				let selectedProducts: ISaleFileUploadTemplateSelectedProductFormat[] =
+					[];
+				if (!saleFileUploadTemplateRow.selectedProducts?.trim()) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Selected Products is required!',
+						property: 'selectedProducts',
+					});
+				} else {
+					try {
+						selectedProducts = parseAnyStringToObject(
+							saleFileUploadTemplateRow.selectedProducts?.trim(),
+						);
+
+						if (selectedProducts.length === 0) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Selected Products empty list!',
+								property: 'selectedProducts',
+							});
+						}
+
+						/**
+						 * Must validate object format
+						 */
+					} catch (error) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Selected Products invalid format!',
+							property: 'selectedProducts',
+						});
+					}
+				}
+
+				if (
+					saleFileUploadTemplateRow.discount &&
+					isNaN(parseFloat(saleFileUploadTemplateRow.discount.toString()))
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Discount invalid format!',
+						property: 'discount',
+					});
+				}
+
+				if (
+					saleFileUploadTemplateRow.shipping &&
+					isNaN(parseFloat(saleFileUploadTemplateRow.shipping.toString()))
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Shipping invalid format!',
+						property: 'shipping',
+					});
+				}
+
+				if (
+					saleFileUploadTemplateRow.tax &&
+					isNaN(parseFloat(saleFileUploadTemplateRow.tax.toString()))
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Tax invalid format!',
+						property: 'tax',
+					});
+				}
+
+				let payments: ISaleFileUploadTemplateRowPaymentFormat[] = [];
+				if (saleFileUploadTemplateRow.payments?.trim()) {
+					try {
+						payments = parseAnyStringToObject(
+							saleFileUploadTemplateRow.payments?.trim(),
+						);
+
+						if (payments.length === 0) {
+							fileUploadTemplateErrorRow.reasons.push({
+								message: 'Payments empty list!',
+								property: 'payments',
+							});
+						}
+
+						/**
+						 * Must validate object format
+						 */
+					} catch (error) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Payments invalid format!',
+							property: 'payments',
+						});
+					}
+				}
+
+				if (
+					saleFileUploadTemplateRow.saleStatus &&
+					!includes(
+						Object.keys(SalesEnum.Status),
+						saleFileUploadTemplateRow.saleStatus.toUpperCase(),
+					)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Sale Status invalid!',
+						property: 'saleStatus',
+					});
+				}
+
+				if (
+					saleFileUploadTemplateRow.paymentStatus &&
+					!includes(
+						Object.keys(SalesEnum.PaymentStatus),
+						saleFileUploadTemplateRow.paymentStatus.toUpperCase(),
+					)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Payment Status invalid!',
+						property: 'paymentStatus',
+					});
+				}
+
+				const deliveryDate: Date | null = saleFileUploadTemplateRow.deliveryDate
+					? parseToDate(saleFileUploadTemplateRow.deliveryDate)
+					: null;
+
+				if (saleFileUploadTemplateRow.deliveryDate) {
+					if (!deliveryDate) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Delivery Date invalid format!',
+							property: 'deliveryDate',
+						});
+					}
+				}
+
+				if (
+					saleFileUploadTemplateRow.deliveryType &&
+					!includes(
+						Object.keys(SalesEnum.DeliveryType),
+						saleFileUploadTemplateRow.deliveryType.toUpperCase(),
+					)
+				) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Delivery Type invalid!',
+						property: 'deliveryType',
+					});
+				}
+
+				const createdDate: Date | null = saleFileUploadTemplateRow.createdDate
+					? parseToDate(saleFileUploadTemplateRow.createdDate)
+					: null;
+
+				if (saleFileUploadTemplateRow.createdDate) {
+					if (!createdDate) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Created Date invalid format!',
+							property: 'createdDate',
+						});
+					}
+				}
+
+				if (fileUploadTemplateErrorRow.reasons.length > 0) {
+					fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
+					continue;
+				}
+
+				const { phoneNumber, phoneNumbers } =
+					this._getPhoneNumbersByCustomerFileUploadTemplateRow(
+						saleFileUploadTemplateRow,
+						customer?.phoneNumbers,
+					);
+
+				const { address, addresses } =
+					this._getAddressesByCustomerFileUploadTemplateRow(
+						saleFileUploadTemplateRow,
+						customer?.addresses,
+					);
+
+				customer = customer
+					? {
+							...customer,
+							phoneNumbers,
+							addresses,
+					  }
+					: {
+							avatar: null,
+							name: saleFileUploadTemplateRow.name,
+							email: saleFileUploadTemplateRow.email,
+							birthDate: birthDate,
+							addresses,
+							gender: saleFileUploadTemplateRow.gender
+								? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+								: PersonEnum.Gender.OTHER,
+							about: saleFileUploadTemplateRow.about,
+							phoneNumbers,
+							tagsIds: [],
+							ownerUserId: ownerUserId as any,
+							createdAt: now,
+							updatedAt: now,
+							userId: null,
+							_id: null,
+							uniqName: createUsernameByName(saleFileUploadTemplateRow.name),
+					  };
+
+				const tagsBySaleUploadTemplateRow: ITag[] =
+					this._getTagsBySaleFileUploadTemplateRow(
+						saleFileUploadTemplateRow.tags,
+						ownerUserId,
+						tags,
+					);
+
+				const saleAddress: IAddress = address ?? addresses[0];
+
+				const salePhoneNumber: IPhoneNumber = phoneNumber ?? phoneNumbers[0];
+
+				const discountAmount: number = isNaN(
+					+saleFileUploadTemplateRow.discount,
+				)
+					? 0
+					: parseFloat(saleFileUploadTemplateRow.discount.toString()) ?? 0;
+
+				const shippingAmount: number = isNaN(
+					+saleFileUploadTemplateRow.shipping,
+				)
+					? 0
+					: parseFloat(saleFileUploadTemplateRow.shipping.toString()) ?? 0;
+
+				const taxAmount: number = isNaN(+saleFileUploadTemplateRow.tax)
+					? 0
+					: parseFloat(saleFileUploadTemplateRow.tax.toString()) ?? 0;
+
+				const saleStores: ISaleStore[] =
+					await this._parseSelectedProductsToSaleStores({
+						ownerUserId,
+						selectedProducts,
+						storesFromUser,
+						customer,
+						discountAmount,
+						shippingAmount,
+						taxAmount,
+					});
+
+				const { subtotalAmount, totalFinalAmount } = reduce(
+					saleStores,
+					(acc: ISubtotalAndTotalFinalAmount, store: ISaleStore) => {
+						acc.subtotalAmount += store.totals.subtotalAmount;
+						acc.totalFinalAmount += store.totals.totalFinalAmount;
+
+						return acc;
+					},
+					{
+						subtotalAmount: 0,
+						totalFinalAmount: 0,
+					},
+				);
+
+				const sale: ISale = {
+					_id: null,
+					isFromUpload: true,
+					buyer: {
+						address: saleAddress,
+						birthDate,
+						email: saleFileUploadTemplateRow.email,
+						gender: saleFileUploadTemplateRow.gender
+							? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+							: PersonEnum.Gender.OTHER,
+						name: saleFileUploadTemplateRow.name,
+						phoneNumber: salePhoneNumber,
+						userId: customer.userId ?? null,
+					},
+					createdDate,
+					createdAt: now,
+					createdByEmployeeId: employeeId as any,
+					createdByUserId: ownerUserId as any,
+					deliveryAt: deliveryDate,
+					type: SalesEnum.Type.MANUAL,
+					header: {
+						billing: saleAddress
+							? {
+									address: saleAddress,
+							  }
+							: null,
+						shipping: saleAddress
+							? {
+									address: saleAddress,
+							  }
+							: null,
+						deliveryType: saleFileUploadTemplateRow.deliveryType
+							? (saleFileUploadTemplateRow.deliveryType.toUpperCase() as SalesEnum.DeliveryType)
+							: SalesEnum.DeliveryType.DELIVERY,
+					},
+					note: saleFileUploadTemplateRow.note,
+					payments: map(
+						payments,
+						(
+							payment: ISaleFileUploadTemplateRowPaymentFormat,
+						): ISalePayment => ({
+							amount: payment.amount,
+							type: payment.type,
+							provider: null,
+							status: SalesEnum.PaymentStatus.PENDING,
+						}),
+					),
+					status: saleFileUploadTemplateRow.saleStatus
+						? (saleFileUploadTemplateRow.saleStatus.toUpperCase() as SalesEnum.Status)
+						: SalesEnum.Status.PENDING,
+					stores: saleStores,
+					totals: {
+						discount: discountAmount
+							? {
+									normal: { amount: discountAmount, note: null },
+							  }
+							: null,
+						shipping: { amount: shippingAmount, note: null },
+						tax: { amount: taxAmount, note: null },
+						subtotalAmount,
+						totalFinalAmount,
+					},
+					paymentStatus: saleFileUploadTemplateRow.paymentStatus
+						? (saleFileUploadTemplateRow.paymentStatus.toUpperCase() as SalesEnum.PaymentStatus)
+						: SalesEnum.PaymentStatus.PENDING,
+					tagsIds: [],
+					updatedByEmployeeId: null,
+					number: 0,
+					softDelete: null,
+					updatedAt: now,
+					updatedByUserId: null,
+				};
+
+				salesToCreateByUpload.push({
+					customer,
+					rowNumber: saleFileUploadTemplateRow.rowNumber,
+					sale,
+					tags: tagsBySaleUploadTemplateRow,
+				});
+			} catch (error: any) {
+				fileUploadTemplateErrorRow.reasons.push({
+					message: `Error when attempt process row: ${error.message}`,
+					property: 'other',
+				});
+
+				fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
+			}
+		}
+
+		if (fileUploadTemplateErrorRows.length > 0) {
+			return {
+				totalError: fileUploadTemplateErrorRows.length,
+				totalProcessed: 0,
+				totalSuccess: salesToCreateByUpload.length,
+				rowsError: fileUploadTemplateErrorRows,
+			};
+		}
+
+		const totalProcessed: number = 0;
+
+		/**
+		 * Process sales to create
+		 */
+		// for await (const saleToCreateByUpload of salesToCreateByUpload) {
+		// }
+
+		return {
+			totalError: fileUploadTemplateErrorRows.length,
+			totalProcessed: totalProcessed,
+			totalSuccess: salesToCreateByUpload.length,
+			rowsError: fileUploadTemplateErrorRows,
+		};
+	}
+
+	private _getTagsBySaleFileUploadTemplateRow(
+		tagsFromRow: string,
+		userId: string,
+		tagsFromSale: ITag[] = [],
+	): ITag[] {
+		const salesTags: ITag[] = [];
+
+		if (!tagsFromRow?.trim()) {
+			return salesTags;
+		}
+
+		const now: Date = new Date();
+
+		for (let tagFromRow of tagsFromRow.split(',')) {
+			try {
+				tagFromRow = tagFromRow?.trim();
+
+				if (!tagFromRow) {
+					continue;
+				}
+
+				const tagFromSale: ITag | null = find(tagsFromSale, {
+					name: tagFromRow,
+				});
+
+				if (tagFromSale) {
+					salesTags.push(tagFromSale);
+				} else {
+					const tagCreated: ITag = {
+						color: TagsEnum.tagDefaultColor,
+						description: null,
+						name: tagFromRow,
+						type: TagsEnum.Type.SALE,
+						userId: userId as any,
+						_id: null,
+						createdAt: now,
+						updatedAt: now,
+					};
+
+					salesTags.push(tagCreated);
+				}
+			} catch (error: any) {
+				this._logger.error(error);
+			}
+		}
+
+		return salesTags;
+	}
+
+	private _getPhoneNumbersByCustomerFileUploadTemplateRow(
+		saleFileUploadTemplateRow: ISaleFileUploadTemplateRow,
+		phoneNumbers: IPhoneNumber[] = [],
+	): { phoneNumbers: IPhoneNumber[]; phoneNumber: IPhoneNumber | null } {
+		const phoneNumber: string | null = saleFileUploadTemplateRow.phoneNumber
+			? saleFileUploadTemplateRow.phoneNumber.toString().trim()
+			: null;
+
+		let phoneType: string | null = saleFileUploadTemplateRow.phoneType
+			? saleFileUploadTemplateRow.phoneType?.toUpperCase().trim()
+			: null;
+
+		if (!phoneNumber) {
+			return { phoneNumbers, phoneNumber: null };
+		}
+
+		phoneType = includes(Object.keys(PhoneNumberEnum.Type), phoneType)
+			? phoneType
+			: PhoneNumberEnum.Type.OTHER;
+
+		if (some(phoneNumbers, { number: phoneNumber, type: phoneType })) {
+			return { phoneNumbers, phoneNumber: null };
+		}
+
+		const messengers: PhoneNumberEnum.PhoneNumberMessenger[] = (
+			saleFileUploadTemplateRow.phoneMessengers?.trim()
+				? saleFileUploadTemplateRow.phoneMessengers
+						.toUpperCase()
+						.split(',')
+						.map((phoneMessenger: string) => phoneMessenger.trim())
+						.filter((phoneMessenger: string) =>
+							includes(
+								Object.keys(PhoneNumberEnum.PhoneNumberMessenger),
+								phoneMessenger,
+							),
+						)
+				: []
+		) as PhoneNumberEnum.PhoneNumberMessenger[];
+
+		const phoneNumberToCreate: IPhoneNumber = {
+			messengers,
+			number: phoneNumber,
+			type: phoneType as PhoneNumberEnum.Type,
+			uid: Date.now().toString(),
+		};
+
+		phoneNumbers.push(phoneNumberToCreate);
+
+		return { phoneNumbers, phoneNumber: phoneNumberToCreate };
+	}
+
+	private _getAddressesByCustomerFileUploadTemplateRow(
+		saleFileUploadTemplateRow: ISaleFileUploadTemplateRow,
+		addresses: IAddress[] = [],
+	): { addresses: IAddress[]; address: IAddress | null } {
+		if (
+			!(
+				saleFileUploadTemplateRow.address1 ||
+				saleFileUploadTemplateRow.country ||
+				saleFileUploadTemplateRow.state ||
+				saleFileUploadTemplateRow.city ||
+				saleFileUploadTemplateRow.zipCode ||
+				saleFileUploadTemplateRow.district
+			)
+		) {
+			return { addresses, address: null };
+		}
+
+		saleFileUploadTemplateRow.address1 =
+			saleFileUploadTemplateRow.address1?.trim();
+		saleFileUploadTemplateRow.country =
+			saleFileUploadTemplateRow.country?.trim();
+		saleFileUploadTemplateRow.state = saleFileUploadTemplateRow.state?.trim();
+		saleFileUploadTemplateRow.city = saleFileUploadTemplateRow.city?.trim();
+		saleFileUploadTemplateRow.zipCode =
+			saleFileUploadTemplateRow.zipCode &&
+			String(saleFileUploadTemplateRow.zipCode)?.trim();
+		saleFileUploadTemplateRow.district =
+			saleFileUploadTemplateRow.district?.trim();
+
+		const country: ICountryMockData = find(
+			countries,
+			(country: ICountryMockData) =>
+				country.code === saleFileUploadTemplateRow.country ||
+				country.name === saleFileUploadTemplateRow.country,
+		) ?? {
+			code: saleFileUploadTemplateRow.country,
+			name: saleFileUploadTemplateRow.country,
+		};
+
+		const state: IStateMockData = find(
+			states,
+			(state: IStateMockData) =>
+				state.code === saleFileUploadTemplateRow.state ||
+				state.name === saleFileUploadTemplateRow.state,
+		) ?? {
+			code: saleFileUploadTemplateRow.state,
+			name: saleFileUploadTemplateRow.state,
+		};
+
+		const types: AddressEnum.Type[] = (
+			saleFileUploadTemplateRow.addressTypes
+				? saleFileUploadTemplateRow.addressTypes
+						.toUpperCase()
+						.split(',')
+						.map((addressType: string) => addressType.trim())
+						.filter((addressType: string) =>
+							includes(Object.keys(AddressEnum.Type), addressType),
+						)
+				: []
+		) as AddressEnum.Type[];
+
+		const addressToCreate: IAddress = {
+			address1: saleFileUploadTemplateRow.address1,
+			address2: saleFileUploadTemplateRow.address2,
+			city: saleFileUploadTemplateRow.city,
+			country,
+			description: saleFileUploadTemplateRow.addressDescription,
+			district: saleFileUploadTemplateRow.district,
+			isValid: true,
+			state,
+			uid: Date.now().toString(),
+			zip: saleFileUploadTemplateRow.zipCode.toString(),
+			types,
+		};
+
+		addresses.push(addressToCreate);
+
+		return { addresses, address: addressToCreate };
+	}
+
+	private async _parseSelectedProductsToSaleStores({
+		customer,
+		ownerUserId,
+		selectedProducts,
+		storesFromUser,
+		discountAmount,
+		shippingAmount,
+		taxAmount,
+	}: {
+		ownerUserId: string;
+		selectedProducts: ISaleFileUploadTemplateSelectedProductFormat[];
+		storesFromUser: IStore[];
+		customer: ICustomer;
+		discountAmount: number;
+		shippingAmount: number;
+		taxAmount: number;
+	}): Promise<ISaleStore[]> {
+		const barcodes: string[] = reduce(
+			selectedProducts,
+			(acc: string[], curr: ISaleFileUploadTemplateSelectedProductFormat) => {
+				acc.push(...map(curr.products, 'barcode'));
+				return acc;
+			},
+			[],
+		);
+
+		const products: IProduct[] =
+			await this._productsService.findByUserIdAndBarcodes(
+				ownerUserId,
+				barcodes,
+			);
+
+		const saleStoresLength: number = selectedProducts?.length ?? 0;
+
+		const discountAmountByStore: number = discountAmount / saleStoresLength;
+
+		const shippingAmountByStore: number = shippingAmount / saleStoresLength;
+
+		const taxAmountByStore: number = taxAmount / saleStoresLength;
+
+		return map(
+			selectedProducts,
+			(
+				selectedProduct: ISaleFileUploadTemplateSelectedProductFormat,
+			): ISaleStore => {
+				const store: IStore | undefined = find(
+					storesFromUser,
+					(store: IStore) =>
+						store.name.toUpperCase().trim() ===
+						selectedProduct.store.toUpperCase().trim(),
+				);
+
+				if (!store) {
+					throw new Error(`Store not found by name: ${selectedProduct.store}`);
+				}
+
+				const productsQuantityPrice: ISaleStoresProductsTotals = reduce(
+					selectedProduct.products,
+					(
+						acc: ISaleStoresProductsTotals,
+						selectedProductProduct: ISaleFileUploadTemplateSelectedProductItemFormat,
+					) => {
+						acc.quantity += selectedProductProduct.quantity;
+						acc.subtotal +=
+							selectedProductProduct.price * selectedProductProduct.quantity;
+						return acc;
+					},
+					{
+						quantity: 0,
+						subtotal: 0,
+					},
+				);
+
+				const getTotalAfterDiscountByStore = (): number => {
+					const totalAfterDiscount: number =
+						productsQuantityPrice.subtotal - discountAmountByStore;
+
+					return totalAfterDiscount > 0 ? totalAfterDiscount : 0;
+				};
+
+				const totalAfterDiscountByStore: number =
+					getTotalAfterDiscountByStore();
+
+				const getTotalFinalByStore = (): number => {
+					const totalFinal: number =
+						totalAfterDiscountByStore +
+						shippingAmountByStore +
+						taxAmountByStore;
+
+					return totalFinal > 0 ? totalFinal : 0;
+				};
+
+				const totalFinalAmountByStore: number = getTotalFinalByStore();
+
+				const saleStoreProducts: ISaleStoreProduct[] = map(
+					selectedProduct.products,
+					(
+						selectedProduct: ISaleFileUploadTemplateSelectedProductItemFormat,
+					): ISaleStoreProduct => {
+						const product: IProduct | undefined = find(
+							products,
+							(product: IProduct) =>
+								product.barcode.toUpperCase().trim() ===
+								selectedProduct.barcode.toUpperCase().trim(),
+						);
+
+						if (!product) {
+							throw new Error(
+								`Product not found by barcode: ${selectedProduct.barcode}`,
+							);
+						}
+
+						const saleStoreProductPercentage: number = getPercentageByValue(
+							selectedProduct.price * selectedProduct.quantity,
+							productsQuantityPrice.subtotal,
+						);
+
+						const discountByPercentage: number = getValueByPercentage(
+							saleStoreProductPercentage,
+							discountAmountByStore,
+						);
+
+						return {
+							barcode: selectedProduct.barcode,
+							note: null,
+							price: selectedProduct.price,
+							quantity: selectedProduct.quantity,
+							productId: product._id as any,
+							discount: discountByPercentage
+								? {
+										distributedAmount: +discountByPercentage.toFixed(2),
+								  }
+								: null,
+						};
+					},
+				);
+
+				return {
+					products: saleStoreProducts,
+					customerId: (customer?._id ?? null) as any,
+					number: 0,
+					storeId: store._id as any,
+					totals: {
+						discount: discountAmountByStore
+							? {
+									distributedAmount: discountAmountByStore,
+							  }
+							: null,
+						shipping: {
+							amount: shippingAmountByStore,
+							note: null,
+						},
+						subtotalAmount: productsQuantityPrice.subtotal,
+						tax: { amount: taxAmountByStore, note: null },
+						totalFinalAmount: totalFinalAmountByStore,
+					},
+				};
+			},
+		);
+	}
 
 	// #endregion
 }
