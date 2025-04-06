@@ -1,7 +1,15 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import * as ExcelJS from 'exceljs';
 import { find, includes, some } from 'lodash';
-import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
+import {
+	AnyKeys,
+	AnyObject,
+	FilterQuery,
+	Model,
+	QueryOptions,
+	Types,
+	UpdateQuery,
+} from 'mongoose';
 
 import {
 	Injectable,
@@ -637,6 +645,18 @@ export class CustomersService {
 
 		const buffer = await workbook.xlsx.writeBuffer();
 		return buffer as Buffer;
+	}
+
+	public async findByIdAndUpdate(
+		customerId: string,
+		update?: UpdateQuery<ICustomer>,
+		options?: QueryOptions<ICustomer>,
+	): Promise<ICustomer> {
+		return this._customerModel.findByIdAndUpdate(customerId, update, options);
+	}
+
+	public async insert(customer: ICustomer): Promise<ICustomer> {
+		return this._customerModel.create(customer);
 	}
 
 	// #endregion

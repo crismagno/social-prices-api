@@ -32,7 +32,7 @@ export interface ISale
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	deliveryAt: Date | null;
 	isFromUpload: boolean;
-	createdDate: Date | null;
+	createdDate: Date | null; // Date of creation sale on his store parsed by user
 }
 
 export interface ISaleTotals {

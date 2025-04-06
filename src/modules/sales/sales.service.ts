@@ -2126,8 +2126,85 @@ export class SalesService {
 		/**
 		 * Process sales to create
 		 */
-		// for await (const saleToCreateByUpload of salesToCreateByUpload) {
-		// }
+		for await (const saleToCreateByUpload of salesToCreateByUpload) {
+			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
+				{
+					rowNumber: saleToCreateByUpload.rowNumber,
+					reasons: [],
+				};
+
+			let customer: ICustomer | undefined;
+
+			try {
+				/**
+				 * Attempt find customer by id or by properties if not find must create
+				 */
+				if (saleToCreateByUpload.customer._id) {
+					customer = await this._customersService.findByIdAndUpdate(
+						saleToCreateByUpload.customer._id,
+						{
+							$set: customer,
+						},
+						{
+							new: true,
+						},
+					);
+				} else {
+					customer =
+						saleToCreateByUpload.customer.name &&
+						saleToCreateByUpload.customer.email &&
+						saleToCreateByUpload.customer.birthDate
+							? await this._customersService.findByMainPropertiesAndOwnerUserId(
+									saleToCreateByUpload.customer.name,
+									saleToCreateByUpload.customer.email,
+									saleToCreateByUpload.customer.birthDate,
+									ownerUserId,
+							  )
+							: null;
+
+					if (customer) {
+						customer = await this._customersService.findByIdAndUpdate(
+							saleToCreateByUpload.customer._id,
+							{
+								$set: customer,
+							},
+							{
+								new: true,
+							},
+						);
+					} else {
+						customer = await this._customersService.insert(
+							saleToCreateByUpload.customer,
+						);
+					}
+				}
+
+				console.log(customer);
+
+				/**
+				 * Set customerId on saleStores
+				 */
+
+				/**
+				 * Create Tags and Set on sale
+				 */
+
+				/**
+				 * Create Sale
+				 */
+
+				/**
+				 * Verify all logic and attempt  send a incorrect to try broke code
+				 */
+			} catch (error) {
+				fileUploadTemplateErrorRow.reasons.push({
+					message: `[!] Error when attempt process row: ${error.message}`,
+					property: 'other',
+				});
+
+				fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
+			}
+		}
 
 		return {
 			totalError: fileUploadTemplateErrorRows.length,
