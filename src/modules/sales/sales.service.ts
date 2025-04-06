@@ -481,6 +481,8 @@ export class SalesService {
 				tagsIds: updateSaleDto.tagsIds as any[],
 				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId as any,
 				deliveryAt: updateSaleDto.deliveryAt,
+				createdDate:
+					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(

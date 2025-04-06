@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
-	IsDate,
 	IsEnum,
 	IsNotEmpty,
 	IsOptional,
@@ -69,11 +68,11 @@ export default class UpdateSaleDto {
 	@Type(() => String)
 	tagsIds: string[];
 
-	@IsDate()
+	@IsString()
 	@IsOptional()
 	deliveryAt: Date | null;
 
-	@IsDate()
+	@IsString()
 	@IsOptional()
 	createdDate: Date | null;
 }
