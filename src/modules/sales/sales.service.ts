@@ -339,7 +339,7 @@ export class SalesService {
 			const now: Date = new Date();
 
 			const saleToCreate: ISale = {
-				createdDate: null,
+				createdDate: createSaleDto.createdDate ?? now,
 				buyer: createSaleDto.buyer
 					? {
 							address: this._parseCreateAddressDtoToAddress(
@@ -2037,7 +2037,7 @@ export class SalesService {
 						phoneNumber: salePhoneNumber,
 						userId: customer.userId ?? null,
 					},
-					createdDate,
+					createdDate: createdDate ?? now,
 					createdAt: now,
 					createdByEmployeeId: employeeId as any,
 					createdByUserId: ownerUserId as any,
