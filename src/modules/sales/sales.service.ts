@@ -637,166 +637,6 @@ export class SalesService {
 		return this._parseSalesToSalesBalance(sales);
 	}
 
-	public async uploadSales(
-		files: Express.Multer.File[],
-		userId: string,
-		employeeId: string,
-	): Promise<void> {
-		const hasUploadProcessing: boolean =
-			await this._filesUploadsService.hasUploadSalesProcessingByUserId(userId);
-
-		if (hasUploadProcessing) {
-			throw new InternalServerErrorException(
-				'In the moment you have upload sales files processing. please wait finish to try upload new files.',
-			);
-		}
-
-		const tags: ITag[] = await this._tagsService.findByType(
-			userId,
-			TagsEnum.Type.SALE,
-		);
-
-		const stores: IStore[] = await this._storesService.findByUserId(userId);
-
-		const now: Date = new Date();
-
-		this._filesService
-			.getUploadFilesUrl(files)
-			.then(async (filenames: string[]) => {
-				const filesUploads: IFileUpload[] =
-					await this._filesUploadsService.createMulti({
-						employeeId,
-						filenames,
-						type: FilesUploadsEnum.Type.UPLOAD_SALES,
-						userId,
-					});
-
-				const fileUploadTemplateErrors: IFileUploadTemplateError<ISaleFileUploadTemplateRow>[] =
-					[];
-
-				for await (const [
-					index,
-					{ filename, _id: fileUploadId },
-				] of filesUploads.entries()) {
-					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-						$set: {
-							status: FilesUploadsEnum.Status.PROCESSING,
-							updatedAt: new Date(),
-						},
-					});
-
-					const fileUploadTemplateError: IFileUploadTemplateError<ISaleFileUploadTemplateRow> =
-						{
-							filename,
-							fileNumber: index + 1,
-							rowsError: [],
-							processError: undefined,
-							fileColumns: {
-								rowNumber: 'Row Number',
-								uniqName: 'Uniq Name',
-								name: 'Name',
-								email: 'Email',
-								birthDate: 'Birth Date',
-								gender: 'Gender',
-								about: 'About',
-								country: 'Country',
-								state: 'State',
-								city: 'City',
-								zipCode: 'Zip Code',
-								address1: 'Address1',
-								address2: 'Address2',
-								district: 'District',
-								addressDescription: 'Address Description',
-								addressTypes: 'Address Types',
-								phoneType: 'Phone Type',
-								phoneNumber: 'Phone Number',
-								phoneMessengers: 'Phone Messengers',
-								selectedProducts: 'Selected Products',
-								discount: 'Discount',
-								shipping: 'Shipping',
-								tax: 'Tax',
-								payments: 'Payments',
-								note: 'Note',
-								tags: 'Tags',
-								saleStatus: 'Sale Status',
-								paymentStatus: 'Payment Status',
-								deliveryDate: 'Delivery Date',
-								deliveryType: 'Delivery Type',
-								createdDate: 'Created Date',
-								other: 'Other',
-							},
-						};
-
-					try {
-						const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] =
-							await this._getSaleFileUploadTemplateRowsByFilename(filename);
-
-						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-							$set: {
-								updatedAt: new Date(),
-								totalToProcess: saleFileUploadTemplateRows.length,
-							},
-						});
-
-						const { totalError, totalProcessed, totalSuccess, rowsError } =
-							await this._processSaleFileUploadTemplateRows(
-								saleFileUploadTemplateRows,
-								userId,
-								employeeId,
-								tags,
-								now,
-								stores,
-							);
-
-						fileUploadTemplateError.rowsError = rowsError;
-
-						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-							$set: {
-								updatedAt: new Date(),
-								totalError,
-								totalSuccess,
-								totalProcessed,
-							},
-						});
-					} catch (error: any) {
-						fileUploadTemplateError.processError = error?.message;
-						this._logger.error(error);
-					} finally {
-						await this._filesService.deleteFile(filename);
-					}
-
-					const fileUploadSet: Partial<IFileUpload> = {
-						updatedAt: new Date(),
-						status: FilesUploadsEnum.Status.COMPLETED,
-					};
-
-					if (
-						fileUploadTemplateError.rowsError.length > 0 ||
-						fileUploadTemplateError.processError
-					) {
-						fileUploadTemplateErrors.push(fileUploadTemplateError);
-						fileUploadSet.errors = fileUploadTemplateError;
-						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
-					}
-
-					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
-						$set: fileUploadSet,
-					});
-
-					this._socketsGateway.handleResponseUploadSalesFileToUser(userId);
-				}
-
-				this._socketsGateway.handleUploadSalesResponseToEmployee(
-					fileUploadTemplateErrors,
-					employeeId,
-				);
-			})
-			.catch((error: any) => {
-				this._logger.error(error);
-				throw new Error('Error when attempt process sales upload.');
-			});
-	}
-
 	// #endregion
 
 	// #region Private Methods
@@ -1527,6 +1367,168 @@ export class SalesService {
 		return productsBalance;
 	};
 
+	//#region Upload Part
+
+	public async uploadSales(
+		files: Express.Multer.File[],
+		userId: string,
+		employeeId: string,
+	): Promise<void> {
+		const hasUploadProcessing: boolean =
+			await this._filesUploadsService.hasUploadSalesProcessingByUserId(userId);
+
+		if (hasUploadProcessing) {
+			throw new InternalServerErrorException(
+				'In the moment you have upload sales files processing. please wait finish to try upload new files.',
+			);
+		}
+
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.SALE,
+		);
+
+		const stores: IStore[] = await this._storesService.findByUserId(userId);
+
+		const now: Date = new Date();
+
+		this._filesService
+			.getUploadFilesUrl(files)
+			.then(async (filenames: string[]) => {
+				const filesUploads: IFileUpload[] =
+					await this._filesUploadsService.createMulti({
+						employeeId,
+						filenames,
+						type: FilesUploadsEnum.Type.UPLOAD_SALES,
+						userId,
+					});
+
+				const fileUploadTemplateErrors: IFileUploadTemplateError<ISaleFileUploadTemplateRow>[] =
+					[];
+
+				for await (const [
+					index,
+					{ filename, _id: fileUploadId },
+				] of filesUploads.entries()) {
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: {
+							status: FilesUploadsEnum.Status.PROCESSING,
+							updatedAt: new Date(),
+						},
+					});
+
+					const fileUploadTemplateError: IFileUploadTemplateError<ISaleFileUploadTemplateRow> =
+						{
+							filename,
+							fileNumber: index + 1,
+							rowsError: [],
+							processError: undefined,
+							fileColumns: {
+								rowNumber: 'Row Number',
+								uniqName: 'Uniq Name',
+								name: 'Name',
+								email: 'Email',
+								birthDate: 'Birth Date',
+								gender: 'Gender',
+								about: 'About',
+								country: 'Country',
+								state: 'State',
+								city: 'City',
+								zipCode: 'Zip Code',
+								address1: 'Address1',
+								address2: 'Address2',
+								district: 'District',
+								addressDescription: 'Address Description',
+								addressTypes: 'Address Types',
+								phoneType: 'Phone Type',
+								phoneNumber: 'Phone Number',
+								phoneMessengers: 'Phone Messengers',
+								selectedProducts: 'Selected Products',
+								discount: 'Discount',
+								shipping: 'Shipping',
+								tax: 'Tax',
+								payments: 'Payments',
+								note: 'Note',
+								tags: 'Tags',
+								saleStatus: 'Sale Status',
+								paymentStatus: 'Payment Status',
+								deliveryDate: 'Delivery Date',
+								deliveryType: 'Delivery Type',
+								createdDate: 'Created Date',
+								other: 'Other',
+							},
+						};
+
+					try {
+						const saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[] =
+							await this._getSaleFileUploadTemplateRowsByFilename(filename);
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalToProcess: saleFileUploadTemplateRows.length,
+							},
+						});
+
+						const { totalError, totalProcessed, totalSuccess, rowsError } =
+							await this._processSaleFileUploadTemplateRows(
+								saleFileUploadTemplateRows,
+								userId,
+								employeeId,
+								tags,
+								now,
+								stores,
+							);
+
+						fileUploadTemplateError.rowsError = rowsError;
+
+						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+							$set: {
+								updatedAt: new Date(),
+								totalError,
+								totalSuccess,
+								totalProcessed,
+							},
+						});
+					} catch (error: any) {
+						fileUploadTemplateError.processError = error?.message;
+						this._logger.error(error);
+					} finally {
+						await this._filesService.deleteFile(filename);
+					}
+
+					const fileUploadSet: Partial<IFileUpload> = {
+						updatedAt: new Date(),
+						status: FilesUploadsEnum.Status.COMPLETED,
+					};
+
+					if (
+						fileUploadTemplateError.rowsError.length > 0 ||
+						fileUploadTemplateError.processError
+					) {
+						fileUploadTemplateErrors.push(fileUploadTemplateError);
+						fileUploadSet.errors = fileUploadTemplateError;
+						fileUploadSet.status = FilesUploadsEnum.Status.ERROR;
+					}
+
+					await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
+						$set: fileUploadSet,
+					});
+
+					this._socketsGateway.handleResponseUploadSalesFileToUser(userId);
+				}
+
+				this._socketsGateway.handleUploadSalesResponseToEmployee(
+					fileUploadTemplateErrors,
+					employeeId,
+				);
+			})
+			.catch((error: any) => {
+				this._logger.error(error);
+				throw new Error('Error when attempt process sales upload.');
+			});
+	}
+
 	private async _getSaleFileUploadTemplateRowsByFilename(
 		filename: string,
 	): Promise<ISaleFileUploadTemplateRow[]> {
@@ -1643,6 +1645,9 @@ export class SalesService {
 
 		const salesToCreateByUpload: ISaleToCreateByUpload[] = [];
 
+		/**
+		 * Validate rows and create sales date to create by upload
+		 */
 		for await (const saleFileUploadTemplateRow of saleFileUploadTemplateRows) {
 			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
 				{
@@ -2114,6 +2119,9 @@ export class SalesService {
 			}
 		}
 
+		/**
+		 * If have any error on rows, return the error rows
+		 */
 		if (fileUploadTemplateErrorRows.length > 0) {
 			return {
 				totalError: fileUploadTemplateErrorRows.length,
@@ -2123,11 +2131,11 @@ export class SalesService {
 			};
 		}
 
-		const totalProcessed: number = 0;
-
 		/**
 		 * Process sales to create
 		 */
+		const totalProcessed: number = 0;
+
 		for await (const saleToCreateByUpload of salesToCreateByUpload) {
 			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
 				{
