@@ -12,7 +12,7 @@ import {
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
-import mongoose, { FilterQuery, Model, Types } from 'mongoose';
+import mongoose, { FilterQuery, Model } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -1816,7 +1816,7 @@ export class SalesService {
 						}
 
 						/**
-						 * Must validate object format
+						 * TODO - Must validate object format
 						 */
 					} catch (error) {
 						fileUploadTemplateErrorRow.reasons.push({
@@ -1871,7 +1871,7 @@ export class SalesService {
 						}
 
 						/**
-						 * Must validate object format
+						 * TODO - Must validate object format
 						 */
 					} catch (error) {
 						fileUploadTemplateErrorRow.reasons.push({
@@ -1984,7 +1984,9 @@ export class SalesService {
 						updatedAt: now,
 						userId: null,
 						_id: null,
-						uniqName: createUsernameByName(saleFileUploadTemplateRow.name),
+						uniqName:
+							rowUniqName ??
+							createUsernameByName(saleFileUploadTemplateRow.name),
 					};
 				}
 
@@ -2223,18 +2225,15 @@ export class SalesService {
 				/**
 				 * Create Tags and Set on sale
 				 */
-
 				const tagsIdsByExistsOrCreated: string[] =
 					await this._getTagsIdsByExistsOrCreated(
 						saleToCreateByUpload.tags,
 						tags,
 					);
 
-				const tagsIds: Types.ObjectId[] = arrayStringToObjectId(
+				saleToCreateByUpload.sale.tagsIds = arrayStringToObjectId(
 					tagsIdsByExistsOrCreated,
-				);
-
-				saleToCreateByUpload.sale.tagsIds = tagsIds as any[];
+				) as any[];
 
 				/**
 				 * Create Sale
