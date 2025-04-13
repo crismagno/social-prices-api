@@ -1,16 +1,20 @@
 import { map } from 'lodash';
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 
 import AddressEnum from '../../enums/address.enum';
 import PhoneNumberEnum from '../../enums/phone-number.enum';
 import { IAddress } from '../../interfaces/address.interface';
 import { IPhoneNumber } from '../../interfaces/phone-number.interface';
 
-export const arrayStringToObjectId = (values: string[]): Types.ObjectId[] =>
-	map(values, (value: string) => new Types.ObjectId(value));
+export const arrayStringToObjectId = (
+	values: string[],
+): mongoose.Types.ObjectId[] =>
+	map(values, (value: string) => new mongoose.Types.ObjectId(value));
 
-export const arrayObjectIdToString = (values: Types.ObjectId[]): string[] =>
-	map(values, (value: Types.ObjectId) => value.toString());
+export const arrayObjectIdToString = (
+	values: mongoose.Types.ObjectId[],
+): string[] =>
+	map(values, (value: mongoose.Types.ObjectId) => value.toString());
 
 export const createComma = (str: string): string =>
 	str?.trim() ? ', ' + str : str;

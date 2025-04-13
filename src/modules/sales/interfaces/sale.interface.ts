@@ -31,7 +31,7 @@ export interface ISale
 	paymentStatus: SalesEnum.PaymentStatus;
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	deliveryAt: Date | null;
-	isFromUpload: boolean;
+	uploadFilename: string | null;
 	createdDate: Date | null; // Date of creation sale on his store parsed by user
 }
 

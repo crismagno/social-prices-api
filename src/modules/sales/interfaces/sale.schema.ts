@@ -334,8 +334,8 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
-	@Prop({ type: Boolean, required: true })
-	isFromUpload: boolean;
+	@Prop({ type: String })
+	uploadFilename: string | null;
 
 	@Prop({ type: Date })
 	deliveryAt: Date | null;

@@ -12,7 +12,7 @@ import {
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
-import mongoose, { FilterQuery, Model } from 'mongoose';
+import mongoose, { FilterQuery, Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -54,6 +54,7 @@ import {
 	getValueByPercentage,
 } from '../../shared/utils/numbers/numbers';
 import { parseAnyStringToObject } from '../../shared/utils/objects/objects';
+import { arrayStringToObjectId } from '../../shared/utils/strings/strings';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -388,7 +389,7 @@ export class SalesService {
 				updatedByUserId: null,
 				_id: null,
 				deliveryAt: createSaleDto.deliveryAt,
-				isFromUpload: false,
+				uploadFilename: null,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -1471,14 +1472,15 @@ export class SalesService {
 						});
 
 						const { totalError, totalProcessed, totalSuccess, rowsError } =
-							await this._processSaleFileUploadTemplateRows(
+							await this._processSaleFileUploadTemplateRows({
 								saleFileUploadTemplateRows,
-								userId,
+								ownerUserId: userId,
 								employeeId,
 								tags,
 								now,
-								stores,
-							);
+								storesFromUser: stores,
+								filename,
+							});
 
 						fileUploadTemplateError.rowsError = rowsError;
 
@@ -1632,14 +1634,23 @@ export class SalesService {
 		return saleFileUploadTemplateRows;
 	}
 
-	private async _processSaleFileUploadTemplateRows(
-		saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[],
-		ownerUserId: string,
-		employeeId: string,
-		tags: ITag[],
-		now: Date,
-		storesFromUser: IStore[],
-	): Promise<ITotalsProcessedFileUploadTemplateRows> {
+	private async _processSaleFileUploadTemplateRows({
+		employeeId,
+		filename,
+		now,
+		ownerUserId,
+		saleFileUploadTemplateRows,
+		storesFromUser,
+		tags,
+	}: {
+		saleFileUploadTemplateRows: ISaleFileUploadTemplateRow[];
+		ownerUserId: string;
+		employeeId: string;
+		tags: ITag[];
+		now: Date;
+		storesFromUser: IStore[];
+		filename: string;
+	}): Promise<ITotalsProcessedFileUploadTemplateRows> {
 		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow>[] =
 			[];
 
@@ -1952,31 +1963,30 @@ export class SalesService {
 						customer?.addresses,
 					);
 
-				customer = customer
-					? {
-							...customer,
-							phoneNumbers,
-							addresses,
-					  }
-					: {
-							avatar: null,
-							name: saleFileUploadTemplateRow.name,
-							email: saleFileUploadTemplateRow.email,
-							birthDate: birthDate,
-							addresses,
-							gender: saleFileUploadTemplateRow.gender
-								? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
-								: PersonEnum.Gender.OTHER,
-							about: saleFileUploadTemplateRow.about,
-							phoneNumbers,
-							tagsIds: [],
-							ownerUserId: ownerUserId as any,
-							createdAt: now,
-							updatedAt: now,
-							userId: null,
-							_id: null,
-							uniqName: createUsernameByName(saleFileUploadTemplateRow.name),
-					  };
+				if (customer) {
+					customer.addresses = addresses;
+					customer.phoneNumbers = phoneNumbers;
+				} else {
+					customer = {
+						avatar: null,
+						name: saleFileUploadTemplateRow.name,
+						email: saleFileUploadTemplateRow.email,
+						birthDate: birthDate,
+						addresses,
+						gender: saleFileUploadTemplateRow.gender
+							? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+							: PersonEnum.Gender.OTHER,
+						about: saleFileUploadTemplateRow.about,
+						phoneNumbers,
+						tagsIds: [],
+						ownerUserId: ownerUserId as any,
+						createdAt: now,
+						updatedAt: now,
+						userId: null,
+						_id: null,
+						uniqName: createUsernameByName(saleFileUploadTemplateRow.name),
+					};
+				}
 
 				const tagsBySaleUploadTemplateRow: ITag[] =
 					this._getTagsBySaleFileUploadTemplateRow(
@@ -2032,7 +2042,7 @@ export class SalesService {
 
 				const sale: ISale = {
 					_id: null,
-					isFromUpload: true,
+					uploadFilename: filename,
 					buyer: {
 						address: saleAddress,
 						birthDate,
@@ -2153,7 +2163,10 @@ export class SalesService {
 					customer = await this._customersService.findByIdAndUpdate(
 						saleToCreateByUpload.customer._id,
 						{
-							$set: customer,
+							$addToSet: {
+								addresses: saleToCreateByUpload.customer.addresses,
+								phoneNumbers: saleToCreateByUpload.customer.phoneNumbers,
+							},
 						},
 						{
 							new: true,
@@ -2174,9 +2187,12 @@ export class SalesService {
 
 					if (customer) {
 						customer = await this._customersService.findByIdAndUpdate(
-							saleToCreateByUpload.customer._id,
+							customer._id,
 							{
-								$set: customer,
+								$addToSet: {
+									addresses: saleToCreateByUpload.customer.addresses,
+									phoneNumbers: saleToCreateByUpload.customer.phoneNumbers,
+								},
 							},
 							{
 								new: true,
@@ -2189,19 +2205,41 @@ export class SalesService {
 					}
 				}
 
-				console.log(customer);
+				const salesNumber: number =
+					await this._countersService.findNextNumberBySaleType();
+
+				saleToCreateByUpload.sale.number = salesNumber;
 
 				/**
 				 * Set customerId on saleStores
 				 */
+				saleToCreateByUpload.sale.stores =
+					this._setCustomerIdAndSaleNumberOnSaleStores(
+						customer._id,
+						saleToCreateByUpload.sale.number,
+						saleToCreateByUpload.sale.stores,
+					);
 
 				/**
 				 * Create Tags and Set on sale
 				 */
 
+				const tagsIdsByExistsOrCreated: string[] =
+					await this._getTagsIdsByExistsOrCreated(
+						saleToCreateByUpload.tags,
+						tags,
+					);
+
+				const tagsIds: Types.ObjectId[] = arrayStringToObjectId(
+					tagsIdsByExistsOrCreated,
+				);
+
+				saleToCreateByUpload.sale.tagsIds = tagsIds as any[];
+
 				/**
 				 * Create Sale
 				 */
+				await this._saleModel.create(saleToCreateByUpload.sale);
 
 				/**
 				 * Verify all logic and attempt  send a incorrect to try broke code
@@ -2563,6 +2601,48 @@ export class SalesService {
 				};
 			},
 		);
+	}
+
+	private _setCustomerIdAndSaleNumberOnSaleStores(
+		customerId: string,
+		saleNumber: number,
+		saleStores: ISaleStore[],
+	): ISaleStore[] {
+		return map(saleStores, (saleStore: ISaleStore): ISaleStore => {
+			saleStore.customerId = customerId as any;
+			saleStore.number = saleNumber;
+			return saleStore;
+		});
+	}
+
+	private async _getTagsIdsByExistsOrCreated(
+		tagsToVerify: ITag[],
+		tagsFromSale: ITag[],
+	): Promise<string[]> {
+		const tagsIds: string[] = [];
+
+		for await (const tagToVerify of tagsToVerify) {
+			const tagFromSale: ITag | null = find(tagsFromSale, {
+				name: tagToVerify.name,
+			});
+
+			if (tagFromSale) {
+				tagsIds.push(tagFromSale._id);
+			} else {
+				const tagCreated: ITag = await this._tagsService.create({
+					color: TagsEnum.tagDefaultColor,
+					description: null,
+					name: tagToVerify.name,
+					type: TagsEnum.Type.SALE,
+					userId: tagToVerify.userId as any,
+				});
+
+				tagsFromSale.push(tagCreated);
+				tagsIds.push(tagCreated._id);
+			}
+		}
+
+		return tagsIds;
 	}
 
 	// #endregion
