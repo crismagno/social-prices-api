@@ -1464,6 +1464,7 @@ export class SalesService {
 								deliveryDate: 'Delivery Date',
 								deliveryType: 'Delivery Type',
 								createdDate: 'Created Date',
+								saleNumberManual: 'Sale Number Manual',
 								other: 'Other',
 							},
 						};
