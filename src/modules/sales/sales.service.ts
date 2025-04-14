@@ -8,7 +8,6 @@ import {
 	map,
 	orderBy,
 	reduce,
-	some,
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
@@ -2176,6 +2175,9 @@ export class SalesService {
 						},
 					);
 				} else {
+					/**
+					 * That code is used because customer can be created by upload
+					 */
 					customer =
 						saleToCreateByUpload.customer.name &&
 						saleToCreateByUpload.customer.email &&
@@ -2213,9 +2215,6 @@ export class SalesService {
 
 				saleToCreateByUpload.sale.number = salesNumber;
 
-				/**
-				 * Set customerId on saleStores
-				 */
 				saleToCreateByUpload.sale.stores =
 					this._setCustomerIdAndSaleNumberOnSaleStores(
 						customer._id,
@@ -2223,9 +2222,6 @@ export class SalesService {
 						saleToCreateByUpload.sale.stores,
 					);
 
-				/**
-				 * Create Tags and Set on sale
-				 */
 				const tagsIdsByExistsOrCreated: string[] =
 					await this._getTagsIdsByExistsOrCreated(
 						saleToCreateByUpload.tags,
@@ -2236,14 +2232,7 @@ export class SalesService {
 					tagsIdsByExistsOrCreated,
 				) as any[];
 
-				/**
-				 * Create Sale
-				 */
 				await this._saleModel.create(saleToCreateByUpload.sale);
-
-				/**
-				 * Verify all logic and attempt  send a incorrect to try broke code
-				 */
 			} catch (error) {
 				fileUploadTemplateErrorRow.reasons.push({
 					message: `[!] Error when attempt process row: ${error.message}`,
@@ -2331,8 +2320,13 @@ export class SalesService {
 			? phoneType
 			: PhoneNumberEnum.Type.OTHER;
 
-		if (some(phoneNumbers, { number: phoneNumber, type: phoneType })) {
-			return { phoneNumbers, phoneNumber: null };
+		const findPhoneNumber: IPhoneNumber | undefined = find(phoneNumbers, {
+			number: phoneNumber,
+			type: phoneType,
+		}) as IPhoneNumber | undefined;
+
+		if (findPhoneNumber) {
+			return { phoneNumbers, phoneNumber: findPhoneNumber };
 		}
 
 		const messengers: PhoneNumberEnum.PhoneNumberMessenger[] = (
@@ -2377,6 +2371,21 @@ export class SalesService {
 			)
 		) {
 			return { addresses, address: null };
+		}
+
+		const findAddress: IAddress | undefined = find(
+			addresses,
+			(address: IAddress) =>
+				address.address1 === saleFileUploadTemplateRow.address1 &&
+				address.country.code === saleFileUploadTemplateRow.country &&
+				address.state.code === saleFileUploadTemplateRow.state &&
+				address.city === saleFileUploadTemplateRow.city &&
+				address.zip === saleFileUploadTemplateRow.zipCode &&
+				address.district === saleFileUploadTemplateRow.district,
+		) as IAddress | undefined;
+
+		if (findAddress) {
+			return { addresses, address: findAddress };
 		}
 
 		saleFileUploadTemplateRow.address1 =

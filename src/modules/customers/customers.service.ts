@@ -658,9 +658,7 @@ export class CustomersService {
 	}
 
 	public async insert(customer: ICustomer): Promise<ICustomer> {
-		const result = await this._customerModel.create(customer);
-
-		return result;
+		return await this._customerModel.create(customer);
 	}
 
 	// #endregion
