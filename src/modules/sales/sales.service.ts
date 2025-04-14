@@ -640,6 +640,12 @@ export class SalesService {
 		return this._parseSalesToSalesBalance(sales);
 	}
 
+	public async findByNumberManual(numberManual: string): Promise<ISale | null> {
+		return this._saleModel.findOne({
+			numberManual,
+		});
+	}
+
 	// #endregion
 
 	// #region Private Methods
@@ -2042,80 +2048,169 @@ export class SalesService {
 					},
 				);
 
-				const sale: ISale = {
-					numberManual:
-						saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
-					_id: null,
-					uploadFilename: filename,
-					buyer: {
-						address: saleAddress,
-						birthDate,
-						email: saleFileUploadTemplateRow.email,
-						gender: saleFileUploadTemplateRow.gender
-							? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
-							: PersonEnum.Gender.OTHER,
-						name: saleFileUploadTemplateRow.name,
-						phoneNumber: salePhoneNumber,
-						userId: customer.userId ?? null,
-					},
-					createdDate: createdDate ?? now,
-					createdAt: now,
-					createdByEmployeeId: employeeId as any,
-					createdByUserId: ownerUserId as any,
-					deliveryAt: deliveryDate,
-					type: SalesEnum.Type.MANUAL,
-					header: {
-						billing: saleAddress
-							? {
-									address: saleAddress,
-							  }
-							: null,
-						shipping: saleAddress
-							? {
-									address: saleAddress,
-							  }
-							: null,
-						deliveryType: saleFileUploadTemplateRow.deliveryType
-							? (saleFileUploadTemplateRow.deliveryType.toUpperCase() as SalesEnum.DeliveryType)
-							: SalesEnum.DeliveryType.DELIVERY,
-					},
-					note: saleFileUploadTemplateRow.note,
-					payments: map(
-						payments,
-						(
-							payment: ISaleFileUploadTemplateRowPaymentFormat,
-						): ISalePayment => ({
-							amount: payment.amount,
-							type: payment.type,
-							provider: null,
-							status: SalesEnum.PaymentStatus.PENDING,
-						}),
-					),
-					status: saleFileUploadTemplateRow.saleStatus
-						? (saleFileUploadTemplateRow.saleStatus.toUpperCase() as SalesEnum.Status)
-						: SalesEnum.Status.PENDING,
-					stores: saleStores,
-					totals: {
-						discount: discountAmount
-							? {
-									normal: { amount: discountAmount, note: null },
-							  }
-							: null,
-						shipping: { amount: shippingAmount, note: null },
-						tax: { amount: taxAmount, note: null },
-						subtotalAmount,
-						totalFinalAmount,
-					},
-					paymentStatus: saleFileUploadTemplateRow.paymentStatus
-						? (saleFileUploadTemplateRow.paymentStatus.toUpperCase() as SalesEnum.PaymentStatus)
-						: SalesEnum.PaymentStatus.PENDING,
-					tagsIds: [],
-					updatedByEmployeeId: null,
-					number: 0,
-					softDelete: null,
-					updatedAt: now,
-					updatedByUserId: null,
-				};
+				let saleBySaleNumberManual: ISale | null = null;
+
+				const saleNumberManual: string | null =
+					saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null;
+
+				if (saleNumberManual) {
+					saleBySaleNumberManual =
+						await this.findByNumberManual(saleNumberManual);
+				}
+
+				let sale: ISale | null = null;
+
+				if (saleBySaleNumberManual) {
+					sale = {
+						numberManual:
+							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
+						_id: saleBySaleNumberManual._id,
+						uploadFilename: saleBySaleNumberManual.uploadFilename,
+						buyer: {
+							address: saleAddress,
+							birthDate,
+							email: saleFileUploadTemplateRow.email,
+							gender: saleFileUploadTemplateRow.gender
+								? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+								: PersonEnum.Gender.OTHER,
+							name: saleFileUploadTemplateRow.name,
+							phoneNumber: salePhoneNumber,
+							userId: customer.userId ?? null,
+						},
+						createdDate: createdDate ?? saleBySaleNumberManual.createdDate,
+						createdAt: saleBySaleNumberManual.createdAt,
+						createdByEmployeeId: employeeId as any,
+						createdByUserId: ownerUserId as any,
+						deliveryAt: deliveryDate,
+						type: SalesEnum.Type.MANUAL,
+						header: {
+							billing: saleAddress
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							shipping: saleAddress
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							deliveryType: saleFileUploadTemplateRow.deliveryType
+								? (saleFileUploadTemplateRow.deliveryType.toUpperCase() as SalesEnum.DeliveryType)
+								: saleBySaleNumberManual.header.deliveryType,
+						},
+						note: saleFileUploadTemplateRow.note,
+						payments: map(
+							payments,
+							(
+								payment: ISaleFileUploadTemplateRowPaymentFormat,
+							): ISalePayment => ({
+								amount: payment.amount,
+								type: payment.type,
+								provider: null,
+								status: SalesEnum.PaymentStatus.PENDING,
+							}),
+						),
+						status: saleFileUploadTemplateRow.saleStatus
+							? (saleFileUploadTemplateRow.saleStatus.toUpperCase() as SalesEnum.Status)
+							: saleBySaleNumberManual.status,
+						stores: saleStores,
+						totals: {
+							discount: discountAmount
+								? {
+										normal: { amount: discountAmount, note: null },
+								  }
+								: null,
+							shipping: { amount: shippingAmount, note: null },
+							tax: { amount: taxAmount, note: null },
+							subtotalAmount,
+							totalFinalAmount,
+						},
+						paymentStatus: saleFileUploadTemplateRow.paymentStatus
+							? (saleFileUploadTemplateRow.paymentStatus.toUpperCase() as SalesEnum.PaymentStatus)
+							: saleBySaleNumberManual.paymentStatus,
+						tagsIds: [],
+						updatedByEmployeeId: null,
+						number: saleBySaleNumberManual.number,
+						softDelete: saleBySaleNumberManual.softDelete,
+						updatedAt: now,
+						updatedByUserId: saleBySaleNumberManual.updatedByUserId,
+					};
+				} else {
+					sale = {
+						numberManual:
+							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
+						_id: null,
+						uploadFilename: filename,
+						buyer: {
+							address: saleAddress,
+							birthDate,
+							email: saleFileUploadTemplateRow.email,
+							gender: saleFileUploadTemplateRow.gender
+								? (saleFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
+								: PersonEnum.Gender.OTHER,
+							name: saleFileUploadTemplateRow.name,
+							phoneNumber: salePhoneNumber,
+							userId: customer.userId ?? null,
+						},
+						createdDate: createdDate ?? now,
+						createdAt: now,
+						createdByEmployeeId: employeeId as any,
+						createdByUserId: ownerUserId as any,
+						deliveryAt: deliveryDate,
+						type: SalesEnum.Type.MANUAL,
+						header: {
+							billing: saleAddress
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							shipping: saleAddress
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							deliveryType: saleFileUploadTemplateRow.deliveryType
+								? (saleFileUploadTemplateRow.deliveryType.toUpperCase() as SalesEnum.DeliveryType)
+								: SalesEnum.DeliveryType.DELIVERY,
+						},
+						note: saleFileUploadTemplateRow.note,
+						payments: map(
+							payments,
+							(
+								payment: ISaleFileUploadTemplateRowPaymentFormat,
+							): ISalePayment => ({
+								amount: payment.amount,
+								type: payment.type,
+								provider: null,
+								status: SalesEnum.PaymentStatus.PENDING,
+							}),
+						),
+						status: saleFileUploadTemplateRow.saleStatus
+							? (saleFileUploadTemplateRow.saleStatus.toUpperCase() as SalesEnum.Status)
+							: SalesEnum.Status.PENDING,
+						stores: saleStores,
+						totals: {
+							discount: discountAmount
+								? {
+										normal: { amount: discountAmount, note: null },
+								  }
+								: null,
+							shipping: { amount: shippingAmount, note: null },
+							tax: { amount: taxAmount, note: null },
+							subtotalAmount,
+							totalFinalAmount,
+						},
+						paymentStatus: saleFileUploadTemplateRow.paymentStatus
+							? (saleFileUploadTemplateRow.paymentStatus.toUpperCase() as SalesEnum.PaymentStatus)
+							: SalesEnum.PaymentStatus.PENDING,
+						tagsIds: [],
+						updatedByEmployeeId: null,
+						number: 0,
+						softDelete: null,
+						updatedAt: now,
+						updatedByUserId: null,
+					};
+				}
 
 				salesToCreateByUpload.push({
 					customer,
@@ -2213,7 +2308,9 @@ export class SalesService {
 				}
 
 				const salesNumber: number =
-					await this._countersService.findNextNumberBySaleType();
+					saleToCreateByUpload.sale.number != 0
+						? saleToCreateByUpload.sale.number
+						: await this._countersService.findNextNumberBySaleType();
 
 				saleToCreateByUpload.sale.number = salesNumber;
 
@@ -2234,7 +2331,16 @@ export class SalesService {
 					tagsIdsByExistsOrCreated,
 				) as any[];
 
-				await this._saleModel.create(saleToCreateByUpload.sale);
+				if (saleToCreateByUpload.sale._id) {
+					await this._saleModel.findByIdAndUpdate(
+						saleToCreateByUpload.sale._id,
+						{
+							$set: saleToCreateByUpload.sale,
+						},
+					);
+				} else {
+					await this._saleModel.create(saleToCreateByUpload.sale);
+				}
 			} catch (error) {
 				fileUploadTemplateErrorRow.reasons.push({
 					message: `[!] Error when attempt process row: ${error.message}`,
