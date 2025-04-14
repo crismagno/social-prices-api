@@ -2631,23 +2631,27 @@ export class SalesService {
 		const tagsIds: string[] = [];
 
 		for await (const tagToVerify of tagsToVerify) {
-			const tagFromSale: ITag | null = find(tagsFromSale, {
-				name: tagToVerify.name,
-			});
-
-			if (tagFromSale) {
-				tagsIds.push(tagFromSale._id);
-			} else {
-				const tagCreated: ITag = await this._tagsService.create({
-					color: TagsEnum.tagDefaultColor,
-					description: null,
+			try {
+				const tagFromSale: ITag | null = find(tagsFromSale, {
 					name: tagToVerify.name,
-					type: TagsEnum.Type.SALE,
-					userId: tagToVerify.userId as any,
 				});
 
-				tagsFromSale.push(tagCreated);
-				tagsIds.push(tagCreated._id);
+				if (tagFromSale) {
+					tagsIds.push(tagFromSale._id);
+				} else {
+					const tagCreated: ITag = await this._tagsService.create({
+						color: TagsEnum.tagDefaultColor,
+						description: null,
+						name: tagToVerify.name,
+						type: TagsEnum.Type.SALE,
+						userId: tagToVerify.userId as any,
+					});
+
+					tagsFromSale.push(tagCreated);
+					tagsIds.push(tagCreated._id);
+				}
+			} catch (error) {
+				this._logger.error(error);
 			}
 		}
 
