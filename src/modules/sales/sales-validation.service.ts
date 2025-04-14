@@ -51,7 +51,8 @@ export class SalesValidationService {
 			row.getCell('AA')?.text?.trim() !== 'Payment Status' ||
 			row.getCell('AB')?.text?.trim() !== 'Delivery Date' ||
 			row.getCell('AC')?.text?.trim() !== 'Delivery Type' ||
-			row.getCell('AD')?.text?.trim() !== 'Created Date'
+			row.getCell('AD')?.text?.trim() !== 'Created Date' ||
+			row.getCell('AE')?.text?.trim() !== 'Sale Number Manual'
 		) {
 			throw new Error('Invalid template.');
 		}

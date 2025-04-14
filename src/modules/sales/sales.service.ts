@@ -1597,6 +1597,7 @@ export class SalesService {
 			const deliveryDate: string = row.getCell('AB')?.text?.trim();
 			const deliveryType: string = row.getCell('AC')?.text?.trim();
 			const createdDate: string = row.getCell('AD')?.text?.trim();
+			const saleNumberManual: string = row.getCell('AE')?.text?.trim();
 
 			saleFileUploadTemplateRows.push({
 				rowNumber,
@@ -1630,6 +1631,7 @@ export class SalesService {
 				uniqName,
 				deliveryType,
 				createdDate,
+				saleNumberManual,
 			});
 		}
 
@@ -2041,7 +2043,8 @@ export class SalesService {
 				);
 
 				const sale: ISale = {
-					numberManual: null,
+					numberManual:
+						saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
 					_id: null,
 					uploadFilename: filename,
 					buyer: {

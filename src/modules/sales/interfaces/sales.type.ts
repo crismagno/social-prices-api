@@ -104,6 +104,7 @@ export interface ISaleFileUploadTemplateRow {
 	deliveryDate?: string;
 	deliveryType?: string;
 	createdDate?: string;
+	saleNumberManual?: string;
 }
 
 export interface IFiltersDownloadSales {
