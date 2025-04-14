@@ -2062,8 +2062,7 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
-						numberManual:
-							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
+						numberManual: saleBySaleNumberManual.numberManual,
 						_id: saleBySaleNumberManual._id,
 						uploadFilename: saleBySaleNumberManual.uploadFilename,
 						buyer: {
