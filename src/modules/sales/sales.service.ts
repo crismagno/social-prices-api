@@ -5,6 +5,7 @@ import {
 	flatMap,
 	forEach,
 	includes,
+	isArray,
 	map,
 	orderBy,
 	reduce,
@@ -1677,8 +1678,8 @@ export class SalesService {
 				}
 
 				/**
-				 * Deve tentar encontrar o customer se nao encontrar no uniqName, se nao encontrar oelas propriedades, deve criar o customer
-				 * e so criar o customer se passar na validacao da sale
+				 * It should try to find the customer if it is not found in the uniqName, if it is not found in the properties, it should create the customer
+				 * and only create the customer if it passes the sale validation
 				 */
 				const birthDate: Date | null = saleFileUploadTemplateRow.birthDate
 					? parseToDate(saleFileUploadTemplateRow.birthDate)
@@ -1708,13 +1709,11 @@ export class SalesService {
 						});
 					}
 
-					if (birthDate) {
-						if (!birthDate) {
-							fileUploadTemplateErrorRow.reasons.push({
-								message: 'Birth Date invalid format!',
-								property: 'birthDate',
-							});
-						}
+					if (saleFileUploadTemplateRow.birthDate?.trim() && !birthDate) {
+						fileUploadTemplateErrorRow.reasons.push({
+							message: 'Birth Date invalid format!',
+							property: 'birthDate',
+						});
 					}
 
 					if (
@@ -1814,9 +1813,8 @@ export class SalesService {
 							});
 						}
 
-						/**
-						 * TODO - Must validate object format
-						 */
+						selectedProducts =
+							this._getRowSelectedProductsValidated(selectedProducts);
 					} catch (error) {
 						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Selected Products invalid format!',
@@ -1869,9 +1867,7 @@ export class SalesService {
 							});
 						}
 
-						/**
-						 * TODO - Must validate object format
-						 */
+						payments = this._getRowPaymentsValidated(payments);
 					} catch (error) {
 						fileUploadTemplateErrorRow.reasons.push({
 							message: 'Payments invalid format!',
@@ -2656,6 +2652,72 @@ export class SalesService {
 		}
 
 		return tagsIds;
+	}
+
+	private _getRowSelectedProductsValidated(
+		selectedProducts: ISaleFileUploadTemplateSelectedProductFormat[],
+	): ISaleFileUploadTemplateSelectedProductFormat[] {
+		for (const selectedProduct of selectedProducts) {
+			if (!selectedProduct.store) {
+				throw new Error('Store is required!');
+			}
+			selectedProduct.store = selectedProduct.store?.trim();
+			if (!selectedProduct.store) {
+				throw new Error('Store invalid format!');
+			}
+			if (!selectedProduct.products) {
+				throw new Error('Products is required!');
+			}
+			if (!isArray(selectedProduct.products)) {
+				throw new Error('Products invalid format!');
+			}
+			if (selectedProduct.products.length === 0) {
+				throw new Error('Products empty list!');
+			}
+
+			for (const product of selectedProduct.products) {
+				product.barcode = product.barcode?.trim();
+				if (!product.barcode) {
+					throw new Error('Product barcode invalid format!');
+				}
+
+				product.price = parseFloat(product.price.toString());
+				if (isNaN(product.price)) {
+					throw new Error('Product price invalid format!');
+				}
+
+				product.quantity = parseInt(product.quantity.toString(), 10);
+				if (isNaN(product.quantity)) {
+					throw new Error('Product quantity invalid format!');
+				}
+			}
+		}
+
+		return selectedProducts;
+	}
+
+	private _getRowPaymentsValidated(
+		payments: ISaleFileUploadTemplateRowPaymentFormat[],
+	): ISaleFileUploadTemplateRowPaymentFormat[] {
+		for (const payment of payments) {
+			if (!payment.type) {
+				throw new Error('Payment type is required!');
+			}
+
+			payment.type = payment.type.toUpperCase().trim() as SalesEnum.PaymentType;
+
+			if (!includes(Object.keys(SalesEnum.PaymentType), payment.type)) {
+				throw new Error('Payment type invalid!');
+			}
+
+			payment.amount = parseFloat(payment.amount.toString());
+
+			if (isNaN(payment.amount)) {
+				throw new Error('Payment amount invalid format!');
+			}
+		}
+
+		return payments;
 	}
 
 	// #endregion
