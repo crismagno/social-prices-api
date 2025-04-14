@@ -297,6 +297,7 @@ export class CustomersService {
 			uniqName:
 				createCustomerDto.uniqName?.trim() ??
 				createUsernameByName(createCustomerDto.name),
+			uploadFilename: null,
 		});
 
 		const newCustomer: ICustomer = await customer.save();
@@ -349,9 +350,9 @@ export class CustomersService {
 			phoneNumbers: updateCustomerDto.phoneNumbers,
 			tagsIds: updateCustomerDto.tagsIds,
 			updatedAt: now,
-			uniqName:
-				updateCustomerDto.uniqName?.trim() ??
-				createUsernameByName(updateCustomerDto.name),
+			uniqName: updateCustomerDto.uniqName
+				? updateCustomerDto.uniqName?.trim()
+				: createUsernameByName(updateCustomerDto.name),
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;
@@ -469,6 +470,7 @@ export class CustomersService {
 								userId,
 								tags,
 								now,
+								filename,
 							);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
@@ -749,6 +751,7 @@ export class CustomersService {
 		ownerUserId: string,
 		tags: ITag[],
 		now: Date,
+		filename: string,
 	): Promise<IFileUploadTemplateErrorRow<ICustomerFileUploadTemplateRow>[]> {
 		const customersToCreate: ICustomer[] = [];
 
@@ -932,6 +935,7 @@ export class CustomersService {
 						updatedAt: now,
 						userId: null,
 						_id: null,
+						uploadFilename: filename,
 						uniqName: createUsernameByName(customerFileUploadTemplateRow.name),
 					});
 				}

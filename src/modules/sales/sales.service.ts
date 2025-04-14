@@ -1968,6 +1968,7 @@ export class SalesService {
 					customer.phoneNumbers = phoneNumbers;
 				} else {
 					customer = {
+						uploadFilename: filename,
 						avatar: null,
 						name: saleFileUploadTemplateRow.name,
 						email: saleFileUploadTemplateRow.email,

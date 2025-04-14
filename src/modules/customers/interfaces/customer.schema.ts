@@ -55,6 +55,9 @@ export class Customer implements ICustomer {
 	@Prop({ type: String })
 	uniqName: string | null;
 
+	@Prop({ type: String })
+	uploadFilename: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 
