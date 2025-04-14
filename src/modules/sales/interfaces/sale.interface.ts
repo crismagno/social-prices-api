@@ -21,6 +21,7 @@ export interface ISale
 	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 	buyer: ISaleBuyer | null;
 	number: number;
+	numberManual: string | null;
 	type: SalesEnum.Type;
 	totals: ISaleTotals;
 	header: ISaleHeader;

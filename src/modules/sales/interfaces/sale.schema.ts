@@ -337,6 +337,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: String })
 	uploadFilename: string | null;
 
+	@Prop({ type: String })
+	numberManual: string | null;
+
 	@Prop({ type: Date })
 	deliveryAt: Date | null;
 

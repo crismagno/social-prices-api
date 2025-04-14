@@ -390,6 +390,7 @@ export class SalesService {
 				_id: null,
 				deliveryAt: createSaleDto.deliveryAt,
 				uploadFilename: null,
+				numberManual: createSaleDto.numberManual,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -484,6 +485,7 @@ export class SalesService {
 				deliveryAt: updateSaleDto.deliveryAt,
 				createdDate:
 					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
+				numberManual: updateSaleDto.numberManual,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -2039,6 +2041,7 @@ export class SalesService {
 				);
 
 				const sale: ISale = {
+					numberManual: null,
 					_id: null,
 					uploadFilename: filename,
 					buyer: {

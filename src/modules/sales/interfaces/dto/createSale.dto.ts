@@ -251,4 +251,8 @@ export default class CreateSaleDto {
 	@IsString()
 	@IsOptional()
 	createdDate: Date | null;
+
+	@IsString()
+	@IsOptional()
+	numberManual: string | null;
 }

@@ -75,4 +75,8 @@ export default class UpdateSaleDto {
 	@IsString()
 	@IsOptional()
 	createdDate: Date | null;
+
+	@IsString()
+	@IsOptional()
+	numberManual: string | null;
 }
