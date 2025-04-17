@@ -2075,8 +2075,8 @@ export class SalesService {
 						},
 						createdDate: createdDate ?? saleBySaleNumberManual.createdDate,
 						createdAt: saleBySaleNumberManual.createdAt,
-						createdByEmployeeId: employeeId as any,
-						createdByUserId: ownerUserId as any,
+						createdByEmployeeId: saleBySaleNumberManual.createdByEmployeeId,
+						createdByUserId: saleBySaleNumberManual.createdByUserId,
 						deliveryAt: deliveryDate,
 						type: SalesEnum.Type.MANUAL,
 						header: {
