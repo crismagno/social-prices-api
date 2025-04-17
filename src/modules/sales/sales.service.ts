@@ -1376,7 +1376,7 @@ export class SalesService {
 		return productsBalance;
 	};
 
-	//#region Upload Part
+	//#region Upload
 
 	public async uploadSales(
 		files: Express.Multer.File[],
@@ -1917,13 +1917,11 @@ export class SalesService {
 					? parseToDate(saleFileUploadTemplateRow.deliveryDate)
 					: null;
 
-				if (saleFileUploadTemplateRow.deliveryDate) {
-					if (!deliveryDate) {
-						fileUploadTemplateErrorRow.reasons.push({
-							message: 'Delivery Date invalid format!',
-							property: 'deliveryDate',
-						});
-					}
+				if (saleFileUploadTemplateRow.deliveryDate && !deliveryDate) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Delivery Date invalid format!',
+						property: 'deliveryDate',
+					});
 				}
 
 				if (
@@ -1943,13 +1941,11 @@ export class SalesService {
 					? parseToDate(saleFileUploadTemplateRow.createdDate)
 					: null;
 
-				if (saleFileUploadTemplateRow.createdDate) {
-					if (!createdDate) {
-						fileUploadTemplateErrorRow.reasons.push({
-							message: 'Created Date invalid format!',
-							property: 'createdDate',
-						});
-					}
+				if (saleFileUploadTemplateRow.createdDate && !createdDate) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Created Date invalid format!',
+						property: 'createdDate',
+					});
 				}
 
 				if (fileUploadTemplateErrorRow.reasons.length > 0) {
@@ -2133,7 +2129,7 @@ export class SalesService {
 						number: saleBySaleNumberManual.number,
 						softDelete: saleBySaleNumberManual.softDelete,
 						updatedAt: now,
-						updatedByUserId: saleBySaleNumberManual.updatedByUserId,
+						updatedByUserId: ownerUserId as any,
 					};
 				} else {
 					sale = {
@@ -2243,7 +2239,7 @@ export class SalesService {
 		/**
 		 * Process sales to create
 		 */
-		const totalProcessed: number = 0;
+		let totalProcessed: number = 0;
 
 		for await (const saleToCreateByUpload of salesToCreateByUpload) {
 			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
@@ -2252,67 +2248,18 @@ export class SalesService {
 					reasons: [],
 				};
 
-			let customer: ICustomer | undefined;
-
 			try {
-				/**
-				 * Attempt find customer by id or by properties if not find must create
-				 */
-				if (saleToCreateByUpload.customer._id) {
-					customer = await this._customersService.findByIdAndUpdate(
-						saleToCreateByUpload.customer._id,
-						{
-							$addToSet: {
-								addresses: saleToCreateByUpload.customer.addresses,
-								phoneNumbers: saleToCreateByUpload.customer.phoneNumbers,
-							},
-						},
-						{
-							new: true,
-						},
-					);
-				} else {
-					/**
-					 * That code is used because customer can be created by upload
-					 */
-					customer =
-						saleToCreateByUpload.customer.name &&
-						saleToCreateByUpload.customer.email &&
-						saleToCreateByUpload.customer.birthDate
-							? await this._customersService.findByMainPropertiesAndOwnerUserId(
-									saleToCreateByUpload.customer.name,
-									saleToCreateByUpload.customer.email,
-									saleToCreateByUpload.customer.birthDate,
-									ownerUserId,
-							  )
-							: null;
+				const customer: ICustomer = await this._getUpdateCustomerOrInsert(
+					saleToCreateByUpload.customer,
+					ownerUserId,
+				);
 
-					if (customer) {
-						customer = await this._customersService.findByIdAndUpdate(
-							customer._id,
-							{
-								$addToSet: {
-									addresses: saleToCreateByUpload.customer.addresses,
-									phoneNumbers: saleToCreateByUpload.customer.phoneNumbers,
-								},
-							},
-							{
-								new: true,
-							},
-						);
-					} else {
-						customer = await this._customersService.insert(
-							saleToCreateByUpload.customer,
-						);
-					}
-				}
-
-				const salesNumber: number =
+				const saleNumber: number =
 					saleToCreateByUpload.sale.number != 0
 						? saleToCreateByUpload.sale.number
 						: await this._countersService.findNextNumberBySaleType();
 
-				saleToCreateByUpload.sale.number = salesNumber;
+				saleToCreateByUpload.sale.number = saleNumber;
 
 				saleToCreateByUpload.sale.stores =
 					this._setCustomerIdAndSaleNumberOnSaleStores(
@@ -2341,6 +2288,8 @@ export class SalesService {
 				} else {
 					await this._saleModel.create(saleToCreateByUpload.sale);
 				}
+
+				totalProcessed += 1;
 			} catch (error) {
 				fileUploadTemplateErrorRow.reasons.push({
 					message: `[!] Error when attempt process row: ${error.message}`,
@@ -2353,7 +2302,7 @@ export class SalesService {
 
 		return {
 			totalError: fileUploadTemplateErrorRows.length,
-			totalProcessed: totalProcessed,
+			totalProcessed,
 			totalSuccess: salesToCreateByUpload.length,
 			rowsError: fileUploadTemplateErrorRows,
 		};
@@ -2830,6 +2779,61 @@ export class SalesService {
 		}
 
 		return payments;
+	}
+
+	private async _getUpdateCustomerOrInsert(
+		customerToUpdateOrInsert: ICustomer,
+		ownerUserId: string,
+	): Promise<ICustomer> {
+		/**
+		 * Attempt find customer by id or by properties if not find must create
+		 */
+		if (customerToUpdateOrInsert._id) {
+			return this._customersService.findByIdAndUpdate(
+				customerToUpdateOrInsert._id,
+				{
+					$addToSet: {
+						addresses: customerToUpdateOrInsert.addresses,
+						phoneNumbers: customerToUpdateOrInsert.phoneNumbers,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+		}
+
+		/**
+		 * That code is used because customer can be created by upload
+		 */
+		const customer: ICustomer | null =
+			customerToUpdateOrInsert.name &&
+			customerToUpdateOrInsert.email &&
+			customerToUpdateOrInsert.birthDate
+				? await this._customersService.findByMainPropertiesAndOwnerUserId(
+						customerToUpdateOrInsert.name,
+						customerToUpdateOrInsert.email,
+						customerToUpdateOrInsert.birthDate,
+						ownerUserId,
+				  )
+				: null;
+
+		if (customer) {
+			return this._customersService.findByIdAndUpdate(
+				customer._id,
+				{
+					$addToSet: {
+						addresses: customerToUpdateOrInsert.addresses,
+						phoneNumbers: customerToUpdateOrInsert.phoneNumbers,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+		}
+
+		return this._customersService.insert(customerToUpdateOrInsert);
 	}
 
 	// #endregion
