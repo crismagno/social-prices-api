@@ -304,6 +304,7 @@ export class EmployeesService {
 			isMain: !!createEmployeeDto.isMain,
 			createdAt: now,
 			updatedAt: now,
+			uploadFilename: null,
 		});
 
 		const newEmployee: IEmployee = await employee.save();
@@ -564,6 +565,7 @@ export class EmployeesService {
 								userId,
 								tags,
 								now,
+								filename,
 							);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
@@ -845,6 +847,7 @@ export class EmployeesService {
 		userId: string,
 		tags: ITag[],
 		now: Date,
+		filename: string,
 	): Promise<IFileUploadTemplateErrorRow<IEmployeeFileUploadTemplateRow>[]> {
 		const employeesToCreate: IEmployee[] = [];
 
@@ -1065,6 +1068,7 @@ export class EmployeesService {
 						password: hashPassword,
 						status: EmployeesEnum.Status.PENDING,
 						username: createUsernameByName(employeeFileUploadTemplateRow.name),
+						uploadFilename: filename,
 					});
 				}
 			} catch (error: any) {

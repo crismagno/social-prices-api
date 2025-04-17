@@ -50,6 +50,9 @@ export class Product implements IProduct {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: String })
+	uploadFilename: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

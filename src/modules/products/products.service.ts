@@ -238,6 +238,7 @@ export class ProductsService {
 			QRCode: createProductDto.QRCode,
 			createdAt: now,
 			updatedAt: now,
+			uploadFilename: null,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -427,6 +428,7 @@ export class ProductsService {
 								categories,
 								stores,
 								now,
+								filename,
 							);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
@@ -717,6 +719,7 @@ export class ProductsService {
 		categories: ICategory[],
 		stores: IStore[],
 		now: Date,
+		filename: string,
 	): Promise<IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[]> {
 		const productsToCreate: IProduct[] = [];
 
@@ -886,6 +889,7 @@ export class ProductsService {
 						filesUrl: [],
 						mainUrl: null,
 						QRCode: null,
+						uploadFilename: filename,
 					});
 				}
 			} catch (error: any) {

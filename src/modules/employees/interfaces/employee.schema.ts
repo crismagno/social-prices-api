@@ -79,6 +79,9 @@ export class Employee implements IEmployee {
 	@Prop({ type: Boolean })
 	isMain: boolean;
 
+	@Prop({ type: String })
+	uploadFilename: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 
