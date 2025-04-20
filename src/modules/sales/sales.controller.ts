@@ -1,10 +1,14 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Delete,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
+	Res,
 	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
@@ -24,6 +28,7 @@ import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import { ISale } from './interfaces/sale.interface';
 import {
+	IFiltersDownloadSales,
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
@@ -123,5 +128,30 @@ export class SalesController {
 			authPayload._id,
 			authPayload.employeeId,
 		);
+	}
+
+	@Post('/downloadSales')
+	@UsePipes(ValidationPipe)
+	public async downloadSales(
+		@Res() res: Response,
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() filters: IFiltersDownloadSales,
+	): Promise<any> {
+		const buffer: Buffer = await this._salesService.downloadSales(
+			authPayload._id,
+			filters,
+		);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download sales',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileDownloadSales.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }

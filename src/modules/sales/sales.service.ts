@@ -97,6 +97,7 @@ import {
 import { Sale } from './interfaces/sale.schema';
 import SalesEnum from './interfaces/sales.enum';
 import {
+	IFiltersDownloadSales,
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
@@ -2837,4 +2838,174 @@ export class SalesService {
 	}
 
 	// #endregion
+
+	//#region Download
+
+	public async downloadSales(
+		userId: string,
+		filters: IFiltersDownloadSales,
+	): Promise<Buffer> {
+		console.log(filters);
+		// const filter: FilterQuery<IProduct> = {
+		// 	userId,
+		// };
+
+		return null;
+
+		// if (filters.search) {
+		// 	const search = new RegExp(filters.search, 'ig');
+
+		// 	filter.$or = [
+		// 		{
+		// 			name: search,
+		// 		},
+		// 		{
+		// 			barcode: search,
+		// 		},
+		// 		{
+		// 			description: search,
+		// 		},
+		// 	];
+		// }
+
+		// if (filters.storeIds?.length) {
+		// 	filter.storeIds = { $in: filters.storeIds };
+		// }
+
+		// if (filters.categoriesIds?.length) {
+		// 	filter.categoriesIds = { $in: filters.categoriesIds };
+		// }
+
+		// if (filters.tagsIds?.length) {
+		// 	filter.tagsIds = { $in: filters.tagsIds };
+		// }
+
+		// if (!isNil(filters.isActive)) {
+		// 	filter.isActive = filters.isActive;
+		// }
+
+		// const products: IProduct[] = await this._productModel.find(
+		// 	filter,
+		// 	null,
+		// 	queryOptionsBySort<IProduct>({
+		// 		field: filters.sortField as any,
+		// 		order: filters.sortOrder,
+		// 	}),
+		// );
+
+		// const tags: ITag[] = await this._tagsService.findByType(
+		// 	userId,
+		// 	TagsEnum.Type.PRODUCT,
+		// );
+
+		// const categories: ICategory[] = await this._categoriesService.findByType(
+		// 	CategoriesEnum.Type.PRODUCT,
+		// 	userId,
+		// );
+
+		// const stores: IStore[] = await this._storeService.findByUserId(userId);
+
+		// const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		// const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
+
+		// const columns = {
+		// 	image: 'Image',
+		// 	name: 'Name',
+		// 	barcode: 'Barcode',
+		// 	description: 'Description',
+		// 	price: 'Price',
+		// 	quantity: 'Quantity',
+		// 	stores: 'Stores',
+		// 	categories: 'Categories',
+		// 	tags: 'Tags',
+		// 	QRCode: 'QRCode',
+		// 	details: 'Details',
+		// 	createdAt: 'Created At',
+		// 	updatedAt: 'Created At',
+		// };
+
+		// const sheetColumns: any[] = [];
+
+		// for (const columnKey in columns) {
+		// 	sheetColumns.push({
+		// 		header: columns[columnKey],
+		// 		key: columnKey,
+		// 		width: columnKey,
+		// 	});
+		// }
+
+		// worksheet.columns = sheetColumns;
+
+		// for (const product of products) {
+		// 	const tagsNames: string = product.tagsIds.reduce(
+		// 		(acc: string, tagId, index: number) => {
+		// 			const tag = find(tags, { _id: tagId }) as ITag | undefined;
+
+		// 			const isLastIndex: boolean = product.tagsIds.length - 1 === index;
+
+		// 			if (tag) {
+		// 				acc += `${tag.name}${isLastIndex ? '' : ', '}`;
+		// 			}
+
+		// 			return acc;
+		// 		},
+		// 		'',
+		// 	);
+
+		// 	const categoriesNames: string = product.categoriesIds.reduce(
+		// 		(acc: string, categoryId, index: number) => {
+		// 			const category = find(categories, { _id: categoryId }) as
+		// 				| ICategory
+		// 				| undefined;
+
+		// 			const isLastIndex: boolean =
+		// 				product.categoriesIds.length - 1 === index;
+
+		// 			if (category) {
+		// 				acc += `${category.name}${isLastIndex ? '' : ', '}`;
+		// 			}
+
+		// 			return acc;
+		// 		},
+		// 		'',
+		// 	);
+
+		// 	const storesNames: string = product.storeIds.reduce(
+		// 		(acc: string, storeId, index: number) => {
+		// 			const store = find(stores, { _id: storeId }) as IStore | undefined;
+
+		// 			const isLastIndex: boolean =
+		// 				product.categoriesIds.length - 1 === index;
+
+		// 			if (store) {
+		// 				acc += `${store.name}${isLastIndex ? '' : ', '}`;
+		// 			}
+
+		// 			return acc;
+		// 		},
+		// 		'',
+		// 	);
+
+		// 	worksheet.addRow({
+		// 		image: '',
+		// 		name: product.name,
+		// 		tags: tagsNames,
+		// 		createdAt: product.createdAt,
+		// 		barcode: product.barcode,
+		// 		description: product.description,
+		// 		price: product.price,
+		// 		quantity: product.quantity,
+		// 		stores: storesNames,
+		// 		categories: categoriesNames,
+		// 		QRCode: product.QRCode,
+		// 		details: product.details,
+		// 		updatedAt: product.updatedAt,
+		// 	});
+		// }
+
+		// const buffer = await workbook.xlsx.writeBuffer();
+		// return buffer as Buffer;
+	}
+
+	//#endregion
 }

@@ -108,10 +108,16 @@ export interface ISaleFileUploadTemplateRow {
 }
 
 export interface IFiltersDownloadSales {
-	search: string;
-	type: SalesEnum.Type;
+	search: string | null;
 	tagsIds: string[];
-	sortField: string;
+	types: SalesEnum.Type[];
+	rangeCreatedDate: IRangeDate | null;
+	selectedProductIds: string[];
+	deliveryTypes: SalesEnum.DeliveryType[];
+	status: SalesEnum.Status[];
+	paymentStatus: SalesEnum.PaymentStatus[];
+	storeIds: string[];
+	sortField: SalesEnum.SortField;
 	sortOrder: TTableStateSortOrder;
 }
 

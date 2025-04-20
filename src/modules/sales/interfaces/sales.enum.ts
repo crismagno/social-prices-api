@@ -34,6 +34,12 @@ namespace SalesEnum {
 		PENDING = 'PENDING',
 		REFUNDED = 'REFUNDED',
 	}
+
+	export enum SortField {
+		deliveryAt = 'deliveryAt',
+		createdAt = 'createdAt',
+		createdDate = 'createdDate',
+	}
 }
 
 export default SalesEnum;
