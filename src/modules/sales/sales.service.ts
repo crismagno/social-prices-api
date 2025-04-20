@@ -55,7 +55,10 @@ import {
 } from '../../shared/utils/numbers/numbers';
 import { parseAnyStringToObject } from '../../shared/utils/objects/objects';
 import { arrayStringToObjectId } from '../../shared/utils/strings/strings';
-import { queryOptions } from '../../shared/utils/table/table-state';
+import {
+	queryOptions,
+	queryOptionsBySort,
+} from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -222,6 +225,9 @@ export class SalesService {
 				},
 				{
 					'buyer.email': search,
+				},
+				{
+					numberManual: search,
 				},
 			];
 
@@ -2845,65 +2851,124 @@ export class SalesService {
 		userId: string,
 		filters: IFiltersDownloadSales,
 	): Promise<Buffer> {
-		console.log(filters);
-		// const filter: FilterQuery<IProduct> = {
-		// 	userId,
-		// };
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		const filter: FilterQuery<ISale> = {
+			$or: [
+				{ createdByUserId: userId },
+				{
+					'stores.storeId': { $in: storesIds },
+				},
+			],
+			softDelete: null,
+		};
+
+		if (filters.search) {
+			const search = new RegExp(filters.search, 'ig');
+
+			filter.$or = [
+				{
+					description: search,
+				},
+				{
+					'buyer.name': search,
+				},
+				{
+					'buyer.email': search,
+				},
+			];
+
+			if (isNumber(+filters.search)) {
+				filter.$or.push({
+					number: +filters.search,
+				});
+			}
+		}
+
+		if (filters?.types?.length) {
+			filter.type = { $in: filters.types };
+		}
+
+		if (filters?.status?.length) {
+			filter.status = { $in: filters.status };
+		}
+
+		if (filters?.paymentStatus?.length) {
+			filter.paymentStatus = { $in: filters.paymentStatus };
+		}
+
+		if (filters?.deliveryTypes?.length) {
+			filter['header.deliveryType'] = { $in: filters.deliveryTypes };
+		}
+
+		if (filters?.storeIds?.length) {
+			filter['stores.storeId'] = { $in: filters.storeIds };
+		}
+
+		if (filters?.rangeCreatedDate) {
+			const { startDate, endDate } = filters.rangeCreatedDate;
+			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
+		if (filters?.tagsIds?.length) {
+			filter.tagsIds = { $in: filters.tagsIds };
+		}
+
+		if (filters?.selectedProductIds?.length) {
+			filter['stores.products.productId'] = {
+				$in: filters?.selectedProductIds,
+			};
+		}
+
+		let sales: ISale[] = await this._saleModel
+			.find(
+				filter,
+				null,
+				queryOptionsBySort<ISale>({
+					field: filters.sortField as any,
+					order: filters.sortOrder,
+				}),
+			)
+			.populate({
+				path: 'stores.customerId',
+				model: 'Customer',
+			})
+			.populate({
+				path: 'stores.products.productId',
+				model: 'Product',
+			});
+
+		sales = JSON.parse(JSON.stringify(sales));
+
+		sales.forEach((sale: ISale) => {
+			sale.stores = JSON.parse(JSON.stringify(sale.stores)).map(
+				(store: ISaleStore) => {
+					store.products = JSON.parse(JSON.stringify(store.products)).map(
+						(product: ISaleStoreProduct) => {
+							return {
+								...product,
+								product: product.productId,
+							};
+						},
+					);
+
+					return {
+						...store,
+						customer: store.customerId,
+					};
+				},
+			);
+		});
+
+		const data = sales;
+
+		console.log('data: ', data.length);
+
+		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
+		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Data');
 
 		return null;
-
-		// if (filters.search) {
-		// 	const search = new RegExp(filters.search, 'ig');
-
-		// 	filter.$or = [
-		// 		{
-		// 			name: search,
-		// 		},
-		// 		{
-		// 			barcode: search,
-		// 		},
-		// 		{
-		// 			description: search,
-		// 		},
-		// 	];
-		// }
-
-		// if (filters.storeIds?.length) {
-		// 	filter.storeIds = { $in: filters.storeIds };
-		// }
-
-		// if (filters.categoriesIds?.length) {
-		// 	filter.categoriesIds = { $in: filters.categoriesIds };
-		// }
-
-		// if (filters.tagsIds?.length) {
-		// 	filter.tagsIds = { $in: filters.tagsIds };
-		// }
-
-		// if (!isNil(filters.isActive)) {
-		// 	filter.isActive = filters.isActive;
-		// }
-
-		// const products: IProduct[] = await this._productModel.find(
-		// 	filter,
-		// 	null,
-		// 	queryOptionsBySort<IProduct>({
-		// 		field: filters.sortField as any,
-		// 		order: filters.sortOrder,
-		// 	}),
-		// );
-
-		// const tags: ITag[] = await this._tagsService.findByType(
-		// 	userId,
-		// 	TagsEnum.Type.PRODUCT,
-		// );
-
-		// const categories: ICategory[] = await this._categoriesService.findByType(
-		// 	CategoriesEnum.Type.PRODUCT,
-		// 	userId,
-		// );
-
-		// const stores: IStore[] = await this._storeService.findByUserId(userId);
 
 		// const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
 		// const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');

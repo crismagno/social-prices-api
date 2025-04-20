@@ -542,7 +542,7 @@ export class ProductsService {
 		const stores: IStore[] = await this._storeService.findByUserId(userId);
 
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
-		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
+		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Data');
 
 		const columns = {
 			image: 'Image',
