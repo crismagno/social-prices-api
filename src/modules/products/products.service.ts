@@ -557,7 +557,7 @@ export class ProductsService {
 			QRCode: 'QRCode',
 			details: 'Details',
 			createdAt: 'Created At',
-			updatedAt: 'Created At',
+			updatedAt: 'Updated At',
 		};
 
 		const sheetColumns: any[] = [];

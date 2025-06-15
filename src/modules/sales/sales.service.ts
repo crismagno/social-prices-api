@@ -38,6 +38,7 @@ import {
 	IChartDateTotalItem,
 	IChartTotalAndQuantity,
 } from '../../shared/utils/charts/charts-types';
+import DatesEnum from '../../shared/utils/dates/dates.enum';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import {
 	createUsernameByName,
@@ -2851,14 +2852,14 @@ export class SalesService {
 		userId: string,
 		filters: IFiltersDownloadSales,
 	): Promise<Buffer> {
-		const storesIds: string[] =
-			await this._storesService.findStoreIdsByUserId(userId);
+		const stores: IStore[] =
+			await this._storesService.findStoresByUserId(userId);
 
 		const filter: FilterQuery<ISale> = {
 			$or: [
 				{ createdByUserId: userId },
 				{
-					'stores.storeId': { $in: storesIds },
+					'stores.storeId': { $in: map(stores, '_id') },
 				},
 			],
 			softDelete: null,
@@ -2961,115 +2962,180 @@ export class SalesService {
 			);
 		});
 
-		const data = sales;
-
-		console.log('data: ', data.length);
-
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
 		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Data');
 
-		return null;
+		const columns = {
+			number: 'Number',
+			numberManual: 'Number Manual',
+			uniqName: 'Uniq Name',
+			name: 'Name',
+			email: 'Email',
+			birthDate: 'Birth Date',
+			gender: 'Gender',
+			about: 'About',
+			country: 'Country',
+			state: 'State',
+			city: 'City',
+			zipCode: 'Zip Code',
+			address1: 'Address1',
+			address2: 'Address2',
+			district: 'District',
+			addressDescription: 'Address Description',
+			addressTypes: 'Address Types',
+			phoneType: 'Phone Type',
+			phoneNumber: 'Phone Number',
+			phoneMessengers: 'Phone Messengers',
+			selectedProducts: 'Selected Products',
+			discount: 'Discount',
+			shipping: 'Shipping',
+			tax: 'Tax',
+			payments: 'Payments',
+			note: 'Note',
+			tags: 'Tags',
+			saleStatus: 'Sale Status',
+			paymentStatus: 'Payment Status',
+			deliveryDate: 'Delivery Date',
+			deliveryType: 'Delivery Type',
+			createdDate: 'Created Date',
+			createdAt: 'Created At',
+		};
 
-		// const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
-		// const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Errors');
+		const sheetColumns: any[] = [];
 
-		// const columns = {
-		// 	image: 'Image',
-		// 	name: 'Name',
-		// 	barcode: 'Barcode',
-		// 	description: 'Description',
-		// 	price: 'Price',
-		// 	quantity: 'Quantity',
-		// 	stores: 'Stores',
-		// 	categories: 'Categories',
-		// 	tags: 'Tags',
-		// 	QRCode: 'QRCode',
-		// 	details: 'Details',
-		// 	createdAt: 'Created At',
-		// 	updatedAt: 'Created At',
-		// };
+		for (const columnKey in columns) {
+			sheetColumns.push({
+				header: columns[columnKey],
+				key: columnKey,
+				width: columnKey,
+			});
+		}
 
-		// const sheetColumns: any[] = [];
+		worksheet.columns = sheetColumns;
 
-		// for (const columnKey in columns) {
-		// 	sheetColumns.push({
-		// 		header: columns[columnKey],
-		// 		key: columnKey,
-		// 		width: columnKey,
-		// 	});
-		// }
+		const tags: ITag[] = await this._tagsService.findByType(
+			userId,
+			TagsEnum.Type.SALE,
+		);
 
-		// worksheet.columns = sheetColumns;
+		for (const sale of sales) {
+			const tagsNames: string = reduce(
+				sale.tagsIds,
+				(acc: string, tagId, index: number) => {
+					const tag = find(
+						tags,
+						(tagParam) => tagParam._id.toString() === tagId.toString(),
+					) as ITag | undefined;
 
-		// for (const product of products) {
-		// 	const tagsNames: string = product.tagsIds.reduce(
-		// 		(acc: string, tagId, index: number) => {
-		// 			const tag = find(tags, { _id: tagId }) as ITag | undefined;
+					const isLastIndex: boolean = sale.tagsIds.length - 1 === index;
 
-		// 			const isLastIndex: boolean = product.tagsIds.length - 1 === index;
+					if (tag) {
+						acc += `${tag.name}${isLastIndex ? '' : ', '}`;
+					}
 
-		// 			if (tag) {
-		// 				acc += `${tag.name}${isLastIndex ? '' : ', '}`;
-		// 			}
+					return acc;
+				},
+				'',
+			);
 
-		// 			return acc;
-		// 		},
-		// 		'',
-		// 	);
+			const customer: ICustomer | null = await this._customersService.findById(
+				sale.stores[0].customerId as any,
+			);
 
-		// 	const categoriesNames: string = product.categoriesIds.reduce(
-		// 		(acc: string, categoryId, index: number) => {
-		// 			const category = find(categories, { _id: categoryId }) as
-		// 				| ICategory
-		// 				| undefined;
+			const birthDate: Date | null =
+				customer?.birthDate ?? sale.buyer.birthDate;
 
-		// 			const isLastIndex: boolean =
-		// 				product.categoriesIds.length - 1 === index;
+			worksheet.addRow({
+				number: sale.number,
+				numberManual: sale.numberManual ?? '',
+				uniqName: customer?.uniqName ?? '',
+				name: customer?.name ?? sale.buyer.name ?? '',
+				email: customer?.email ?? sale.buyer.email,
+				birthDate: moment(birthDate).format(DatesEnum.Format.MMDDYYYY),
+				gender: PersonEnum.GenderLabels[customer?.gender ?? sale.buyer.gender],
+				about: customer?.about,
+				country: sale.buyer.address?.country?.name ?? '',
+				state: sale.buyer.address?.state?.name,
+				city: sale.buyer.address?.city,
+				zipCode: sale.buyer.address?.zip,
+				address1: sale.buyer.address?.address1,
+				address2: sale.buyer.address?.address2,
+				district: sale.buyer.address?.district,
+				addressDescription: sale.buyer.address?.description,
+				addressTypes: sale.buyer.address.types?.length
+					? map(
+							sale.buyer.address.types,
+							(type: AddressEnum.Type) => AddressEnum.TypesLabels[type],
+					  ).join(', ')
+					: '',
+				phoneType: sale.buyer.phoneNumber?.type
+					? PhoneNumberEnum.TypeLabels[sale.buyer.phoneNumber.type]
+					: '',
+				phoneNumber: sale.buyer.phoneNumber?.number ?? '',
+				phoneMessengers: sale.buyer.phoneNumber?.messengers?.length
+					? map(
+							sale.buyer.phoneNumber.messengers,
+							(messenger: PhoneNumberEnum.PhoneNumberMessenger) =>
+								PhoneNumberEnum.PhoneNumberMessengerLabels[messenger],
+					  ).join(', ')
+					: '',
+				selectedProducts: map(sale.stores, (store: ISaleStore) => {
+					const findStore: IStore | undefined = find(stores, {
+						_id: store.storeId,
+					}) as IStore | undefined;
 
-		// 			if (category) {
-		// 				acc += `${category.name}${isLastIndex ? '' : ', '}`;
-		// 			}
+					return {
+						store: findStore?.name ?? '',
+						products: map(
+							store.products,
+							(saleStoreProduct: ISaleStoreProduct) => {
+								return {
+									barcode: saleStoreProduct?.barcode ?? '',
+									quantity: saleStoreProduct.quantity,
+									price: saleStoreProduct.price.toFixed(2),
+								};
+							},
+						),
+					};
+				}),
+				discount: sale.totals.discount?.normal.amount
+					? sale.totals.discount?.normal.amount.toFixed(2)
+					: 0,
+				shipping: sale.totals.shipping.amount
+					? sale.totals.shipping.amount.toFixed(2)
+					: 0,
+				tax: sale.totals.tax.amount ? sale.totals.tax.amount.toFixed(2) : 0,
+				payments: sale.payments.length
+					? map(sale.payments, (payment: ISalePayment) => {
+							return {
+								type: SalesEnum.PaymentTypeLabels[payment.type],
+								amount: payment.amount.toFixed(2),
+							};
+					  })
+					: '',
+				note: sale.note,
+				tags: tagsNames,
+				saleStatus: SalesEnum.StatusLabels[sale.status],
+				paymentStatus: SalesEnum.PaymentStatusLabels[sale.paymentStatus],
+				deliveryDate: sale.deliveryAt
+					? moment(sale.deliveryAt).format(
+							DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
+					  )
+					: '',
+				deliveryType: sale.header.deliveryType
+					? SalesEnum.DeliveryTypeLabels[sale.header.deliveryType]
+					: '',
+				createdDate: moment(sale.createdDate).format(
+					DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
+				),
+				createdAt: moment(sale.createdAt).format(
+					DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
+				),
+			});
+		}
 
-		// 			return acc;
-		// 		},
-		// 		'',
-		// 	);
-
-		// 	const storesNames: string = product.storeIds.reduce(
-		// 		(acc: string, storeId, index: number) => {
-		// 			const store = find(stores, { _id: storeId }) as IStore | undefined;
-
-		// 			const isLastIndex: boolean =
-		// 				product.categoriesIds.length - 1 === index;
-
-		// 			if (store) {
-		// 				acc += `${store.name}${isLastIndex ? '' : ', '}`;
-		// 			}
-
-		// 			return acc;
-		// 		},
-		// 		'',
-		// 	);
-
-		// 	worksheet.addRow({
-		// 		image: '',
-		// 		name: product.name,
-		// 		tags: tagsNames,
-		// 		createdAt: product.createdAt,
-		// 		barcode: product.barcode,
-		// 		description: product.description,
-		// 		price: product.price,
-		// 		quantity: product.quantity,
-		// 		stores: storesNames,
-		// 		categories: categoriesNames,
-		// 		QRCode: product.QRCode,
-		// 		details: product.details,
-		// 		updatedAt: product.updatedAt,
-		// 	});
-		// }
-
-		// const buffer = await workbook.xlsx.writeBuffer();
-		// return buffer as Buffer;
+		const buffer = await workbook.xlsx.writeBuffer();
+		return buffer as Buffer;
 	}
 
 	//#endregion

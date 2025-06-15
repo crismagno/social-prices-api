@@ -83,6 +83,10 @@ export class StoresService {
 		return storesIds.map((storeId) => storeId.toString());
 	}
 
+	public async findStoresByUserId(userId: string): Promise<IStore[]> {
+		return this._storeModel.find({ userId }, { _id: 1 });
+	}
+
 	public async findByUserTableState(
 		userId: string,
 		tableState: ITableStateRequest<IStore>,
