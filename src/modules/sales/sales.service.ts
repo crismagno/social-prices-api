@@ -614,11 +614,13 @@ export class SalesService {
 				sales,
 				storesIds,
 				params.periodType,
+				params.productIds,
 			);
 
 		const chartDataProducts = await this._parseSalesToChartDataProducts(
 			sales,
 			storesIds,
+			params.productIds,
 		);
 
 		return {
@@ -977,6 +979,7 @@ export class SalesService {
 		sales: ISale[],
 		storeIds: string[],
 		periodType: ChartsEnum.PeriodType,
+		productIds: string[] = [],
 	): IChartDataPeriodTypeItem[] {
 		const chartDataItems: IChartDateTotalItem[] = reduce(
 			sales,
@@ -984,12 +987,30 @@ export class SalesService {
 				const totalAndQuantity = sale.stores.reduce(
 					(acc: IChartTotalAndQuantity, saleStore: ISaleStore) => {
 						if (includes(storeIds, saleStore.storeId.toString())) {
-							acc.total += saleStore.totals.totalFinalAmount;
-							acc.quantity += reduce(
-								saleStore.products,
-								(acc2, curr2) => (acc2 += curr2.quantity),
-								0,
-							);
+							const saleStoreProductsTotalQuantity: IChartTotalAndQuantity =
+								reduce(
+									saleStore.products,
+									(acc2: IChartTotalAndQuantity, curr2: ISaleStoreProduct) => {
+										if (
+											productIds.length > 0 &&
+											!includes(productIds, curr2.productId.toString())
+										) {
+											return acc2;
+										}
+
+										acc2.quantity += curr2.quantity;
+										acc2.total += curr2.price * curr2.quantity;
+
+										return acc2;
+									},
+									{
+										total: 0,
+										quantity: 0,
+									},
+								);
+
+							acc.total += saleStoreProductsTotalQuantity.total;
+							acc.quantity += saleStoreProductsTotalQuantity.quantity;
 						}
 
 						return acc;
@@ -1016,6 +1037,7 @@ export class SalesService {
 	private async _parseSalesToChartDataProducts(
 		sales: ISale[],
 		storeIds: string[],
+		productIds: string[] = [],
 	): Promise<{
 		chartDataProductsByTotal: IChartDataProductItem[];
 		chartDataProductsByQuantity: IChartDataProductItem[];
@@ -1049,6 +1071,13 @@ export class SalesService {
 				acc: IChartDataProductItem[],
 				saleStoreProduct: ISaleStoreProductString,
 			) => {
+				if (
+					productIds.length > 0 &&
+					!includes(productIds, saleStoreProduct.productId)
+				) {
+					return acc;
+				}
+
 				const findChartDataProductItem: IChartDataProductItem | undefined =
 					find(acc, {
 						productId: saleStoreProduct.productId,
