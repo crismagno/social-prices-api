@@ -84,7 +84,7 @@ export class StoresService {
 	}
 
 	public async findStoresByUserId(userId: string): Promise<IStore[]> {
-		return this._storeModel.find({ userId }, { _id: 1 });
+		return this._storeModel.find({ userId });
 	}
 
 	public async findByUserTableState(

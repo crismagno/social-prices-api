@@ -3079,15 +3079,17 @@ export class SalesService {
 								PhoneNumberEnum.PhoneNumberMessengerLabels[messenger],
 					  ).join(', ')
 					: '',
-				selectedProducts: map(sale.stores, (store: ISaleStore) => {
-					const findStore: IStore | undefined = find(stores, {
-						_id: store.storeId,
-					}) as IStore | undefined;
+				selectedProducts: map(sale.stores, (saleStore: ISaleStore) => {
+					const findStore: IStore | undefined = find(
+						stores,
+						(store: IStore) =>
+							store._id.toString() === saleStore.storeId.toString(),
+					) as IStore | undefined;
 
 					return {
 						store: findStore?.name ?? '',
 						products: map(
-							store.products,
+							saleStore.products,
 							(saleStoreProduct: ISaleStoreProduct) => {
 								return {
 									barcode: saleStoreProduct?.barcode ?? '',
