@@ -1400,12 +1400,13 @@ export class SalesService {
 				);
 			if (findProductBalance) {
 				findProductBalance.quantity += saleStoreProduct.quantity;
-				findProductBalance.total += saleStoreProduct.price;
+				findProductBalance.total +=
+					saleStoreProduct.quantity * saleStoreProduct.price;
 			} else {
 				productsBalance.push({
 					productId: saleStoreProduct.productId.toString(),
 					quantity: saleStoreProduct.quantity,
-					total: saleStoreProduct.price,
+					total: saleStoreProduct.quantity * saleStoreProduct.price,
 				});
 			}
 		}
