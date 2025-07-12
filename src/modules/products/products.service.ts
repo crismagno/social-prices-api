@@ -235,6 +235,7 @@ export class ProductsService {
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
 			barcode: valueOrCreateUniqueSuffix(createProductDto.barcode),
+			previousBarcodes: [],
 			QRCode: createProductDto.QRCode,
 			createdAt: now,
 			updatedAt: now,
@@ -297,6 +298,14 @@ export class ProductsService {
 
 		const now: Date = new Date();
 
+		const barcode: string = valueOrCreateUniqueSuffix(updateProductDto.barcode);
+
+		const previousBarcodes: string[] = product.previousBarcodes ?? [];
+
+		if (!!product.barcode?.trim() && product.barcode !== barcode) {
+			previousBarcodes.push(product.barcode);
+		}
+
 		const productUpdated: IProduct = await this._productModel.findByIdAndUpdate(
 			product._id,
 			{
@@ -311,7 +320,8 @@ export class ProductsService {
 					storeIds: updateProductDto.storeIds,
 					categoriesIds: updateProductDto.categoriesIds,
 					tagsIds: updateProductDto.tagsIds,
-					barcode: valueOrCreateUniqueSuffix(updateProductDto.barcode),
+					barcode,
+					previousBarcodes,
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
 					updatedAt: now,
@@ -890,6 +900,7 @@ export class ProductsService {
 						mainUrl: null,
 						QRCode: null,
 						uploadFilename: filename,
+						previousBarcodes: [],
 					});
 				}
 			} catch (error: any) {

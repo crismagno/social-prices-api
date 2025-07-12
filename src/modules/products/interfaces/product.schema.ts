@@ -38,6 +38,9 @@ export class Product implements IProduct {
 	@Prop({ type: String, sparse: true })
 	barcode: string | null;
 
+	@Prop({ type: [String] })
+	previousBarcodes: string[];
+
 	@Prop({ type: String })
 	QRCode: string | null;
 
