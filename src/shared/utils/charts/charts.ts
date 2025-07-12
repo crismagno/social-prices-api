@@ -14,7 +14,7 @@ export const parseToChartDataPeriodTypeItemByHour = (
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = [];
 
-	for (let hour = 1; hour < 25; hour += 1) {
+	for (let hour = 0; hour < 24; hour += 1) {
 		const totalAndQuantity: IChartTotalAndQuantity = items.reduce(
 			(acc: IChartTotalAndQuantity, item: IChartDateTotalItem) => {
 				if (
