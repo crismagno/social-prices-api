@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import AddressEnum from '../enums/address.enum';
+import AddressEnum from './address.enum';
 
 export const CodeNameSchema = new mongoose.Schema(
 	{

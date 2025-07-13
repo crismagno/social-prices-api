@@ -1,4 +1,4 @@
-import PersonEnum from '../../../shared/enums/person.enum';
+import PersonEnum from '../../../shared/common/person/person.enum';
 import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
 import EmployeesEnum from './employees.enum';
 

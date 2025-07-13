@@ -1,10 +1,10 @@
 import { map } from 'lodash';
 import mongoose from 'mongoose';
 
-import AddressEnum from '../../enums/address.enum';
-import PhoneNumberEnum from '../../enums/phone-number.enum';
-import { IAddress } from '../../interfaces/address.interface';
-import { IPhoneNumber } from '../../interfaces/phone-number.interface';
+import AddressEnum from '../../common/address/address.enum';
+import { IAddress } from '../../common/address/address.interface';
+import PhoneNumberEnum from '../../common/phone/phone-number.enum';
+import { IPhoneNumber } from '../../common/phone/phone-number.interface';
 
 export const arrayStringToObjectId = (
 	values: string[],

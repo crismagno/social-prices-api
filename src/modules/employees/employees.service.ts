@@ -13,11 +13,11 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import AddressEnum from '../../shared/enums/address.enum';
-import PersonEnum from '../../shared/enums/person.enum';
-import PhoneNumberEnum from '../../shared/enums/phone-number.enum';
-import { IAddress } from '../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../shared/interfaces/phone-number.interface';
+import AddressEnum from '../../shared/common/address/address.enum';
+import { IAddress } from '../../shared/common/address/address.interface';
+import PersonEnum from '../../shared/common/person/person.enum';
+import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
+import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import {
 	createUsernameByName,

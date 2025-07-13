@@ -1,6 +1,6 @@
-import PersonEnum from '../../../shared/enums/person.enum';
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 import { IUserEntity } from './users.types';

@@ -7,7 +7,7 @@ import {
 	IsString,
 } from 'class-validator';
 
-import AddressEnum from '../enums/address.enum';
+import AddressEnum from './address.enum';
 
 export class AddressStateDto {
 	@IsString()

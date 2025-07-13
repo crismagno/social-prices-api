@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
-import { ISoftDeleteEntity } from '../../../shared/interfaces/soft-delete.interface';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
+import { ISoftDeleteEntity } from '../../../shared/common/soft-delete/soft-delete.interface';
 import StoresEnum from './stores.enum';
 
 export interface IStore

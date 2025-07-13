@@ -1,6 +1,6 @@
 import { IsArray, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
-import PhoneNumberEnum from '../enums/phone-number.enum';
+import PhoneNumberEnum from './phone-number.enum';
 
 export class CreatePhoneNumberDto {
 	@IsString()

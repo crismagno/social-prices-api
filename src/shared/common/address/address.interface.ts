@@ -1,4 +1,4 @@
-import AddressEnum from '../enums/address.enum';
+import AddressEnum from './address.enum';
 
 export interface IAddress {
 	address1: string;

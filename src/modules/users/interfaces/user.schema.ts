@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
-import PersonEnum from '../../../shared/enums/person.enum';
-import { AddressSchema } from '../../../shared/schemas/address.schema';
-import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
+import { AddressSchema } from '../../../shared/common/address/address.schema';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 

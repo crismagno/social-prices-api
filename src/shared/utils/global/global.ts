@@ -1,7 +1,7 @@
 import { isNil } from 'lodash';
 import { extname } from 'path';
 
-import AppEnum from '../../enums/app.enum';
+import AppEnum from '../../common/global/app.enum';
 import GlobalEnum from './global-enum';
 
 export const isValidEmail = (email: string): boolean => {

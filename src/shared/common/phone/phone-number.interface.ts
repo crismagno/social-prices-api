@@ -1,4 +1,4 @@
-import PhoneNumberEnum from '../enums/phone-number.enum';
+import PhoneNumberEnum from './phone-number.enum';
 
 export interface IPhoneNumber {
 	uid: string;

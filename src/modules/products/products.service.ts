@@ -18,7 +18,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import CommonEnum from '../../shared/enums/common.enum';
+import CommonEnum from '../../shared/common/global/common.enum';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import {
 	arrayObjectIdToString,

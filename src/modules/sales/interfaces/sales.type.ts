@@ -1,4 +1,4 @@
-import { IRangeDate } from '../../../shared/interfaces/global.interface';
+import { IRangeDate } from '../../../shared/common/global/global.interface';
 import ChartsEnum from '../../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,

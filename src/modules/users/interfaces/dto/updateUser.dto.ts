@@ -1,6 +1,6 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import PersonEnum from '../../../../shared/enums/person.enum';
+import PersonEnum from '../../../../shared/common/person/person.enum';
 
 export default class UpdateUserDto {
 	@IsString()

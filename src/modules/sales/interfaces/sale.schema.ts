@@ -2,13 +2,13 @@ import mongoose, { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import PersonEnum from '../../../shared/enums/person.enum';
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
-import { ISoftDelete } from '../../../shared/interfaces/soft-delete.interface';
-import { AddressSchema } from '../../../shared/schemas/address.schema';
-import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
-import { SoftDeleteSchema } from '../../../shared/schemas/soft-delete.schema';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { AddressSchema } from '../../../shared/common/address/address.schema';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
+import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
+import { ISoftDelete } from '../../../shared/common/soft-delete/soft-delete.interface';
+import { SoftDeleteSchema } from '../../../shared/common/soft-delete/soft-delete.schema';
 import {
 	ISale,
 	ISaleAmountNote,

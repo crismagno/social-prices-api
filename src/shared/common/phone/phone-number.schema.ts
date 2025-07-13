@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import PhoneNumberEnum from '../enums/phone-number.enum';
+import PhoneNumberEnum from './phone-number.enum';
 
 export const PhoneNumberSchema = new mongoose.Schema(
 	{

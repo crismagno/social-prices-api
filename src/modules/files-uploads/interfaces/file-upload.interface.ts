@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
 import FilesUploadsEnum from './files-uploads.enum';
 
 export interface IFileUpload extends ICreatedAtEntity, IUpdatedAtEntity {

@@ -9,7 +9,7 @@ import {
 
 import AuthorizationToken from '../../infra/authorization/authorization-token';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import PersonEnum from '../../shared/enums/person.enum';
+import PersonEnum from '../../shared/common/person/person.enum';
 import {
 	createNameByEmail,
 	createUsernameByEmail,

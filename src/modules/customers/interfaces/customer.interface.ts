@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
-import PersonEnum from '../../../shared/enums/person.enum';
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number.interface';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 
 export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;

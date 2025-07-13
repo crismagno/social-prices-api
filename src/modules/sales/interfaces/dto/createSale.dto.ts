@@ -11,9 +11,9 @@ import {
 	ValidateNested,
 } from 'class-validator';
 
-import { CreateAddressDto } from '../../../../shared/dtos/CreateAddress.dto';
-import { CreatePhoneNumberDto } from '../../../../shared/dtos/CreatePhoneNumber.dto';
-import PersonEnum from '../../../../shared/enums/person.enum';
+import { CreateAddressDto } from '../../../../shared/common/address/CreateAddress.dto';
+import PersonEnum from '../../../../shared/common/person/person.enum';
+import { CreatePhoneNumberDto } from '../../../../shared/common/phone/CreatePhoneNumber.dto';
 import SalesEnum from '../sales.enum';
 
 export class SaleAmountNoteDto {
