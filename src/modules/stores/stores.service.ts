@@ -220,6 +220,8 @@ export class StoresService {
 			tagsIds: createStoreDto.tagsIds,
 			createdAt: now,
 			updatedAt: now,
+			cnpj: createStoreDto.cnpj,
+			type: createStoreDto.type,
 		});
 
 		const newStore: IStore = await store.save();
@@ -289,6 +291,8 @@ export class StoresService {
 			categoriesIds: updateStoreDto.categoriesIds,
 			tagsIds: updateStoreDto.tagsIds,
 			updatedAt: now,
+			cnpj: updateStoreDto.cnpj,
+			type: updateStoreDto.type,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;

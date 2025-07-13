@@ -24,4 +24,6 @@ export interface IStore
 	about: string | null;
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+	cnpj: string | null;
+	type: StoresEnum.Type | null;
 }

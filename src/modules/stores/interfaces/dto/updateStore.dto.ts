@@ -38,4 +38,12 @@ export default class UpdateStoreDto {
 	@IsString()
 	@IsOptional()
 	status: StoresEnum.Status | null;
+
+	@IsString()
+	@IsOptional()
+	cnpj: string | null;
+
+	@IsString()
+	@IsOptional()
+	type: StoresEnum.Type | null;
 }

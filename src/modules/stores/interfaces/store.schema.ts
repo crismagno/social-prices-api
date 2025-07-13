@@ -46,6 +46,18 @@ export class Store implements IStore {
 	@Prop({ type: String })
 	description: string | null;
 
+	@Prop({ type: String })
+	cnpj: string | null;
+
+	@Prop({
+		type: String,
+		enum: {
+			values: Object.keys(StoresEnum.Type),
+			message: '{VALUE} is not supported',
+		},
+	})
+	type: StoresEnum.Type | null;
+
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 
