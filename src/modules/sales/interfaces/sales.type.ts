@@ -48,6 +48,7 @@ export interface ISaleStoreProductString {
 
 export interface IGetSalesBalanceParams {
 	rangeDate?: IRangeDate;
+	storeId?: string;
 }
 
 export interface IGetSalesBalanceResponse {

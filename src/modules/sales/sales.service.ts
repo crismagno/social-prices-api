@@ -633,8 +633,9 @@ export class SalesService {
 		userId: string,
 		params: IGetSalesBalanceParams,
 	): Promise<IGetSalesBalanceResponse> {
-		const storesIds: string[] =
-			await this._storesService.findStoreIdsByUserId(userId);
+		const storesIds: string[] = params.storeId
+			? [params.storeId]
+			: await this._storesService.findStoreIdsByUserId(userId);
 
 		const filter: FilterQuery<ISale> = {
 			'stores.storeId': { $in: storesIds },
@@ -647,7 +648,10 @@ export class SalesService {
 
 		const sales: ISale[] = await this._saleModel.find(filter);
 
-		return this._parseSalesToSalesBalance(sales);
+		return this._parseSalesToSalesBalance({
+			sales,
+			storeId: params.storeId,
+		});
 	}
 
 	public async findByNumberManual(numberManual: string): Promise<ISale | null> {
@@ -1182,9 +1186,13 @@ export class SalesService {
 		return chartDataProductItemsByOrder;
 	}
 
-	private async _parseSalesToSalesBalance(
-		sales: ISale[],
-	): Promise<IGetSalesBalanceResponse> {
+	private async _parseSalesToSalesBalance({
+		sales,
+		storeId,
+	}: {
+		sales: ISale[];
+		storeId?: string;
+	}): Promise<IGetSalesBalanceResponse> {
 		const salesBalanceResponse: IGetSalesBalanceResponse = {
 			annual: {
 				quantity: 0,
@@ -1221,10 +1229,11 @@ export class SalesService {
 		const endYear = moment().endOf('year');
 
 		for (const sale of sales) {
-			const quantity: number = this._getQuantityBySale(sale);
+			const quantity: number = this._getQuantityBySale({ sale, storeId });
 
-			const saleStoreProducts: ISaleStoreProduct[] =
-				this._getSaleStoreProducts(sale);
+			const saleStoreProducts: ISaleStoreProduct[] = this._getSaleStoreProducts(
+				{ sale, storeId },
+			);
 
 			const saleCreatedAt = moment(sale.createdAt);
 
@@ -1358,10 +1367,20 @@ export class SalesService {
 		return salesBalanceResponse;
 	}
 
-	private _getQuantityBySale = (sale: ISale): number => {
+	private _getQuantityBySale = ({
+		sale,
+		storeId,
+	}: {
+		sale: ISale;
+		storeId?: string;
+	}): number => {
 		return reduce(
 			sale.stores,
 			(accStore: number, store: ISaleStore) => {
+				if (storeId && store.storeId.toString() !== storeId) {
+					return accStore;
+				}
+
 				accStore += reduce(
 					store.products,
 					(accProduct: number, product: ISaleStoreProduct) => {
@@ -1377,10 +1396,20 @@ export class SalesService {
 		);
 	};
 
-	private _getSaleStoreProducts = (sale: ISale): ISaleStoreProduct[] => {
+	private _getSaleStoreProducts = ({
+		sale,
+		storeId,
+	}: {
+		sale: ISale;
+		storeId?: string;
+	}): ISaleStoreProduct[] => {
 		return reduce(
 			sale.stores,
 			(accStore: ISaleStoreProduct[], store: ISaleStore) => {
+				if (storeId && store.storeId.toString() !== storeId) {
+					return accStore;
+				}
+
 				accStore.push(...store.products);
 				return accStore;
 			},
