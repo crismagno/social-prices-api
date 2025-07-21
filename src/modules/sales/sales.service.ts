@@ -274,6 +274,10 @@ export class SalesService {
 			};
 		}
 
+		if (tableState.filters?.customerIds?.length) {
+			filter.customerId = { $in: tableState.filters.customerIds };
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
@@ -399,6 +403,7 @@ export class SalesService {
 				deliveryAt: createSaleDto.deliveryAt,
 				uploadFilename: null,
 				numberManual: createSaleDto.numberManual,
+				customerId: saleStores[0].customerId,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -494,6 +499,7 @@ export class SalesService {
 				createdDate:
 					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
 				numberManual: updateSaleDto.numberManual,
+				customerId: saleStores[0].customerId,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -644,6 +650,10 @@ export class SalesService {
 		if (params.rangeDate) {
 			const { startDate, endDate } = params.rangeDate;
 			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
+		if (params.customerId) {
+			filter.customerId = params.customerId;
 		}
 
 		const sales: ISale[] = await this._saleModel.find(filter);
@@ -2126,6 +2136,7 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
+						customerId: saleBySaleNumberManual.customerId,
 						numberManual: saleBySaleNumberManual.numberManual,
 						_id: saleBySaleNumberManual._id,
 						uploadFilename: saleBySaleNumberManual.uploadFilename,
@@ -2200,6 +2211,7 @@ export class SalesService {
 					};
 				} else {
 					sale = {
+						customerId: saleStores[0].customerId,
 						numberManual:
 							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
 						_id: null,
@@ -2320,6 +2332,8 @@ export class SalesService {
 					saleToCreateByUpload.customer,
 					ownerUserId,
 				);
+
+				saleToCreateByUpload.sale.customerId = customer._id as any;
 
 				const saleNumber: number =
 					saleToCreateByUpload.sale.number != 0
@@ -2946,38 +2960,44 @@ export class SalesService {
 			}
 		}
 
-		if (filters?.types?.length) {
+		if (filters.types?.length) {
 			filter.type = { $in: filters.types };
 		}
 
-		if (filters?.status?.length) {
+		if (filters.status?.length) {
 			filter.status = { $in: filters.status };
 		}
 
-		if (filters?.paymentStatus?.length) {
+		if (filters.paymentStatus?.length) {
 			filter.paymentStatus = { $in: filters.paymentStatus };
 		}
 
-		if (filters?.deliveryTypes?.length) {
+		if (filters.deliveryTypes?.length) {
 			filter['header.deliveryType'] = { $in: filters.deliveryTypes };
 		}
 
-		if (filters?.storeIds?.length) {
+		if (filters.storeIds?.length) {
 			filter['stores.storeId'] = { $in: filters.storeIds };
 		}
 
-		if (filters?.rangeCreatedDate) {
+		if (filters.rangeCreatedDate) {
 			const { startDate, endDate } = filters.rangeCreatedDate;
 			filter.createdAt = { $gte: startDate, $lte: endDate };
 		}
 
-		if (filters?.tagsIds?.length) {
+		if (filters.tagsIds?.length) {
 			filter.tagsIds = { $in: filters.tagsIds };
 		}
 
-		if (filters?.selectedProductIds?.length) {
+		if (filters.selectedProductIds?.length) {
 			filter['stores.products.productId'] = {
-				$in: filters?.selectedProductIds,
+				$in: filters.selectedProductIds,
+			};
+		}
+
+		if (filters.customerIds?.length) {
+			filter.customerId = {
+				$in: filters.customerIds,
 			};
 		}
 

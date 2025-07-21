@@ -79,4 +79,8 @@ export default class UpdateSaleDto {
 	@IsString()
 	@IsOptional()
 	numberManual: string | null;
+
+	@IsString()
+	@IsOptional()
+	customerId: string;
 }

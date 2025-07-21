@@ -34,6 +34,7 @@ export interface ISale
 	deliveryAt: Date | null;
 	uploadFilename: string | null;
 	createdDate: Date | null; // Date of creation sale on his store parsed by user
+	customerId: mongoose.Schema.Types.ObjectId | null;
 }
 
 export interface ISaleTotals {

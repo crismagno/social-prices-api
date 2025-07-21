@@ -24,6 +24,7 @@ export interface IProductQuantity {
 
 export interface IGetSalesAnalyticsParams {
 	storesIds?: string[];
+	customerIds?: string[];
 	status?: SalesEnum.Status[];
 	types?: SalesEnum.Type[];
 	tagsIds?: string[];
@@ -49,6 +50,7 @@ export interface ISaleStoreProductString {
 export interface IGetSalesBalanceParams {
 	rangeDate?: IRangeDate;
 	storeId?: string;
+	customerId?: string;
 }
 
 export interface IGetSalesBalanceResponse {
@@ -118,6 +120,7 @@ export interface IFiltersDownloadSales {
 	status: SalesEnum.Status[];
 	paymentStatus: SalesEnum.PaymentStatus[];
 	storeIds: string[];
+	customerIds: string[];
 	sortField: SalesEnum.SortField;
 	sortOrder: TTableStateSortOrder;
 }
