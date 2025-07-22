@@ -613,6 +613,10 @@ export class SalesService {
 			filter['stores.products.productId'] = { $in: params.productIds };
 		}
 
+		if (params.customerIds?.length) {
+			filter.customerId = { $in: params.customerIds };
+		}
+
 		const sales: ISale[] = await this._saleModel.find(filter);
 
 		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
