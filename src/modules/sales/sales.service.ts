@@ -3082,6 +3082,8 @@ export class SalesService {
 			deliveryType: 'Delivery Type',
 			createdDate: 'Created Date',
 			createdAt: 'Created At',
+			subtotal: 'Subtotal',
+			totalFinal: 'Total Final',
 		};
 
 		const sheetColumns: any[] = [];
@@ -3216,8 +3218,48 @@ export class SalesService {
 				createdAt: moment(sale.createdAt).format(
 					DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
 				),
+				subtotal: sale.totals.subtotalAmount.toFixed(2),
+				totalFinal: sale.totals.totalFinalAmount.toFixed(2),
 			});
 		}
+
+		worksheet.addRow({
+			subtotal: reduce(
+				sales,
+				(acc: number, sale: ISale) => {
+					return acc + sale.totals.subtotalAmount;
+				},
+				0,
+			).toFixed(2),
+			shipping: reduce(
+				sales,
+				(acc: number, sale: ISale) => {
+					return acc + sale.totals.shipping.amount;
+				},
+				0,
+			).toFixed(2),
+			tax: reduce(
+				sales,
+				(acc: number, sale: ISale) => {
+					return acc + sale.totals.tax.amount;
+				},
+				0,
+			).toFixed(2),
+			discount: reduce(
+				sales,
+				(acc: number, sale: ISale) => {
+					return acc + (sale.totals.discount?.normal?.amount ?? 0);
+				},
+				0,
+			).toFixed(2),
+			totalFinal: reduce(
+				sales,
+				(acc: number, sale: ISale) => {
+					return acc + sale.totals.totalFinalAmount;
+				},
+				0,
+			).toFixed(2),
+		});
 
 		const buffer = await workbook.xlsx.writeBuffer();
 		return buffer as Buffer;
