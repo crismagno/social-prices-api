@@ -33,6 +33,7 @@ import {
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
 	IGetSalesBalanceResponse,
+	IGetSalesSummaryByUserTableStateResponse,
 } from './interfaces/sales.type';
 import { SalesService } from './sales.service';
 
@@ -47,6 +48,18 @@ export class SalesController {
 		@Body() tableState: ITableStateRequest<ISale>,
 	): Promise<ITableStateResponse<ISale[]>> {
 		return await this._salesService.findByUserTableState(
+			authPayload._id,
+			tableState,
+		);
+	}
+
+	@Post('/getSalesSummaryByUserTableState')
+	@UsePipes(ValidationPipe)
+	public async getSalesSummaryByUserTableState(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() tableState: ITableStateRequest<ISale>,
+	): Promise<IGetSalesSummaryByUserTableStateResponse> {
+		return await this._salesService.getSalesSummaryByUserTableState(
 			authPayload._id,
 			tableState,
 		);

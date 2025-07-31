@@ -12,7 +12,7 @@ import {
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
-import mongoose, { FilterQuery, Model } from 'mongoose';
+import mongoose, { FilterQuery, Model, PipelineStage } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -107,6 +107,7 @@ import {
 	IGetSalesBalanceParams,
 	IGetSalesBalanceResponse,
 	IGetSalesProductBalanceResponse,
+	IGetSalesSummaryByUserTableStateResponse,
 	IProductQuantity,
 	IProductToSubtract,
 	ISaleFileUploadTemplateRow,
@@ -321,6 +322,122 @@ export class SalesService {
 		response.data = sales;
 
 		return response;
+	}
+
+	public async getSalesSummaryByUserTableState(
+		userId: string,
+		tableState: ITableStateRequest<ISale>,
+	): Promise<IGetSalesSummaryByUserTableStateResponse> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		const filter: FilterQuery<ISale> = {
+			$or: [
+				{ createdByUserId: new mongoose.Types.ObjectId(userId) },
+				{
+					'stores.storeId': { $in: arrayStringToObjectId(storesIds) },
+				},
+			],
+			softDelete: null,
+		};
+
+		if (tableState.search) {
+			const search = new RegExp(tableState.search, 'ig');
+
+			filter.$or = [
+				{
+					description: search,
+				},
+				{
+					'buyer.name': search,
+				},
+				{
+					'buyer.email': search,
+				},
+				{
+					numberManual: search,
+				},
+			];
+
+			if (isNumber(+tableState.search)) {
+				filter.$or.push({
+					number: +tableState.search,
+				});
+			}
+		}
+
+		if (tableState.filters?.type?.length) {
+			filter.type = { $in: tableState.filters.type };
+		}
+
+		if (tableState.filters?.status?.length) {
+			filter.status = { $in: tableState.filters.status };
+		}
+
+		if (tableState.filters?.paymentStatus?.length) {
+			filter.paymentStatus = { $in: tableState.filters.paymentStatus };
+		}
+
+		if (tableState.filters?.deliveryType?.length) {
+			filter['header.deliveryType'] = { $in: tableState.filters.deliveryType };
+		}
+
+		if (tableState.filters?.stores?.length) {
+			filter['stores.storeId'] = {
+				$in: arrayStringToObjectId(tableState.filters.stores),
+			};
+		}
+
+		if (tableState.filters?.createdAtRange) {
+			const { startDate, endDate } = tableState.filters.createdAtRange;
+			filter.createdAt = { $gte: startDate, $lte: endDate };
+		}
+
+		if (tableState?.filters?.tagsIds?.length) {
+			filter.tagsIds = {
+				$in: arrayStringToObjectId(tableState.filters.tagsIds),
+			};
+		}
+
+		if (tableState.filters?.productIds?.length) {
+			filter['stores.products.productId'] = {
+				$in: arrayStringToObjectId(tableState.filters?.productIds),
+			};
+		}
+
+		if (tableState.filters?.customerIds?.length) {
+			filter.customerId = {
+				$in: arrayStringToObjectId(tableState.filters.customerIds),
+			};
+		}
+
+		const pipeline: PipelineStage[] = [
+			{ $match: filter },
+			{
+				$group: {
+					_id: null,
+					subtotal: { $sum: { $ifNull: ['$totals.subtotalAmount', 0] } },
+					tax: { $sum: { $ifNull: ['$totals.tax.amount', 0] } },
+					discount: {
+						$sum: { $ifNull: ['$totals.discount.normal.amount', 0] },
+					},
+					shipping: { $sum: { $ifNull: ['$totals.shipping.amount', 0] } },
+					totalFinal: { $sum: { $ifNull: ['$totals.totalFinalAmount', 0] } },
+				},
+			},
+		];
+
+		const [
+			salesSummary = {
+				subtotal: 0,
+				tax: 0,
+				discount: 0,
+				shipping: 0,
+				totalFinal: 0,
+			} as IGetSalesSummaryByUserTableStateResponse,
+		] = await this._saleModel.aggregate(pipeline).exec();
+
+		return salesSummary;
 	}
 
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
