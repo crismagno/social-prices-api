@@ -1,6 +1,7 @@
 import { isNumber } from 'class-validator';
 import * as ExcelJS from 'exceljs';
 import {
+	filter,
 	find,
 	flatMap,
 	forEach,
@@ -777,11 +778,16 @@ export class SalesService {
 			filter.customerId = params.customerId;
 		}
 
+		if (params.productIds?.length) {
+			filter['stores.products.productId'] = { $in: params.productIds };
+		}
+
 		const sales: ISale[] = await this._saleModel.find(filter);
 
 		return this._parseSalesToSalesBalance({
 			sales,
 			storeId: params.storeId,
+			productIds: params.productIds,
 		});
 	}
 
@@ -1320,9 +1326,11 @@ export class SalesService {
 	private async _parseSalesToSalesBalance({
 		sales,
 		storeId,
+		productIds = [],
 	}: {
 		sales: ISale[];
 		storeId?: string;
+		productIds: string[];
 	}): Promise<IGetSalesBalanceResponse> {
 		const salesBalanceResponse: IGetSalesBalanceResponse = {
 			annual: {
@@ -1360,11 +1368,18 @@ export class SalesService {
 		const endYear = moment().endOf('year');
 
 		for (const sale of sales) {
-			const quantity: number = this._getQuantityBySale({ sale, storeId });
+			const quantity: number = this._getQuantityBySale({
+				sale,
+				storeId,
+				productIds,
+			});
 
 			const saleStoreProducts: ISaleStoreProduct[] = this._getSaleStoreProducts(
-				{ sale, storeId },
+				{ sale, storeId, productIds },
 			);
+
+			const sumSaleStoreProductsTotal: number =
+				this._sumSaleStoreProductsTotal(saleStoreProducts);
 
 			const saleCreatedAt = moment(sale.createdAt);
 
@@ -1378,7 +1393,7 @@ export class SalesService {
 						saleStoreProducts,
 					);
 				salesBalanceResponse.hour.quantity += quantity;
-				salesBalanceResponse.hour.total += sale.totals.totalFinalAmount;
+				salesBalanceResponse.hour.total += sumSaleStoreProductsTotal;
 			}
 
 			if (
@@ -1391,7 +1406,7 @@ export class SalesService {
 						saleStoreProducts,
 					);
 				salesBalanceResponse.day.quantity += quantity;
-				salesBalanceResponse.day.total += sale.totals.totalFinalAmount;
+				salesBalanceResponse.day.total += sumSaleStoreProductsTotal;
 			}
 
 			if (
@@ -1404,7 +1419,7 @@ export class SalesService {
 						saleStoreProducts,
 					);
 				salesBalanceResponse.month.quantity += quantity;
-				salesBalanceResponse.month.total += sale.totals.totalFinalAmount;
+				salesBalanceResponse.month.total += sumSaleStoreProductsTotal;
 			}
 
 			if (
@@ -1417,11 +1432,11 @@ export class SalesService {
 						saleStoreProducts,
 					);
 				salesBalanceResponse.annual.quantity += quantity;
-				salesBalanceResponse.annual.total += sale.totals.totalFinalAmount;
+				salesBalanceResponse.annual.total += sumSaleStoreProductsTotal;
 			}
 		}
 
-		const productIds: string[] = uniq([
+		const productIdsByUniq: string[] = uniq([
 			...map(salesBalanceResponse.hour.productsBalance, 'productId'),
 			...map(salesBalanceResponse.day.productsBalance, 'productId'),
 			...map(salesBalanceResponse.month.productsBalance, 'productId'),
@@ -1429,7 +1444,7 @@ export class SalesService {
 		]);
 
 		const products: IProduct[] =
-			await this._productsService.findByIds(productIds);
+			await this._productsService.findByIds(productIdsByUniq);
 
 		salesBalanceResponse.hour.productsBalance = map(
 			orderBy(
@@ -1501,9 +1516,11 @@ export class SalesService {
 	private _getQuantityBySale = ({
 		sale,
 		storeId,
+		productIds = [],
 	}: {
 		sale: ISale;
 		storeId?: string;
+		productIds: string[];
 	}): number => {
 		return reduce(
 			sale.stores,
@@ -1515,6 +1532,13 @@ export class SalesService {
 				accStore += reduce(
 					store.products,
 					(accProduct: number, product: ISaleStoreProduct) => {
+						if (
+							productIds.length > 0 &&
+							!includes(productIds, product.productId.toString())
+						) {
+							return accProduct;
+						}
+
 						accProduct += product.quantity;
 						return accProduct;
 					},
@@ -1530,9 +1554,11 @@ export class SalesService {
 	private _getSaleStoreProducts = ({
 		sale,
 		storeId,
+		productIds,
 	}: {
 		sale: ISale;
 		storeId?: string;
+		productIds: string[];
 	}): ISaleStoreProduct[] => {
 		return reduce(
 			sale.stores,
@@ -1541,7 +1567,17 @@ export class SalesService {
 					return accStore;
 				}
 
-				accStore.push(...store.products);
+				let saleStoreProducts: ISaleStoreProduct[] = store.products;
+
+				if (productIds.length > 0) {
+					saleStoreProducts = filter(
+						store.products,
+						(storeProduct: ISaleStoreProduct) =>
+							includes(productIds, storeProduct.productId.toString()),
+					);
+				}
+
+				accStore.push(...saleStoreProducts);
 				return accStore;
 			},
 			[],
@@ -1572,6 +1608,19 @@ export class SalesService {
 		}
 
 		return productsBalance;
+	};
+
+	private _sumSaleStoreProductsTotal = (
+		saleStoreProducts: ISaleStoreProduct[],
+	): number => {
+		return reduce(
+			saleStoreProducts,
+			(acc, saleStoreProduct) => {
+				acc += saleStoreProduct.quantity * saleStoreProduct.price;
+				return acc;
+			},
+			0,
+		);
 	};
 
 	//#region Upload
