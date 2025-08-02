@@ -263,7 +263,7 @@ export class SalesService {
 
 		if (tableState.filters?.createdAtRange) {
 			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdAt = { $gte: startDate, $lte: endDate };
+			filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {
@@ -391,7 +391,7 @@ export class SalesService {
 
 		if (tableState.filters?.createdAtRange) {
 			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdAt = { $gte: startDate, $lte: endDate };
+			filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {
