@@ -1355,17 +1355,33 @@ export class SalesService {
 			},
 		};
 
-		const startHour = moment().startOf('hour');
-		const endHour = moment().endOf('hour');
+		const startHour = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.startOf('hour');
+		const endHour = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.endOf('hour');
 
-		const startDay = moment().startOf('day');
-		const endDay = moment().endOf('day');
+		const startDay = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.startOf('day');
+		const endDay = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.endOf('day');
 
-		const startMonth = moment().startOf('month');
-		const endMonth = moment().endOf('month');
+		const startMonth = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.startOf('month');
+		const endMonth = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.endOf('month');
 
-		const startYear = moment().startOf('year');
-		const endYear = moment().endOf('year');
+		const startYear = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.startOf('year');
+		const endYear = moment()
+			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+			.endOf('year');
 
 		for (const sale of sales) {
 			const quantity: number = this._getQuantityBySale({
@@ -1381,7 +1397,9 @@ export class SalesService {
 			const sumSaleStoreProductsTotal: number =
 				this._sumSaleStoreProductsTotal(saleStoreProducts);
 
-			const saleCreatedAt = moment(sale.createdAt);
+			const saleCreatedAt = moment(sale.createdAt).tz(
+				DatesEnum.Timezones.America_Sao_Paulo,
+			);
 
 			if (
 				saleCreatedAt.isSameOrAfter(startHour) &&
