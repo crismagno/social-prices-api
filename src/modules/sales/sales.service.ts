@@ -277,7 +277,7 @@ export class SalesService {
 		}
 
 		if (tableState.filters?.customerIds?.length) {
-			filter.customerId = { $in: tableState.filters.customerIds };
+			filter['stores.customerId'] = { $in: tableState.filters.customerIds };
 		}
 
 		const response: ITableStateResponse<ISale[]> = {
@@ -407,7 +407,7 @@ export class SalesService {
 		}
 
 		if (tableState.filters?.customerIds?.length) {
-			filter.customerId = {
+			filter['stores.customerId'] = {
 				$in: arrayStringToObjectId(tableState.filters.customerIds),
 			};
 		}
@@ -521,7 +521,6 @@ export class SalesService {
 				deliveryAt: createSaleDto.deliveryAt,
 				uploadFilename: null,
 				numberManual: createSaleDto.numberManual,
-				customerId: saleStores[0].customerId,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -617,7 +616,6 @@ export class SalesService {
 				createdDate:
 					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
 				numberManual: updateSaleDto.numberManual,
-				customerId: saleStores[0].customerId,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -732,7 +730,7 @@ export class SalesService {
 		}
 
 		if (params.customerIds?.length) {
-			filter.customerId = { $in: params.customerIds };
+			filter['stores.customerId'] = { $in: params.customerIds };
 		}
 
 		const sales: ISale[] = await this._saleModel.find(filter);
@@ -775,7 +773,7 @@ export class SalesService {
 		}
 
 		if (params.customerId) {
-			filter.customerId = params.customerId;
+			filter['stores.customerId'] = params.customerId;
 		}
 
 		if (params.productIds?.length) {
@@ -2324,7 +2322,6 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
-						customerId: saleBySaleNumberManual.customerId,
 						numberManual: saleBySaleNumberManual.numberManual,
 						_id: saleBySaleNumberManual._id,
 						uploadFilename: saleBySaleNumberManual.uploadFilename,
@@ -2399,7 +2396,6 @@ export class SalesService {
 					};
 				} else {
 					sale = {
-						customerId: saleStores[0].customerId,
 						numberManual:
 							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
 						_id: null,
@@ -2520,8 +2516,6 @@ export class SalesService {
 					saleToCreateByUpload.customer,
 					ownerUserId,
 				);
-
-				saleToCreateByUpload.sale.customerId = customer._id as any;
 
 				const saleNumber: number =
 					saleToCreateByUpload.sale.number != 0
@@ -3184,7 +3178,7 @@ export class SalesService {
 		}
 
 		if (filters.customerIds?.length) {
-			filter.customerId = {
+			filter['stores.customerId'] = {
 				$in: filters.customerIds,
 			};
 		}

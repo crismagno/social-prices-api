@@ -34,7 +34,6 @@ export interface ISale
 	deliveryAt: Date | null;
 	uploadFilename: string | null;
 	createdDate: Date | null; // Date of creation sale on his store parsed by user
-	customerId: mongoose.Schema.Types.ObjectId | null;
 }
 
 export interface ISaleTotals {
@@ -50,6 +49,10 @@ export interface ISaleStore {
 	number: number;
 	products: ISaleStoreProduct[];
 	totals: ISaleStoreTotals;
+	/**
+	 * We can have different customerId by each store in a future when customer come doing a buy in shop so he can make a buy in multiple stores,
+	 * and each store by user can have a customerId specifically
+	 */
 	customerId: mongoose.Schema.Types.ObjectId | null;
 	customer?: ICustomer;
 }
