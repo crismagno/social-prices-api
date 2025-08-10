@@ -420,7 +420,7 @@ export class SalesService {
 					subtotal: { $sum: { $ifNull: ['$totals.subtotalAmount', 0] } },
 					tax: { $sum: { $ifNull: ['$totals.tax.amount', 0] } },
 					discount: {
-						$sum: { $ifNull: ['$totals.discount.normal.amount', 0] },
+						$sum: { $ifNull: ['$totals.discount.distributed.amount', 0] },
 					},
 					shipping: { $sum: { $ifNull: ['$totals.shipping.amount', 0] } },
 					totalFinal: { $sum: { $ifNull: ['$totals.totalFinalAmount', 0] } },
@@ -2379,7 +2379,7 @@ export class SalesService {
 						totals: {
 							discount: discountAmount
 								? {
-										normal: { amount: discountAmount, note: null },
+										distributed: { amount: discountAmount, note: null },
 								  }
 								: null,
 							shipping: { amount: shippingAmount, note: null },
@@ -2455,7 +2455,7 @@ export class SalesService {
 						totals: {
 							discount: discountAmount
 								? {
-										normal: { amount: discountAmount, note: null },
+										distributed: { amount: discountAmount, note: null },
 								  }
 								: null,
 							shipping: { amount: shippingAmount, note: null },
@@ -3369,8 +3369,8 @@ export class SalesService {
 						),
 					};
 				}),
-				discount: sale.totals.discount?.normal.amount
-					? sale.totals.discount?.normal.amount.toFixed(2)
+				discount: sale.totals.discount?.distributed.amount
+					? sale.totals.discount?.distributed.amount.toFixed(2)
 					: 0,
 				shipping: sale.totals.shipping.amount
 					? sale.totals.shipping.amount.toFixed(2)
@@ -3432,7 +3432,7 @@ export class SalesService {
 			discount: reduce(
 				sales,
 				(acc: number, sale: ISale) => {
-					return acc + (sale.totals.discount?.normal?.amount ?? 0);
+					return acc + (sale.totals.discount?.distributed?.amount ?? 0);
 				},
 				0,
 			).toFixed(2),

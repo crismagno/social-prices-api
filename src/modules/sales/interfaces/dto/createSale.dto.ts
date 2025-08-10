@@ -57,7 +57,7 @@ export class SaleStoreProductDto {
 
 export class SaleTotalsDiscountDto {
 	@Type(() => SaleAmountNoteDto)
-	normal: SaleAmountNoteDto;
+	distributed: SaleAmountNoteDto;
 }
 
 export class SalePaymentDto {

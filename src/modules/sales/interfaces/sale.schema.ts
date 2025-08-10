@@ -73,7 +73,7 @@ export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);
 @Schema()
 export class SaleTotalsDiscount implements ISaleTotalsDiscount {
 	@Prop({ required: true, type: SaleAmountNoteSchema, _id: false })
-	normal: ISaleAmountNote;
+	distributed: ISaleAmountNote;
 }
 
 export const SaleTotalsDiscountSchema =
