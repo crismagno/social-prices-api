@@ -416,5 +416,30 @@ export class NotificationsService {
 		});
 	}
 
+	public async completedSale(
+		sale: ISale,
+		user: IUser,
+		employee: IEmployee,
+	): Promise<void> {
+		await this._emailTransportService.sendEmail({
+			to: sale.buyer.email,
+			subject: `Completed Sale`,
+			html: `Hi! ${sale.buyer.name} your sale has been completed. Sale number: <b>${sale.number}</b>!`,
+		});
+
+		const userId: string = user._id;
+
+		const content: string = `Hi! ${user.name}, order has been completed by ${employee.name}. Sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Completed Sale',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
 	//#endregion
 }

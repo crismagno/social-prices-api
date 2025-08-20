@@ -69,6 +69,8 @@ import { CountersService } from '../counters/counters.service';
 import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import CreateCustomerDto from '../customers/interfaces/dto/createCustomer.dto';
+import { EmployeesService } from '../employees/employees.service';
+import { IEmployee } from '../employees/interfaces/employee.interface';
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
 import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';
@@ -147,6 +149,7 @@ export class SalesService {
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _filesUploadsService: FilesUploadsService,
 		private readonly _filesService: FilesService,
+		private readonly _employeesService: EmployeesService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -793,6 +796,62 @@ export class SalesService {
 		return this._saleModel.findOne({
 			numberManual,
 		});
+	}
+
+	public async completeManual(
+		saleId: string,
+		userId: string,
+		employeeId?: string,
+	): Promise<ISale> {
+		try {
+			if (!saleId) {
+				throw new BadRequestException('SaleId is required!');
+			}
+
+			const sale: ISale = await this._saleModel.findOneAndUpdate(
+				{ _id: new mongoose.Types.ObjectId(saleId) },
+				{
+					$set: {
+						status: SalesEnum.Status.COMPLETED,
+						softDelete: null,
+						updatedAt: new Date(),
+						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						updatedByEmployeeId: employeeId
+							? new mongoose.Types.ObjectId(employeeId)
+							: null,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+
+			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+				saleStore.storeId.toString(),
+			);
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByIdOrFail(userIdByStores);
+
+			const employee: IEmployee =
+				await this._employeesService.findByIdOrFail(employeeId);
+
+			await this._notificationsService.completedSale(
+				sale,
+				userIdOwnerStore,
+				employee,
+			);
+
+			return sale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
 	}
 
 	// #endregion

@@ -8,6 +8,7 @@ import {
 	InternalServerErrorException,
 	Param,
 	Post,
+	Put,
 	Res,
 	UploadedFiles,
 	UseInterceptors,
@@ -95,6 +96,19 @@ export class SalesController {
 		@Body() updateSaleDto: UpdateSaleDto,
 	): Promise<ISale> {
 		return await this._salesService.updateManual(updateSaleDto);
+	}
+
+	@Put('/completeManual/:saleId')
+	@UsePipes(ValidationPipe)
+	public async completeManual(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('saleId', ValidationParamsPipe) saleId: string,
+	): Promise<ISale> {
+		return await this._salesService.completeManual(
+			saleId,
+			authPayload._id,
+			authPayload.employeeId,
+		);
 	}
 
 	@Delete('/deleteManual/:saleId')

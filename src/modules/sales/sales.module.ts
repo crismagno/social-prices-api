@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { CountersModule } from '../counters/counters.module';
 import { CustomersModule } from '../customers/customers.module';
+import { EmployeesModule } from '../employees/employees.module';
 import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
 import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -28,6 +29,7 @@ import { SalesService } from './sales.service';
 		SocketsModule,
 		FilesModule,
 		FilesUploadsModule,
+		EmployeesModule,
 	],
 	controllers: [SalesController],
 	providers: [SalesService, SalesValidationService],
