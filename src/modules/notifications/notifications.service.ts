@@ -423,19 +423,19 @@ export class NotificationsService {
 	): Promise<void> {
 		await this._emailTransportService.sendEmail({
 			to: sale.buyer.email,
-			subject: `Completed Sale`,
+			subject: `Sale Completed`,
 			html: `Hi! ${sale.buyer.name} your sale has been completed. Sale number: <b>${sale.number}</b>!`,
 		});
 
 		const userId: string = user._id;
 
-		const content: string = `Hi! ${user.name}, order has been completed by ${employee.name}. Sale number: <b>${sale.number}</b>!`;
+		const content: string = `Hi! ${user.name}, sale has been completed by ${employee.name}. Sale number: <b>${sale.number}</b>!`;
 
 		await this.create({
 			content,
 			createdByUserId: userId,
 			subtitle: null,
-			title: 'Completed Sale',
+			title: 'Sale Completed',
 			type: NotificationsEnum.Type.NEWS,
 			userId,
 		});
