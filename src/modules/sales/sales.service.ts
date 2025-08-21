@@ -798,8 +798,9 @@ export class SalesService {
 		});
 	}
 
-	public async completeManual(
+	public async updateStatusManual(
 		saleId: string,
+		newStatus: SalesEnum.Status,
 		userId: string,
 		employeeId?: string,
 	): Promise<ISale> {
@@ -812,8 +813,7 @@ export class SalesService {
 				{ _id: new mongoose.Types.ObjectId(saleId) },
 				{
 					$set: {
-						status: SalesEnum.Status.COMPLETED,
-						softDelete: null,
+						status: newStatus,
 						updatedAt: new Date(),
 						updatedByUserId: new mongoose.Types.ObjectId(userId),
 						updatedByEmployeeId: employeeId
@@ -826,25 +826,27 @@ export class SalesService {
 				},
 			);
 
-			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
-				saleStore.storeId.toString(),
-			);
+			if (sale.status === SalesEnum.Status.COMPLETED) {
+				const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+					saleStore.storeId.toString(),
+				);
 
-			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+				const stores: IStore[] = await this._storesService.findByIds(storeIds);
 
-			const userIdByStores: string = stores[0].userId.toString();
+				const userIdByStores: string = stores[0].userId.toString();
 
-			const userIdOwnerStore: IUser =
-				await this._usersService.findOneByIdOrFail(userIdByStores);
+				const userIdOwnerStore: IUser =
+					await this._usersService.findOneByIdOrFail(userIdByStores);
 
-			const employee: IEmployee =
-				await this._employeesService.findByIdOrFail(employeeId);
+				const employee: IEmployee =
+					await this._employeesService.findByIdOrFail(employeeId);
 
-			await this._notificationsService.completedSale(
-				sale,
-				userIdOwnerStore,
-				employee,
-			);
+				await this._notificationsService.completedSale(
+					sale,
+					userIdOwnerStore,
+					employee,
+				);
+			}
 
 			return sale;
 		} catch (error: any) {

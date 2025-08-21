@@ -27,6 +27,7 @@ import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import { ISale } from './interfaces/sale.interface';
 import {
 	IFiltersDownloadSales,
@@ -98,14 +99,16 @@ export class SalesController {
 		return await this._salesService.updateManual(updateSaleDto);
 	}
 
-	@Put('/completeManual/:saleId')
+	@Put('/updateStatusManual/:saleId')
 	@UsePipes(ValidationPipe)
-	public async completeManual(
+	public async updateStatusManual(
 		@AuthPayload() authPayload: IAuthPayload,
 		@Param('saleId', ValidationParamsPipe) saleId: string,
+		@Body() updateSaleStatusManualDto: UpdateSaleStatusManualDto,
 	): Promise<ISale> {
-		return await this._salesService.completeManual(
+		return await this._salesService.updateStatusManual(
 			saleId,
+			updateSaleStatusManualDto.newStatus,
 			authPayload._id,
 			authPayload.employeeId,
 		);
