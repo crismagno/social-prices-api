@@ -27,6 +27,7 @@ import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
 import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import { ISale } from './interfaces/sale.interface';
 import {
@@ -99,7 +100,7 @@ export class SalesController {
 		return await this._salesService.updateManual(updateSaleDto);
 	}
 
-	@Put('/updateStatusManual/:saleId')
+	@Put('/updateStatusManual')
 	@UsePipes(ValidationPipe)
 	public async updateStatusManual(
 		@AuthPayload() authPayload: IAuthPayload,
@@ -107,8 +108,20 @@ export class SalesController {
 		@Body() updateSaleStatusManualDto: UpdateSaleStatusManualDto,
 	): Promise<ISale> {
 		return await this._salesService.updateStatusManual(
-			saleId,
-			updateSaleStatusManualDto.newStatus,
+			updateSaleStatusManualDto,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Put('/updatePaymentStatusManual')
+	@UsePipes(ValidationPipe)
+	public async updatePaymentStatusManual(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() updateSalePaymentStatusManualDto: UpdateSalePaymentStatusManualDto,
+	): Promise<ISale> {
+		return await this._salesService.updatePaymentStatusManual(
+			updateSalePaymentStatusManualDto,
 			authPayload._id,
 			authPayload.employeeId,
 		);

@@ -95,6 +95,8 @@ import CreateSaleDto, {
 	SaleStoreProductDto,
 } from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
+import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import {
 	ISale,
 	ISalePayment,
@@ -799,21 +801,16 @@ export class SalesService {
 	}
 
 	public async updateStatusManual(
-		saleId: string,
-		newStatus: SalesEnum.Status,
+		updateSaleStatusManualDto: UpdateSaleStatusManualDto,
 		userId: string,
 		employeeId?: string,
 	): Promise<ISale> {
 		try {
-			if (!saleId) {
-				throw new BadRequestException('SaleId is required!');
-			}
-
 			const sale: ISale = await this._saleModel.findOneAndUpdate(
-				{ _id: new mongoose.Types.ObjectId(saleId) },
+				{ _id: new mongoose.Types.ObjectId(updateSaleStatusManualDto.saleId) },
 				{
 					$set: {
-						status: newStatus,
+						status: updateSaleStatusManualDto.newStatus,
 						updatedAt: new Date(),
 						updatedByUserId: new mongoose.Types.ObjectId(userId),
 						updatedByEmployeeId: employeeId
@@ -847,6 +844,42 @@ export class SalesService {
 					employee,
 				);
 			}
+
+			return sale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async updatePaymentStatusManual(
+		updateSalePaymentStatusManualDto: UpdateSalePaymentStatusManualDto,
+		userId: string,
+		employeeId?: string,
+	): Promise<ISale> {
+		try {
+			const sale: ISale = await this._saleModel.findOneAndUpdate(
+				{
+					_id: new mongoose.Types.ObjectId(
+						updateSalePaymentStatusManualDto.saleId,
+					),
+				},
+				{
+					$set: {
+						paymentStatus: updateSalePaymentStatusManualDto.newPaymentStatus,
+						updatedAt: new Date(),
+						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						updatedByEmployeeId: employeeId
+							? new mongoose.Types.ObjectId(employeeId)
+							: null,
+						payments: updateSalePaymentStatusManualDto.newPayments,
+					},
+				},
+				{
+					new: true,
+				},
+			);
 
 			return sale;
 		} catch (error: any) {
