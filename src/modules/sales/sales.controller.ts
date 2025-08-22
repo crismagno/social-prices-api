@@ -104,7 +104,6 @@ export class SalesController {
 	@UsePipes(ValidationPipe)
 	public async updateStatusManual(
 		@AuthPayload() authPayload: IAuthPayload,
-		@Param('saleId', ValidationParamsPipe) saleId: string,
 		@Body() updateSaleStatusManualDto: UpdateSaleStatusManualDto,
 	): Promise<ISale> {
 		return await this._salesService.updateStatusManual(
