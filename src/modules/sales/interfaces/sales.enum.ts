@@ -71,6 +71,13 @@ namespace SalesEnum {
 		[DeliveryType.PICKUP]: 'Pickup',
 		[DeliveryType.DELIVERY]: 'Delivery',
 	};
+
+	export const StatusToFilterCharts: Status[] = [
+		Status.STARTED,
+		Status.PROCESSING,
+		Status.COMPLETED,
+		Status.STOPPED,
+	];
 }
 
 export default SalesEnum;

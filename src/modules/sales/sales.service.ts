@@ -784,6 +784,7 @@ export class SalesService {
 
 		const filter: FilterQuery<ISale> = {
 			'stores.storeId': { $in: storesIds },
+			status: { $in: SalesEnum.StatusToFilterCharts },
 		};
 
 		if (params.rangeDate) {
