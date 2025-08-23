@@ -53,6 +53,12 @@ export class SaleStoreProductDto {
 	@Type(() => SaleStoreProductDiscountDto)
 	@IsOptional()
 	discount: SaleStoreProductDiscountDto | null;
+
+	@IsBoolean()
+	isValid: boolean;
+
+	@IsBoolean()
+	isCompleted: boolean;
 }
 
 export class SaleTotalsDiscountDto {

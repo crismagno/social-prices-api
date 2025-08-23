@@ -163,6 +163,12 @@ export class SaleStoreProduct implements ISaleStoreProduct {
 
 	@Prop({ type: SaleStoreProductDiscountSchema, _id: false })
 	discount: ISaleStoreProductDiscount | null;
+
+	@Prop({ required: true, type: Boolean })
+	isValid: boolean;
+
+	@Prop({ required: true, type: Boolean })
+	isCompleted: boolean;
 }
 
 export const SaleStoreProductSchema =

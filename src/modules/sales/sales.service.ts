@@ -3013,6 +3013,8 @@ export class SalesService {
 										distributedAmount: +discountByPercentage.toFixed(2),
 								  }
 								: null,
+							isCompleted: true,
+							isValid: true,
 						};
 					},
 				);
