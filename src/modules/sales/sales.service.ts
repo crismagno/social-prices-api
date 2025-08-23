@@ -268,7 +268,10 @@ export class SalesService {
 
 		if (tableState.filters?.createdAtRange) {
 			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+			filter.createdDate = {
+				$gte: new Date(startDate),
+				$lte: new Date(endDate),
+			};
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {
@@ -396,7 +399,10 @@ export class SalesService {
 
 		if (tableState.filters?.createdAtRange) {
 			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+			filter.createdDate = {
+				$gte: new Date(startDate),
+				$lte: new Date(endDate),
+			};
 		}
 
 		if (tableState?.filters?.tagsIds?.length) {
@@ -723,7 +729,7 @@ export class SalesService {
 
 		if (params.rangeDate) {
 			const { startDate, endDate } = params.rangeDate;
-			filter.createdAt = { $gte: startDate, $lte: endDate };
+			filter.createdDate = { $gte: startDate, $lte: endDate };
 		}
 
 		if (params.tagsIds?.length) {
@@ -736,6 +742,14 @@ export class SalesService {
 
 		if (params.customerIds?.length) {
 			filter['stores.customerId'] = { $in: params.customerIds };
+		}
+
+		if (params.paymentStatus?.length) {
+			filter.paymentStatus = { $in: params.paymentStatus };
+		}
+
+		if (params.deliveryTypes?.length) {
+			filter['header.deliveryType'] = { $in: params.deliveryTypes };
 		}
 
 		const sales: ISale[] = await this._saleModel.find(filter);
@@ -774,7 +788,7 @@ export class SalesService {
 
 		if (params.rangeDate) {
 			const { startDate, endDate } = params.rangeDate;
-			filter.createdAt = { $gte: startDate, $lte: endDate };
+			filter.createdDate = { $gte: startDate, $lte: endDate };
 		}
 
 		if (params.customerId) {
@@ -1255,7 +1269,7 @@ export class SalesService {
 				);
 
 				acc.push({
-					date: sale.createdAt,
+					date: sale.createdDate,
 					...totalAndQuantity,
 				});
 
@@ -1489,7 +1503,7 @@ export class SalesService {
 			const sumSaleStoreProductsTotal: number =
 				this._sumSaleStoreProductsTotal(saleStoreProducts);
 
-			const saleCreatedAt = moment(sale.createdAt).tz(
+			const saleCreatedAt = moment(sale.createdDate).tz(
 				DatesEnum.Timezones.America_Sao_Paulo,
 			);
 
@@ -3258,7 +3272,7 @@ export class SalesService {
 
 		if (filters.rangeCreatedDate) {
 			const { startDate, endDate } = filters.rangeCreatedDate;
-			filter.createdAt = { $gte: startDate, $lte: endDate };
+			filter.createdDate = { $gte: startDate, $lte: endDate };
 		}
 
 		if (filters.tagsIds?.length) {

@@ -31,6 +31,8 @@ export interface IGetSalesAnalyticsParams {
 	productIds?: string[];
 	rangeDate?: IRangeDate;
 	periodType?: ChartsEnum.PeriodType;
+	paymentStatus?: SalesEnum.PaymentStatus[];
+	deliveryTypes?: SalesEnum.DeliveryType[];
 }
 
 export interface IGetSalesAnalyticsResponse {

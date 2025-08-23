@@ -343,8 +343,8 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: Date })
 	deliveryAt: Date | null;
 
-	@Prop({ type: Date })
-	createdDate: Date | null;
+	@Prop({ required: true, type: Date })
+	createdDate: Date;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
