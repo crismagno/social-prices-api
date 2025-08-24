@@ -647,7 +647,21 @@ export class SalesService {
 			const user: IUser =
 				await this._usersService.findOneByIdOrFail(userIdByStores);
 
-			await this._notificationsService.updatedManualSale(updatedSale, user);
+			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
+				await this._completeSaleStoresProducts(updatedSale._id);
+
+				const employee: IEmployee = await this._employeesService.findByIdOrFail(
+					updateSaleDto.updatedByEmployeeId,
+				);
+
+				await this._notificationsService.completedSale(
+					updatedSale,
+					user,
+					employee,
+				);
+			} else {
+				await this._notificationsService.updatedManualSale(updatedSale, user);
+			}
 
 			return updatedSale;
 		} catch (error: any) {
@@ -839,6 +853,8 @@ export class SalesService {
 			);
 
 			if (sale.status === SalesEnum.Status.COMPLETED) {
+				await this._completeSaleStoresProducts(sale._id);
+
 				const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
 					saleStore.storeId.toString(),
 				);
@@ -1763,6 +1779,38 @@ export class SalesService {
 			0,
 		);
 	};
+
+	private async _completeSaleStoresProducts(saleId: string): Promise<void> {
+		const sale: ISale = await this.findByIdOrFail(saleId);
+
+		sale.stores = map(sale.stores, (saleStore: ISaleStore) => {
+			return {
+				...saleStore,
+				products: map(
+					saleStore.products,
+					(saleStoreProduct: ISaleStoreProduct) => {
+						return {
+							...saleStoreProduct,
+							isCompleted: saleStoreProduct.isValid
+								? true
+								: saleStoreProduct.isCompleted,
+						};
+					},
+				),
+			};
+		});
+
+		await this._saleModel.updateOne(
+			{
+				_id: new mongoose.Types.ObjectId(saleId),
+			},
+			{
+				$set: {
+					stores: sale.stores,
+				},
+			},
+		);
+	}
 
 	//#region Upload
 
