@@ -1238,16 +1238,27 @@ export class SalesService {
 							const saleStoreProductsTotalQuantity: IChartTotalAndQuantity =
 								reduce(
 									saleStore.products,
-									(acc2: IChartTotalAndQuantity, curr2: ISaleStoreProduct) => {
+									(
+										acc2: IChartTotalAndQuantity,
+										saleStoreProduct: ISaleStoreProduct,
+									) => {
+										if (!saleStoreProduct.isValid) {
+											return acc2;
+										}
+
 										if (
 											productIds.length > 0 &&
-											!includes(productIds, curr2.productId.toString())
+											!includes(
+												productIds,
+												saleStoreProduct.productId.toString(),
+											)
 										) {
 											return acc2;
 										}
 
-										acc2.quantity += curr2.quantity;
-										acc2.total += curr2.price * curr2.quantity;
+										acc2.quantity += saleStoreProduct.quantity;
+										acc2.total +=
+											saleStoreProduct.price * saleStoreProduct.quantity;
 
 										return acc2;
 									},
@@ -1295,7 +1306,7 @@ export class SalesService {
 			(sale: ISale) =>
 				flatMap(sale.stores, (saleStore: ISaleStore) => {
 					if (includes(storeIds, saleStore.storeId.toString())) {
-						return saleStore.products;
+						return filter(saleStore.products, { isValid: true });
 					}
 
 					return [];
@@ -1656,15 +1667,19 @@ export class SalesService {
 
 				accStore += reduce(
 					store.products,
-					(accProduct: number, product: ISaleStoreProduct) => {
+					(accProduct: number, saleStoreProduct: ISaleStoreProduct) => {
+						if (!saleStoreProduct.isValid) {
+							return accProduct;
+						}
+
 						if (
 							productIds.length > 0 &&
-							!includes(productIds, product.productId.toString())
+							!includes(productIds, saleStoreProduct.productId.toString())
 						) {
 							return accProduct;
 						}
 
-						accProduct += product.quantity;
+						accProduct += saleStoreProduct.quantity;
 						return accProduct;
 					},
 					0,
@@ -1698,6 +1713,7 @@ export class SalesService {
 					saleStoreProducts = filter(
 						store.products,
 						(storeProduct: ISaleStoreProduct) =>
+							storeProduct.isValid &&
 							includes(productIds, storeProduct.productId.toString()),
 					);
 				}
@@ -3466,7 +3482,11 @@ export class SalesService {
 							saleStore.products,
 							(saleStoreProduct: ISaleStoreProduct) => {
 								return {
-									barcode: saleStoreProduct?.barcode ?? '',
+									barcode: saleStoreProduct?.barcode
+										? `${saleStoreProduct.isValid ? '' : 'Invalid - '}${
+												saleStoreProduct.barcode
+										  }`
+										: '',
 									quantity: saleStoreProduct.quantity,
 									price: saleStoreProduct.price.toFixed(2),
 								};
