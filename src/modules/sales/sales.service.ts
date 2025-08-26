@@ -95,6 +95,7 @@ import CreateSaleDto, {
 	SaleStoreProductDto,
 } from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
 import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
 import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import {
@@ -528,15 +529,16 @@ export class SalesService {
 				softDelete: null,
 				updatedByEmployeeId: null,
 				updatedByUserId: null,
-				_id: null,
+				_id: new mongoose.Types.ObjectId() as any,
 				deliveryAt: createSaleDto.deliveryAt,
 				uploadFilename: null,
 				numberManual: createSaleDto.numberManual,
+				filesUrl: [],
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
 
-			const newSale: ISale = await saleModel.save();
+			const newSale = await saleModel.save();
 
 			await this._subtractProductsQuantityBySaleStores(saleStores);
 
@@ -546,6 +548,16 @@ export class SalesService {
 				await this._usersService.findOneByIdOrFail(userIdByStores);
 
 			await this._notificationsService.createdManualSale(newSale, user);
+
+			if (newSale.status === SalesEnum.Status.COMPLETED) {
+				await this._completeSaleStoresProducts(newSale._id.toString());
+
+				const employee: IEmployee = await this._employeesService.findByIdOrFail(
+					createSaleDto.createdByEmployeeId,
+				);
+
+				await this._notificationsService.completedSale(newSale, user, employee);
+			}
 
 			return newSale;
 		} catch (error: any) {
@@ -648,7 +660,7 @@ export class SalesService {
 				await this._usersService.findOneByIdOrFail(userIdByStores);
 
 			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
-				await this._completeSaleStoresProducts(updatedSale._id);
+				await this._completeSaleStoresProducts(updatedSale._id.toString());
 
 				const employee: IEmployee = await this._employeesService.findByIdOrFail(
 					updateSaleDto.updatedByEmployeeId,
@@ -662,6 +674,67 @@ export class SalesService {
 			} else {
 				await this._notificationsService.updatedManualSale(updatedSale, user);
 			}
+
+			return updatedSale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async updateSaleFiles(
+		updateSaleFilesDto: UpdateSaleFilesDto,
+		files: Express.Multer.File[],
+	): Promise<ISale> {
+		try {
+			const sale: ISale = await this.findByIdOrFail(updateSaleFilesDto.saleId);
+
+			if (typeof updateSaleFilesDto.deletedFilesUrl === 'string') {
+				updateSaleFilesDto.deletedFilesUrl = JSON.parse(
+					updateSaleFilesDto.deletedFilesUrl,
+				);
+
+				if (updateSaleFilesDto.deletedFilesUrl.length) {
+					await this._filesService.deleteFiles(
+						updateSaleFilesDto.deletedFilesUrl,
+					);
+				}
+			}
+
+			if (
+				files.length === 0 &&
+				updateSaleFilesDto.deletedFilesUrl.length === 0
+			) {
+				return sale;
+			}
+
+			const filesUrl: string[] =
+				await this._filesService.getUploadFilesUrl(files);
+
+			sale.filesUrl = sale.filesUrl.filter(
+				(fileUrl: string) =>
+					!updateSaleFilesDto.deletedFilesUrl.find(
+						(deletedFileUrl: string) => deletedFileUrl === fileUrl,
+					),
+			);
+
+			sale.filesUrl.push(...filesUrl);
+
+			const now: Date = new Date();
+
+			const saleToUpdate = {
+				filesUrl: sale.filesUrl,
+				updatedAt: now,
+			};
+
+			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
+				updateSaleFilesDto.saleId,
+				{
+					$set: saleToUpdate,
+				},
+				{ new: true },
+			);
 
 			return updatedSale;
 		} catch (error: any) {
@@ -853,7 +926,7 @@ export class SalesService {
 			);
 
 			if (sale.status === SalesEnum.Status.COMPLETED) {
-				await this._completeSaleStoresProducts(sale._id);
+				await this._completeSaleStoresProducts(sale._id.toString());
 
 				const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
 					saleStore.storeId.toString(),
@@ -2495,6 +2568,7 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
+						filesUrl: saleBySaleNumberManual.filesUrl,
 						numberManual: saleBySaleNumberManual.numberManual,
 						_id: saleBySaleNumberManual._id,
 						uploadFilename: saleBySaleNumberManual.uploadFilename,
@@ -2569,6 +2643,7 @@ export class SalesService {
 					};
 				} else {
 					sale = {
+						filesUrl: [],
 						numberManual:
 							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
 						_id: null,

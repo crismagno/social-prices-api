@@ -202,9 +202,6 @@ export class ProductsService {
 	): Promise<IProduct> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
-		const filesUrl: string[] =
-			await this._filesService.getUploadFilesUrl(files);
-
 		if (typeof createProductDto.storeIds === 'string') {
 			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
 		}
@@ -218,6 +215,9 @@ export class ProductsService {
 		if (typeof createProductDto.tagsIds === 'string') {
 			createProductDto.tagsIds = JSON.parse(createProductDto.tagsIds);
 		}
+
+		const filesUrl: string[] =
+			await this._filesService.getUploadFilesUrl(files);
 
 		const now: Date = new Date();
 

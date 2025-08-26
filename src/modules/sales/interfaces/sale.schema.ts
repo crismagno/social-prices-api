@@ -269,7 +269,8 @@ export const SaleBuyerSchema = SchemaFactory.createForClass(SaleBuyer);
 
 @Schema()
 export class Sale extends Document implements ISale {
-	readonly _id: string;
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	readonly _id: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
@@ -351,6 +352,9 @@ export class Sale extends Document implements ISale {
 
 	@Prop({ required: true, type: Date })
 	createdDate: Date;
+
+	@Prop({ type: [String] })
+	filesUrl: string[];
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

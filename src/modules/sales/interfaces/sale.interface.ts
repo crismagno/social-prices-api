@@ -14,7 +14,7 @@ export interface ISale
 	extends ICreatedAtEntity,
 		IUpdatedAtEntity,
 		ISoftDeleteEntity {
-	readonly _id: string;
+	readonly _id: mongoose.Schema.Types.ObjectId;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
@@ -34,6 +34,7 @@ export interface ISale
 	deliveryAt: Date | null;
 	uploadFilename: string | null;
 	createdDate: Date; // Date of creation sale on his store parsed by user
+	filesUrl: string[];
 }
 
 export interface ISaleTotals {

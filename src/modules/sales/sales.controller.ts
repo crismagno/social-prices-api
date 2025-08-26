@@ -27,6 +27,7 @@ import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
 import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
 import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import { ISale } from './interfaces/sale.interface';
@@ -195,5 +196,16 @@ export class SalesController {
 		});
 
 		res.send(buffer);
+	}
+
+	@Post('/updateSaleFiles')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async updateSaleFiles(
+		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		files: Express.Multer.File[],
+		@Body() updateSaleFilesDto: UpdateSaleFilesDto,
+	): Promise<ISale> {
+		return await this._salesService.updateSaleFiles(updateSaleFilesDto, files);
 	}
 }
