@@ -23,7 +23,7 @@ export const parseFilePipeBuilder = (params?: {
 			fileType: allowedTypes,
 		})
 		.addMaxSizeValidator({
-			maxSize: 5242880,
+			maxSize: 20 * 1024 * 1024, // 20MB
 		})
 		.build({
 			fileIsRequired: !!params?.build?.fileIsRequired,
