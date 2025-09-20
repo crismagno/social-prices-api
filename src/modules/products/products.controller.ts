@@ -112,7 +112,7 @@ export class ProductsController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async uploadProducts(
-		@UploadedFiles(parseFilePipeBuilder())
+		@UploadedFiles(parseFilePipeBuilder({ allowOnlyTypes: ['spreadsheet'] }))
 		files: Express.Multer.File[],
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<void> {

@@ -82,7 +82,7 @@ export class UsersController {
 	@Post('/uploadAvatar')
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async uploadAvatar(
-		@UploadedFile(parseFilePipeBuilder())
+		@UploadedFile(parseFilePipeBuilder({ allowOnlyTypes: ['image'] }))
 		file: Express.Multer.File,
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IUserEntity> {

@@ -39,7 +39,12 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async create(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createCustomerDto: CreateCustomerDto,
@@ -55,7 +60,12 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async update(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateCustomerDto: UpdateCustomerDto,
@@ -107,7 +117,7 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async uploadCustomers(
-		@UploadedFiles(parseFilePipeBuilder())
+		@UploadedFiles(parseFilePipeBuilder({ allowOnlyTypes: ['spreadsheet'] }))
 		files: Express.Multer.File[],
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<void> {

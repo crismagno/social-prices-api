@@ -39,7 +39,12 @@ export class EmployeesController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async create(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
 		@Body() createEmployeeDto: CreateEmployeeDto,
 		@AuthPayload() authPayload: IAuthPayload,
@@ -55,7 +60,12 @@ export class EmployeesController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async update(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
 		@Body() updateEmployeeDto: UpdateEmployeeDto,
 	): Promise<IEmployee> {
@@ -103,7 +113,7 @@ export class EmployeesController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FilesInterceptor('files'))
 	public async uploadEmployees(
-		@UploadedFiles(parseFilePipeBuilder())
+		@UploadedFiles(parseFilePipeBuilder({ allowOnlyTypes: ['spreadsheet'] }))
 		files: Express.Multer.File[],
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<void> {

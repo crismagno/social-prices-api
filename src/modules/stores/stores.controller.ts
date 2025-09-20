@@ -35,7 +35,12 @@ export class StoresController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('logo'))
 	public async create(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createStoreDto: CreateStoreDto,
