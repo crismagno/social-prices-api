@@ -177,3 +177,8 @@ export interface IGetSalesSummaryByUserTableStateResponse {
 	shipping: number;
 	subtotal: number;
 }
+
+export interface ISalePdf {
+	sale: ISale;
+	pdf: any;
+}

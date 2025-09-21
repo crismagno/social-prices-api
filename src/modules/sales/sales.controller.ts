@@ -38,6 +38,7 @@ import {
 	IGetSalesBalanceParams,
 	IGetSalesBalanceResponse,
 	IGetSalesSummaryByUserTableStateResponse,
+	ISalePdf,
 } from './interfaces/sales.type';
 import { SalesService } from './sales.service';
 
@@ -207,5 +208,27 @@ export class SalesController {
 		@Body() updateSaleFilesDto: UpdateSaleFilesDto,
 	): Promise<ISale> {
 		return await this._salesService.updateSaleFiles(updateSaleFilesDto, files);
+	}
+
+	@Get('/downloadSalePdf/:saleId')
+	@UsePipes(ValidationPipe)
+	public async downloadSalePdf(
+		@Res() res: Response,
+		@Param('saleId', ValidationParamsPipe) saleId: string,
+	): Promise<any> {
+		const salePdf: ISalePdf = await this._salesService.downloadSalePdf(saleId);
+
+		if (!salePdf || !salePdf.pdf) {
+			throw new InternalServerErrorException(
+				'Error when attempt download sale pdf',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=sale-${salePdf.sale.number}.pdf`,
+			'Content-Type': 'application/pdf',
+		});
+
+		res.send(salePdf.pdf);
 	}
 }

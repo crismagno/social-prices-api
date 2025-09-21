@@ -120,6 +120,7 @@ import {
 	ISaleFileUploadTemplateRowPaymentFormat,
 	ISaleFileUploadTemplateSelectedProductFormat,
 	ISaleFileUploadTemplateSelectedProductItemFormat,
+	ISalePdf,
 	ISaleStoreProductString,
 	ISaleStoresProductsTotals,
 	ISaleToCreateByUpload,
@@ -1885,7 +1886,9 @@ export class SalesService {
 		);
 	}
 
-	//#region Upload
+	// #endregion
+
+	// #region Upload
 
 	public async uploadSales(
 		files: Express.Multer.File[],
@@ -3351,7 +3354,7 @@ export class SalesService {
 
 	// #endregion
 
-	//#region Download
+	// #region Download
 
 	public async downloadSales(
 		userId: string,
@@ -3695,6 +3698,48 @@ export class SalesService {
 
 		const buffer = await workbook.xlsx.writeBuffer();
 		return buffer as Buffer;
+	}
+
+	public async downloadSalePdf(saleId: string): Promise<ISalePdf> {
+		const sale: ISale = await this.findByIdOrFail(saleId);
+
+		const html = `
+				<html>
+					<head>
+						<style>
+							body { font-family: Arial, sans-serif; padding: 20px; }
+							h1 { color: #333; }
+							table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+							th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+						</style>
+					</head>
+					<body>
+						<h1>Resumo da Venda</h1>
+						<p><b>ID:</b> ${sale.number}</p>
+
+						<h2>Itens</h2>
+						<table>
+							<tr><th>Produto</th><th>Qtd</th><th>Preço</th></tr>
+						</table>
+					</body>
+				</html>
+			`;
+
+		const puppeteer = {} as any;
+
+		const browser = await puppeteer.launch({
+			// args: chromium.args,
+			// executablePath: await chromium.executablePath(),
+			headless: true,
+		});
+		const page = await browser.newPage();
+		await page.setContent(html);
+
+		const pdf = await page.pdf({ format: 'A4' });
+
+		await browser.close();
+
+		return { sale, pdf };
 	}
 
 	//#endregion
