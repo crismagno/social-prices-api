@@ -210,7 +210,7 @@ export class SalesController {
 		return await this._salesService.updateSaleFiles(updateSaleFilesDto, files);
 	}
 
-	@Get('/downloadSalePdf/:saleId')
+	@Post('/downloadSalePdf/:saleId')
 	@UsePipes(ValidationPipe)
 	public async downloadSalePdf(
 		@Res() res: Response,

@@ -14,6 +14,7 @@ import {
 } from 'lodash';
 import * as moment from 'moment-timezone';
 import mongoose, { FilterQuery, Model, PipelineStage } from 'mongoose';
+import * as puppeteer from 'puppeteer';
 
 import {
 	BadRequestException,
@@ -3725,21 +3726,21 @@ export class SalesService {
 				</html>
 			`;
 
-		const puppeteer = {} as any;
-
 		const browser = await puppeteer.launch({
-			// args: chromium.args,
-			// executablePath: await chromium.executablePath(),
-			headless: true,
+			headless: 'new',
+			args: ['--no-sandbox', '--disable-setuid-sandbox'],
+			executablePath:
+				process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
 		});
-		const page = await browser.newPage();
-		await page.setContent(html);
 
-		const pdf = await page.pdf({ format: 'A4' });
+		const page = await browser.newPage();
+		await page.setContent(html, { waitUntil: 'networkidle0' });
+
+		const pdfBuffer = await page.pdf({ format: 'A4' });
 
 		await browser.close();
 
-		return { sale, pdf };
+		return { sale, pdf: pdfBuffer };
 	}
 
 	//#endregion
