@@ -32,6 +32,8 @@ import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto'
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
+import { getHtmlFromTemplate } from '../../shared/templates/templates';
+import TemplatesEnum from '../../shared/templates/templates.enum';
 import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
 import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
@@ -3704,27 +3706,10 @@ export class SalesService {
 	public async downloadSalePdf(saleId: string): Promise<ISalePdf> {
 		const sale: ISale = await this.findByIdOrFail(saleId);
 
-		const html = `
-				<html>
-					<head>
-						<style>
-							body { font-family: Arial, sans-serif; padding: 20px; }
-							h1 { color: #333; }
-							table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-							th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-						</style>
-					</head>
-					<body>
-						<h1>Resumo da Venda</h1>
-						<p><b>ID:</b> ${sale.number}</p>
-
-						<h2>Itens</h2>
-						<table>
-							<tr><th>Produto</th><th>Qtd</th><th>Preço</th></tr>
-						</table>
-					</body>
-				</html>
-			`;
+		const html = getHtmlFromTemplate({
+			data: sale,
+			relativePath: TemplatesEnum.RelativePath.SALE_RESUME_HBS,
+		});
 
 		const browser = await puppeteer.launch({
 			headless: 'new',
