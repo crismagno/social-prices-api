@@ -180,5 +180,5 @@ export interface IGetSalesSummaryByUserTableStateResponse {
 
 export interface ISalePdf {
 	sale: ISale;
-	pdf: any;
+	pdfBuffer: Buffer;
 }

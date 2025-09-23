@@ -14,7 +14,6 @@ import {
 } from 'lodash';
 import * as moment from 'moment-timezone';
 import mongoose, { FilterQuery, Model, PipelineStage } from 'mongoose';
-import * as puppeteer from 'puppeteer';
 
 import {
 	BadRequestException,
@@ -32,8 +31,6 @@ import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto'
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
-import { getHtmlFromTemplate } from '../../shared/templates/templates';
-import TemplatesEnum from '../../shared/templates/templates.enum';
 import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
 import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
@@ -59,6 +56,7 @@ import {
 	getValueByPercentage,
 } from '../../shared/utils/numbers/numbers';
 import { parseAnyStringToObject } from '../../shared/utils/objects/objects';
+import { generatePdfBuffer } from '../../shared/utils/pdf/pdf';
 import { arrayStringToObjectId } from '../../shared/utils/strings/strings';
 import {
 	queryOptions,
@@ -68,6 +66,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import TemplatesEnum from '../../shared/utils/templates/templates.enum';
 import { CountersService } from '../counters/counters.service';
 import { CustomersService } from '../customers/customers.service';
 import { ICustomer } from '../customers/interfaces/customer.interface';
@@ -3706,26 +3705,14 @@ export class SalesService {
 	public async downloadSalePdf(saleId: string): Promise<ISalePdf> {
 		const sale: ISale = await this.findByIdOrFail(saleId);
 
-		const html = getHtmlFromTemplate({
-			data: sale,
-			relativePath: TemplatesEnum.RelativePath.SALE_RESUME_HBS,
+		const pdfBuffer: Buffer = await generatePdfBuffer({
+			getHtmlFromTemplateParams: {
+				data: sale,
+				relativePath: TemplatesEnum.RelativePath.SALE_RESUME_HBS,
+			},
 		});
 
-		const browser = await puppeteer.launch({
-			headless: 'new',
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			executablePath:
-				process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-		});
-
-		const page = await browser.newPage();
-		await page.setContent(html, { waitUntil: 'networkidle0' });
-
-		const pdfBuffer = await page.pdf({ format: 'A4' });
-
-		await browser.close();
-
-		return { sale, pdf: pdfBuffer };
+		return { sale, pdfBuffer };
 	}
 
 	//#endregion

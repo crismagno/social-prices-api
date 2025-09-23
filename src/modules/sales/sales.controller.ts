@@ -218,7 +218,7 @@ export class SalesController {
 	): Promise<any> {
 		const salePdf: ISalePdf = await this._salesService.downloadSalePdf(saleId);
 
-		if (!salePdf || !salePdf.pdf) {
+		if (!salePdf || !salePdf.pdfBuffer) {
 			throw new InternalServerErrorException(
 				'Error when attempt download sale pdf',
 			);
@@ -229,6 +229,6 @@ export class SalesController {
 			'Content-Type': 'application/pdf',
 		});
 
-		res.send(salePdf.pdf);
+		res.send(salePdf.pdfBuffer);
 	}
 }
