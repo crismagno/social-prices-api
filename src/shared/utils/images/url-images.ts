@@ -25,4 +25,4 @@ export const getImageUrl = (filename: string): string => {
 };
 
 export const getImageAvatarDefault = (): string =>
-	`${process.env.SOCIAL_PRICES_API_URL}/assets/images/avatar-default.png`;
+	`${process.env.SOCIAL_PRICES_API_URL}assets/images/avatar-default.png`;
