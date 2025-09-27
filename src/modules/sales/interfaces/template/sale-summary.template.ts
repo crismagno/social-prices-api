@@ -153,7 +153,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 					);
 
 				return {
-					name: saleStore.store.name,
+					name: saleStore.store?.name ?? 'No Name',
 					products: saleSummaryStoreProducts,
 				};
 			},

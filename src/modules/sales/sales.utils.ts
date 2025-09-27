@@ -73,8 +73,8 @@ export const parsePopulatedSales = (sales: ISale[]): ISale[] => {
 export const parsePopulatedSaleStores = (
 	saleStores: ISaleStore[],
 ): ISaleStore[] => {
-	return unFreezeData(saleStores).map((store: ISaleStore): ISaleStore => {
-		store.products = unFreezeData(store.products).map(
+	return unFreezeData(saleStores).map((saleStore: ISaleStore): ISaleStore => {
+		saleStore.products = unFreezeData(saleStore.products).map(
 			(product: ISaleStoreProduct): ISaleStoreProduct => {
 				return {
 					...product,
@@ -84,8 +84,9 @@ export const parsePopulatedSaleStores = (
 		);
 
 		return {
-			...store,
-			customer: store.customerId as any,
+			...saleStore,
+			store: saleStore.storeId as any,
+			customer: saleStore.customerId as any,
 		};
 	});
 };
