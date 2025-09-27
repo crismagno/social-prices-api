@@ -3702,13 +3702,13 @@ export class SalesService {
 		return buffer as Buffer;
 	}
 
-	public async downloadSalePdf(saleId: string): Promise<ISalePdf> {
+	public async downloadSaleSummaryPdf(saleId: string): Promise<ISalePdf> {
 		const sale: ISale = await this.findByIdOrFail(saleId);
 
 		const pdfBuffer: Buffer = await generatePdfBuffer({
 			getHtmlFromTemplateParams: {
 				data: sale,
-				relativePath: TemplatesEnum.RelativePath.SALE_RESUME_HBS,
+				relativePath: TemplatesEnum.RelativePath.SALE_SUMMARY_HBS,
 			},
 		});
 

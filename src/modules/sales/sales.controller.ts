@@ -210,22 +210,23 @@ export class SalesController {
 		return await this._salesService.updateSaleFiles(updateSaleFilesDto, files);
 	}
 
-	@Post('/downloadSalePdf/:saleId')
+	@Post('/downloadSaleSummaryPdf/:saleId')
 	@UsePipes(ValidationPipe)
-	public async downloadSalePdf(
+	public async downloadSaleSummaryPdf(
 		@Res() res: Response,
 		@Param('saleId', ValidationParamsPipe) saleId: string,
 	): Promise<any> {
-		const salePdf: ISalePdf = await this._salesService.downloadSalePdf(saleId);
+		const salePdf: ISalePdf =
+			await this._salesService.downloadSaleSummaryPdf(saleId);
 
 		if (!salePdf || !salePdf.pdfBuffer) {
 			throw new InternalServerErrorException(
-				'Error when attempt download sale pdf',
+				'Error when attempt download sale summary pdf',
 			);
 		}
 
 		res.set({
-			'Content-Disposition': `attachment; filename=sale-${salePdf.sale.number}.pdf`,
+			'Content-Disposition': `attachment; filename=sale-summary-${salePdf.sale.number}.pdf`,
 			'Content-Type': 'application/pdf',
 		});
 

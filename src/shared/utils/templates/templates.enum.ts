@@ -1,6 +1,6 @@
 namespace TemplatesEnum {
 	export enum RelativePath {
-		SALE_RESUME_HBS = 'sales/sale-resume.hbs',
+		SALE_SUMMARY_HBS = 'sales/sale-summary.hbs',
 	}
 }
 
