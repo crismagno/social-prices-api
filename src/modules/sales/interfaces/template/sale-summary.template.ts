@@ -4,8 +4,8 @@ import moment from 'moment';
 import PersonEnum from '../../../../shared/common/person/person.enum';
 import DatesEnum from '../../../../shared/utils/dates/dates.enum';
 import {
-	getImageAvatarDefault,
 	getImageUrl,
+	imageAvatarDefault,
 } from '../../../../shared/utils/images/url-images';
 import {
 	createAddressName,
@@ -133,7 +133,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 
 							const fileUrl: string = product?.mainUrl
 								? getImageUrl(product.mainUrl)
-								: getImageAvatarDefault();
+								: imageAvatarDefault;
 
 							const price: number = saleStoreProduct.price;
 
