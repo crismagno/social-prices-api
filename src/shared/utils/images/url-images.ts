@@ -2,7 +2,7 @@ export const getImageLocalUrl = (filename: string): string =>
 	`${process.env.SOCIAL_PRICES_API_URL}uploads/${filename}`;
 
 export const getImageAwsUrl = (filename: string): string =>
-	`${process.env.BUCKET_SOCIAL_PRICES_AWS_S3}/${filename}`;
+	`${process.env.BUCKET_SOCIAL_PRICES_AWS_S3}${filename}`;
 
 export const getImageUrl = (filename: string): string => {
 	if (!filename?.trim()) {
