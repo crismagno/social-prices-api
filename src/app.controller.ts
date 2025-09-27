@@ -27,6 +27,17 @@ export class AppController {
 		});
 	}
 
+	@Public()
+	@Get('/assets/images/:filename')
+	public getAssetImage(
+		@Res() res: any,
+		@Param('filename', ValidationParamsPipe) filename: string,
+	) {
+		return res.sendFile(filename, {
+			root: './assets/images',
+		});
+	}
+
 	@Get('/me')
 	public getMe(@AuthPayload() user: UserEntity) {
 		return user;

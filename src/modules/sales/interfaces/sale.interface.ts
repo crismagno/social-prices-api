@@ -8,6 +8,7 @@ import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interfac
 import { ISoftDeleteEntity } from '../../../shared/common/soft-delete/soft-delete.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
+import { IStore } from '../../stores/interfaces/store.interface';
 import SalesEnum from './sales.enum';
 
 export interface ISale
@@ -50,6 +51,7 @@ export interface ISaleStore {
 	number: number;
 	products: ISaleStoreProduct[];
 	totals: ISaleStoreTotals;
+	store?: IStore;
 	/**
 	 * We can have different customerId by each store in a future when customer come doing a buy in shop so he can make a buy in multiple stores,
 	 * and each store by user can have a customerId specifically

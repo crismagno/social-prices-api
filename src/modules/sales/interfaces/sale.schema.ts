@@ -214,7 +214,7 @@ export const SaleHeaderSchema = SchemaFactory.createForClass(SaleHeader);
 
 @Schema()
 export class SaleStore implements ISaleStore {
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Store' })
 	storeId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: [SaleStoreProductSchema], _id: false })

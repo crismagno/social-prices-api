@@ -38,3 +38,7 @@ export const parsePropertiesToJsonIfNeed = (obj: any): any => {
 
 	return newObject;
 };
+
+export const unFreezeData = <T>(data: T): T => {
+	return JSON.parse(JSON.stringify(data));
+};

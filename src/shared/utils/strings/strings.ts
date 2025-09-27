@@ -1,6 +1,7 @@
 import { map } from 'lodash';
 import mongoose from 'mongoose';
 
+import { IUser } from '../../../modules/users/interfaces/user.interface';
 import AddressEnum from '../../common/address/address.enum';
 import { IAddress } from '../../common/address/address.interface';
 import PhoneNumberEnum from '../../common/phone/phone-number.enum';
@@ -115,3 +116,17 @@ export const hasSpecialCharacters = (value: string): boolean => {
 
 export const parseToUpperAndUnderline = (value: string): string =>
 	value?.trim().toLocaleUpperCase().split(' ').join('_');
+
+export const formatterMoney = (value: any): string =>
+	`R$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+export const parserMoney = (value: any) =>
+	value?.replace(/\R\$\s?|(,*)/g, '') as unknown as number;
+
+export const getUserName = (user: IUser): string =>
+	user?.name || user.username || '';
+
+export const formatToMoneyDecimal = (
+	value: number,
+	decimal: number = 2,
+): string => `R$ ${value?.toFixed(decimal) ?? 0}`;

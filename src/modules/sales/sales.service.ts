@@ -129,7 +129,12 @@ import {
 	ISubtotalAndTotalFinalAmount,
 	ITotalsProcessedFileUploadTemplateRows,
 } from './interfaces/sales.type';
+import {
+	getSaleSummaryTemplate,
+	ISaleSummaryTemplate,
+} from './interfaces/template/sale-summary.template';
 import { SalesValidationService } from './sales-validation.service';
+import { parsePopulatedSales, parsePopulatedSaleStores } from './sales.utils';
 
 @Injectable()
 export class SalesService {
@@ -188,6 +193,31 @@ export class SalesService {
 		if (!sale) {
 			throw new NotFoundException('Sale not found!');
 		}
+
+		return sale;
+	}
+
+	public async findFilledByIdOrFail(saleId: string): Promise<ISale> {
+		const sale: ISale | null = await this._saleModel
+			.findById(saleId)
+			.populate({
+				path: 'stores.customerId',
+				model: 'Customer',
+			})
+			.populate({
+				path: 'stores.products.productId',
+				model: 'Product',
+			})
+			.populate({
+				path: 'stores.storeId',
+				model: 'Store',
+			});
+
+		if (!sale) {
+			throw new NotFoundException('Sale not found!');
+		}
+
+		sale.stores = parsePopulatedSaleStores(sale.stores);
 
 		return sale;
 	}
@@ -299,7 +329,7 @@ export class SalesService {
 
 		response.total = await this._saleModel.countDocuments(filter);
 
-		let sales: ISale[] = await this._saleModel
+		const sales: ISale[] = await this._saleModel
 			.find(filter, null, queryOptions<ISale>(tableState))
 			.populate({
 				path: 'stores.customerId',
@@ -310,29 +340,7 @@ export class SalesService {
 				model: 'Product',
 			});
 
-		sales = JSON.parse(JSON.stringify(sales));
-
-		sales.forEach((sale: ISale) => {
-			sale.stores = JSON.parse(JSON.stringify(sale.stores)).map(
-				(store: ISaleStore) => {
-					store.products = JSON.parse(JSON.stringify(store.products)).map(
-						(product: ISaleStoreProduct) => {
-							return {
-								...product,
-								product: product.productId,
-							};
-						},
-					);
-
-					return {
-						...store,
-						customer: store.customerId,
-					};
-				},
-			);
-		});
-
-		response.data = sales;
+		response.data = parsePopulatedSales(sales);
 
 		return response;
 	}
@@ -3456,27 +3464,7 @@ export class SalesService {
 				model: 'Product',
 			});
 
-		sales = JSON.parse(JSON.stringify(sales));
-
-		sales.forEach((sale: ISale) => {
-			sale.stores = JSON.parse(JSON.stringify(sale.stores)).map(
-				(store: ISaleStore) => {
-					store.products = JSON.parse(JSON.stringify(store.products)).map(
-						(product: ISaleStoreProduct) => {
-							return {
-								...product,
-								product: product.productId,
-							};
-						},
-					);
-
-					return {
-						...store,
-						customer: store.customerId,
-					};
-				},
-			);
-		});
+		sales = parsePopulatedSales(sales);
 
 		const workbook: ExcelJS.Workbook = new ExcelJS.Workbook();
 		const worksheet: ExcelJS.Worksheet = workbook.addWorksheet('Data');
@@ -3703,11 +3691,14 @@ export class SalesService {
 	}
 
 	public async downloadSaleSummaryPdf(saleId: string): Promise<ISalePdf> {
-		const sale: ISale = await this.findByIdOrFail(saleId);
+		const sale: ISale = await this.findFilledByIdOrFail(saleId);
+
+		const saleSummaryTemplate: ISaleSummaryTemplate =
+			getSaleSummaryTemplate(sale);
 
 		const pdfBuffer: Buffer = await generatePdfBuffer({
 			getHtmlFromTemplateParams: {
-				data: sale,
+				data: saleSummaryTemplate,
 				relativePath: TemplatesEnum.RelativePath.SALE_SUMMARY_HBS,
 			},
 		});
