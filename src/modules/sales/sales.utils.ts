@@ -60,7 +60,7 @@ export const getTotalAfterPayment = (
 	totalPayment: number,
 ): number => sale.totals.totalFinalAmount - totalPayment;
 
-export const parsePopulatedSales = (sales: ISale[]) => {
+export const parsePopulatedSales = (sales: ISale[]): ISale[] => {
 	sales = unFreezeData(sales);
 
 	sales.forEach((sale: ISale) => {
@@ -70,7 +70,9 @@ export const parsePopulatedSales = (sales: ISale[]) => {
 	return sales;
 };
 
-export const parsePopulatedSaleStores = (saleStores: ISaleStore[]) => {
+export const parsePopulatedSaleStores = (
+	saleStores: ISaleStore[],
+): ISaleStore[] => {
 	return unFreezeData(saleStores).map((store: ISaleStore): ISaleStore => {
 		store.products = unFreezeData(store.products).map(
 			(product: ISaleStoreProduct): ISaleStoreProduct => {
