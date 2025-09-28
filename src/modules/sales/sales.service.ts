@@ -134,7 +134,7 @@ import {
 	ISaleSummaryTemplate,
 } from './interfaces/template/sale-summary.template';
 import { SalesValidationService } from './sales-validation.service';
-import { parsePopulatedSales, parsePopulatedSaleStores } from './sales.utils';
+import { parsePopulatedSale, parsePopulatedSales } from './sales.utils';
 
 @Injectable()
 export class SalesService {
@@ -217,9 +217,9 @@ export class SalesService {
 			throw new NotFoundException('Sale not found!');
 		}
 
-		sale.stores = parsePopulatedSaleStores(sale.stores);
+		const salePopulated: ISale = parsePopulatedSale(sale);
 
-		return sale;
+		return salePopulated;
 	}
 
 	public async findByUserId(userId: string): Promise<ISale[]> {

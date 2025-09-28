@@ -24,6 +24,8 @@ export const getImageUrl = (filename: string): string => {
 	return getImageAwsUrl(filename);
 };
 
-export const apiAssetImageUrl: string = `${process.env.SOCIAL_PRICES_API_URL}api/v1/assets/images`;
+export const apiAssetImageUrl = (): string =>
+	`${process.env.SOCIAL_PRICES_API_URL}api/v1/assets/images`;
 
-export const imageAvatarDefault: string = `${apiAssetImageUrl}/avatar-default.png`;
+export const getImageAvatarDefault = (): string =>
+	`${apiAssetImageUrl()}/avatar-default.png`;

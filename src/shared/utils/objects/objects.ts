@@ -1,3 +1,5 @@
+import { cloneDeep } from 'lodash';
+
 export const parseAnyStringToObject = <T>(value: any): T => {
 	return eval(`(${value})`);
 };
@@ -40,5 +42,5 @@ export const parsePropertiesToJsonIfNeed = (obj: any): any => {
 };
 
 export const unFreezeData = <T>(data: T): T => {
-	return JSON.parse(JSON.stringify(data));
+	return JSON.parse(JSON.stringify(cloneDeep(data)));
 };

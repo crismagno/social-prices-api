@@ -1,20 +1,105 @@
-<html>
+<html lang='pt-BR'>
 	<head>
+		<meta charset='UTF-8' />
 		<style>
-			body { font-family: Arial, sans-serif; padding: 20px; } h1 { color: #333;
-			} table { width: 100%; border-collapse: collapse; margin-top: 20px; } th,
-			td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+			body { font-family: Arial, sans-serif; font-size: 12px; } h2 { margin-top:
+			0; } table { width: 100%; border-collapse: collapse; margin-bottom: 20px;
+			} th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+			.totals td { font-weight: bold; } .flex { display: flex; } .flex-col {
+			flex-direction: column; } .w-full { width: : 100%; } .justify-center {
+			justify-content: center; } .items-center { align-items: center; } .mt-5 {
+			margin-top: 50px; } .mt-3 {margin-top: 30px;} .text-center { text-align:
+			center; } .justify-between { justify-content: space-between; } .pr-10 {
+			padding-right: 100px; } .mt-2 { margin-top: 20px; } .font-semibold { font:
+			700; } .mr-1 { margin-right: 10px; } .rounded { border-radius: 100%; }
 		</style>
 	</head>
 	<body>
-		<h1>Resumo da Venda</h1>
-		<p><b>ID:</b> {{sale.number}}</p>
 
-		<h2>Itens</h2>
-		<table>
-			<tr><th>Produto</th><th>Qtd</th><th>Preço</th></tr>
-		</table>
+		<h2>Sale Summary: {{saleNumber}}</h2>
 
-		<h1>TEST</h1>
+		<hr />
+
+		<div className='flex flex-col w-full justify-center items-center mt-5'>
+			<img src='{{customer.avatar}}' width='40' class='rounded' />
+
+			<label className='mt-3'>{{customer.name}}</label>
+
+			<label>
+				{{customer.email}}
+				/
+				{{customer.phone}}
+			</label>
+
+			<label>
+				{{customer.birthDate}}
+				/
+				{{customer.gender}}
+			</label>
+
+			<div className='text-center'>
+				<b>Shipping Address: </b>
+
+				<span>{{shippingAddress}}</span>
+			</div>
+		</div>
+
+		<hr />
+
+		{{!-- <h3>Cliente</h3>
+		<p><strong>Nome:</strong> {{customer.name}}</p>
+		<p><strong>Email:</strong> {{customer.email}}</p>
+		<p><strong>Telefone:</strong> {{customer.phone}}</p>
+		<p><strong>Nascimento:</strong> {{customer.birthDate}}</p>
+		<p><strong>Gênero:</strong> {{customer.gender}}</p>
+		<p><strong>Endereço:</strong> {{customer.address}}</p>
+
+		<h3>Loja(s)</h3>
+		{{#each stores}}
+			<h4>{{name}}</h4>
+			<table>
+				<thead>
+					<tr>
+						<th>Produto</th>
+						<th>Código</th>
+						<th>Qtd</th>
+						<th>Preço</th>
+						<th>Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each products}}
+						<tr>
+							<td>{{name}}</td>
+							<td>{{barcode}}</td>
+							<td>{{quantity}}</td>
+							<td>{{price}}</td>
+							<td>{{total}}</td>
+						</tr>
+					{{/each}}
+				</tbody>
+				<tfoot class='totals'>
+					<tr><td colspan='4'>Subtotal</td><td>{{totals.subtotal}}</td></tr>
+					<tr><td colspan='4'>Desconto</td><td>{{totals.discount}}</td></tr>
+					<tr><td colspan='4'>Frete</td><td>{{totals.shipping}}</td></tr>
+					<tr><td colspan='4'>Impostos</td><td>{{totals.tax}}</td></tr>
+					<tr><td colspan='4'>Total</td><td>{{totals.total}}</td></tr>
+				</tfoot>
+			</table>
+		{{/each}}
+
+		<h3>Pagamentos</h3>
+		<p><strong>PIX:</strong> {{payments.pix}}</p>
+		<p><strong>Outros:</strong> {{payments.other}}</p>
+		<p><strong>Total Pago:</strong> {{payments.totalPayment}}</p>
+		<p><strong>Saldo:</strong> {{payments.totalAfterPayment}}</p>
+
+		<h3>Meta</h3>
+		<p><strong>Status:</strong> {{meta.status}}</p>
+		<p><strong>Status do Pagamento:</strong> {{meta.paymentStatus}}</p>
+		<p><strong>Data de Entrega:</strong> {{meta.deliveryAt}}</p>
+		<p><strong>Criado em:</strong> {{meta.createdDate}}</p>
+		<p><strong>Número da Venda:</strong> {{meta.saleNumber}}</p> --}}
+
 	</body>
 </html>

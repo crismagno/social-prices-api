@@ -1,6 +1,9 @@
-import { reduce } from 'lodash';
+import { cloneDeep, reduce } from 'lodash';
 
 import { unFreezeData } from '../../shared/utils/objects/objects';
+import { ICustomer } from '../customers/interfaces/customer.interface';
+import { IProduct } from '../products/interfaces/product.interface';
+import { IStore } from '../stores/interfaces/store.interface';
 import {
 	ISale,
 	ISalePayment,
@@ -61,32 +64,46 @@ export const getTotalAfterPayment = (
 ): number => sale.totals.totalFinalAmount - totalPayment;
 
 export const parsePopulatedSales = (sales: ISale[]): ISale[] => {
-	sales = unFreezeData(sales);
+	const salesClone: ISale[] = cloneDeep(unFreezeData(sales));
 
-	sales.forEach((sale: ISale) => {
+	salesClone.forEach((sale: ISale) => {
 		sale.stores = parsePopulatedSaleStores(sale.stores);
 	});
 
-	return sales;
+	return salesClone;
 };
 
 export const parsePopulatedSaleStores = (
 	saleStores: ISaleStore[],
 ): ISaleStore[] => {
-	return unFreezeData(saleStores).map((saleStore: ISaleStore): ISaleStore => {
-		saleStore.products = unFreezeData(saleStore.products).map(
-			(product: ISaleStoreProduct): ISaleStoreProduct => {
-				return {
-					...product,
-					product: product.productId as any,
-				};
-			},
-		);
+	const saleStoresClone: ISaleStore[] = unFreezeData(saleStores);
 
-		return {
-			...saleStore,
-			store: saleStore.storeId as any,
-			customer: saleStore.customerId as any,
-		};
-	});
+	const saleStoresPopulated: ISaleStore[] = saleStoresClone.map(
+		(saleStore: ISaleStore): ISaleStore => {
+			saleStore.products = unFreezeData(saleStore.products).map(
+				(product: ISaleStoreProduct): ISaleStoreProduct => {
+					return {
+						...product,
+						product: unFreezeData<IProduct>(product.productId as any),
+					};
+				},
+			);
+
+			return {
+				...saleStore,
+				store: unFreezeData<IStore>(saleStore.storeId as any),
+				customer: unFreezeData<ICustomer>(saleStore.customerId as any),
+			};
+		},
+	);
+
+	return saleStoresPopulated;
+};
+
+export const parsePopulatedSale = (sale: ISale): ISale => {
+	const saleClone: ISale = cloneDeep(unFreezeData(sale));
+
+	saleClone.stores = parsePopulatedSaleStores(saleClone.stores);
+
+	return saleClone;
 };

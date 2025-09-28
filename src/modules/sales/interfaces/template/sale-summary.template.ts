@@ -1,16 +1,17 @@
 import { map } from 'lodash';
-import moment from 'moment';
+import * as moment from 'moment-timezone';
 
 import PersonEnum from '../../../../shared/common/person/person.enum';
 import DatesEnum from '../../../../shared/utils/dates/dates.enum';
 import {
+	getImageAvatarDefault,
 	getImageUrl,
-	imageAvatarDefault,
 } from '../../../../shared/utils/images/url-images';
 import {
 	createAddressName,
 	formatToMoneyDecimal,
 } from '../../../../shared/utils/strings/strings';
+import { ICustomer } from '../../../customers/interfaces/customer.interface';
 import { IProduct } from '../../../products/interfaces/product.interface';
 import {
 	getQuantity,
@@ -50,6 +51,7 @@ export interface ISaleSummaryCustomerTemplate {
 	phone: string;
 	birthDate?: string;
 	gender?: string;
+	avatar?: string;
 }
 
 export interface ISaleSummaryStoreTemplate {
@@ -83,6 +85,7 @@ export interface ISaleSummaryPaymentTemplate {
 
 export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 	const buyer: ISaleBuyer = sale.buyer;
+	const customer: ICustomer | undefined = sale?.stores?.[0].customer;
 
 	const quantityTotal = getQuantity(sale);
 
@@ -104,6 +107,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 				? moment(buyer.birthDate).format(DatesEnum.Format.MMDDYYYY)
 				: '',
 			gender: PersonEnum.GenderLabels[buyer.gender],
+			avatar: customer?.avatar ?? getImageAvatarDefault(),
 		},
 		deliveryAt: sale.deliveryAt
 			? moment(sale.deliveryAt).format(DatesEnum.Format.DDMMYYY)
@@ -133,7 +137,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 
 							const fileUrl: string = product?.mainUrl
 								? getImageUrl(product.mainUrl)
-								: imageAvatarDefault;
+								: getImageAvatarDefault();
 
 							const price: number = saleStoreProduct.price;
 
@@ -153,7 +157,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 					);
 
 				return {
-					name: saleStore.store?.name ?? 'No Name',
+					name: saleStore.store?.name ?? '---',
 					products: saleSummaryStoreProducts,
 				};
 			},
