@@ -66,6 +66,7 @@ export interface ISaleSummaryStoreProductTemplate {
 	quantity: number;
 	price: string;
 	total: string;
+	classStyle: string;
 }
 
 export interface ISaleSummaryTotalsTemplate {
@@ -107,7 +108,9 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 				? moment(buyer.birthDate).format(DatesEnum.Format.MMDDYYYY)
 				: '',
 			gender: PersonEnum.GenderLabels[buyer.gender],
-			avatar: customer?.avatar ?? getImageAvatarDefault(),
+			avatar: customer?.avatar
+				? getImageUrl(customer.avatar)
+				: getImageAvatarDefault(),
 		},
 		deliveryAt: sale.deliveryAt
 			? moment(sale.deliveryAt).format(DatesEnum.Format.DDMMYYY)
@@ -123,7 +126,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 		paymentStatus: SalesEnum.PaymentStatusLabels[sale.paymentStatus],
 		saleNumber: sale.number.toString(),
 		saleNumberManual: sale.numberManual,
-		saleStatus: SalesEnum.Status[sale.status],
+		saleStatus: SalesEnum.StatusLabels[sale.status],
 		stores: map(
 			sale.stores,
 			(saleStore: ISaleStore): ISaleSummaryStoreTemplate => {
@@ -152,6 +155,11 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 								price: formatToMoneyDecimal(price),
 								quantity: quantity,
 								total: formatToMoneyDecimal(total),
+								classStyle: !saleStoreProduct.isValid
+									? 'bg-invalid'
+									: saleStoreProduct.isCompleted
+									? 'bg-completed'
+									: '',
 							};
 						},
 					);
