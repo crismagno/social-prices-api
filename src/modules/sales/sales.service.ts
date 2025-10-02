@@ -217,9 +217,7 @@ export class SalesService {
 			throw new NotFoundException('Sale not found!');
 		}
 
-		const salePopulated: ISale = parsePopulatedSale(sale);
-
-		return salePopulated;
+		return parsePopulatedSale(sale);
 	}
 
 	public async findByUserId(userId: string): Promise<ISale[]> {
