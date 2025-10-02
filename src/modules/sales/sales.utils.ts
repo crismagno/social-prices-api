@@ -1,4 +1,4 @@
-import { cloneDeep, reduce } from 'lodash';
+import { reduce } from 'lodash';
 
 import { unFreezeData } from '../../shared/utils/objects/objects';
 import { ICustomer } from '../customers/interfaces/customer.interface';
@@ -64,7 +64,7 @@ export const getTotalAfterPayment = (
 ): number => sale.totals.totalFinalAmount - totalPayment;
 
 export const parsePopulatedSales = (sales: ISale[]): ISale[] => {
-	const salesClone: ISale[] = cloneDeep(unFreezeData(sales));
+	const salesClone: ISale[] = unFreezeData(sales);
 
 	salesClone.forEach((sale: ISale) => {
 		sale.stores = parsePopulatedSaleStores(sale.stores);
@@ -101,7 +101,7 @@ export const parsePopulatedSaleStores = (
 };
 
 export const parsePopulatedSale = (sale: ISale): ISale => {
-	const saleClone: ISale = cloneDeep(unFreezeData(sale));
+	const saleClone: ISale = unFreezeData(sale);
 
 	saleClone.stores = parsePopulatedSaleStores(saleClone.stores);
 

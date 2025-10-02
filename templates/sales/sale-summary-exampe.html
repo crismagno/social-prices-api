@@ -177,7 +177,7 @@
 			<div class="divider"></div>
 
 			<div class='flex flex-col justify-center items-center mt-2'>
-				<img src='{{customer.avatar}}' width='80' class='rounded' />
+				<img src='{{customer.avatar}}' width='80' height="80" class='rounded' />
 
 				<label class='mt-2'>{{customer.name}}</label>
 
@@ -220,10 +220,10 @@
 
 					<div class="flex flex-col mt-1 w-full">
 						{{#each products}}
-						<div class="flex w-full justify-between bg-invalid">
+						<div class="flex w-full justify-between {{classStyle}}">
 							<div class="flex">
 								<div class="mr-1">
-									<img src='{{image}}' width='40' class='rounded' />
+									<img src='{{image}}' width='40' height="40" class='rounded' />
 								</div>
 
 								<div class="flex flex-col mr-3">
