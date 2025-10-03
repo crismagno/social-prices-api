@@ -66,7 +66,7 @@ export interface ISaleSummaryStoreProductTemplate {
 	quantity: number;
 	price: string;
 	total: string;
-	classStyle: string;
+	status: string;
 }
 
 export interface ISaleSummaryTotalsTemplate {
@@ -155,11 +155,11 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 								price: formatToMoneyDecimal(price),
 								quantity: quantity,
 								total: formatToMoneyDecimal(total),
-								classStyle: !saleStoreProduct.isValid
-									? 'bg-invalid'
+								status: !saleStoreProduct.isValid
+									? 'invalid'
 									: saleStoreProduct.isCompleted
-									? 'bg-completed'
-									: '',
+									? 'completed'
+									: 'normal',
 							};
 						},
 					);
