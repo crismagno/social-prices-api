@@ -1,10 +1,18 @@
-import { FilterQuery, Model } from 'mongoose';
+import {
+	FilterQuery,
+	Model,
+} from 'mongoose';
 
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+	BadRequestException,
+	Injectable,
+	Logger,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService
+	from '../../infra/services/email-transport/email-transport-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -439,6 +447,36 @@ export class NotificationsService {
 			type: NotificationsEnum.Type.NEWS,
 			userId,
 		});
+	}
+
+	public async sendSaleSummaryLink(
+		sale: ISale,
+		toEmail: string,
+		token: string,
+	): Promise<INotificationResponse> {
+		const pageUrl: string = `${process.env.SOCIAL_PRICES_URL}download/sales/summary?i=${token}`;
+
+		const emailResponse: string = await this._emailTransportService.sendEmail({
+			to: toEmail,
+			subject: `Download Sale Summary`,
+			html: `
+			<div>
+				Hi! ${sale.buyer.name}.
+				You can download your sale summary related to sale number: <b>${sale.number}</b>!
+				Just click here to do download: <a href="${pageUrl}" target="blank">Download Sale Summary</a>
+			</div>
+			`,
+		});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send sale summary link',
+			);
+		}
+
+		return {
+			email: emailResponse,
+		};
 	}
 
 	//#endregion

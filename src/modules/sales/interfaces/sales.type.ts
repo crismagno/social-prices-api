@@ -4,9 +4,13 @@ import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 } from '../../../shared/utils/charts/charts-types';
-import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
+import {
+	TTableStateSortOrder,
+} from '../../../shared/utils/table/table-state.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
-import { IFileUploadTemplateErrorRow } from '../../files-uploads/interfaces/files-uploads.type';
+import {
+	IFileUploadTemplateErrorRow,
+} from '../../files-uploads/interfaces/files-uploads.type';
 import { IProduct } from '../../products/interfaces/product.interface';
 import { ITag } from '../../tags/interfaces/tags.interface';
 import { ISale } from './sale.interface';
@@ -181,4 +185,9 @@ export interface IGetSalesSummaryByUserTableStateResponse {
 export interface ISalePdf {
 	sale: ISale;
 	pdfBuffer: Buffer;
+}
+
+export interface ISendSaleSummaryLinkRequest {
+	saleId: string;
+	toEmail?: string;
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
+import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import { CountersModule } from '../counters/counters.module';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
@@ -32,6 +33,6 @@ import { SalesService } from './sales.service';
 		EmployeesModule,
 	],
 	controllers: [SalesController],
-	providers: [SalesService, SalesValidationService],
+	providers: [SalesService, SalesValidationService, HashCrypt],
 })
 export class SalesModule {}

@@ -13,7 +13,11 @@ import {
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
-import mongoose, { FilterQuery, Model, PipelineStage } from 'mongoose';
+import mongoose, {
+	FilterQuery,
+	Model,
+	PipelineStage,
+} from 'mongoose';
 
 import {
 	BadRequestException,
@@ -25,13 +29,18 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
+import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import AddressEnum from '../../shared/common/address/address.enum';
 import { IAddress } from '../../shared/common/address/address.interface';
-import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto';
+import {
+	CreateAddressDto,
+} from '../../shared/common/address/CreateAddress.dto';
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
-import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
+import {
+	parseToChartDataPeriodTypeItem,
+} from '../../shared/utils/charts/charts';
 import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
@@ -98,8 +107,10 @@ import CreateSaleDto, {
 } from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
-import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
-import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
+import UpdateSalePaymentStatusManualDto
+	from './interfaces/dto/updateSalePaymentStatusManual.dto';
+import UpdateSaleStatusManualDto
+	from './interfaces/dto/updateSaleStatusManual.dto';
 import {
 	ISale,
 	ISalePayment,
@@ -126,6 +137,7 @@ import {
 	ISaleStoreProductString,
 	ISaleStoresProductsTotals,
 	ISaleToCreateByUpload,
+	ISendSaleSummaryLinkRequest,
 	ISubtotalAndTotalFinalAmount,
 	ITotalsProcessedFileUploadTemplateRows,
 } from './interfaces/sales.type';
@@ -134,7 +146,10 @@ import {
 	ISaleSummaryTemplate,
 } from './interfaces/template/sale-summary.template';
 import { SalesValidationService } from './sales-validation.service';
-import { parsePopulatedSale, parsePopulatedSales } from './sales.utils';
+import {
+	parsePopulatedSale,
+	parsePopulatedSales,
+} from './sales.utils';
 
 @Injectable()
 export class SalesService {
@@ -161,6 +176,7 @@ export class SalesService {
 		private readonly _filesUploadsService: FilesUploadsService,
 		private readonly _filesService: FilesService,
 		private readonly _employeesService: EmployeesService,
+		private readonly _hashCrypt: HashCrypt,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -3702,6 +3718,35 @@ export class SalesService {
 		});
 
 		return { sale, pdfBuffer };
+	}
+
+	public async sendSaleSummaryLink(
+		sendSaleSummaryLinkRequest: ISendSaleSummaryLinkRequest,
+	): Promise<void> {
+		if (!isValidEmail(sendSaleSummaryLinkRequest.toEmail)) {
+			throw new BadRequestException('Invalid Email!');
+		}
+
+		const { saleId, toEmail } = sendSaleSummaryLinkRequest;
+
+		const sale: ISale = await this.findByIdOrFail(saleId);
+
+		const token: string = this._hashCrypt.encryptWithExpirationDays({
+			saleId: sale._id,
+		});
+
+		await this._notificationsService.sendSaleSummaryLink(sale, toEmail, token);
+	}
+
+	public async getSaleBySaleSummaryLinkToken(token: string): Promise<ISale> {
+		const { saleId } = this._hashCrypt.decryptAndValidateExpiration<{
+			saleId: string;
+			exp: number;
+		}>(token);
+
+		const sale: ISale = await this.findFilledByIdOrFail(saleId);
+
+		return sale;
 	}
 
 	//#endregion

@@ -17,8 +17,13 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
-import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
-import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import { Public } from '../../shared/decorators/custom.decorator';
+import {
+	parseFilePipeBuilder,
+} from '../../shared/pipes/parse-file-builder-pipe';
+import {
+	ValidationParamsPipe,
+} from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -28,8 +33,10 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
-import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
-import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
+import UpdateSalePaymentStatusManualDto
+	from './interfaces/dto/updateSalePaymentStatusManual.dto';
+import UpdateSaleStatusManualDto
+	from './interfaces/dto/updateSaleStatusManual.dto';
 import { ISale } from './interfaces/sale.interface';
 import {
 	IFiltersDownloadSales,
@@ -39,6 +46,7 @@ import {
 	IGetSalesBalanceResponse,
 	IGetSalesSummaryByUserTableStateResponse,
 	ISalePdf,
+	ISendSaleSummaryLinkRequest,
 } from './interfaces/sales.type';
 import { SalesService } from './sales.service';
 
@@ -210,6 +218,7 @@ export class SalesController {
 		return await this._salesService.updateSaleFiles(updateSaleFilesDto, files);
 	}
 
+	@Public()
 	@Get('/downloadSaleSummaryPdf/:saleId')
 	@UsePipes(ValidationPipe)
 	public async downloadSaleSummaryPdf(
@@ -231,5 +240,22 @@ export class SalesController {
 		});
 
 		res.send(salePdf.pdfBuffer);
+	}
+
+	@Post('/sendSaleSummaryLink')
+	@UsePipes(ValidationPipe)
+	public async sendSaleSummaryLink(
+		@Body() sendSaleSummaryLinkRequest: ISendSaleSummaryLinkRequest,
+	): Promise<void> {
+		await this._salesService.sendSaleSummaryLink(sendSaleSummaryLinkRequest);
+	}
+
+	@Public()
+	@Get('/getSaleBySaleSummaryLinkToken/:token')
+	@UsePipes(ValidationPipe)
+	public async getSaleBySaleSummaryLinkToken(
+		@Param('token', ValidationParamsPipe) token: string,
+	): Promise<ISale> {
+		return await this._salesService.getSaleBySaleSummaryLinkToken(token);
 	}
 }
