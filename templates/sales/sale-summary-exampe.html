@@ -220,7 +220,7 @@
 
 					<div class="flex flex-col mt-1 w-full">
 						{{#each products}}
-						<div class="flex w-full justify-between {{classStyle}}">
+						<div class="flex w-full justify-between bg-{{status}}">
 							<div class="flex">
 								<div class="mr-1">
 									<img src='{{image}}' width='40' height="40" class='rounded' />
@@ -347,6 +347,13 @@
 			<div class="flex justify-between w-full mt-1">
 				<label class="font-bold">Sale Number Manual: </label>
 				<label>{{saleNumberManual}}</label>
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="flex w-full mt-1">
+				<label class="flex font-bold mr-1">Note to Customer: </label>
+				<label>{{noteToCustomer}}</label>
 			</div>
 		</div>
 	</div>
