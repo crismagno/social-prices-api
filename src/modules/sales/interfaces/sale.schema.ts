@@ -356,6 +356,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: [String] })
 	filesUrl: string[];
 
+	@Prop({ type: String })
+	noteToCustomer: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

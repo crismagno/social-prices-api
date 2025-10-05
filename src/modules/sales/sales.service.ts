@@ -13,11 +13,7 @@ import {
 	uniq,
 } from 'lodash';
 import * as moment from 'moment-timezone';
-import mongoose, {
-	FilterQuery,
-	Model,
-	PipelineStage,
-} from 'mongoose';
+import mongoose, { FilterQuery, Model, PipelineStage } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -32,15 +28,11 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import AddressEnum from '../../shared/common/address/address.enum';
 import { IAddress } from '../../shared/common/address/address.interface';
-import {
-	CreateAddressDto,
-} from '../../shared/common/address/CreateAddress.dto';
+import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto';
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
-import {
-	parseToChartDataPeriodTypeItem,
-} from '../../shared/utils/charts/charts';
+import { parseToChartDataPeriodTypeItem } from '../../shared/utils/charts/charts';
 import ChartsEnum from '../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
@@ -107,10 +99,8 @@ import CreateSaleDto, {
 } from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
-import UpdateSalePaymentStatusManualDto
-	from './interfaces/dto/updateSalePaymentStatusManual.dto';
-import UpdateSaleStatusManualDto
-	from './interfaces/dto/updateSaleStatusManual.dto';
+import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
+import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import {
 	ISale,
 	ISalePayment,
@@ -146,10 +136,7 @@ import {
 	ISaleSummaryTemplate,
 } from './interfaces/template/sale-summary.template';
 import { SalesValidationService } from './sales-validation.service';
-import {
-	parsePopulatedSale,
-	parsePopulatedSales,
-} from './sales.utils';
+import { parsePopulatedSale, parsePopulatedSales } from './sales.utils';
 
 @Injectable()
 export class SalesService {
@@ -559,6 +546,7 @@ export class SalesService {
 				uploadFilename: null,
 				numberManual: createSaleDto.numberManual,
 				filesUrl: [],
+				noteToCustomer: createSaleDto.noteToCustomer,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -664,6 +652,7 @@ export class SalesService {
 				createdDate:
 					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
 				numberManual: updateSaleDto.numberManual,
+				noteToCustomer: updateSaleDto.noteToCustomer,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -2667,6 +2656,7 @@ export class SalesService {
 						softDelete: saleBySaleNumberManual.softDelete,
 						updatedAt: now,
 						updatedByUserId: ownerUserId as any,
+						noteToCustomer: saleBySaleNumberManual.noteToCustomer,
 					};
 				} else {
 					sale = {
@@ -2743,6 +2733,7 @@ export class SalesService {
 						softDelete: null,
 						updatedAt: now,
 						updatedByUserId: null,
+						noteToCustomer: null,
 					};
 				}
 

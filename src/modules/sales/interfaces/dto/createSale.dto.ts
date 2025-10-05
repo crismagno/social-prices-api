@@ -261,4 +261,8 @@ export default class CreateSaleDto {
 	@IsString()
 	@IsOptional()
 	numberManual: string | null;
+
+	@IsString()
+	@IsOptional()
+	noteToCustomer: string | null;
 }

@@ -43,6 +43,7 @@ export interface ISaleSummaryTemplate {
 	createdDate: string;
 	saleNumberManual: string;
 	totals: ISaleSummaryTotalsTemplate;
+	noteToCustomer: string;
 }
 
 export interface ISaleSummaryCustomerTemplate {
@@ -184,5 +185,6 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 			total: formatToMoneyDecimal(sale.totals.totalFinalAmount ?? 0),
 			totalAfterDiscount: formatToMoneyDecimal(totalAfterDiscount),
 		},
+		noteToCustomer: sale.noteToCustomer ?? '',
 	};
 };

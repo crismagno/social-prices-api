@@ -36,6 +36,7 @@ export interface ISale
 	uploadFilename: string | null;
 	createdDate: Date; // Date of creation sale on his store parsed by user
 	filesUrl: string[];
+	noteToCustomer: string | null;
 }
 
 export interface ISaleTotals {
