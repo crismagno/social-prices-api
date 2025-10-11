@@ -165,6 +165,7 @@ export class CategoriesService {
 			description: createCategoryDto.description,
 			createdAt: now,
 			updatedAt: now,
+			color: createCategoryDto.color,
 		});
 
 		const newCategory: ICategory = await category.save();
@@ -191,6 +192,7 @@ export class CategoriesService {
 						code: updateCategoryDto.code,
 						type: updateCategoryDto.type,
 						description: updateCategoryDto.description,
+						color: updateCategoryDto.color,
 					},
 				},
 				{
@@ -221,6 +223,7 @@ export class CategoriesService {
 						createdByUserId: userId,
 						createdAt: now,
 						updatedAt: now,
+						color: null,
 					};
 				},
 			),

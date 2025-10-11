@@ -26,4 +26,8 @@ export default class UpdateCategoryDto {
 	@IsString()
 	@IsOptional()
 	description: string | null;
+
+	@IsString()
+	@IsOptional()
+	color: string | null;
 }

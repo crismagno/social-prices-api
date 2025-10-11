@@ -1003,6 +1003,7 @@ export class ProductsService {
 								type: CategoriesEnum.Type.PRODUCT,
 								ownerUserId: userId,
 								code: parseToUpperAndUnderline(categoryFromRow),
+								color: null,
 							},
 							userId,
 						);

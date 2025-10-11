@@ -22,4 +22,8 @@ export default class CreateCategoryDto {
 	@IsString()
 	@IsOptional()
 	description: string | null;
+
+	@IsString()
+	@IsOptional()
+	color: string | null;
 }

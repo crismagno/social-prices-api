@@ -34,6 +34,9 @@ export class Category implements ICategory {
 	@Prop({ type: String })
 	description: string | null;
 
+	@Prop({ type: String })
+	color: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

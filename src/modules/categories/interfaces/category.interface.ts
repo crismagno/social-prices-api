@@ -12,4 +12,5 @@ export interface ICategory extends ICreatedAtEntity, IUpdatedAtEntity {
 	createdByUserId: mongoose.Schema.Types.ObjectId;
 	ownerUserId: mongoose.Schema.Types.ObjectId | null;
 	description: string | null;
+	color: string | null;
 }
