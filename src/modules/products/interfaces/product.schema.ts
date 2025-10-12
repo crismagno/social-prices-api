@@ -56,6 +56,9 @@ export class Product implements IProduct {
 	@Prop({ type: String })
 	uploadFilename: string | null;
 
+	@Prop({ type: String })
+	brand: string | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

@@ -21,4 +21,5 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	uploadFilename: string | null;
+	brand: string | null;
 }

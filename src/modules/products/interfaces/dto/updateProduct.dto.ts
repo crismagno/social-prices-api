@@ -33,6 +33,10 @@ export default class UpdateProductDto {
 	@IsOptional()
 	QRCode: string | null;
 
+	@IsString()
+	@IsOptional()
+	brand: string | null;
+
 	deletedFilesUrl: string[];
 
 	categoriesIds: string[];

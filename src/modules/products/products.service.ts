@@ -240,6 +240,7 @@ export class ProductsService {
 			createdAt: now,
 			updatedAt: now,
 			uploadFilename: null,
+			brand: createProductDto.brand,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -325,6 +326,7 @@ export class ProductsService {
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
 					updatedAt: now,
+					brand: updateProductDto.brand,
 				},
 			},
 		);
@@ -901,6 +903,7 @@ export class ProductsService {
 						QRCode: null,
 						uploadFilename: filename,
 						previousBarcodes: [],
+						brand: null,
 					});
 				}
 			} catch (error: any) {

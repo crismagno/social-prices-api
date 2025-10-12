@@ -29,6 +29,10 @@ export default class CreateProductDto {
 	@IsOptional()
 	QRCode: string | null;
 
+	@IsString()
+	@IsOptional()
+	brand: string | null;
+
 	categoriesIds: string[];
 
 	tagsIds: string[];
