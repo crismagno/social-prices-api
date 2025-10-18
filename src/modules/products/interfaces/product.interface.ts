@@ -23,6 +23,7 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	uploadFilename: string | null;
 	brand: string | null;
 	historicPrices: IProductHistoricPrice[];
+	releaseDate: Date | null;
 }
 
 export interface IProductHistoricPrice {

@@ -42,4 +42,7 @@ export default class UpdateProductDto {
 	categoriesIds: string[];
 
 	tagsIds: string[];
+
+	@IsOptional()
+	releaseDate: Date | null;
 }

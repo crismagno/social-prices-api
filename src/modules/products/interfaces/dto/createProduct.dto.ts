@@ -36,4 +36,7 @@ export default class CreateProductDto {
 	categoriesIds: string[];
 
 	tagsIds: string[];
+
+	@IsOptional()
+	releaseDate: Date | null;
 }

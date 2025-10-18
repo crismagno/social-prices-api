@@ -19,6 +19,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
+import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import {
 	arrayObjectIdToString,
@@ -245,6 +246,7 @@ export class ProductsService {
 			uploadFilename: null,
 			brand: createProductDto.brand,
 			historicPrices: [],
+			releaseDate: parseToDate(createProductDto.releaseDate),
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -346,6 +348,7 @@ export class ProductsService {
 					updatedAt: now,
 					brand: updateProductDto.brand,
 					historicPrices,
+					releaseDate: parseToDate(updateProductDto.releaseDate),
 				},
 			},
 		);
@@ -924,6 +927,7 @@ export class ProductsService {
 						previousBarcodes: [],
 						brand: null,
 						historicPrices: [],
+						releaseDate: null,
 					});
 				}
 			} catch (error: any) {
