@@ -2,7 +2,22 @@ import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { IProduct } from './product.interface';
+import { IProduct, IProductHistoricPrice } from './product.interface';
+
+@Schema()
+export class ProductHistoricPrice implements IProductHistoricPrice {
+	@Prop({ type: Number, required: true })
+	price: number;
+
+	@Prop({ type: String, required: true })
+	barcode: string;
+
+	@Prop({ type: Date, required: true })
+	updatedAt: Date;
+}
+
+export const ProductHistoricPriceSchema =
+	SchemaFactory.createForClass(ProductHistoricPrice);
 
 @Schema()
 export class Product implements IProduct {
@@ -58,6 +73,9 @@ export class Product implements IProduct {
 
 	@Prop({ type: String })
 	brand: string | null;
+
+	@Prop({ type: [ProductHistoricPriceSchema], required: true, _id: false })
+	historicPrices: IProductHistoricPrice[];
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

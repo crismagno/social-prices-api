@@ -56,7 +56,10 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateProductDto from './interfaces/dto/createProduct.dto';
 import UpdateProductDto from './interfaces/dto/updateProduct.dto';
-import { IProduct } from './interfaces/product.interface';
+import {
+	IProduct,
+	IProductHistoricPrice,
+} from './interfaces/product.interface';
 import { Product } from './interfaces/product.schema';
 import {
 	IFiltersDownloadProducts,
@@ -241,6 +244,7 @@ export class ProductsService {
 			updatedAt: now,
 			uploadFilename: null,
 			brand: createProductDto.brand,
+			historicPrices: [],
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -307,6 +311,20 @@ export class ProductsService {
 			previousBarcodes.push(product.barcode);
 		}
 
+		const historicPrices: IProductHistoricPrice[] =
+			product.historicPrices ?? [];
+
+		if (
+			parseFloat(updateProductDto.price.toString()) !==
+			parseFloat(product.price.toString())
+		) {
+			historicPrices.push({
+				barcode: product.barcode,
+				price: product.price,
+				updatedAt: now,
+			});
+		}
+
 		const productUpdated: IProduct = await this._productModel.findByIdAndUpdate(
 			product._id,
 			{
@@ -327,6 +345,7 @@ export class ProductsService {
 					QRCode: updateProductDto.QRCode,
 					updatedAt: now,
 					brand: updateProductDto.brand,
+					historicPrices,
 				},
 			},
 		);
@@ -904,6 +923,7 @@ export class ProductsService {
 						uploadFilename: filename,
 						previousBarcodes: [],
 						brand: null,
+						historicPrices: [],
 					});
 				}
 			} catch (error: any) {
