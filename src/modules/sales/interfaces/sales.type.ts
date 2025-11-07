@@ -1,16 +1,13 @@
+import CommonEnum from '../../../shared/common/global/common.enum';
 import { IRangeDate } from '../../../shared/common/global/global.interface';
 import ChartsEnum from '../../../shared/utils/charts/charts-enum';
 import {
 	IChartDataPeriodTypeItem,
 	IChartDataProductItem,
 } from '../../../shared/utils/charts/charts-types';
-import {
-	TTableStateSortOrder,
-} from '../../../shared/utils/table/table-state.interface';
+import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
-import {
-	IFileUploadTemplateErrorRow,
-} from '../../files-uploads/interfaces/files-uploads.type';
+import { IFileUploadTemplateErrorRow } from '../../files-uploads/interfaces/files-uploads.type';
 import { IProduct } from '../../products/interfaces/product.interface';
 import { ITag } from '../../tags/interfaces/tags.interface';
 import { ISale } from './sale.interface';
@@ -130,6 +127,7 @@ export interface IFiltersDownloadSales {
 	customerIds: string[];
 	sortField: SalesEnum.SortField;
 	sortOrder: TTableStateSortOrder;
+	isActive: CommonEnum.YesNo | null;
 }
 
 export interface ISaleFileUploadTemplateSelectedProductFormat {

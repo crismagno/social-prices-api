@@ -29,6 +29,7 @@ import HashCrypt from '../../infra/hash-crypt/hash-crypt';
 import AddressEnum from '../../shared/common/address/address.enum';
 import { IAddress } from '../../shared/common/address/address.interface';
 import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto';
+import CommonEnum from '../../shared/common/global/common.enum';
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
@@ -254,7 +255,6 @@ export class SalesService {
 					'stores.storeId': { $in: storesIds },
 				},
 			],
-			softDelete: null,
 		};
 
 		if (tableState.search) {
@@ -324,6 +324,12 @@ export class SalesService {
 			filter['stores.customerId'] = { $in: tableState.filters.customerIds };
 		}
 
+		if (tableState.filters?.isActive?.length === 1) {
+			filter.softDelete = tableState.filters?.isActive[0]
+				? null
+				: { $ne: null };
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
@@ -361,7 +367,6 @@ export class SalesService {
 					'stores.storeId': { $in: arrayStringToObjectId(storesIds) },
 				},
 			],
-			softDelete: null,
 		};
 
 		if (tableState.search) {
@@ -435,6 +440,12 @@ export class SalesService {
 			filter['stores.customerId'] = {
 				$in: arrayStringToObjectId(tableState.filters.customerIds),
 			};
+		}
+
+		if (tableState.filters?.isActive?.length === 1) {
+			filter.softDelete = tableState.filters?.isActive[0]
+				? null
+				: { $ne: null };
 		}
 
 		const pipeline: PipelineStage[] = [
@@ -810,6 +821,54 @@ export class SalesService {
 		}
 	}
 
+	public async activateManual(
+		saleId: string,
+		userId: string,
+		employeeId?: string,
+	): Promise<ISale> {
+		try {
+			if (!saleId) {
+				throw new BadRequestException('SaleId is required!');
+			}
+
+			const sale: ISale = await this._saleModel.findOneAndUpdate(
+				{ _id: new mongoose.Types.ObjectId(saleId) },
+				{
+					$set: {
+						softDelete: null,
+						updatedAt: new Date(),
+						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						updatedByEmployeeId: employeeId
+							? new mongoose.Types.ObjectId(employeeId)
+							: null,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+
+			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+				saleStore.storeId.toString(),
+			);
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByIdOrFail(userIdByStores);
+
+			await this._notificationsService.activatedSale(sale, userIdOwnerStore);
+
+			return sale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
 	public async getSalesAnalytics(
 		userId: string,
 		params: IGetSalesAnalyticsParams,
@@ -1082,6 +1141,22 @@ export class SalesService {
 				{
 					new: true,
 				},
+			);
+
+			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
+				saleStore.storeId.toString(),
+			);
+
+			const stores: IStore[] = await this._storesService.findByIds(storeIds);
+
+			const userIdByStores: string = stores[0].userId.toString();
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByIdOrFail(userIdByStores);
+
+			await this._notificationsService.updatedCustomerOnSale(
+				sale,
+				userIdOwnerStore,
 			);
 
 			return sale;
@@ -3472,7 +3547,6 @@ export class SalesService {
 					'stores.storeId': { $in: map(stores, '_id') },
 				},
 			],
-			softDelete: null,
 		};
 
 		if (filters.search) {
@@ -3536,6 +3610,11 @@ export class SalesService {
 			filter['stores.customerId'] = {
 				$in: filters.customerIds,
 			};
+		}
+
+		if (filters.isActive) {
+			filter.softDelete =
+				filters.isActive === CommonEnum.YesNo.YES ? null : { $ne: null };
 		}
 
 		let sales: ISale[] = await this._saleModel

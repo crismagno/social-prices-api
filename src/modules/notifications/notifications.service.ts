@@ -1,18 +1,10 @@
-import {
-	FilterQuery,
-	Model,
-} from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 
-import {
-	BadRequestException,
-	Injectable,
-	Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService
-	from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -477,6 +469,36 @@ export class NotificationsService {
 		return {
 			email: emailResponse,
 		};
+	}
+
+	public async activatedSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have activated a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Activated',
+			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
+	}
+
+	public async updatedCustomerOnSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have updated customer on sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Customer Updated on Sale',
+			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
 	}
 
 	//#endregion

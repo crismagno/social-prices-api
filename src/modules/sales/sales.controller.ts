@@ -156,6 +156,18 @@ export class SalesController {
 			authPayload.employeeId,
 		);
 	}
+	@Put('/activateManual/:saleId')
+	@UsePipes(ValidationPipe)
+	public async activateManual(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('saleId', ValidationParamsPipe) saleId: string,
+	): Promise<ISale> {
+		return await this._salesService.activateManual(
+			saleId,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
 
 	@Post('/getSalesAnalytics')
 	@UsePipes(ValidationPipe)
