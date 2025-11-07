@@ -18,12 +18,8 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { Public } from '../../shared/decorators/custom.decorator';
-import {
-	parseFilePipeBuilder,
-} from '../../shared/pipes/parse-file-builder-pipe';
-import {
-	ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -32,11 +28,10 @@ import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSaleCustomerManualDto from './interfaces/dto/updateSaleCustomerManual.dto';
 import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
-import UpdateSalePaymentStatusManualDto
-	from './interfaces/dto/updateSalePaymentStatusManual.dto';
-import UpdateSaleStatusManualDto
-	from './interfaces/dto/updateSaleStatusManual.dto';
+import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
+import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
 import { ISale } from './interfaces/sale.interface';
 import {
 	IFiltersDownloadSales,
@@ -131,6 +126,19 @@ export class SalesController {
 	): Promise<ISale> {
 		return await this._salesService.updatePaymentStatusManual(
 			updateSalePaymentStatusManualDto,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Put('/updateSaleCustomerManual')
+	@UsePipes(ValidationPipe)
+	public async updateSaleCustomerManual(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() updateSaleCustomerManualDto: UpdateSaleCustomerManualDto,
+	): Promise<ISale> {
+		return await this._salesService.updateSaleCustomerManual(
+			updateSaleCustomerManualDto,
 			authPayload._id,
 			authPayload.employeeId,
 		);

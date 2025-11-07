@@ -37,6 +37,7 @@ export interface ISale
 	createdDate: Date; // Date of creation sale on his store parsed by user
 	filesUrl: string[];
 	noteToCustomer: string | null;
+	previousCustomerIds: string[];
 }
 
 export interface ISaleTotals {

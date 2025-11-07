@@ -1,7 +1,7 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import * as ExcelJS from 'exceljs';
 import { find, includes, some } from 'lodash';
-import {
+import mongoose, {
 	AnyKeys,
 	AnyObject,
 	FilterQuery,
@@ -659,6 +659,23 @@ export class CustomersService {
 
 	public async insert(customer: ICustomer): Promise<ICustomer> {
 		return await this._customerModel.create(customer);
+	}
+
+	public async inertAddressToCustomer(
+		customerId: string,
+		newAddress: IAddress,
+	): Promise<ICustomer> {
+		return await this._customerModel.findOneAndUpdate(
+			{
+				_id: new mongoose.Types.ObjectId(customerId),
+			},
+			{
+				$push: {
+					addresses: newAddress,
+				},
+			},
+			{ new: true },
+		);
 	}
 
 	// #endregion

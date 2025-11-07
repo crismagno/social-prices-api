@@ -98,6 +98,7 @@ import CreateSaleDto, {
 	SaleStoreProductDto,
 } from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
+import UpdateSaleCustomerManualDto from './interfaces/dto/updateSaleCustomerManual.dto';
 import UpdateSaleFilesDto from './interfaces/dto/updateSaleFiles.dto';
 import UpdateSalePaymentStatusManualDto from './interfaces/dto/updateSalePaymentStatusManual.dto';
 import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.dto';
@@ -494,6 +495,7 @@ export class SalesService {
 			const now: Date = new Date();
 
 			const saleToCreate: ISale = {
+				previousCustomerIds: [],
 				createdDate: createSaleDto.createdDate ?? now,
 				buyer: createSaleDto.buyer
 					? {
@@ -992,6 +994,89 @@ export class SalesService {
 							? new mongoose.Types.ObjectId(employeeId)
 							: null,
 						payments: updateSalePaymentStatusManualDto.newPayments,
+					},
+				},
+				{
+					new: true,
+				},
+			);
+
+			return sale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async updateSaleCustomerManual(
+		updateSaleCustomerManualDto: UpdateSaleCustomerManualDto,
+		userId: string,
+		employeeId?: string,
+	): Promise<ISale> {
+		try {
+			let sale: ISale = await this.findByIdOrFail(
+				updateSaleCustomerManualDto.saleId,
+			);
+
+			const previousCustomerId: string = sale.stores[0].customerId.toString();
+
+			const newCustomer: ICustomer =
+				await this._customersService.findByIdOrFail(
+					updateSaleCustomerManualDto.newCustomerId,
+				);
+
+			const saleAddress: IAddress | undefined =
+				find(newCustomer.addresses, {
+					uid: updateSaleCustomerManualDto.newAddressUid,
+				}) || sale.buyer.address;
+
+			sale = await this._saleModel.findOneAndUpdate(
+				{
+					_id: new mongoose.Types.ObjectId(updateSaleCustomerManualDto.saleId),
+				},
+				{
+					$set: {
+						buyer: {
+							address: saleAddress,
+							birthDate: newCustomer.birthDate,
+							email: newCustomer.email,
+							gender: newCustomer.gender,
+							name: newCustomer.name,
+							phoneNumber: newCustomer.phoneNumbers[0],
+							userId: newCustomer.userId,
+						},
+						header: {
+							billing: sale.header.billing
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							shipping: sale.header.shipping
+								? {
+										address: saleAddress,
+								  }
+								: null,
+							deliveryType: sale.header.deliveryType,
+						},
+						updatedAt: new Date(),
+						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						updatedByEmployeeId: employeeId
+							? new mongoose.Types.ObjectId(employeeId)
+							: null,
+						stores: map(
+							sale.stores,
+							(saleStore: ISaleStore): ISaleStore => ({
+								number: saleStore.number,
+								customerId: newCustomer._id as any,
+								products: saleStore.products,
+								storeId: saleStore.storeId,
+								totals: saleStore.totals,
+							}),
+						),
+					},
+					$push: {
+						previousCustomerIds: previousCustomerId,
 					},
 				},
 				{
@@ -2584,6 +2669,7 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
+						previousCustomerIds: saleBySaleNumberManual.previousCustomerIds,
 						filesUrl: saleBySaleNumberManual.filesUrl,
 						numberManual: saleBySaleNumberManual.numberManual,
 						_id: saleBySaleNumberManual._id,
@@ -2660,6 +2746,7 @@ export class SalesService {
 					};
 				} else {
 					sale = {
+						previousCustomerIds: [],
 						filesUrl: [],
 						numberManual:
 							saleFileUploadTemplateRow.saleNumberManual?.trim() ?? null,
