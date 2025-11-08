@@ -8,6 +8,7 @@ namespace StoresEnum {
 	export enum Type {
 		ONLINE = 'ONLINE',
 		PHYSICAL = 'PHYSICAL',
+		HYBRID = 'HYBRID',
 	}
 }
 

@@ -362,6 +362,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: [String] })
 	previousCustomerIds: string[];
 
+	@Prop({ type: Boolean, required: true })
+	isSendCustomerNotifications: boolean;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

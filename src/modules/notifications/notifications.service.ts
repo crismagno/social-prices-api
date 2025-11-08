@@ -421,11 +421,13 @@ export class NotificationsService {
 		user: IUser,
 		employee: IEmployee,
 	): Promise<void> {
-		await this._emailTransportService.sendEmail({
-			to: sale.buyer.email,
-			subject: `Sale Completed`,
-			html: `Hi! ${sale.buyer.name} your sale has been completed. Sale number: <b>${sale.number}</b>!`,
-		});
+		if (sale.isSendCustomerNotifications) {
+			await this._emailTransportService.sendEmail({
+				to: sale.buyer.email,
+				subject: `Sale Completed`,
+				html: `Hi! ${sale.buyer.name} your sale has been completed. Sale number: <b>${sale.number}</b>!`,
+			});
+		}
 
 		const userId: string = user._id;
 

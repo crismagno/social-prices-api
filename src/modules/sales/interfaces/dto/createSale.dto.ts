@@ -265,4 +265,7 @@ export default class CreateSaleDto {
 	@IsString()
 	@IsOptional()
 	noteToCustomer: string | null;
+
+	@IsBoolean()
+	isSendCustomerNotifications: boolean;
 }

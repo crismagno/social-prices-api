@@ -506,6 +506,7 @@ export class SalesService {
 			const now: Date = new Date();
 
 			const saleToCreate: ISale = {
+				isSendCustomerNotifications: createSaleDto.isSendCustomerNotifications,
 				previousCustomerIds: [],
 				createdDate: createSaleDto.createdDate ?? now,
 				buyer: createSaleDto.buyer
@@ -666,6 +667,7 @@ export class SalesService {
 					updateSaleDto.createdDate ?? sale.createdDate ?? sale.createdAt,
 				numberManual: updateSaleDto.numberManual,
 				noteToCustomer: updateSaleDto.noteToCustomer,
+				isSendCustomerNotifications: updateSaleDto.isSendCustomerNotifications,
 			};
 
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
@@ -2744,6 +2746,8 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
+						isSendCustomerNotifications:
+							saleBySaleNumberManual.isSendCustomerNotifications,
 						previousCustomerIds: saleBySaleNumberManual.previousCustomerIds,
 						filesUrl: saleBySaleNumberManual.filesUrl,
 						numberManual: saleBySaleNumberManual.numberManual,
@@ -2821,6 +2825,7 @@ export class SalesService {
 					};
 				} else {
 					sale = {
+						isSendCustomerNotifications: false,
 						previousCustomerIds: [],
 						filesUrl: [],
 						numberManual:

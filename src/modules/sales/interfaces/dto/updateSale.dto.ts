@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
+	IsBoolean,
 	IsEnum,
 	IsNotEmpty,
 	IsOptional,
@@ -83,4 +84,7 @@ export default class UpdateSaleDto {
 	@IsString()
 	@IsOptional()
 	noteToCustomer: string | null;
+
+	@IsBoolean()
+	isSendCustomerNotifications: boolean;
 }
