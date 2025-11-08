@@ -29,3 +29,5 @@ export const apiAssetImageUrl = (): string =>
 
 export const getImageAvatarDefault = (): string =>
 	`${apiAssetImageUrl()}/avatar-default.png`;
+
+export const getLogo1 = (): string => `${apiAssetImageUrl()}/logo1.png`;

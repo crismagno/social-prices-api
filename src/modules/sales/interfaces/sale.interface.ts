@@ -9,6 +9,7 @@ import { ISoftDeleteEntity } from '../../../shared/common/soft-delete/soft-delet
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 import { IStore } from '../../stores/interfaces/store.interface';
+import { IUser } from '../../users/interfaces/user.interface';
 import SalesEnum from './sales.enum';
 
 export interface ISale
@@ -17,6 +18,7 @@ export interface ISale
 		ISoftDeleteEntity {
 	readonly _id: mongoose.Schema.Types.ObjectId;
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
+	user?: IUser;
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;

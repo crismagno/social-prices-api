@@ -6,6 +6,7 @@ import DatesEnum from '../../../../shared/utils/dates/dates.enum';
 import {
 	getImageAvatarDefault,
 	getImageUrl,
+	getLogo1,
 } from '../../../../shared/utils/images/url-images';
 import {
 	createAddressName,
@@ -13,6 +14,7 @@ import {
 } from '../../../../shared/utils/strings/strings';
 import { ICustomer } from '../../../customers/interfaces/customer.interface';
 import { IProduct } from '../../../products/interfaces/product.interface';
+import { IUser } from '../../../users/interfaces/user.interface';
 import {
 	getQuantity,
 	getTotalAfterDiscount,
@@ -44,6 +46,10 @@ export interface ISaleSummaryTemplate {
 	saleNumberManual: string;
 	totals: ISaleSummaryTotalsTemplate;
 	noteToCustomer: string;
+	logoSrc: string;
+	dateNow: string;
+	lastUpdated: string;
+	user: ISaleSummaryUser;
 }
 
 export interface ISaleSummaryCustomerTemplate {
@@ -85,9 +91,19 @@ export interface ISaleSummaryPaymentTemplate {
 	amount: string;
 }
 
+export interface ISaleSummaryUser {
+	avatar: string;
+	name: string;
+	email: string;
+	phoneNumber: string;
+}
+
 export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 	const buyer: ISaleBuyer = sale.buyer;
+
 	const customer: ICustomer | undefined = sale?.stores?.[0].customer;
+
+	const user: IUser | undefined = sale?.user;
 
 	const quantityTotal = getQuantity(sale);
 
@@ -186,5 +202,16 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 			totalAfterDiscount: formatToMoneyDecimal(totalAfterDiscount),
 		},
 		noteToCustomer: sale.noteToCustomer ?? '',
+		logoSrc: getLogo1(),
+		dateNow: moment().format(DatesEnum.Format.DDMMYYYYhhmmss),
+		lastUpdated: moment(sale.updatedAt).format(DatesEnum.Format.DDMMYYYYhhmmss),
+		user: {
+			avatar: user?.avatar
+				? getImageUrl(user?.avatar)
+				: getImageAvatarDefault(),
+			name: user?.name ?? '-',
+			email: user?.email ?? '-',
+			phoneNumber: user?.phoneNumbers?.[0].number ?? '-',
+		},
 	};
 };

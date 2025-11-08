@@ -222,7 +222,13 @@ export class SalesService {
 			throw new NotFoundException('Sale not found!');
 		}
 
-		return parsePopulatedSale(sale);
+		const salePopulated: ISale = parsePopulatedSale(sale);
+
+		salePopulated.user = await this._usersService.findOneById(
+			salePopulated.stores?.[0]?.store?.userId?.toString(),
+		);
+
+		return salePopulated;
 	}
 
 	public async findByUserId(userId: string): Promise<ISale[]> {

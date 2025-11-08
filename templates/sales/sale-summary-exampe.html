@@ -23,7 +23,7 @@
 		}
 
 		.sub-container {
-			width: 500px;
+			width: 700px;
 		}
 
 		h2 {
@@ -171,10 +171,28 @@
 
 <body>
 	<div class="container">
-		<div class="sub-container flex flex-col justify-center items-center">
-			<h2>Sale Summary: {{saleNumber}}</h2>
+		<div class="sub-container flex" style="justify-content: space-between !important; align-items: flex-start;">
+			<div class="flex" style="align-items: center;">
+				<div class="mr-1">
+					<img src="{{user.avatar}}" width='70' height="70" class='rounded' />
+				</div>
+				<div class="flex flex-col">
+					<label>{{user.name}}</label>
+					<a href="mailto:{{user.email}}" style="font-size: 14px;">{{user.email}}</a>
+					<a href="tel:{{user.phoneNumber}}" style="font-size: 14px;">{{user.phoneNumber}}</a>
+				</div>
+			</div>
 
+			<label style="font-size: 13px;">
+				Last Updated: {{lastUpdated}}
+			</label>
+		</div>
+
+
+		<div class="sub-container flex flex-col justify-center items-center mt-1">
 			<div class="divider"></div>
+
+			<h2 class="mt-1">Sale Summary: {{saleNumber}}</h2>
 
 			<div class='flex flex-col justify-center items-center mt-2'>
 				<img src='{{customer.avatar}}' width='80' height="80" class='rounded' />
@@ -355,6 +373,19 @@
 				<label class="flex font-bold mr-1">Note to Customer: </label>
 				<label>{{noteToCustomer}}</label>
 			</div>
+
+			<div class="divider mt-2"></div>
+		</div>
+
+		<div class="sub-container flex"
+			style="justify-content: space-between !important; align-items: baseline; margin-top: 30px;">
+			<div style="width: 50px;"></div>
+
+			<img src="{{logoSrc}}" width='50' height="50" class='rounded' />
+
+			<label style="font-size: 13px;">
+				{{dateNow}}
+			</label>
 		</div>
 	</div>
 </body>
