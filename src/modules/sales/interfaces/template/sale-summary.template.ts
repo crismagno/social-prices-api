@@ -7,7 +7,7 @@ import {
 	getImageAvatarDefault,
 	getImageUrl,
 	getLogo1,
-} from '../../../../shared/utils/images/url-images';
+} from '../../../../shared/utils/images/images-url';
 import {
 	createAddressName,
 	formatToMoneyDecimal,
