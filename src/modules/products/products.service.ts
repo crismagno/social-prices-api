@@ -176,6 +176,10 @@ export class ProductsService {
 			filter.tagsIds = { $in: tableState.filters.tagsIds };
 		}
 
+		if (tableState?.filters?.productIds?.length) {
+			filter.$and = [{ _id: { $in: tableState.filters.productIds } }];
+		}
+
 		const response: ITableStateResponse<IProduct[]> = {
 			data: [],
 			total: 0,
