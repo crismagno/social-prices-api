@@ -363,6 +363,7 @@ export class EmployeesService {
 			phoneNumbers: updateEmployeeDto.phoneNumbers,
 			tagsIds: updateEmployeeDto.tagsIds,
 			level: updateEmployeeDto.level,
+			status: updateEmployeeDto.status,
 			updatedAt: now,
 		};
 
