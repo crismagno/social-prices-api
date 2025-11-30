@@ -192,6 +192,10 @@ export class AuthService {
 		const employee: IEmployee =
 			await this._employeesService.findByUsernameOrFail(username);
 
+		if (employee.status === EmployeesEnum.Status.STOPPED) {
+			throw new BadRequestException('Employee unavailable to login!');
+		}
+
 		const user: IUser = await this._usersService.findOneByIdOrFail(
 			employee.userId.toString(),
 		);
