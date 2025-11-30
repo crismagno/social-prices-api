@@ -89,6 +89,14 @@ export class SalesController {
 		return await this._salesService.findById(saleId);
 	}
 
+	@Get('/findFilledByIdOrFail/:saleId')
+	@UsePipes(ValidationPipe)
+	public async findFilledByIdOrFail(
+		@Param('saleId', ValidationParamsPipe) saleId: string,
+	): Promise<ISale | null> {
+		return await this._salesService.findFilledByIdOrFail(saleId);
+	}
+
 	@Post('/createManual')
 	@UsePipes(ValidationPipe)
 	public async createManual(
