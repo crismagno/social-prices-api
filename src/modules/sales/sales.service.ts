@@ -175,7 +175,34 @@ export class SalesService {
 	// #region Public Methods
 
 	public async findById(saleId: string): Promise<ISale | null> {
-		return this._saleModel.findById(saleId);
+		let sale: ISale | null = await this._saleModel.findById(saleId);
+
+		if (!sale) {
+			return null;
+		}
+
+		sale = await this._saleModel
+			.findById(saleId)
+			.populate({
+				path: 'createdByEmployeeId',
+				model: 'Employee',
+			})
+			.populate({
+				path: 'updatedByEmployeeId',
+				model: 'Employee',
+			});
+
+		if (!sale) {
+			throw new NotFoundException('Sale not found!');
+		}
+
+		const salePopulated: ISale = parsePopulatedSale(sale);
+
+		salePopulated.user = await this._usersService.findOneById(
+			salePopulated.stores?.[0]?.store?.userId?.toString(),
+		);
+
+		return salePopulated;
 	}
 
 	public async countByUserId(userId: string): Promise<number> {
