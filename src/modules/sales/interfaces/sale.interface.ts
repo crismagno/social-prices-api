@@ -7,6 +7,7 @@ import PersonEnum from '../../../shared/common/person/person.enum';
 import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 import { ISoftDeleteEntity } from '../../../shared/common/soft-delete/soft-delete.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
+import { IEmployee } from '../../employees/interfaces/employee.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 import { IStore } from '../../stores/interfaces/store.interface';
 import { IUser } from '../../users/interfaces/user.interface';
@@ -22,6 +23,8 @@ export interface ISale
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
 	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+	createdByEmployee?: IEmployee;
+	updatedByEmployee?: IEmployee;
 	buyer: ISaleBuyer | null;
 	number: number;
 	numberManual: string | null;

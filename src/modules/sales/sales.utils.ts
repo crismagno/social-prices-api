@@ -2,6 +2,7 @@ import { reduce } from 'lodash';
 
 import { unFreezeData } from '../../shared/utils/objects/objects';
 import { ICustomer } from '../customers/interfaces/customer.interface';
+import { IEmployee } from '../employees/interfaces/employee.interface';
 import { IProduct } from '../products/interfaces/product.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import {
@@ -104,6 +105,14 @@ export const parsePopulatedSale = (sale: ISale): ISale => {
 	const saleClone: ISale = unFreezeData(sale);
 
 	saleClone.stores = parsePopulatedSaleStores(saleClone.stores);
+
+	saleClone.createdByEmployee = unFreezeData<IEmployee>(
+		saleClone.updatedByEmployeeId as any,
+	);
+
+	saleClone.updatedByEmployee = unFreezeData<IEmployee>(
+		saleClone.updatedByEmployeeId as any,
+	);
 
 	return saleClone;
 };

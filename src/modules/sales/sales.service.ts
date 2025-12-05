@@ -216,6 +216,14 @@ export class SalesService {
 			.populate({
 				path: 'stores.storeId',
 				model: 'Store',
+			})
+			.populate({
+				path: 'createdByEmployeeId',
+				model: 'Employee',
+			})
+			.populate({
+				path: 'updatedByEmployeeId',
+				model: 'Employee',
 			});
 
 		if (!sale) {
