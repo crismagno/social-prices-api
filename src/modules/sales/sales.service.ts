@@ -1039,28 +1039,37 @@ export class SalesService {
 		employeeId?: string,
 	): Promise<ISale> {
 		try {
-			const sale: ISale = await this._saleModel.findOneAndUpdate(
+			const now: Date = new Date();
+
+			const $set = {
+				status: updateSaleStatusManualDto.newStatus,
+				updatedAt: now,
+				updatedByUserId: new mongoose.Types.ObjectId(userId),
+				updatedByEmployeeId: employeeId
+					? new mongoose.Types.ObjectId(employeeId)
+					: null,
+			};
+
+			if (updateSaleStatusManualDto.newStatus === SalesEnum.Status.COMPLETED) {
+				$set['completedAt'] = now;
+			}
+
+			const updatedSale: ISale = await this._saleModel.findOneAndUpdate(
 				{ _id: new mongoose.Types.ObjectId(updateSaleStatusManualDto.saleId) },
 				{
-					$set: {
-						status: updateSaleStatusManualDto.newStatus,
-						updatedAt: new Date(),
-						updatedByUserId: new mongoose.Types.ObjectId(userId),
-						updatedByEmployeeId: employeeId
-							? new mongoose.Types.ObjectId(employeeId)
-							: null,
-					},
+					$set: $set,
 				},
 				{
 					new: true,
 				},
 			);
 
-			if (sale.status === SalesEnum.Status.COMPLETED) {
-				await this._completeSaleStoresProducts(sale._id.toString());
+			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
+				await this._completeSaleStoresProducts(updatedSale._id.toString());
 
-				const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
-					saleStore.storeId.toString(),
+				const storeIds: string[] = map(
+					updatedSale.stores,
+					(saleStore: ISaleStore) => saleStore.storeId.toString(),
 				);
 
 				const stores: IStore[] = await this._storesService.findByIds(storeIds);
@@ -1074,13 +1083,13 @@ export class SalesService {
 					await this._employeesService.findByIdOrFail(employeeId);
 
 				await this._notificationsService.completedSale(
-					sale,
+					updatedSale,
 					userIdOwnerStore,
 					employee,
 				);
 			}
 
-			return sale;
+			return updatedSale;
 		} catch (error: any) {
 			this._logger.error(error);
 
