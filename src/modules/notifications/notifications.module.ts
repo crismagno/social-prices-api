@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
-import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport.service';
 import { CodesModule } from '../codes/codes.module';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';

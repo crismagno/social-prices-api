@@ -4,7 +4,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport.service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
