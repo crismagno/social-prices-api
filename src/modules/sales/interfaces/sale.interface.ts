@@ -44,6 +44,7 @@ export interface ISale
 	noteToCustomer: string | null;
 	previousCustomerIds: string[];
 	isSendCustomerNotifications: boolean;
+	completedAt: Date | null;
 }
 
 export interface ISaleTotals {
