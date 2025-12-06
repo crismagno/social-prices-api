@@ -365,6 +365,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: Boolean, required: true })
 	isSendCustomerNotifications: boolean;
 
+	@Prop({ type: Date })
+	completedAt: Date;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

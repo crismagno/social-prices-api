@@ -602,6 +602,8 @@ export class SalesService {
 				numberManual: createSaleDto.numberManual,
 				filesUrl: [],
 				noteToCustomer: createSaleDto.noteToCustomer,
+				completedAt:
+					createSaleDto.status === SalesEnum.Status.COMPLETED ? now : null,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -618,6 +620,7 @@ export class SalesService {
 			await this._notificationsService.createdManualSale(newSale, user);
 
 			if (newSale.status === SalesEnum.Status.COMPLETED) {
+				newSale.completedAt = new Date();
 				await this._completeSaleStoresProducts(newSale._id.toString());
 
 				const employee: IEmployee = await this._employeesService.findByIdOrFail(
@@ -711,6 +714,13 @@ export class SalesService {
 				isSendCustomerNotifications: updateSaleDto.isSendCustomerNotifications,
 			};
 
+			if (
+				sale.status !== SalesEnum.Status.COMPLETED &&
+				updateSaleDto.status === SalesEnum.Status.COMPLETED
+			) {
+				saleToUpdate['completedAt'] = now;
+			}
+
 			const updatedSale: ISale = await this._saleModel.findByIdAndUpdate(
 				updateSaleDto.saleId,
 				{
@@ -729,7 +739,10 @@ export class SalesService {
 			const user: IUser =
 				await this._usersService.findOneByIdOrFail(userIdByStores);
 
-			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
+			if (
+				sale.status !== SalesEnum.Status.COMPLETED &&
+				updatedSale.status === SalesEnum.Status.COMPLETED
+			) {
 				await this._completeSaleStoresProducts(updatedSale._id.toString());
 
 				const employee: IEmployee = await this._employeesService.findByIdOrFail(
@@ -2787,6 +2800,7 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
+						completedAt: saleBySaleNumberManual.completedAt,
 						isSendCustomerNotifications:
 							saleBySaleNumberManual.isSendCustomerNotifications,
 						previousCustomerIds: saleBySaleNumberManual.previousCustomerIds,
@@ -2866,6 +2880,11 @@ export class SalesService {
 					};
 				} else {
 					sale = {
+						completedAt:
+							saleFileUploadTemplateRow?.saleStatus?.toUpperCase() ===
+							SalesEnum.Status.COMPLETED
+								? deliveryDate ?? createdDate ?? now
+								: null,
 						isSendCustomerNotifications: false,
 						previousCustomerIds: [],
 						filesUrl: [],
