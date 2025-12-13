@@ -1207,7 +1207,11 @@ export class SalesService {
 	): Promise<void> {
 		try {
 			await this._saleModel.updateMany(
-				{ _id: arrayStringToObjectId(completeMultipleSalesManualDto.saleIds) },
+				{
+					_id: {
+						$in: arrayStringToObjectId(completeMultipleSalesManualDto.saleIds),
+					},
+				},
 				{
 					$set: {
 						status: SalesEnum.Status.COMPLETED,
