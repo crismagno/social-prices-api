@@ -94,6 +94,7 @@ import { ITag } from '../tags/interfaces/tags.interface';
 import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
+import CompleteMultipleSalesManualDto from './interfaces/dto/CompleteMultipleSalesManual.dto';
 import CreateSaleDto, {
 	SaleStoreDto,
 	SaleStoreProductDto,
@@ -856,16 +857,8 @@ export class SalesService {
 				},
 			);
 
-			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
-				saleStore.storeId.toString(),
-			);
-
-			const stores: IStore[] = await this._storesService.findByIds(storeIds);
-
-			const userIdByStores: string = stores[0].userId.toString();
-
 			const userIdOwnerStore: IUser =
-				await this._usersService.findOneByIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userId);
 
 			await this._notificationsService.deletedSale(sale, userIdOwnerStore);
 
@@ -904,16 +897,8 @@ export class SalesService {
 				},
 			);
 
-			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
-				saleStore.storeId.toString(),
-			);
-
-			const stores: IStore[] = await this._storesService.findByIds(storeIds);
-
-			const userIdByStores: string = stores[0].userId.toString();
-
 			const userIdOwnerStore: IUser =
-				await this._usersService.findOneByIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userId);
 
 			await this._notificationsService.activatedSale(sale, userIdOwnerStore);
 
@@ -1067,17 +1052,8 @@ export class SalesService {
 			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
 				await this._completeSaleStoresProducts(updatedSale._id.toString());
 
-				const storeIds: string[] = map(
-					updatedSale.stores,
-					(saleStore: ISaleStore) => saleStore.storeId.toString(),
-				);
-
-				const stores: IStore[] = await this._storesService.findByIds(storeIds);
-
-				const userIdByStores: string = stores[0].userId.toString();
-
 				const userIdOwnerStore: IUser =
-					await this._usersService.findOneByIdOrFail(userIdByStores);
+					await this._usersService.findOneByIdOrFail(userId);
 
 				const employee: IEmployee =
 					await this._employeesService.findByIdOrFail(employeeId);
@@ -1208,16 +1184,8 @@ export class SalesService {
 				},
 			);
 
-			const storeIds: string[] = map(sale.stores, (saleStore: ISaleStore) =>
-				saleStore.storeId.toString(),
-			);
-
-			const stores: IStore[] = await this._storesService.findByIds(storeIds);
-
-			const userIdByStores: string = stores[0].userId.toString();
-
 			const userIdOwnerStore: IUser =
-				await this._usersService.findOneByIdOrFail(userIdByStores);
+				await this._usersService.findOneByIdOrFail(userId);
 
 			await this._notificationsService.updatedCustomerOnSale(
 				sale,
@@ -1225,6 +1193,49 @@ export class SalesService {
 			);
 
 			return sale;
+		} catch (error: any) {
+			this._logger.error(error);
+
+			throw new BadRequestException(error);
+		}
+	}
+
+	public async completeMultipleSalesManual(
+		completeMultipleSalesManualDto: CompleteMultipleSalesManualDto,
+		userId: string,
+		employeeId?: string,
+	): Promise<void> {
+		try {
+			await this._saleModel.updateMany(
+				{ _id: arrayStringToObjectId(completeMultipleSalesManualDto.saleIds) },
+				{
+					$set: {
+						status: SalesEnum.Status.COMPLETED,
+						updatedAt: new Date(),
+						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						updatedByEmployeeId: employeeId
+							? new mongoose.Types.ObjectId(employeeId)
+							: null,
+					},
+				},
+				{ multi: true },
+			);
+
+			const userIdOwnerStore: IUser =
+				await this._usersService.findOneByIdOrFail(userId);
+
+			const employee: IEmployee =
+				await this._employeesService.findByIdOrFail(employeeId);
+
+			for await (const saleId of completeMultipleSalesManualDto.saleIds) {
+				const sale: ISale = await this._completeSaleStoresProducts(saleId);
+
+				await this._notificationsService.completedSale(
+					sale,
+					userIdOwnerStore,
+					employee,
+				);
+			}
 		} catch (error: any) {
 			this._logger.error(error);
 
@@ -2092,7 +2103,7 @@ export class SalesService {
 		);
 	};
 
-	private async _completeSaleStoresProducts(saleId: string): Promise<void> {
+	private async _completeSaleStoresProducts(saleId: string): Promise<ISale> {
 		const sale: ISale = await this.findByIdOrFail(saleId);
 
 		sale.stores = map(sale.stores, (saleStore: ISaleStore) => {
@@ -2112,7 +2123,7 @@ export class SalesService {
 			};
 		});
 
-		await this._saleModel.updateOne(
+		const updatedSale: ISale = await this._saleModel.findOneAndUpdate(
 			{
 				_id: new mongoose.Types.ObjectId(saleId),
 			},
@@ -2121,7 +2132,10 @@ export class SalesService {
 					stores: sale.stores,
 				},
 			},
+			{ new: true },
 		);
+
+		return updatedSale;
 	}
 
 	// #endregion
