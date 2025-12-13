@@ -1224,6 +1224,8 @@ export class SalesService {
 				throw new BadRequestException('No sales to complete found!');
 			}
 
+			const now: Date = new Date();
+
 			await this._saleModel.updateMany(
 				{
 					_id: {
@@ -1233,8 +1235,9 @@ export class SalesService {
 				{
 					$set: {
 						status: SalesEnum.Status.COMPLETED,
-						updatedAt: new Date(),
+						updatedAt: now,
 						updatedByUserId: new mongoose.Types.ObjectId(userId),
+						completedAt: now,
 						updatedByEmployeeId: employeeId
 							? new mongoose.Types.ObjectId(employeeId)
 							: null,
