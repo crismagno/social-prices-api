@@ -26,6 +26,7 @@ import {
 } from '../../shared/utils/table/table-state.interface';
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import CompleteMultipleSalesManualDto from './interfaces/dto/completeMultipleSalesManual.dto';
 import CreateSaleDto from './interfaces/dto/createSale.dto';
 import UpdateSaleDto from './interfaces/dto/updateSale.dto';
 import UpdateSaleCustomerManualDto from './interfaces/dto/updateSaleCustomerManual.dto';
@@ -121,6 +122,19 @@ export class SalesController {
 	): Promise<ISale> {
 		return await this._salesService.updateStatusManual(
 			updateSaleStatusManualDto,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Post('/completeMultipleSalesManual')
+	@UsePipes(ValidationPipe)
+	public async completeMultipleSalesManual(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() completeMultipleSalesManualDto: CompleteMultipleSalesManualDto,
+	): Promise<void> {
+		await this._salesService.completeMultipleSalesManual(
+			completeMultipleSalesManualDto,
 			authPayload._id,
 			authPayload.employeeId,
 		);

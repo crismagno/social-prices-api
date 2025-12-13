@@ -94,7 +94,7 @@ import { ITag } from '../tags/interfaces/tags.interface';
 import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import CompleteMultipleSalesManualDto from './interfaces/dto/CompleteMultipleSalesManual.dto';
+import CompleteMultipleSalesManualDto from './interfaces/dto/completeMultipleSalesManual.dto';
 import CreateSaleDto, {
 	SaleStoreDto,
 	SaleStoreProductDto,
@@ -1206,10 +1206,28 @@ export class SalesService {
 		employeeId?: string,
 	): Promise<void> {
 		try {
+			const salesToComplete: ISale[] = await this._saleModel
+				.find(
+					{
+						_id: {
+							$in: arrayStringToObjectId(
+								completeMultipleSalesManualDto.saleIds,
+							),
+						},
+						status: { $ne: SalesEnum.Status.COMPLETED },
+					},
+					{ _id: 1 },
+				)
+				.lean();
+
+			if (salesToComplete.length === 0) {
+				throw new BadRequestException('No sales to complete found!');
+			}
+
 			await this._saleModel.updateMany(
 				{
 					_id: {
-						$in: arrayStringToObjectId(completeMultipleSalesManualDto.saleIds),
+						$in: map(salesToComplete, '_id'),
 					},
 				},
 				{
