@@ -344,9 +344,12 @@ export class SalesService {
 			filter['stores.storeId'] = { $in: tableState.filters.stores };
 		}
 
-		if (tableState.filters?.createdAtRange) {
-			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdDate = {
+		if (tableState.filters?.rangeDate) {
+			const { startDate, endDate } = tableState.filters.rangeDate;
+			const filterRangeField: string =
+				tableState.filters?.rangeField ?? 'createdAt';
+
+			filter[filterRangeField] = {
 				$gte: new Date(startDate),
 				$lte: new Date(endDate),
 			};
@@ -458,9 +461,12 @@ export class SalesService {
 			};
 		}
 
-		if (tableState.filters?.createdAtRange) {
-			const { startDate, endDate } = tableState.filters.createdAtRange;
-			filter.createdDate = {
+		if (tableState.filters?.rangeDate) {
+			const { startDate, endDate } = tableState.filters.rangeDate;
+			const filterRangeField: string =
+				tableState.filters?.rangeField ?? 'createdAt';
+
+			filter[filterRangeField] = {
 				$gte: new Date(startDate),
 				$lte: new Date(endDate),
 			};
@@ -3704,9 +3710,14 @@ export class SalesService {
 			filter['stores.storeId'] = { $in: filters.storeIds };
 		}
 
-		if (filters.rangeCreatedDate) {
-			const { startDate, endDate } = filters.rangeCreatedDate;
-			filter.createdDate = { $gte: startDate, $lte: endDate };
+		if (filters.rangeDate) {
+			const { startDate, endDate } = filters.rangeDate;
+			const filterRangeField: string = filters?.rangeField ?? 'createdAt';
+
+			filter[filterRangeField] = {
+				$gte: new Date(startDate),
+				$lte: new Date(endDate),
+			};
 		}
 
 		if (filters.tagsIds?.length) {

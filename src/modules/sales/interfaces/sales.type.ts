@@ -118,7 +118,8 @@ export interface IFiltersDownloadSales {
 	search: string | null;
 	tagsIds: string[];
 	types: SalesEnum.Type[];
-	rangeCreatedDate: IRangeDate | null;
+	rangeDate: IRangeDate | null;
+	rangeField?: string;
 	selectedProductIds: string[];
 	deliveryTypes: SalesEnum.DeliveryType[];
 	status: SalesEnum.Status[];
