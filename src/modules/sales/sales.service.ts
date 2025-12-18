@@ -3794,6 +3794,7 @@ export class SalesService {
 			tags: 'Tags',
 			saleStatus: 'Sale Status',
 			paymentStatus: 'Payment Status',
+			completedAt: 'Completed At',
 			deliveryDate: 'Delivery Date',
 			deliveryType: 'Delivery Type',
 			createdDate: 'Created Date',
@@ -3924,6 +3925,11 @@ export class SalesService {
 				tags: tagsNames,
 				saleStatus: SalesEnum.StatusLabels[sale.status],
 				paymentStatus: SalesEnum.PaymentStatusLabels[sale.paymentStatus],
+				completedAt: sale.completedAt
+					? moment(sale.completedAt).format(
+							DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
+					  )
+					: '',
 				deliveryDate: sale.deliveryAt
 					? moment(sale.deliveryAt).format(
 							DatesEnum.Format.YYYYMMDDhhmmss_DASHED,
