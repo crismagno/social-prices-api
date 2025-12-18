@@ -52,7 +52,10 @@ export class SalesValidationService {
 			row.getCell('AB')?.text?.trim() !== 'Delivery Date' ||
 			row.getCell('AC')?.text?.trim() !== 'Delivery Type' ||
 			row.getCell('AD')?.text?.trim() !== 'Created Date' ||
-			row.getCell('AE')?.text?.trim() !== 'Sale Number Manual'
+			row.getCell('AE')?.text?.trim() !== 'Sale Number Manual' ||
+			row.getCell('AF')?.text?.trim() !== 'Note to Customer' ||
+			row.getCell('AG')?.text?.trim() !== 'Send Customer Notifications' ||
+			row.getCell('AH')?.text?.trim() !== 'Completed At'
 		) {
 			throw new Error('Invalid template.');
 		}

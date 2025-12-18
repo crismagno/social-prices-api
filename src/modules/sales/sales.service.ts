@@ -2260,6 +2260,9 @@ export class SalesService {
 								deliveryType: 'Delivery Type',
 								createdDate: 'Created Date',
 								saleNumberManual: 'Sale Number Manual',
+								noteToCustomer: 'Note to Customer',
+								sendCustomerNotifications: 'Send Customer Notifications',
+								completedAt: 'Completed At',
 								other: 'Other',
 							},
 						};
@@ -2400,6 +2403,9 @@ export class SalesService {
 			const deliveryType: string = row.getCell('AC')?.text?.trim();
 			const createdDate: string = row.getCell('AD')?.text?.trim();
 			const saleNumberManual: string = row.getCell('AE')?.text?.trim();
+			const noteToCustomer: string = row.getCell('AF')?.text?.trim();
+			const sendCustomerNotifications: string = row.getCell('AG')?.text?.trim();
+			const completedAt: string = row.getCell('AH')?.text?.trim();
 
 			saleFileUploadTemplateRows.push({
 				rowNumber,
@@ -2434,6 +2440,9 @@ export class SalesService {
 				deliveryType,
 				createdDate,
 				saleNumberManual,
+				noteToCustomer,
+				sendCustomerNotifications,
+				completedAt,
 			});
 		}
 
@@ -2743,6 +2752,17 @@ export class SalesService {
 					});
 				}
 
+				const completedAt: Date | null = saleFileUploadTemplateRow.completedAt
+					? parseToDate(saleFileUploadTemplateRow.completedAt)
+					: null;
+
+				if (saleFileUploadTemplateRow.completedAt && !completedAt) {
+					fileUploadTemplateErrorRow.reasons.push({
+						message: 'Completed At invalid format!',
+						property: 'completedAt',
+					});
+				}
+
 				if (fileUploadTemplateErrorRow.reasons.length > 0) {
 					fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
 					continue;
@@ -2840,6 +2860,10 @@ export class SalesService {
 					},
 				);
 
+				const isSendCustomerNotifications: boolean =
+					saleFileUploadTemplateRow.sendCustomerNotifications?.toUpperCase() ===
+					CommonEnum.YesNo.YES;
+
 				let saleBySaleNumberManual: ISale | null = null;
 
 				const saleNumberManual: string | null =
@@ -2854,9 +2878,8 @@ export class SalesService {
 
 				if (saleBySaleNumberManual) {
 					sale = {
-						completedAt: saleBySaleNumberManual.completedAt,
-						isSendCustomerNotifications:
-							saleBySaleNumberManual.isSendCustomerNotifications,
+						completedAt: completedAt ?? saleBySaleNumberManual.completedAt,
+						isSendCustomerNotifications: isSendCustomerNotifications,
 						previousCustomerIds: saleBySaleNumberManual.previousCustomerIds,
 						filesUrl: saleBySaleNumberManual.filesUrl,
 						numberManual: saleBySaleNumberManual.numberManual,
@@ -2930,16 +2953,19 @@ export class SalesService {
 						softDelete: saleBySaleNumberManual.softDelete,
 						updatedAt: now,
 						updatedByUserId: ownerUserId as any,
-						noteToCustomer: saleBySaleNumberManual.noteToCustomer,
+						noteToCustomer:
+							saleFileUploadTemplateRow.noteToCustomer ||
+							saleBySaleNumberManual.noteToCustomer,
 					};
 				} else {
 					sale = {
 						completedAt:
-							saleFileUploadTemplateRow?.saleStatus?.toUpperCase() ===
-							SalesEnum.Status.COMPLETED
+							completedAt ??
+							saleFileUploadTemplateRow.saleStatus?.toUpperCase() ===
+								SalesEnum.Status.COMPLETED
 								? deliveryDate ?? createdDate ?? now
 								: null,
-						isSendCustomerNotifications: false,
+						isSendCustomerNotifications,
 						previousCustomerIds: [],
 						filesUrl: [],
 						numberManual:
@@ -3014,7 +3040,7 @@ export class SalesService {
 						softDelete: null,
 						updatedAt: now,
 						updatedByUserId: null,
-						noteToCustomer: null,
+						noteToCustomer: saleFileUploadTemplateRow.noteToCustomer,
 					};
 				}
 

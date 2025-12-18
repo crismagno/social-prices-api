@@ -112,6 +112,9 @@ export interface ISaleFileUploadTemplateRow {
 	deliveryType?: string;
 	createdDate?: string;
 	saleNumberManual?: string;
+	noteToCustomer?: string;
+	sendCustomerNotifications?: string; // YES or NO
+	completedAt?: string;
 }
 
 export interface IFiltersDownloadSales {
