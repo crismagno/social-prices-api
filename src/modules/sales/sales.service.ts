@@ -1825,21 +1825,25 @@ export class SalesService {
 				quantity: 0,
 				total: 0,
 				productsBalance: [],
+				salesQuantity: 0,
 			},
 			day: {
 				quantity: 0,
 				total: 0,
 				productsBalance: [],
+				salesQuantity: 0,
 			},
 			hour: {
 				quantity: 0,
 				total: 0,
 				productsBalance: [],
+				salesQuantity: 0,
 			},
 			month: {
 				quantity: 0,
 				total: 0,
 				productsBalance: [],
+				salesQuantity: 0,
 			},
 		};
 
@@ -1900,6 +1904,7 @@ export class SalesService {
 					);
 				salesBalanceResponse.hour.quantity += quantity;
 				salesBalanceResponse.hour.total += sumSaleStoreProductsTotal;
+				salesBalanceResponse.hour.salesQuantity += 1;
 			}
 
 			if (
@@ -1913,6 +1918,7 @@ export class SalesService {
 					);
 				salesBalanceResponse.day.quantity += quantity;
 				salesBalanceResponse.day.total += sumSaleStoreProductsTotal;
+				salesBalanceResponse.day.salesQuantity += 1;
 			}
 
 			if (
@@ -1926,6 +1932,7 @@ export class SalesService {
 					);
 				salesBalanceResponse.month.quantity += quantity;
 				salesBalanceResponse.month.total += sumSaleStoreProductsTotal;
+				salesBalanceResponse.month.salesQuantity += 1;
 			}
 
 			if (
@@ -1939,6 +1946,7 @@ export class SalesService {
 					);
 				salesBalanceResponse.annual.quantity += quantity;
 				salesBalanceResponse.annual.total += sumSaleStoreProductsTotal;
+				salesBalanceResponse.annual.salesQuantity += 1;
 			}
 		}
 
