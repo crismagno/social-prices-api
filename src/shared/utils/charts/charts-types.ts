@@ -8,6 +8,7 @@ export interface IChartDataPeriodTypeItem {
 	total: number;
 	name: any;
 	quantity: number;
+	salesQuantity: number;
 }
 
 export interface IChartDataProductItem {

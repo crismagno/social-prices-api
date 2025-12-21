@@ -1,6 +1,7 @@
-import { find, sortBy } from 'lodash';
+import { filter, find, sortBy } from 'lodash';
 import * as moment from 'moment-timezone';
 
+import { ISale } from '../../../modules/sales/interfaces/sale.interface';
 import DatesEnum from '../dates/dates.enum';
 import ChartsEnum from './charts-enum';
 import {
@@ -11,6 +12,7 @@ import {
 
 export const parseToChartDataPeriodTypeItemByHour = (
 	items: IChartDateTotalItem[],
+	sales: ISale[] = [],
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = [];
 
@@ -38,6 +40,14 @@ export const parseToChartDataPeriodTypeItemByHour = (
 		const data: IChartDataPeriodTypeItem = {
 			name: hour,
 			...totalAndQuantity,
+			salesQuantity: filter(sales, (sale: ISale) => {
+				return (
+					moment
+						.utc(sale.createdAt)
+						.tz(DatesEnum.Timezones.America_Sao_Paulo)
+						.hour() === hour
+				);
+			}).length,
 		};
 
 		result.push(data);
@@ -48,6 +58,7 @@ export const parseToChartDataPeriodTypeItemByHour = (
 
 export const parseToChartDataPeriodTypeItemByDay = (
 	items: IChartDateTotalItem[],
+	sales: ISale[] = [],
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = [];
 
@@ -75,6 +86,14 @@ export const parseToChartDataPeriodTypeItemByDay = (
 		const data: IChartDataPeriodTypeItem = {
 			name: day,
 			...totalAndQuantity,
+			salesQuantity: filter(sales, (sale: ISale) => {
+				return (
+					moment
+						.utc(sale.createdAt)
+						.tz(DatesEnum.Timezones.America_Sao_Paulo)
+						.date() === day
+				);
+			}).length,
 		};
 
 		result.push(data);
@@ -85,6 +104,7 @@ export const parseToChartDataPeriodTypeItemByDay = (
 
 export const parseToChartDataPeriodTypeItemByMonth = (
 	items: IChartDateTotalItem[],
+	sales: ISale[] = [],
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = [];
 
@@ -112,6 +132,14 @@ export const parseToChartDataPeriodTypeItemByMonth = (
 		const data: IChartDataPeriodTypeItem = {
 			name: month + 1,
 			...totalAndQuantity,
+			salesQuantity: filter(sales, (sale: ISale) => {
+				return (
+					moment
+						.utc(sale.createdAt)
+						.tz(DatesEnum.Timezones.America_Sao_Paulo)
+						.month() === month
+				);
+			}).length,
 		};
 
 		result.push(data);
@@ -122,6 +150,7 @@ export const parseToChartDataPeriodTypeItemByMonth = (
 
 export const parseToChartDataPeriodTypeItemByYear = (
 	items: IChartDateTotalItem[],
+	sales: ISale[] = [],
 ): IChartDataPeriodTypeItem[] => {
 	const result: IChartDataPeriodTypeItem[] = items.reduce(
 		(acc: IChartDataPeriodTypeItem[], item: IChartDateTotalItem) => {
@@ -137,11 +166,27 @@ export const parseToChartDataPeriodTypeItemByYear = (
 			if (findByItemYear) {
 				findByItemYear.total += item.total;
 				findByItemYear.quantity += item.quantity;
+				// findByItemYear.salesQuantity += filter(sales, (sale: ISale) => {
+				// 	return (
+				// 		moment
+				// 			.utc(sale.createdAt)
+				// 			.tz(DatesEnum.Timezones.America_Sao_Paulo)
+				// 			.year() === itemYear
+				// 	);
+				// }).length;
 			} else {
 				acc.push({
 					name: itemYear,
 					total: item.total,
 					quantity: item.quantity,
+					salesQuantity: filter(sales, (sale: ISale) => {
+						return (
+							moment
+								.utc(sale.createdAt)
+								.tz(DatesEnum.Timezones.America_Sao_Paulo)
+								.year() === itemYear
+						);
+					}).length,
 				});
 			}
 
@@ -156,16 +201,17 @@ export const parseToChartDataPeriodTypeItemByYear = (
 export const parseToChartDataPeriodTypeItem = (
 	items: IChartDateTotalItem[],
 	periodType: ChartsEnum.PeriodType,
+	sales: ISale[] = [],
 ): IChartDataPeriodTypeItem[] => {
 	switch (periodType) {
 		case ChartsEnum.PeriodType.HOUR:
-			return parseToChartDataPeriodTypeItemByHour(items);
+			return parseToChartDataPeriodTypeItemByHour(items, sales);
 		case ChartsEnum.PeriodType.DAY:
-			return parseToChartDataPeriodTypeItemByDay(items);
+			return parseToChartDataPeriodTypeItemByDay(items, sales);
 		case ChartsEnum.PeriodType.MONTH:
-			return parseToChartDataPeriodTypeItemByMonth(items);
+			return parseToChartDataPeriodTypeItemByMonth(items, sales);
 		case ChartsEnum.PeriodType.YEAR:
-			return parseToChartDataPeriodTypeItemByYear(items);
+			return parseToChartDataPeriodTypeItemByYear(items, sales);
 		default:
 			return [];
 	}

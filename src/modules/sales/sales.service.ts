@@ -1660,7 +1660,7 @@ export class SalesService {
 			[],
 		);
 
-		return parseToChartDataPeriodTypeItem(chartDataItems, periodType);
+		return parseToChartDataPeriodTypeItem(chartDataItems, periodType, sales);
 	}
 
 	private async _parseSalesToChartDataProducts(
