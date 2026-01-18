@@ -107,6 +107,10 @@ export const parsePopulatedSale = (sale: ISale): ISale => {
 	saleClone.stores = parsePopulatedSaleStores(saleClone.stores);
 
 	saleClone.createdByEmployee = unFreezeData<IEmployee>(
+		saleClone.createdByEmployeeId as any,
+	);
+
+	saleClone.updatedByEmployee = unFreezeData<IEmployee>(
 		saleClone.updatedByEmployeeId as any,
 	);
 
