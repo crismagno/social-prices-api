@@ -13,6 +13,10 @@ export default class UpdateProductDto {
 
 	@IsString()
 	@IsOptional()
+	sku: string | null;
+
+	@IsString()
+	@IsOptional()
 	details: string | null;
 
 	@IsString()

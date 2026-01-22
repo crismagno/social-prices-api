@@ -90,6 +90,9 @@ export class Product implements IProduct {
 	@Prop({ type: String, sparse: true })
 	barcode: string | null;
 
+	@Prop({ type: String })
+	sku: string | null;
+
 	@Prop({ type: [String] })
 	previousBarcodes: string[];
 

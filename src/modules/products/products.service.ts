@@ -251,6 +251,7 @@ export class ProductsService {
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
 			barcode: valueOrCreateUniqueSuffix(createProductDto.barcode),
+			sku: valueOrCreateUniqueSuffix(createProductDto.sku),
 			previousBarcodes: [],
 			QRCode: createProductDto.QRCode,
 			createdAt: now,
@@ -364,6 +365,7 @@ export class ProductsService {
 					categoriesIds: updateProductDto.categoriesIds,
 					tagsIds: updateProductDto.tagsIds,
 					barcode,
+					sku: valueOrCreateUniqueSuffix(updateProductDto.sku),
 					previousBarcodes,
 					mainUrl: product.filesUrl?.[0] ?? null,
 					QRCode: updateProductDto.QRCode,
@@ -941,6 +943,7 @@ export class ProductsService {
 						barcode: valueOrCreateUniqueSuffix(
 							productFileUploadTemplateRow.barcode,
 						),
+						sku: valueOrCreateUniqueSuffix(''),
 						categoriesIds: categoriesIds as any[],
 						description: productFileUploadTemplateRow.description,
 						details: productFileUploadTemplateRow.details,

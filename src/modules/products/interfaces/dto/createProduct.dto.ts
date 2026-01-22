@@ -41,6 +41,10 @@ export default class CreateProductDto {
 
 	@IsString()
 	@IsOptional()
+	sku: string | null;
+
+	@IsString()
+	@IsOptional()
 	details: string | null;
 
 	quantity: number;
