@@ -1,5 +1,7 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+import { CreateProductDimensionsDto as ProductDimensionsDto } from './createProduct.dto';
+
 export default class UpdateProductDto {
 	@IsString()
 	@IsNotEmpty()
@@ -45,4 +47,8 @@ export default class UpdateProductDto {
 
 	@IsOptional()
 	releaseDate: Date | null;
+
+	dimensions: ProductDimensionsDto | null;
+
+	colors: string[] | null;
 }

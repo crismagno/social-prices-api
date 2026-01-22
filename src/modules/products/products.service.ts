@@ -224,6 +224,14 @@ export class ProductsService {
 			createProductDto.tagsIds = JSON.parse(createProductDto.tagsIds);
 		}
 
+		if (typeof createProductDto.dimensions === 'string') {
+			createProductDto.dimensions = JSON.parse(createProductDto.dimensions);
+		}
+
+		if (typeof createProductDto.colors === 'string') {
+			createProductDto.colors = JSON.parse(createProductDto.colors);
+		}
+
 		const filesUrl: string[] =
 			await this._filesService.getUploadFilesUrl(files);
 
@@ -251,6 +259,8 @@ export class ProductsService {
 			brand: createProductDto.brand,
 			historicPrices: [],
 			releaseDate: parseToDate(createProductDto.releaseDate),
+			colors: createProductDto.colors,
+			dimensions: createProductDto.dimensions,
 		});
 
 		const newProduct: IProduct = await product.save();
@@ -293,6 +303,14 @@ export class ProductsService {
 
 		if (typeof updateProductDto.tagsIds === 'string') {
 			updateProductDto.tagsIds = JSON.parse(updateProductDto.tagsIds);
+		}
+
+		if (typeof updateProductDto.dimensions === 'string') {
+			updateProductDto.dimensions = JSON.parse(updateProductDto.dimensions);
+		}
+
+		if (typeof updateProductDto.colors === 'string') {
+			updateProductDto.colors = JSON.parse(updateProductDto.colors);
 		}
 
 		const filesUrl: string[] =
@@ -353,6 +371,8 @@ export class ProductsService {
 					brand: updateProductDto.brand,
 					historicPrices,
 					releaseDate: parseToDate(updateProductDto.releaseDate),
+					colors: updateProductDto.colors,
+					dimensions: updateProductDto.dimensions,
 				},
 			},
 		);
@@ -932,6 +952,8 @@ export class ProductsService {
 						brand: null,
 						historicPrices: [],
 						releaseDate: null,
+						colors: [],
+						dimensions: null,
 					});
 				}
 			} catch (error: any) {

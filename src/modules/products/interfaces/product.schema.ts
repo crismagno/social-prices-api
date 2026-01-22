@@ -2,7 +2,11 @@ import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { IProduct, IProductHistoricPrice } from './product.interface';
+import {
+	IProduct,
+	IProductDimensions,
+	IProductHistoricPrice,
+} from './product.interface';
 
 @Schema()
 export class ProductHistoricPrice implements IProductHistoricPrice {
@@ -18,6 +22,39 @@ export class ProductHistoricPrice implements IProductHistoricPrice {
 
 export const ProductHistoricPriceSchema =
 	SchemaFactory.createForClass(ProductHistoricPrice);
+
+@Schema()
+export class ProductDimensions implements IProductDimensions {
+	@Prop({ type: String })
+	size: string | null;
+
+	@Prop({ type: Number })
+	height: number | null;
+
+	@Prop({ type: Number })
+	width: number | null;
+
+	@Prop({ type: Number })
+	length: number | null;
+
+	@Prop({ type: Number })
+	depth: number | null;
+
+	@Prop({ type: Number })
+	diameter: number | null;
+
+	@Prop({ type: Number })
+	thickness: number | null;
+
+	@Prop({ type: Number })
+	volume: number | null;
+
+	@Prop({ type: Number })
+	weight: number | null;
+}
+
+export const ProductDimensionsSchema =
+	SchemaFactory.createForClass(ProductDimensions);
 
 @Schema()
 export class Product implements IProduct {
@@ -79,6 +116,12 @@ export class Product implements IProduct {
 
 	@Prop({ type: [ProductHistoricPriceSchema], required: true, _id: false })
 	historicPrices: IProductHistoricPrice[];
+
+	@Prop({ type: ProductDimensionsSchema, _id: false })
+	dimensions: IProductDimensions | null;
+
+	@Prop({ type: [String] })
+	colors: string[] | null;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

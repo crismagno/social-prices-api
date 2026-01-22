@@ -1,5 +1,35 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+export class CreateProductDimensionsDto {
+	@IsString()
+	@IsOptional()
+	size: string | null;
+
+	@IsOptional()
+	height: number | null;
+
+	@IsOptional()
+	width: number | null;
+
+	@IsOptional()
+	length: number | null;
+
+	@IsOptional()
+	depth: number | null;
+
+	@IsOptional()
+	diameter: number | null;
+
+	@IsOptional()
+	thickness: number | null;
+
+	@IsOptional()
+	volume: number | null;
+
+	@IsOptional()
+	weight: number | null;
+}
+
 export default class CreateProductDto {
 	@IsString()
 	@IsNotEmpty()
@@ -39,4 +69,8 @@ export default class CreateProductDto {
 
 	@IsOptional()
 	releaseDate: Date | null;
+
+	dimensions: CreateProductDimensionsDto | null;
+
+	colors: string[] | null;
 }

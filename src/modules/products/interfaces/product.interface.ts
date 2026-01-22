@@ -24,10 +24,24 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	brand: string | null;
 	historicPrices: IProductHistoricPrice[];
 	releaseDate: Date | null;
+	dimensions: IProductDimensions | null;
+	colors: string[] | null;
 }
 
 export interface IProductHistoricPrice {
 	price: number;
 	barcode: string;
 	updatedAt: Date;
+}
+
+export interface IProductDimensions {
+	size: string | null;
+	height: number | null;
+	width: number | null;
+	length: number | null;
+	depth: number | null;
+	diameter: number | null;
+	thickness: number | null;
+	volume: number | null;
+	weight: number | null;
 }
