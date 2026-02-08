@@ -25,6 +25,7 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	brand: string | null;
 	historicPrices: IProductHistoricPrice[];
 	releaseDate: Date | null;
+	expirationDate: Date | null;
 	dimensions: IProductDimensions | null;
 	colors: string[] | null;
 }

@@ -74,6 +74,9 @@ export default class CreateProductDto {
 	@IsOptional()
 	releaseDate: Date | null;
 
+	@IsOptional()
+	expirationDate: Date | null;
+
 	dimensions: CreateProductDimensionsDto | null;
 
 	colors: string[] | null;

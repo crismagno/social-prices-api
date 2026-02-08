@@ -52,6 +52,9 @@ export default class UpdateProductDto {
 	@IsOptional()
 	releaseDate: Date | null;
 
+	@IsOptional()
+	expirationDate: Date | null;
+
 	dimensions: ProductDimensionsDto | null;
 
 	colors: string[] | null;

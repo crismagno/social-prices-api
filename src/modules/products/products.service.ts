@@ -260,6 +260,7 @@ export class ProductsService {
 			brand: createProductDto.brand,
 			historicPrices: [],
 			releaseDate: parseToDate(createProductDto.releaseDate),
+			expirationDate: parseToDate(createProductDto.expirationDate),
 			colors: createProductDto.colors,
 			dimensions: createProductDto.dimensions,
 		});
@@ -373,6 +374,7 @@ export class ProductsService {
 					brand: updateProductDto.brand,
 					historicPrices,
 					releaseDate: parseToDate(updateProductDto.releaseDate),
+					expirationDate: parseToDate(updateProductDto.expirationDate),
 					colors: updateProductDto.colors,
 					dimensions: updateProductDto.dimensions,
 				},
@@ -957,6 +959,7 @@ export class ProductsService {
 						releaseDate: null,
 						colors: [],
 						dimensions: null,
+						expirationDate: null,
 					});
 				}
 			} catch (error: any) {

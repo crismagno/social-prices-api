@@ -117,6 +117,9 @@ export class Product implements IProduct {
 	@Prop({ type: Date })
 	releaseDate: Date | null;
 
+	@Prop({ type: Date })
+	expirationDate: Date | null;
+
 	@Prop({ type: [ProductHistoricPriceSchema], required: true, _id: false })
 	historicPrices: IProductHistoricPrice[];
 
