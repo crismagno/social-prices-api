@@ -1,4 +1,8 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+	IsNotEmpty,
+	IsOptional,
+	IsString,
+} from 'class-validator';
 
 import { CreateProductItemDimensionsDto } from './createProductItem.dto';
 
