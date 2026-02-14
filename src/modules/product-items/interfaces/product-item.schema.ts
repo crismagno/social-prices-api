@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import {
+	Prop,
+	Schema,
+	SchemaFactory,
+} from '@nestjs/mongoose';
 
 import {
 	IProductItem,
@@ -58,7 +62,7 @@ export const ProductItemDimensionsSchema = SchemaFactory.createForClass(
 	ProductItemDimensions,
 );
 
-@Schema()
+@Schema({ toJSON: { virtuals: true } })
 export class ProductItem implements IProductItem {
 	readonly _id: string;
 
@@ -146,3 +150,11 @@ export class ProductItem implements IProductItem {
 }
 
 export const ProductItemSchema = SchemaFactory.createForClass(ProductItem);
+
+// Virtual field for populated product
+ProductItemSchema.virtual('product', {
+	ref: 'Product',
+	localField: 'productId',
+	foreignField: '_id',
+	justOne: true,
+});

@@ -1,7 +1,12 @@
 import mongoose from 'mongoose';
 
-import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
-import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import {
+	ICreatedAtEntity,
+} from '../../../shared/common/global/created-at.interface';
+import {
+	IUpdatedAtEntity,
+} from '../../../shared/common/global/updated-at.interface';
+import { IProduct } from '../../products/interfaces/product.interface';
 
 export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
@@ -29,6 +34,7 @@ export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
 	dimensions: IProductItemDimensions | null;
 	colors: string[] | null;
 	productId: mongoose.Schema.Types.ObjectId;
+	product?: IProduct;
 }
 
 export interface IProductItemHistoricPrice {

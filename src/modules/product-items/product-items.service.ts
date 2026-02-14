@@ -204,11 +204,10 @@ export class ProductItemsService {
 		};
 
 		response.total = await this._productItemModel.countDocuments(filter);
-		response.data = await this._productItemModel.find(
-			filter,
-			null,
-			queryOptions<IProductItem>(tableState),
-		);
+		response.data = await this._productItemModel
+			.find(filter, null, queryOptions<IProductItem>(tableState))
+			.populate('product', 'name')
+			.exec();
 
 		return response;
 	}
