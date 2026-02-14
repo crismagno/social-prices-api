@@ -1,14 +1,30 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
+import {
+	CategorySchema,
+} from '../../../modules/categories/interfaces/category.schema';
 import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
-import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
-import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
-import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';
-import { FileUploadSchema } from '../../../modules/files-uploads/interfaces/file-upload.schema';
-import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
-import { ProductItemSchema } from '../../../modules/product-items/interfaces/product-item.schema';
-import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
+import {
+	CounterSchema,
+} from '../../../modules/counters/interfaces/counter.schema';
+import {
+	CustomerSchema,
+} from '../../../modules/customers/interfaces/customer.schema';
+import {
+	EmployeeSchema,
+} from '../../../modules/employees/interfaces/employee.schema';
+import {
+	FileUploadSchema,
+} from '../../../modules/files-uploads/interfaces/file-upload.schema';
+import {
+	NotificationSchema,
+} from '../../../modules/notifications/interfaces/notification.schema';
+import {
+	ProductItemSchema,
+} from '../../../modules/product-items/interfaces/product-item.schema';
+import {
+	ProductSchema,
+} from '../../../modules/products/interfaces/product.schema';
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
 import { StoreSchema } from '../../../modules/stores/interfaces/store.schema';
 import { TagSchema } from '../../../modules/tags/interfaces/tags.schema';
@@ -27,7 +43,7 @@ export const schemasName = {
 	tag: 'Tag',
 	employee: 'Employee',
 	fileUpload: 'FileUpload',
-	productItem: 'productItem',
+	productItem: 'ProductItem',
 };
 
 export const schemasModule = {
@@ -68,6 +84,10 @@ export const schemasModule = {
 		{ name: schemasName.fileUpload, schema: FileUploadSchema },
 	]),
 	productItem: MongooseModule.forFeature([
-		{ name: schemasName.productItem, schema: ProductItemSchema },
+		{
+			name: schemasName.productItem,
+			schema: ProductItemSchema,
+			collection: 'product-items',
+		},
 	]),
 };
