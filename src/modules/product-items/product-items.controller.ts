@@ -30,9 +30,9 @@ import { IProductItem } from './interfaces/product-item.interface';
 import { IFiltersDownloadProductItems } from './interfaces/product-items.type';
 import { ProductItemsService } from './product-items.service';
 
-@Controller('api/v1/products')
+@Controller('api/v1/product-items')
 export class ProductItemsController {
-	constructor(private _productItemsService: ProductItemsService) {}
+	constructor(private readonly _productItemsService: ProductItemsService) {}
 
 	@Post('/')
 	@UsePipes(ValidationPipe)
