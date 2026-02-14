@@ -12,6 +12,7 @@ import {
 import { ICustomerFileUploadTemplateRow } from '../customers/interfaces/customers.type';
 import { IEmployeeFileUploadTemplateRow } from '../employees/interfaces/employees.types';
 import { IFileUploadTemplateError } from '../files-uploads/interfaces/files-uploads.type';
+import { IProductItemFileUploadTemplateRow } from '../product-items/interfaces/product-items.type';
 import { IProductFileUploadTemplateRow } from '../products/interfaces/products.type';
 import { ISaleFileUploadTemplateRow } from '../sales/interfaces/sales.type';
 import SocketsEnum from './interfaces/sockets.enum';
@@ -111,6 +112,34 @@ export class SocketsGateway
 	): void {
 		this.server.emit(
 			SocketsEnum.EventNames.RESPONSE_UPLOAD_PRODUCTS_FILE_TO_USER(userId),
+		);
+	}
+
+	//#endregion
+
+	//#region Product Items
+
+	@SubscribeMessage('uploadProductItemsResponseToEmployee')
+	handleUploadProductItemsResponseToEmployee(
+		@MessageBody()
+		data: IFileUploadTemplateError<IProductItemFileUploadTemplateRow>[],
+		employeeId: string,
+	): void {
+		this.server.emit(
+			SocketsEnum.EventNames.UPLOAD_PRODUCT_ITEMS_RESPONSE_TO_EMPLOYEE(
+				employeeId,
+			),
+			data,
+		);
+	}
+
+	@SubscribeMessage('responseFromUploadProductItemsFile')
+	handleResponseUploadProductItemsFileToUser(
+		@MessageBody()
+		userId: string,
+	): void {
+		this.server.emit(
+			SocketsEnum.EventNames.RESPONSE_UPLOAD_PRODUCT_ITEMS_FILE_TO_USER(userId),
 		);
 	}
 

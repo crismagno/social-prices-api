@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { CreateProductDimensionsDto } from './createProduct.dto';
+import { CreateProductItemDimensionsDto } from './createProductItem.dto';
 
-export default class UpdateProductDto {
+export default class UpdateProductItemDto {
 	@IsString()
 	@IsNotEmpty()
-	productId: string;
+	productItemId: string;
 
 	@IsString()
 	@IsOptional()
@@ -55,7 +55,7 @@ export default class UpdateProductDto {
 	@IsOptional()
 	expirationDate: Date | null;
 
-	dimensions: CreateProductDimensionsDto | null;
+	dimensions: CreateProductItemDimensionsDto | null;
 
 	colors: string[] | null;
 }

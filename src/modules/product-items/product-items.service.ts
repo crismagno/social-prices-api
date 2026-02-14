@@ -53,23 +53,22 @@ import { StoresService } from '../stores/stores.service';
 import TagsEnum from '../tags/interfaces/tags.enum';
 import { ITag } from '../tags/interfaces/tags.interface';
 import { TagsService } from '../tags/tags.service';
-import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import CreateProductDto from './interfaces/dto/createProduct.dto';
-import UpdateProductDto from './interfaces/dto/updateProduct.dto';
+import CreateProductItemDto from './interfaces/dto/createProductItem.dto';
+import UpdateProductItemDto from './interfaces/dto/updateProductItem.dto';
 import {
-	IProduct,
-	IProductHistoricPrice,
-} from './interfaces/product.interface';
-import { Product } from './interfaces/product.schema';
+	IProductItem,
+	IProductItemHistoricPrice,
+} from './interfaces/product-item.interface';
+import { ProductItem } from './interfaces/product-item.schema';
 import {
-	IFiltersDownloadProducts,
-	IProductFileUploadTemplateRow,
-} from './interfaces/products.type';
-import { ProductsValidationService } from './products-validation.service';
+	IFiltersDownloadProductItems,
+	IProductItemFileUploadTemplateRow,
+} from './interfaces/product-items.type';
+import { ProductItemsValidationService } from './product-items-validation.service';
 
 @Injectable()
-export class ProductsService {
+export class ProductItemsService {
 	// #region Private Properties
 
 	private readonly _logger: Logger;
@@ -79,8 +78,8 @@ export class ProductsService {
 	// #region Constructor
 
 	constructor(
-		@InjectModel(schemasName.product)
-		private readonly _productModel: Model<Product>,
+		@InjectModel(schemasName.productItem)
+		private readonly _productItemModel: Model<ProductItem>,
 		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,
 		private readonly _notificationsService: NotificationsService,
@@ -88,59 +87,59 @@ export class ProductsService {
 		private readonly _tagsService: TagsService,
 		private readonly _categoriesService: CategoriesService,
 		private readonly _socketsGateway: SocketsGateway,
-		private readonly _productsValidationService: ProductsValidationService,
+		private readonly _productItemsValidationService: ProductItemsValidationService,
 		private readonly _storeService: StoresService,
 	) {
-		this._logger = new Logger(ProductsService.name);
+		this._logger = new Logger(ProductItemsService.name);
 	}
 
 	// #endregion
 
 	// #region Public Methods
 
-	public async findById(productId: string): Promise<IProduct | null> {
-		return this._productModel.findById(productId);
+	public async findById(productItemId: string): Promise<IProductItem | null> {
+		return this._productItemModel.findById(productItemId);
 	}
 
-	public async findByIds(productIds: string[]): Promise<IProduct[]> {
-		return this._productModel.find({ _id: { $in: productIds } });
+	public async findByIds(productItemIds: string[]): Promise<IProductItem[]> {
+		return this._productItemModel.find({ _id: { $in: productItemIds } });
 	}
 
-	public async findByIdOrFail(productId: string): Promise<IProduct> {
-		const product: IProduct | null = await this.findById(productId);
+	public async findByIdOrFail(productItemId: string): Promise<IProductItem> {
+		const productItem: IProductItem | null = await this.findById(productItemId);
 
-		if (!product) {
-			throw new NotFoundException('Product not found!');
+		if (!productItem) {
+			throw new NotFoundException('Product item not found!');
 		}
 
-		return product;
+		return productItem;
 	}
 
-	public async findByUserId(userId: string): Promise<IProduct[]> {
-		return await this._productModel.find({ userId });
+	public async findByUserId(userId: string): Promise<IProductItem[]> {
+		return await this._productItemModel.find({ userId });
 	}
 
 	public async findByUserIdAndBarcodes(
 		userId: string,
 		barcodes: string[],
-	): Promise<IProduct[]> {
-		return await this._productModel.find({
+	): Promise<IProductItem[]> {
+		return await this._productItemModel.find({
 			userId,
 			barcode: { $in: barcodes },
 		});
 	}
 
 	public async countByUserId(userId: string): Promise<number> {
-		return await this._productModel.countDocuments({
+		return await this._productItemModel.countDocuments({
 			userId,
 		});
 	}
 
 	public async findByUserTableState(
 		userId: string,
-		tableState: ITableStateRequest<IProduct>,
-	): Promise<ITableStateResponse<IProduct[]>> {
-		const filter: FilterQuery<IProduct> = {
+		tableState: ITableStateRequest<IProductItem>,
+	): Promise<ITableStateResponse<IProductItem[]>> {
+		const filter: FilterQuery<IProductItem> = {
 			userId,
 		};
 
@@ -183,16 +182,16 @@ export class ProductsService {
 			filter.$and = [{ _id: { $in: tableState.filters.productIds } }];
 		}
 
-		const response: ITableStateResponse<IProduct[]> = {
+		const response: ITableStateResponse<IProductItem[]> = {
 			data: [],
 			total: 0,
 		};
 
-		response.total = await this._productModel.countDocuments(filter);
-		response.data = await this._productModel.find(
+		response.total = await this._productItemModel.countDocuments(filter);
+		response.data = await this._productItemModel.find(
 			filter,
 			null,
-			queryOptions<IProduct>(tableState),
+			queryOptions<IProductItem>(tableState),
 		);
 
 		return response;
@@ -202,37 +201,37 @@ export class ProductsService {
 		userId: string,
 		name: string,
 		barcode: string,
-	): Promise<IProduct | null> {
-		return this._productModel.findOne({ name, userId, barcode: barcode });
+	): Promise<IProductItem | null> {
+		return this._productItemModel.findOne({ name, userId, barcode: barcode });
 	}
 
 	public async create(
 		files: Express.Multer.File[],
-		createProductDto: CreateProductDto,
+		createProductItemDto: CreateProductItemDto,
 		userId: string,
-	): Promise<IProduct> {
-		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
-
-		if (typeof createProductDto.storeIds === 'string') {
-			createProductDto.storeIds = JSON.parse(createProductDto.storeIds);
+	): Promise<IProductItem> {
+		if (typeof createProductItemDto.storeIds === 'string') {
+			createProductItemDto.storeIds = JSON.parse(createProductItemDto.storeIds);
 		}
 
-		if (typeof createProductDto.categoriesIds === 'string') {
-			createProductDto.categoriesIds = JSON.parse(
-				createProductDto.categoriesIds,
+		if (typeof createProductItemDto.categoriesIds === 'string') {
+			createProductItemDto.categoriesIds = JSON.parse(
+				createProductItemDto.categoriesIds,
 			);
 		}
 
-		if (typeof createProductDto.tagsIds === 'string') {
-			createProductDto.tagsIds = JSON.parse(createProductDto.tagsIds);
+		if (typeof createProductItemDto.tagsIds === 'string') {
+			createProductItemDto.tagsIds = JSON.parse(createProductItemDto.tagsIds);
 		}
 
-		if (typeof createProductDto.dimensions === 'string') {
-			createProductDto.dimensions = JSON.parse(createProductDto.dimensions);
+		if (typeof createProductItemDto.dimensions === 'string') {
+			createProductItemDto.dimensions = JSON.parse(
+				createProductItemDto.dimensions,
+			);
 		}
 
-		if (typeof createProductDto.colors === 'string') {
-			createProductDto.colors = JSON.parse(createProductDto.colors);
+		if (typeof createProductItemDto.colors === 'string') {
+			createProductItemDto.colors = JSON.parse(createProductItemDto.colors);
 		}
 
 		const filesUrl: string[] =
@@ -240,176 +239,169 @@ export class ProductsService {
 
 		const now: Date = new Date();
 
-		const product = new this._productModel({
-			description: createProductDto.description,
+		const productItem = new this._productItemModel({
+			description: createProductItemDto.description,
 			filesUrl,
-			isActive: createProductDto.isActive,
-			name: createProductDto.name,
-			price: createProductDto.price,
-			quantity: createProductDto.quantity,
-			details: createProductDto.details,
-			storeIds: createProductDto.storeIds,
-			categoriesIds: createProductDto.categoriesIds,
-			tagsIds: createProductDto.tagsIds,
+			isActive: createProductItemDto.isActive,
+			name: createProductItemDto.name,
+			price: createProductItemDto.price,
+			quantity: createProductItemDto.quantity,
+			details: createProductItemDto.details,
+			storeIds: createProductItemDto.storeIds,
+			categoriesIds: createProductItemDto.categoriesIds,
+			tagsIds: createProductItemDto.tagsIds,
 			userId,
 			mainUrl: filesUrl?.[0] ?? null,
-			barcode: valueOrCreateUniqueSuffix(createProductDto.barcode),
-			sku: valueOrCreateUniqueSuffix(createProductDto.sku),
+			barcode: valueOrCreateUniqueSuffix(createProductItemDto.barcode),
+			sku: valueOrCreateUniqueSuffix(createProductItemDto.sku),
 			previousBarcodes: [],
-			QRCode: createProductDto.QRCode,
+			QRCode: createProductItemDto.QRCode,
 			createdAt: now,
 			updatedAt: now,
 			uploadFilename: null,
-			brand: createProductDto.brand,
+			brand: createProductItemDto.brand,
 			historicPrices: [],
-			releaseDate: parseToDate(createProductDto.releaseDate),
-			expirationDate: parseToDate(createProductDto.expirationDate),
-			colors: createProductDto.colors,
-			dimensions: createProductDto.dimensions,
+			releaseDate: parseToDate(createProductItemDto.releaseDate),
+			expirationDate: parseToDate(createProductItemDto.expirationDate),
+			colors: createProductItemDto.colors,
+			dimensions: createProductItemDto.dimensions,
+			productId: createProductItemDto.productId,
 		});
 
-		const newProduct: IProduct = await product.save();
-
-		await this._notificationsService.createdProduct(user, product);
-
-		return newProduct;
+		return await productItem.save();
 	}
 
 	public async update(
 		files: Express.Multer.File[],
-		updateProductDto: UpdateProductDto,
-		userId: string,
-	): Promise<IProduct> {
-		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
-
-		const product: IProduct = await this.findByIdOrFail(
-			updateProductDto.productId,
+		updateProductItemDto: UpdateProductItemDto,
+	): Promise<IProductItem> {
+		const productItem: IProductItem = await this.findByIdOrFail(
+			updateProductItemDto.productItemId,
 		);
 
-		if (typeof updateProductDto.deletedFilesUrl === 'string') {
-			updateProductDto.deletedFilesUrl = JSON.parse(
-				updateProductDto.deletedFilesUrl,
+		if (typeof updateProductItemDto.deletedFilesUrl === 'string') {
+			updateProductItemDto.deletedFilesUrl = JSON.parse(
+				updateProductItemDto.deletedFilesUrl,
 			);
 
-			if (updateProductDto.deletedFilesUrl.length) {
-				await this._filesService.deleteFiles(updateProductDto.deletedFilesUrl);
+			if (updateProductItemDto.deletedFilesUrl.length) {
+				await this._filesService.deleteFiles(
+					updateProductItemDto.deletedFilesUrl,
+				);
 			}
 		}
 
-		if (typeof updateProductDto.storeIds === 'string') {
-			updateProductDto.storeIds = JSON.parse(updateProductDto.storeIds);
+		if (typeof updateProductItemDto.storeIds === 'string') {
+			updateProductItemDto.storeIds = JSON.parse(updateProductItemDto.storeIds);
 		}
 
-		if (typeof updateProductDto.categoriesIds === 'string') {
-			updateProductDto.categoriesIds = JSON.parse(
-				updateProductDto.categoriesIds,
+		if (typeof updateProductItemDto.categoriesIds === 'string') {
+			updateProductItemDto.categoriesIds = JSON.parse(
+				updateProductItemDto.categoriesIds,
 			);
 		}
 
-		if (typeof updateProductDto.tagsIds === 'string') {
-			updateProductDto.tagsIds = JSON.parse(updateProductDto.tagsIds);
+		if (typeof updateProductItemDto.tagsIds === 'string') {
+			updateProductItemDto.tagsIds = JSON.parse(updateProductItemDto.tagsIds);
 		}
 
-		if (typeof updateProductDto.dimensions === 'string') {
-			updateProductDto.dimensions = JSON.parse(updateProductDto.dimensions);
+		if (typeof updateProductItemDto.dimensions === 'string') {
+			updateProductItemDto.dimensions = JSON.parse(
+				updateProductItemDto.dimensions,
+			);
 		}
 
-		if (typeof updateProductDto.colors === 'string') {
-			updateProductDto.colors = JSON.parse(updateProductDto.colors);
+		if (typeof updateProductItemDto.colors === 'string') {
+			updateProductItemDto.colors = JSON.parse(updateProductItemDto.colors);
 		}
 
 		const filesUrl: string[] =
 			await this._filesService.getUploadFilesUrl(files);
 
-		product.filesUrl = product.filesUrl.filter(
+		productItem.filesUrl = productItem.filesUrl.filter(
 			(fileUrl: string) =>
-				!updateProductDto.deletedFilesUrl.find(
+				!updateProductItemDto.deletedFilesUrl.find(
 					(deletedFileUrl: string) => deletedFileUrl === fileUrl,
 				),
 		);
 
-		product.filesUrl.push(...filesUrl);
+		productItem.filesUrl.push(...filesUrl);
 
 		const now: Date = new Date();
 
-		const barcode: string = valueOrCreateUniqueSuffix(updateProductDto.barcode);
+		const barcode: string = valueOrCreateUniqueSuffix(
+			updateProductItemDto.barcode,
+		);
 
-		const previousBarcodes: string[] = product.previousBarcodes ?? [];
+		const previousBarcodes: string[] = productItem.previousBarcodes ?? [];
 
-		if (!!product.barcode?.trim() && product.barcode !== barcode) {
-			previousBarcodes.push(product.barcode);
+		if (!!productItem.barcode?.trim() && productItem.barcode !== barcode) {
+			previousBarcodes.push(productItem.barcode);
 		}
 
-		const historicPrices: IProductHistoricPrice[] =
-			product.historicPrices ?? [];
+		const historicPrices: IProductItemHistoricPrice[] =
+			productItem.historicPrices ?? [];
 
 		if (
-			parseFloat(updateProductDto.price.toString()) !==
-			parseFloat(product.price.toString())
+			parseFloat(updateProductItemDto.price.toString()) !==
+			parseFloat(productItem.price.toString())
 		) {
 			historicPrices.push({
-				barcode: product.barcode,
-				price: product.price,
+				barcode: productItem.barcode,
+				price: productItem.price,
 				updatedAt: now,
 			});
 		}
 
-		const productUpdated: IProduct = await this._productModel.findByIdAndUpdate(
-			product._id,
-			{
-				$set: {
-					filesUrl: product.filesUrl,
-					description: updateProductDto.description,
-					isActive: updateProductDto.isActive,
-					name: updateProductDto.name,
-					price: updateProductDto.price,
-					quantity: updateProductDto.quantity,
-					details: updateProductDto.details,
-					storeIds: updateProductDto.storeIds,
-					categoriesIds: updateProductDto.categoriesIds,
-					tagsIds: updateProductDto.tagsIds,
-					barcode,
-					sku: valueOrCreateUniqueSuffix(updateProductDto.sku),
-					previousBarcodes,
-					mainUrl: product.filesUrl?.[0] ?? null,
-					QRCode: updateProductDto.QRCode,
-					updatedAt: now,
-					brand: updateProductDto.brand,
-					historicPrices,
-					releaseDate: parseToDate(updateProductDto.releaseDate),
-					expirationDate: parseToDate(updateProductDto.expirationDate),
-					colors: updateProductDto.colors,
-					dimensions: updateProductDto.dimensions,
-				},
+		return await this._productItemModel.findByIdAndUpdate(productItem._id, {
+			$set: {
+				filesUrl: productItem.filesUrl,
+				description: updateProductItemDto.description,
+				isActive: updateProductItemDto.isActive,
+				name: updateProductItemDto.name,
+				price: updateProductItemDto.price,
+				quantity: updateProductItemDto.quantity,
+				details: updateProductItemDto.details,
+				storeIds: updateProductItemDto.storeIds,
+				categoriesIds: updateProductItemDto.categoriesIds,
+				tagsIds: updateProductItemDto.tagsIds,
+				barcode,
+				sku: valueOrCreateUniqueSuffix(updateProductItemDto.sku),
+				previousBarcodes,
+				mainUrl: productItem.filesUrl?.[0] ?? null,
+				QRCode: updateProductItemDto.QRCode,
+				updatedAt: now,
+				brand: updateProductItemDto.brand,
+				historicPrices,
+				releaseDate: parseToDate(updateProductItemDto.releaseDate),
+				expirationDate: parseToDate(updateProductItemDto.expirationDate),
+				colors: updateProductItemDto.colors,
+				dimensions: updateProductItemDto.dimensions,
 			},
-		);
-
-		await this._notificationsService.updatedProduct(user, productUpdated);
-
-		return productUpdated;
+		});
 	}
 
 	public async updateOne(
-		filter?: FilterQuery<Product>,
-		update?: UpdateWithAggregationPipeline | UpdateQuery<IProduct>,
-		options?: QueryOptions<IProduct>,
-	): Promise<IProduct | null> {
-		return this._productModel.findOneAndUpdate(filter, update, options);
+		filter?: FilterQuery<ProductItem>,
+		update?: UpdateWithAggregationPipeline | UpdateQuery<IProductItem>,
+		options?: QueryOptions<IProductItem>,
+	): Promise<IProductItem | null> {
+		return this._productItemModel.findOneAndUpdate(filter, update, options);
 	}
 
-	public async uploadProducts(
+	public async uploadProductItems(
 		files: Express.Multer.File[],
 		userId: string,
 		employeeId: string,
 	): Promise<void> {
 		const hasUploadProcessing: boolean =
-			await this._filesUploadsService.hasUploadProductsProcessingByUserId(
+			await this._filesUploadsService.hasUploadProductItemsProcessingByUserId(
 				userId,
 			);
 
 		if (hasUploadProcessing) {
 			throw new InternalServerErrorException(
-				'In the moment you have upload products files processing. please wait finish to try upload new files.',
+				'In the moment you have upload product items files processing. please wait finish to try upload new files.',
 			);
 		}
 
@@ -434,11 +426,11 @@ export class ProductsService {
 					await this._filesUploadsService.createMulti({
 						employeeId,
 						filenames,
-						type: FilesUploadsEnum.Type.UPLOAD_PRODUCTS,
+						type: FilesUploadsEnum.Type.UPLOAD_PRODUCT_ITEMS,
 						userId,
 					});
 
-				const fileUploadTemplateErrors: IFileUploadTemplateError<IProductFileUploadTemplateRow>[] =
+				const fileUploadTemplateErrors: IFileUploadTemplateError<IProductItemFileUploadTemplateRow>[] =
 					[];
 
 				for await (const [
@@ -452,7 +444,7 @@ export class ProductsService {
 						},
 					});
 
-					const fileUploadTemplateError: IFileUploadTemplateError<IProductFileUploadTemplateRow> =
+					const fileUploadTemplateError: IFileUploadTemplateError<IProductItemFileUploadTemplateRow> =
 						{
 							filename,
 							fileNumber: index + 1,
@@ -475,19 +467,21 @@ export class ProductsService {
 							},
 						};
 					try {
-						const productFileUploadTemplateRows: IProductFileUploadTemplateRow[] =
-							await this._getProductFileUploadTemplateRowsByFilename(filename);
+						const productItemFileUploadTemplateRows: IProductItemFileUploadTemplateRow[] =
+							await this._getProductItemFileUploadTemplateRowsByFilename(
+								filename,
+							);
 
 						await this._filesUploadsService.findByIdAndUpdate(fileUploadId, {
 							$set: {
 								updatedAt: new Date(),
-								totalToProcess: productFileUploadTemplateRows.length,
+								totalToProcess: productItemFileUploadTemplateRows.length,
 							},
 						});
 
 						fileUploadTemplateError.rowsError =
-							await this._processProductFileUploadTemplateRows(
-								productFileUploadTemplateRows,
+							await this._processProductItemFileUploadTemplateRows(
+								productItemFileUploadTemplateRows,
 								userId,
 								tags,
 								categories,
@@ -501,9 +495,9 @@ export class ProductsService {
 								updatedAt: new Date(),
 								totalError: fileUploadTemplateError.rowsError.length,
 								totalSuccess:
-									productFileUploadTemplateRows.length -
+									productItemFileUploadTemplateRows.length -
 									fileUploadTemplateError.rowsError.length,
-								totalProcessed: productFileUploadTemplateRows.length,
+								totalProcessed: productItemFileUploadTemplateRows.length,
 							},
 						});
 					} catch (error: any) {
@@ -531,25 +525,27 @@ export class ProductsService {
 						$set: fileUploadSet,
 					});
 
-					this._socketsGateway.handleResponseUploadProductsFileToUser(userId);
+					this._socketsGateway.handleResponseUploadProductItemsFileToUser(
+						userId,
+					);
 				}
 
-				this._socketsGateway.handleUploadProductsResponseToEmployee(
+				this._socketsGateway.handleUploadProductItemsResponseToEmployee(
 					fileUploadTemplateErrors,
 					employeeId,
 				);
 			})
 			.catch((error: any) => {
 				this._logger.error(error);
-				throw new Error('Error when attempt process products upload.');
+				throw new Error('Error when attempt process product items upload.');
 			});
 	}
 
-	public async downloadProducts(
+	public async downloadProductItems(
 		userId: string,
-		filters: IFiltersDownloadProducts,
+		filters: IFiltersDownloadProductItems,
 	): Promise<Buffer> {
-		const filter: FilterQuery<IProduct> = {
+		const filter: FilterQuery<IProductItem> = {
 			userId,
 		};
 
@@ -588,10 +584,10 @@ export class ProductsService {
 			filter.isActive = filters.isActive;
 		}
 
-		const products: IProduct[] = await this._productModel.find(
+		const productItems: IProductItem[] = await this._productItemModel.find(
 			filter,
 			null,
-			queryOptionsBySort<IProduct>({
+			queryOptionsBySort<IProductItem>({
 				field: filters.sortField as any,
 				order: filters.sortOrder,
 			}),
@@ -640,12 +636,12 @@ export class ProductsService {
 
 		worksheet.columns = sheetColumns;
 
-		for (const product of products) {
-			const tagsNames: string = product.tagsIds.reduce(
+		for (const productItem of productItems) {
+			const tagsNames: string = productItem.tagsIds.reduce(
 				(acc: string, tagId, index: number) => {
 					const tag = find(tags, { _id: tagId }) as ITag | undefined;
 
-					const isLastIndex: boolean = product.tagsIds.length - 1 === index;
+					const isLastIndex: boolean = productItem.tagsIds.length - 1 === index;
 
 					if (tag) {
 						acc += `${tag.name}${isLastIndex ? '' : ', '}`;
@@ -656,14 +652,14 @@ export class ProductsService {
 				'',
 			);
 
-			const categoriesNames: string = product.categoriesIds.reduce(
+			const categoriesNames: string = productItem.categoriesIds.reduce(
 				(acc: string, categoryId, index: number) => {
 					const category = find(categories, { _id: categoryId }) as
 						| ICategory
 						| undefined;
 
 					const isLastIndex: boolean =
-						product.categoriesIds.length - 1 === index;
+						productItem.categoriesIds.length - 1 === index;
 
 					if (category) {
 						acc += `${category.name}${isLastIndex ? '' : ', '}`;
@@ -674,11 +670,12 @@ export class ProductsService {
 				'',
 			);
 
-			const storesNames: string = product.storeIds.reduce(
+			const storesNames: string = productItem.storeIds.reduce(
 				(acc: string, storeId, index: number) => {
 					const store = find(stores, { _id: storeId }) as IStore | undefined;
 
-					const isLastIndex: boolean = product.storeIds.length - 1 === index;
+					const isLastIndex: boolean =
+						productItem.storeIds.length - 1 === index;
 
 					if (store) {
 						acc += `${store.name}${isLastIndex ? '' : ', '}`;
@@ -691,18 +688,18 @@ export class ProductsService {
 
 			worksheet.addRow({
 				image: '',
-				name: product.name,
+				name: productItem.name,
 				tags: tagsNames,
-				createdAt: product.createdAt,
-				barcode: product.barcode,
-				description: product.description,
-				price: product.price,
-				quantity: product.quantity,
+				createdAt: productItem.createdAt,
+				barcode: productItem.barcode,
+				description: productItem.description,
+				price: productItem.price,
+				quantity: productItem.quantity,
 				stores: storesNames,
 				categories: categoriesNames,
-				QRCode: product.QRCode,
-				details: product.details,
-				updatedAt: product.updatedAt,
+				QRCode: productItem.QRCode,
+				details: productItem.details,
+				updatedAt: productItem.updatedAt,
 			});
 		}
 
@@ -714,9 +711,9 @@ export class ProductsService {
 
 	// #region Private Methods
 
-	private async _getProductFileUploadTemplateRowsByFilename(
+	private async _getProductItemFileUploadTemplateRowsByFilename(
 		filename: string,
-	): Promise<IProductFileUploadTemplateRow[]> {
+	): Promise<IProductItemFileUploadTemplateRow[]> {
 		const fileBuffer: Buffer | null =
 			await this._filesService.getFileBufferByFilename(filename);
 
@@ -729,13 +726,14 @@ export class ProductsService {
 
 		const worksheet: ExcelJS.Worksheet = workbook.getWorksheet('Template');
 
-		this._productsValidationService.validateProductsUploadTemplate(
+		this._productItemsValidationService.validateProductItemsUploadTemplate(
 			worksheet.getRow(1),
 		);
 
 		const worksheetRowsCountToIterate: number = worksheet.rowCount + 1;
 
-		const productFileUploadTemplateRows: IProductFileUploadTemplateRow[] = [];
+		const productItemFileUploadTemplateRows: IProductItemFileUploadTemplateRow[] =
+			[];
 
 		for (
 			let rowNumber = 2;
@@ -760,7 +758,7 @@ export class ProductsService {
 			const isActive: string = row.getCell('J')?.text?.trim();
 			const details: string = row.getCell('K')?.text?.trim();
 
-			productFileUploadTemplateRows.push({
+			productItemFileUploadTemplateRows.push({
 				rowNumber,
 				image,
 				name,
@@ -776,32 +774,32 @@ export class ProductsService {
 			});
 		}
 
-		return productFileUploadTemplateRows;
+		return productItemFileUploadTemplateRows;
 	}
 
-	private async _processProductFileUploadTemplateRows(
-		productFileUploadTemplateRows: IProductFileUploadTemplateRow[],
+	private async _processProductItemFileUploadTemplateRows(
+		productItemFileUploadTemplateRows: IProductItemFileUploadTemplateRow[],
 		userId: string,
 		tags: ITag[],
 		categories: ICategory[],
 		stores: IStore[],
 		now: Date,
 		filename: string,
-	): Promise<IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[]> {
-		const productsToCreate: IProduct[] = [];
+	): Promise<IFileUploadTemplateErrorRow<IProductItemFileUploadTemplateRow>[]> {
+		const productItemsToCreate: IProductItem[] = [];
 
-		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[] =
+		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<IProductItemFileUploadTemplateRow>[] =
 			[];
 
-		for await (const productFileUploadTemplateRow of productFileUploadTemplateRows) {
-			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow> =
+		for await (const productItemFileUploadTemplateRow of productItemFileUploadTemplateRows) {
+			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<IProductItemFileUploadTemplateRow> =
 				{
-					rowNumber: productFileUploadTemplateRow.rowNumber,
+					rowNumber: productItemFileUploadTemplateRow.rowNumber,
 					reasons: [],
 				};
 
 			try {
-				if (!productFileUploadTemplateRow.name?.trim()) {
+				if (!productItemFileUploadTemplateRow.name?.trim()) {
 					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Name is required!',
 						property: 'name',
@@ -809,8 +807,8 @@ export class ProductsService {
 				}
 
 				if (
-					productFileUploadTemplateRow.barcode?.trim() &&
-					hasSpecialCharacters(productFileUploadTemplateRow.barcode)
+					productItemFileUploadTemplateRow.barcode?.trim() &&
+					hasSpecialCharacters(productItemFileUploadTemplateRow.barcode)
 				) {
 					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Barcode invalid!',
@@ -819,8 +817,8 @@ export class ProductsService {
 				}
 
 				if (
-					productFileUploadTemplateRow.price?.toString()?.trim() &&
-					isNaN(+productFileUploadTemplateRow.price)
+					productItemFileUploadTemplateRow.price?.toString()?.trim() &&
+					isNaN(+productItemFileUploadTemplateRow.price)
 				) {
 					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Price invalid!',
@@ -829,8 +827,8 @@ export class ProductsService {
 				}
 
 				if (
-					productFileUploadTemplateRow.quantity?.toString()?.trim() &&
-					isNaN(+productFileUploadTemplateRow.quantity)
+					productItemFileUploadTemplateRow.quantity?.toString()?.trim() &&
+					isNaN(+productItemFileUploadTemplateRow.quantity)
 				) {
 					fileUploadTemplateErrorRow.reasons.push({
 						message: 'Quantity invalid!',
@@ -843,117 +841,119 @@ export class ProductsService {
 					continue;
 				}
 
-				const productToUpdate: IProduct | null =
-					productFileUploadTemplateRow.name &&
-					productFileUploadTemplateRow.barcode
+				const productItemToUpdate: IProductItem | null =
+					productItemFileUploadTemplateRow.name &&
+					productItemFileUploadTemplateRow.barcode
 						? await this.findByUserIdAndProperties(
 								userId,
-								productFileUploadTemplateRow.name,
-								productFileUploadTemplateRow.barcode,
+								productItemFileUploadTemplateRow.name,
+								productItemFileUploadTemplateRow.barcode,
 						  )
 						: null;
 
-				const tagsByProductUploadTemplateRow: string[] =
-					await this._getTagsByProductFileUploadTemplateRow(
-						productFileUploadTemplateRow.tags,
+				const tagsByProductItemUploadTemplateRow: string[] =
+					await this._getTagsByProductItemFileUploadTemplateRow(
+						productItemFileUploadTemplateRow.tags,
 						userId,
 						tags,
-						arrayObjectIdToString(productToUpdate?.tagsIds as any[]),
+						arrayObjectIdToString(productItemToUpdate?.tagsIds as any[]),
 					);
 
 				const tagsIds: Types.ObjectId[] = arrayStringToObjectId(
-					tagsByProductUploadTemplateRow,
+					tagsByProductItemUploadTemplateRow,
 				);
 
-				const categoriesByProductUploadTemplateRow: string[] =
-					await this._getCategoriesByProductFileUploadTemplateRow(
-						productFileUploadTemplateRow.categories,
+				const categoriesByProductItemUploadTemplateRow: string[] =
+					await this._getCategoriesByProductItemFileUploadTemplateRow(
+						productItemFileUploadTemplateRow.categories,
 						userId,
 						categories,
-						arrayObjectIdToString(productToUpdate?.categoriesIds as any[]),
+						arrayObjectIdToString(productItemToUpdate?.categoriesIds as any[]),
 					);
 
 				const categoriesIds: Types.ObjectId[] = arrayStringToObjectId(
-					categoriesByProductUploadTemplateRow,
+					categoriesByProductItemUploadTemplateRow,
 				);
 
-				const storesByProductUploadTemplateRow: string[] =
-					await this._getStoresByProductFileUploadTemplateRow(
-						productFileUploadTemplateRow.stores,
+				const storesByProductItemUploadTemplateRow: string[] =
+					await this._getStoresByProductItemFileUploadTemplateRow(
+						productItemFileUploadTemplateRow.stores,
 						stores,
-						arrayObjectIdToString(productToUpdate?.storeIds as any[]),
+						arrayObjectIdToString(productItemToUpdate?.storeIds as any[]),
 					);
 
 				const storeIds: Types.ObjectId[] = arrayStringToObjectId(
-					storesByProductUploadTemplateRow,
+					storesByProductItemUploadTemplateRow,
 				);
 
-				if (productToUpdate) {
-					productToUpdate.tagsIds = tagsIds as any[];
+				if (productItemToUpdate) {
+					productItemToUpdate.tagsIds = tagsIds as any[];
 
-					productToUpdate.categoriesIds = categoriesIds as any[];
+					productItemToUpdate.categoriesIds = categoriesIds as any[];
 
-					productToUpdate.storeIds = storeIds as any[];
+					productItemToUpdate.storeIds = storeIds as any[];
 
-					productToUpdate.description =
-						productFileUploadTemplateRow?.description ??
-						productToUpdate.description;
+					productItemToUpdate.description =
+						productItemFileUploadTemplateRow?.description ??
+						productItemToUpdate.description;
 
-					productToUpdate.details =
-						productFileUploadTemplateRow?.details ?? productToUpdate.details;
+					productItemToUpdate.details =
+						productItemFileUploadTemplateRow?.details ??
+						productItemToUpdate.details;
 
-					productToUpdate.price = productFileUploadTemplateRow.price?.toString()
-						?.length
-						? +productFileUploadTemplateRow.price
-						: productToUpdate.price;
+					productItemToUpdate.price =
+						productItemFileUploadTemplateRow.price?.toString()?.length
+							? +productItemFileUploadTemplateRow.price
+							: productItemToUpdate.price;
 
-					productToUpdate.quantity =
-						productFileUploadTemplateRow.quantity?.toString()?.length
-							? +productFileUploadTemplateRow.quantity
-							: productToUpdate.quantity;
+					productItemToUpdate.quantity =
+						productItemFileUploadTemplateRow.quantity?.toString()?.length
+							? +productItemFileUploadTemplateRow.quantity
+							: productItemToUpdate.quantity;
 
-					productToUpdate.isActive =
-						productFileUploadTemplateRow.isActive?.trim()
-							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
+					productItemToUpdate.isActive =
+						productItemFileUploadTemplateRow.isActive?.trim()
+							? productItemFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
-							: productToUpdate.isActive;
+							: productItemToUpdate.isActive;
 
 					await this.updateOne(
 						{
-							_id: new Types.ObjectId(productToUpdate._id),
+							_id: new Types.ObjectId(productItemToUpdate._id),
 						},
 						{
-							$set: productToUpdate,
+							$set: productItemToUpdate,
 						},
 					);
 				} else {
-					productsToCreate.push({
-						name: productFileUploadTemplateRow.name,
+					productItemsToCreate.push({
+						name: productItemFileUploadTemplateRow.name,
 						tagsIds: tagsIds as any[],
 						storeIds: storeIds as any[],
 						createdAt: now,
 						updatedAt: now,
 						userId: userId as any,
 						_id: null,
-						price: productFileUploadTemplateRow.price?.toString()?.length
-							? +productFileUploadTemplateRow.price
+						price: productItemFileUploadTemplateRow.price?.toString()?.length
+							? +productItemFileUploadTemplateRow.price
 							: 0,
 
-						quantity: productFileUploadTemplateRow.quantity?.toString()?.length
-							? +productFileUploadTemplateRow.quantity
+						quantity: productItemFileUploadTemplateRow.quantity?.toString()
+							?.length
+							? +productItemFileUploadTemplateRow.quantity
 							: 0,
 
-						isActive: productFileUploadTemplateRow.isActive?.trim()
-							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
+						isActive: productItemFileUploadTemplateRow.isActive?.trim()
+							? productItemFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
-							: productToUpdate.isActive,
+							: productItemToUpdate.isActive,
 						barcode: valueOrCreateUniqueSuffix(
-							productFileUploadTemplateRow.barcode,
+							productItemFileUploadTemplateRow.barcode,
 						),
 						sku: valueOrCreateUniqueSuffix(''),
 						categoriesIds: categoriesIds as any[],
-						description: productFileUploadTemplateRow.description,
-						details: productFileUploadTemplateRow.details,
+						description: productItemFileUploadTemplateRow.description,
+						details: productItemFileUploadTemplateRow.details,
 						filesUrl: [],
 						mainUrl: null,
 						QRCode: null,
@@ -965,6 +965,7 @@ export class ProductsService {
 						colors: [],
 						dimensions: null,
 						expirationDate: null,
+						productId: null,
 					});
 				}
 			} catch (error: any) {
@@ -977,21 +978,21 @@ export class ProductsService {
 			}
 		}
 
-		if (productsToCreate.length > 0) {
-			await this._productModel.create(productsToCreate);
+		if (productItemsToCreate.length > 0) {
+			await this._productItemModel.create(productItemsToCreate);
 		}
 
 		return fileUploadTemplateErrorRows;
 	}
 
-	private async _getTagsByProductFileUploadTemplateRow(
+	private async _getTagsByProductItemFileUploadTemplateRow(
 		tagsFromRow: string,
 		userId: string,
 		tagsFromUser: ITag[] = [],
-		tagsIdsFromProduct: string[] = [],
+		tagsIdsFromProductItem: string[] = [],
 	): Promise<string[]> {
 		if (!tagsFromRow?.trim()) {
-			return tagsIdsFromProduct;
+			return tagsIdsFromProductItem;
 		}
 
 		for await (let tagFromRow of tagsFromRow.split(',')) {
@@ -1008,8 +1009,8 @@ export class ProductsService {
 
 				if (tagFromUser) {
 					const tagIdFromUser: string = tagFromUser._id.toString();
-					if (!includes(tagsIdsFromProduct, tagIdFromUser)) {
-						tagsIdsFromProduct.push(tagIdFromUser);
+					if (!includes(tagsIdsFromProductItem, tagIdFromUser)) {
+						tagsIdsFromProductItem.push(tagIdFromUser);
 					}
 				} else {
 					const tagCreated: ITag = await this._tagsService.create({
@@ -1021,24 +1022,24 @@ export class ProductsService {
 					});
 
 					tagsFromUser.push(tagCreated);
-					tagsIdsFromProduct.push(tagCreated._id);
+					tagsIdsFromProductItem.push(tagCreated._id);
 				}
 			} catch (error: any) {
 				this._logger.error(error);
 			}
 		}
 
-		return tagsIdsFromProduct;
+		return tagsIdsFromProductItem;
 	}
 
-	private async _getCategoriesByProductFileUploadTemplateRow(
+	private async _getCategoriesByProductItemFileUploadTemplateRow(
 		categoriesFromRow: string,
 		userId: string,
 		categoriesFromUser: ICategory[] = [],
-		categoriesIdsFromProduct: string[] = [],
+		categoriesIdsFromProductItem: string[] = [],
 	): Promise<string[]> {
 		if (!categoriesFromRow?.trim()) {
-			return categoriesIdsFromProduct;
+			return categoriesIdsFromProductItem;
 		}
 
 		for await (let categoryFromRow of categoriesFromRow.split(',')) {
@@ -1055,8 +1056,8 @@ export class ProductsService {
 
 				if (categoryFromUser) {
 					const categoryIdFromUser: string = categoryFromUser._id.toString();
-					if (!includes(categoriesIdsFromProduct, categoryIdFromUser)) {
-						categoriesIdsFromProduct.push(categoryIdFromUser);
+					if (!includes(categoriesIdsFromProductItem, categoryIdFromUser)) {
+						categoriesIdsFromProductItem.push(categoryIdFromUser);
 					}
 				} else {
 					const categoryCreated: ICategory =
@@ -1073,23 +1074,23 @@ export class ProductsService {
 						);
 
 					categoriesFromUser.push(categoryCreated);
-					categoriesIdsFromProduct.push(categoryCreated._id);
+					categoriesIdsFromProductItem.push(categoryCreated._id);
 				}
 			} catch (error: any) {
 				this._logger.error(error);
 			}
 		}
 
-		return categoriesIdsFromProduct;
+		return categoriesIdsFromProductItem;
 	}
 
-	private async _getStoresByProductFileUploadTemplateRow(
+	private async _getStoresByProductItemFileUploadTemplateRow(
 		storesFromRow: string,
 		storesFromUser: IStore[] = [],
-		storesIdsFromProduct: string[] = [],
+		storesIdsFromProductItem: string[] = [],
 	): Promise<string[]> {
 		if (!storesFromRow?.trim()) {
-			return storesIdsFromProduct;
+			return storesIdsFromProductItem;
 		}
 
 		for await (let storeFromRow of storesFromRow.split(',')) {
@@ -1106,8 +1107,8 @@ export class ProductsService {
 
 				if (storeFromUser) {
 					const storeIdFromUser: string = storeFromUser._id.toString();
-					if (!includes(storesIdsFromProduct, storeIdFromUser)) {
-						storesIdsFromProduct.push(storeIdFromUser);
+					if (!includes(storesIdsFromProductItem, storeIdFromUser)) {
+						storesIdsFromProductItem.push(storeIdFromUser);
 					}
 				}
 			} catch (error: any) {
@@ -1115,7 +1116,7 @@ export class ProductsService {
 			}
 		}
 
-		return storesIdsFromProduct;
+		return storesIdsFromProductItem;
 	}
 
 	// #endregion

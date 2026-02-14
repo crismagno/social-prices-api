@@ -7,6 +7,7 @@ import { CustomerSchema } from '../../../modules/customers/interfaces/customer.s
 import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';
 import { FileUploadSchema } from '../../../modules/files-uploads/interfaces/file-upload.schema';
 import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
+import { ProductItemSchema } from '../../../modules/product-items/interfaces/product-item.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
 import { StoreSchema } from '../../../modules/stores/interfaces/store.schema';
@@ -26,6 +27,7 @@ export const schemasName = {
 	tag: 'Tag',
 	employee: 'Employee',
 	fileUpload: 'FileUpload',
+	productItem: 'productItem',
 };
 
 export const schemasModule = {
@@ -64,5 +66,8 @@ export const schemasModule = {
 	]),
 	fileUpload: MongooseModule.forFeature([
 		{ name: schemasName.fileUpload, schema: FileUploadSchema },
+	]),
+	productItem: MongooseModule.forFeature([
+		{ name: schemasName.productItem, schema: ProductItemSchema },
 	]),
 };

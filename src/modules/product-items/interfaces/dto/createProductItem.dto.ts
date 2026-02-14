@@ -1,11 +1,39 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { CreateProductDimensionsDto } from './createProduct.dto';
+export class CreateProductItemDimensionsDto {
+	@IsString()
+	@IsOptional()
+	size: string | null;
 
-export default class UpdateProductDto {
+	@IsOptional()
+	height: number | null;
+
+	@IsOptional()
+	width: number | null;
+
+	@IsOptional()
+	length: number | null;
+
+	@IsOptional()
+	depth: number | null;
+
+	@IsOptional()
+	diameter: number | null;
+
+	@IsOptional()
+	thickness: number | null;
+
+	@IsOptional()
+	volume: number | null;
+
+	@IsOptional()
+	weight: number | null;
+}
+
+export default class CreateProductItemDto {
 	@IsString()
 	@IsNotEmpty()
-	productId: string;
+	name: string;
 
 	@IsString()
 	@IsOptional()
@@ -18,10 +46,6 @@ export default class UpdateProductDto {
 	@IsString()
 	@IsOptional()
 	details: string | null;
-
-	@IsString()
-	@IsNotEmpty()
-	name: string;
 
 	quantity: number;
 
@@ -43,8 +67,6 @@ export default class UpdateProductDto {
 	@IsOptional()
 	brand: string | null;
 
-	deletedFilesUrl: string[];
-
 	categoriesIds: string[];
 
 	tagsIds: string[];
@@ -55,7 +77,11 @@ export default class UpdateProductDto {
 	@IsOptional()
 	expirationDate: Date | null;
 
-	dimensions: CreateProductDimensionsDto | null;
+	dimensions: CreateProductItemDimensionsDto | null;
 
 	colors: string[] | null;
+
+	@IsString()
+	@IsNotEmpty()
+	productId: string;
 }

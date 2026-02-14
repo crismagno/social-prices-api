@@ -103,6 +103,15 @@ export class FilesUploadsService {
 		);
 	}
 
+	public async hasUploadProductItemsProcessingByUserId(
+		userId: string,
+	): Promise<boolean> {
+		return await this.hasUploadProcessingByUserIdAndType(
+			userId,
+			FilesUploadsEnum.Type.UPLOAD_PRODUCT_ITEMS,
+		);
+	}
+
 	public async hasUploadEmployeesProcessingByUserId(
 		userId: string,
 	): Promise<boolean> {
