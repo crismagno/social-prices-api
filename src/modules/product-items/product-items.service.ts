@@ -51,6 +51,7 @@ import {
 } from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IProduct } from '../products/interfaces/product.interface';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
@@ -281,6 +282,45 @@ export class ProductItemsService {
 			colors: createProductItemDto.colors,
 			dimensions: createProductItemDto.dimensions,
 			productId: createProductItemDto.productId,
+		});
+
+		return await productItem.save();
+	}
+
+	public async createDefaultProductItem(
+		product: IProduct,
+		userId: string,
+	): Promise<IProductItem> {
+		const now: Date = new Date();
+
+		const productItem = new this._productItemModel({
+			name: `${product.name} - Default`,
+			description: product.description,
+			filesUrl: product.filesUrl || [],
+			isActive: product.isActive,
+			price: product.price,
+			quantity: product.quantity,
+			details: product.details,
+			storeIds: product.storeIds,
+			categoriesIds: product.categoriesIds,
+			tagsIds: product.tagsIds,
+			userId,
+			mainUrl: product.mainUrl,
+			barcode: product.barcode,
+			sku: product.sku,
+			previousBarcodes: [],
+			QRCode: product.QRCode,
+			createdAt: now,
+			updatedAt: now,
+			uploadFilename: null,
+			brand: product.brand,
+			historicPrices: [],
+			releaseDate: product.releaseDate,
+			expirationDate: product.expirationDate,
+			colors: product.colors,
+			dimensions: product.dimensions,
+			productId: product._id,
+			isDefault: true,
 		});
 
 		return await productItem.save();
@@ -981,6 +1021,7 @@ export class ProductItemsService {
 						dimensions: null,
 						expirationDate: null,
 						productId: null,
+						isDefault: false,
 					});
 				}
 			} catch (error: any) {

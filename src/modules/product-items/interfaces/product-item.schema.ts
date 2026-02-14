@@ -142,6 +142,9 @@ export class ProductItem implements IProductItem {
 	})
 	productId: mongoose.Schema.Types.ObjectId;
 
+	@Prop({ required: true, type: Boolean, default: false })
+	isDefault: boolean;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

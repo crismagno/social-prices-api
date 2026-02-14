@@ -1,5 +1,9 @@
 import * as ExcelJS from 'exceljs';
-import { find, includes, isNil } from 'lodash';
+import {
+	find,
+	includes,
+	isNil,
+} from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -10,6 +14,8 @@ import {
 } from 'mongoose';
 
 import {
+	forwardRef,
+	Inject,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
@@ -47,6 +53,7 @@ import {
 } from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ProductItemsService } from '../product-items/product-items.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
@@ -90,6 +97,8 @@ export class ProductsService {
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _productsValidationService: ProductsValidationService,
 		private readonly _storeService: StoresService,
+		@Inject(forwardRef(() => ProductItemsService))
+		private readonly _productItemsService: ProductItemsService,
 	) {
 		this._logger = new Logger(ProductsService.name);
 	}
@@ -269,6 +278,12 @@ export class ProductsService {
 		});
 
 		const newProduct: IProduct = await product.save();
+
+		// Create default product item
+		await this._productItemsService.createDefaultProductItem(
+			newProduct,
+			userId,
+		);
 
 		await this._notificationsService.createdProduct(user, product);
 

@@ -35,6 +35,7 @@ export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
 	colors: string[] | null;
 	productId: mongoose.Schema.Types.ObjectId;
 	product?: IProduct;
+	isDefault: boolean;
 }
 
 export interface IProductItemHistoricPrice {
