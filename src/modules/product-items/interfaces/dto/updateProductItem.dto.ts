@@ -33,6 +33,8 @@ export default class UpdateProductItemDto {
 
 	isActive: boolean;
 
+	isDefault: boolean;
+
 	storeIds: string[];
 
 	@IsString()

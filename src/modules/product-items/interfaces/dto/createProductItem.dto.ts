@@ -57,6 +57,8 @@ export default class CreateProductItemDto {
 
 	isActive: boolean;
 
+	isDefault: boolean;
+
 	storeIds: string[];
 
 	@IsString()

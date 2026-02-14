@@ -173,6 +173,10 @@ export class ProductItemsService {
 			filter.isActive = tableState.filters.isActive[0];
 		}
 
+		if (tableState.filters?.isDefault?.length === 1) {
+			filter.isDefault = tableState.filters.isDefault[0];
+		}
+
 		if (tableState.filters?.storeIds?.length) {
 			filter.storeIds = { $in: tableState.filters.storeIds as string[] };
 		}
@@ -259,6 +263,7 @@ export class ProductItemsService {
 			description: createProductItemDto.description,
 			filesUrl,
 			isActive: createProductItemDto.isActive,
+			isDefault: createProductItemDto.isDefault ?? false,
 			name: createProductItemDto.name,
 			price: createProductItemDto.price,
 			quantity: createProductItemDto.quantity,
@@ -451,6 +456,7 @@ export class ProductItemsService {
 				filesUrl: productItem.filesUrl,
 				description: updateProductItemDto.description,
 				isActive: updateProductItemDto.isActive,
+				isDefault: updateProductItemDto.isDefault ?? productItem.isDefault,
 				name: updateProductItemDto.name,
 				price: updateProductItemDto.price,
 				quantity: updateProductItemDto.quantity,
