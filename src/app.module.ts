@@ -18,6 +18,7 @@ import { EmployeesModule } from './modules/employees/employees.module';
 import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module';
 import { FilesModule } from './modules/files/files.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ProductItemsModule } from './modules/product-items/product-items.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { SocketsModule } from './modules/sockets/sockets.module';
@@ -50,6 +51,7 @@ import { UsersModule } from './modules/users/users.module';
 		FilesModule,
 		SocketsModule,
 		FilesUploadsModule,
+		ProductItemsModule,
 	],
 	controllers: [AppController],
 	providers: [

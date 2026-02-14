@@ -29,4 +29,4 @@ import { ProductItemsService } from './product-items.service';
 	providers: [ProductItemsService, ProductItemsValidationService],
 	exports: [ProductItemsService],
 })
-export class ProductsModule {}
+export class ProductItemsModule {}
