@@ -326,6 +326,44 @@ export class ProductItemsService {
 		return await productItem.save();
 	}
 
+	public async createDefaultProductItems(
+		products: IProduct[],
+	): Promise<IProductItem[]> {
+		const productItems = products.map((product: IProduct) => {
+			return new this._productItemModel({
+				name: `${product.name} - Default`,
+				description: product.description,
+				filesUrl: product.filesUrl || [],
+				isActive: product.isActive,
+				price: product.price,
+				quantity: product.quantity,
+				details: product.details,
+				storeIds: product.storeIds,
+				categoriesIds: product.categoriesIds,
+				tagsIds: product.tagsIds,
+				userId: product.userId,
+				mainUrl: product.mainUrl,
+				barcode: product.barcode,
+				sku: product.sku,
+				previousBarcodes: product.previousBarcodes,
+				QRCode: product.QRCode,
+				createdAt: product.createdAt,
+				updatedAt: product.updatedAt,
+				uploadFilename: product.uploadFilename,
+				brand: product.brand,
+				historicPrices: product.historicPrices,
+				releaseDate: product.releaseDate,
+				expirationDate: product.expirationDate,
+				colors: product.colors,
+				dimensions: product.dimensions,
+				productId: product._id,
+				isDefault: true,
+			});
+		});
+
+		return await this._productItemModel.create(productItems);
+	}
+
 	public async update(
 		files: Express.Multer.File[],
 		updateProductItemDto: UpdateProductItemDto,

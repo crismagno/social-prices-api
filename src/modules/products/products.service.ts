@@ -803,7 +803,7 @@ export class ProductsService {
 		now: Date,
 		filename: string,
 	): Promise<IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[]> {
-		const productsToCreate: IProduct[] = [];
+		const productsToCreate: Omit<IProduct, '_id'>[] = [];
 
 		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<IProductFileUploadTemplateRow>[] =
 			[];
@@ -949,7 +949,6 @@ export class ProductsService {
 						createdAt: now,
 						updatedAt: now,
 						userId: userId as any,
-						_id: null,
 						price: productFileUploadTemplateRow.price?.toString()?.length
 							? +productFileUploadTemplateRow.price
 							: 0,
@@ -993,7 +992,12 @@ export class ProductsService {
 		}
 
 		if (productsToCreate.length > 0) {
-			await this._productModel.create(productsToCreate);
+			const createdProducts: IProduct[] =
+				await this._productModel.create(productsToCreate);
+
+			await this._productItemsService.createDefaultProductItems(
+				createdProducts,
+			);
 		}
 
 		return fileUploadTemplateErrorRows;
