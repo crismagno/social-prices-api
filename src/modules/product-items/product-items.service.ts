@@ -1,5 +1,9 @@
 import * as ExcelJS from 'exceljs';
-import { find, includes, isNil } from 'lodash';
+import {
+	find,
+	includes,
+	isNil,
+} from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -65,7 +69,9 @@ import {
 	IFiltersDownloadProductItems,
 	IProductItemFileUploadTemplateRow,
 } from './interfaces/product-items.type';
-import { ProductItemsValidationService } from './product-items-validation.service';
+import {
+	ProductItemsValidationService,
+} from './product-items-validation.service';
 
 @Injectable()
 export class ProductItemsService {
@@ -179,7 +185,17 @@ export class ProductItemsService {
 		}
 
 		if (tableState?.filters?.productIds?.length) {
-			filter.$and = [{ _id: { $in: tableState.filters.productIds } }];
+			filter.productId = { $in: tableState.filters.productIds };
+		}
+
+		if (tableState?.filters?.rangeDate?.length) {
+			const [startDate, endDate] = tableState.filters.rangeDate;
+			const fieldDate = tableState.filters.fieldDate || 'createdAt';
+
+			filter[fieldDate] = {
+				$gte: new Date(startDate),
+				$lte: new Date(endDate),
+			};
 		}
 
 		const response: ITableStateResponse<IProductItem[]> = {
