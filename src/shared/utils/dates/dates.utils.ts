@@ -2,26 +2,31 @@ import * as moment from 'moment';
 
 import DatesEnum from './dates.enum';
 
-export function parseToDate(date: Date | string): Date {
-	const valueToDate = new Date(date);
-	let parsedDate: Date | undefined;
-
-	if (!Number.isNaN(valueToDate.getTime())) {
-		parsedDate = valueToDate;
+export function parseToDate(date: Date | string): Date | null {
+	if (!date) {
+		return null;
 	}
 
-	const parsedBirthDate: moment.Moment = moment.utc(
-		date,
-		DatesEnum.ValidBirthDateFormat,
-		true,
-	);
-
-	if (parsedBirthDate.isValid()) {
-		parsedDate = parsedBirthDate.toDate();
+	if (date instanceof Date) {
+		return !isNaN(date.getTime()) ? date : null;
 	}
 
-	if (parsedDate) {
-		return parsedDate;
+	if (typeof date === 'string') {
+		const parsedDate = moment(date);
+
+		if (parsedDate.isValid()) {
+			return parsedDate.toDate();
+		}
+
+		const parsedDateWithFormat = moment.utc(
+			date,
+			DatesEnum.ValidDateFormat,
+			true,
+		);
+
+		if (parsedDateWithFormat.isValid()) {
+			return parsedDateWithFormat.toDate();
+		}
 	}
 
 	return null;

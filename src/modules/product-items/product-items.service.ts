@@ -282,8 +282,12 @@ export class ProductItemsService {
 			uploadFilename: null,
 			brand: createProductItemDto.brand,
 			historicPrices: [],
-			releaseDate: parseToDate(createProductItemDto.releaseDate),
-			expirationDate: parseToDate(createProductItemDto.expirationDate),
+			releaseDate: createProductItemDto.releaseDate
+				? parseToDate(createProductItemDto.releaseDate)
+				: null,
+			expirationDate: createProductItemDto.expirationDate
+				? parseToDate(createProductItemDto.expirationDate)
+				: null,
 			colors: createProductItemDto.colors,
 			dimensions: createProductItemDto.dimensions,
 			productId: createProductItemDto.productId,
@@ -517,8 +521,12 @@ export class ProductItemsService {
 				updatedAt: now,
 				brand: updateProductItemDto.brand,
 				historicPrices,
-				releaseDate: parseToDate(updateProductItemDto.releaseDate),
-				expirationDate: parseToDate(updateProductItemDto.expirationDate),
+				releaseDate: updateProductItemDto.releaseDate
+					? parseToDate(updateProductItemDto.releaseDate)
+					: null,
+				expirationDate: updateProductItemDto.expirationDate
+					? parseToDate(updateProductItemDto.expirationDate)
+					: null,
 				colors: updateProductItemDto.colors,
 				dimensions: updateProductItemDto.dimensions,
 			},

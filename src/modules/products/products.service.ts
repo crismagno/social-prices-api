@@ -271,8 +271,12 @@ export class ProductsService {
 			uploadFilename: null,
 			brand: createProductDto.brand,
 			historicPrices: [],
-			releaseDate: parseToDate(createProductDto.releaseDate),
-			expirationDate: parseToDate(createProductDto.expirationDate),
+			releaseDate: createProductDto.releaseDate
+				? parseToDate(createProductDto.releaseDate)
+				: null,
+			expirationDate: createProductDto.expirationDate
+				? parseToDate(createProductDto.expirationDate)
+				: null,
 			colors: createProductDto.colors,
 			dimensions: createProductDto.dimensions,
 		});
@@ -388,8 +392,12 @@ export class ProductsService {
 					updatedAt: now,
 					brand: updateProductDto.brand,
 					historicPrices,
-					releaseDate: parseToDate(updateProductDto.releaseDate),
-					expirationDate: parseToDate(updateProductDto.expirationDate),
+					releaseDate: updateProductDto.releaseDate
+						? parseToDate(updateProductDto.releaseDate)
+						: null,
+					expirationDate: updateProductDto.expirationDate
+						? parseToDate(updateProductDto.expirationDate)
+						: null,
 					colors: updateProductDto.colors,
 					dimensions: updateProductDto.dimensions,
 				},

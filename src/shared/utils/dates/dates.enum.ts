@@ -12,7 +12,7 @@ namespace DatesEnum {
 		America_Sao_Paulo: 'America/Sao_Paulo',
 	};
 
-	export const ValidBirthDateFormat = [
+	export const ValidDateFormat = [
 		Format.YYYYMMDD_DASHED,
 		Format.YYYYMMDDhhmmss_DASHED,
 		Format.DDMMYYYYhhmmss,
