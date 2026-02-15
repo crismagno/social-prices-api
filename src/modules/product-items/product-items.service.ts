@@ -300,7 +300,7 @@ export class ProductItemsService {
 		product: IProduct,
 	): Promise<IProductItem> {
 		const productItem = new this._productItemModel({
-			name: `${product.name} - Default`,
+			name: product.name,
 			description: product.description,
 			filesUrl: product.filesUrl || [],
 			isActive: product.isActive,
@@ -370,23 +370,20 @@ export class ProductItemsService {
 
 	public async updateDefaultProductItem(product: IProduct): Promise<void> {
 		try {
-			const defaultProductItem = await this._productItemModel.findOne({
-				productId: product._id,
-				isDefault: true,
-			});
+			const defaultProductItem: IProductItem | null =
+				await this._productItemModel.findOne({
+					productId: product._id,
+					isDefault: true,
+				});
 
 			if (!defaultProductItem) {
-				this._logger.warn(
-					`No default product item found for product ${product._id}`,
-				);
+				await this.createDefaultProductItem(product);
 				return;
 			}
 
-			const now: Date = new Date();
-
 			await this._productItemModel.findByIdAndUpdate(defaultProductItem._id, {
 				$set: {
-					name: `${product.name} - Default`,
+					name: product.name,
 					description: product.description,
 					filesUrl: product.filesUrl || [],
 					isActive: product.isActive,
@@ -400,7 +397,7 @@ export class ProductItemsService {
 					barcode: product.barcode,
 					sku: product.sku,
 					QRCode: product.QRCode,
-					updatedAt: now,
+					updatedAt: product.updatedAt,
 					brand: product.brand,
 					releaseDate: product.releaseDate,
 					expirationDate: product.expirationDate,
