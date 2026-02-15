@@ -294,10 +294,7 @@ export class ProductItemsService {
 
 	public async createDefaultProductItem(
 		product: IProduct,
-		userId: string,
 	): Promise<IProductItem> {
-		const now: Date = new Date();
-
 		const productItem = new this._productItemModel({
 			name: `${product.name} - Default`,
 			description: product.description,
@@ -309,17 +306,17 @@ export class ProductItemsService {
 			storeIds: product.storeIds,
 			categoriesIds: product.categoriesIds,
 			tagsIds: product.tagsIds,
-			userId,
+			userId: product.userId,
 			mainUrl: product.mainUrl,
 			barcode: product.barcode,
 			sku: product.sku,
-			previousBarcodes: [],
+			previousBarcodes: product.previousBarcodes,
 			QRCode: product.QRCode,
-			createdAt: now,
-			updatedAt: now,
-			uploadFilename: null,
+			createdAt: product.createdAt,
+			updatedAt: product.updatedAt,
+			uploadFilename: product.uploadFilename,
 			brand: product.brand,
-			historicPrices: [],
+			historicPrices: product.historicPrices,
 			releaseDate: product.releaseDate,
 			expirationDate: product.expirationDate,
 			colors: product.colors,
@@ -334,39 +331,87 @@ export class ProductItemsService {
 	public async createDefaultProductItems(
 		products: IProduct[],
 	): Promise<IProductItem[]> {
-		const productItems = products.map((product: IProduct) => {
-			return new this._productItemModel({
-				name: `${product.name} - Default`,
-				description: product.description,
-				filesUrl: product.filesUrl || [],
-				isActive: product.isActive,
-				price: product.price,
-				quantity: product.quantity,
-				details: product.details,
-				storeIds: product.storeIds,
-				categoriesIds: product.categoriesIds,
-				tagsIds: product.tagsIds,
-				userId: product.userId,
-				mainUrl: product.mainUrl,
-				barcode: product.barcode,
-				sku: product.sku,
-				previousBarcodes: product.previousBarcodes,
-				QRCode: product.QRCode,
-				createdAt: product.createdAt,
-				updatedAt: product.updatedAt,
-				uploadFilename: product.uploadFilename,
-				brand: product.brand,
-				historicPrices: product.historicPrices,
-				releaseDate: product.releaseDate,
-				expirationDate: product.expirationDate,
-				colors: product.colors,
-				dimensions: product.dimensions,
+		const productItems = products.map((product: IProduct) => ({
+			name: `${product.name} - Default`,
+			description: product.description,
+			filesUrl: product.filesUrl || [],
+			isActive: product.isActive,
+			price: product.price,
+			quantity: product.quantity,
+			details: product.details,
+			storeIds: product.storeIds,
+			categoriesIds: product.categoriesIds,
+			tagsIds: product.tagsIds,
+			userId: product.userId,
+			mainUrl: product.mainUrl,
+			barcode: product.barcode,
+			sku: product.sku,
+			previousBarcodes: product.previousBarcodes,
+			QRCode: product.QRCode,
+			createdAt: product.createdAt,
+			updatedAt: product.updatedAt,
+			uploadFilename: product.uploadFilename,
+			brand: product.brand,
+			historicPrices: product.historicPrices,
+			releaseDate: product.releaseDate,
+			expirationDate: product.expirationDate,
+			colors: product.colors,
+			dimensions: product.dimensions,
+			productId: product._id,
+			isDefault: true,
+		}));
+
+		return await this._productItemModel.create(productItems);
+	}
+
+	public async updateDefaultProductItem(product: IProduct): Promise<void> {
+		try {
+			const defaultProductItem = await this._productItemModel.findOne({
 				productId: product._id,
 				isDefault: true,
 			});
-		});
 
-		return await this._productItemModel.create(productItems);
+			if (!defaultProductItem) {
+				this._logger.warn(
+					`No default product item found for product ${product._id}`,
+				);
+				return;
+			}
+
+			const now: Date = new Date();
+
+			await this._productItemModel.findByIdAndUpdate(defaultProductItem._id, {
+				$set: {
+					name: `${product.name} - Default`,
+					description: product.description,
+					filesUrl: product.filesUrl || [],
+					isActive: product.isActive,
+					price: product.price,
+					quantity: product.quantity,
+					details: product.details,
+					storeIds: product.storeIds,
+					categoriesIds: product.categoriesIds,
+					tagsIds: product.tagsIds,
+					mainUrl: product.mainUrl,
+					barcode: product.barcode,
+					sku: product.sku,
+					QRCode: product.QRCode,
+					updatedAt: now,
+					brand: product.brand,
+					releaseDate: product.releaseDate,
+					expirationDate: product.expirationDate,
+					colors: product.colors,
+					dimensions: product.dimensions,
+					historicPrices: product.historicPrices,
+					previousBarcodes: product.previousBarcodes,
+					uploadFilename: product.uploadFilename,
+				},
+			});
+		} catch (error: any) {
+			this._logger.error(
+				`Error updating default product item for product ${product._id}: ${error.message}`,
+			);
+		}
 	}
 
 	public async update(

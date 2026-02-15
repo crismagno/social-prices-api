@@ -280,10 +280,7 @@ export class ProductsService {
 		const newProduct: IProduct = await product.save();
 
 		// Create default product item
-		await this._productItemsService.createDefaultProductItem(
-			newProduct,
-			userId,
-		);
+		await this._productItemsService.createDefaultProductItem(newProduct);
 
 		await this._notificationsService.createdProduct(user, product);
 
@@ -397,7 +394,12 @@ export class ProductsService {
 					dimensions: updateProductDto.dimensions,
 				},
 			},
+			{
+				new: true,
+			},
 		);
+
+		await this._productItemsService.updateDefaultProductItem(productUpdated);
 
 		await this._notificationsService.updatedProduct(user, productUpdated);
 
@@ -933,14 +935,23 @@ export class ProductsService {
 							  CommonEnum.YesNo.YES
 							: productToUpdate.isActive;
 
-					await this.updateOne(
+					const updatedProduct: IProduct = await this.updateOne(
 						{
 							_id: new Types.ObjectId(productToUpdate._id),
 						},
 						{
 							$set: productToUpdate,
 						},
+						{
+							new: true,
+						},
 					);
+
+					if (updatedProduct) {
+						await this._productItemsService.updateDefaultProductItem(
+							updatedProduct,
+						);
+					}
 				} else {
 					productsToCreate.push({
 						name: productFileUploadTemplateRow.name,
