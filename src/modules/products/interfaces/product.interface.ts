@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
 
-import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
-import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import {
+	ICreatedAtEntity,
+} from '../../../shared/common/global/created-at.interface';
+import {
+	IUpdatedAtEntity,
+} from '../../../shared/common/global/updated-at.interface';
 
 export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;

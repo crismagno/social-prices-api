@@ -488,6 +488,7 @@ export class ProductsService {
 								image: 'Image',
 								name: 'Name',
 								barcode: 'Barcode',
+								sku: 'SKU',
 								description: 'Description',
 								price: 'Price',
 								quantity: 'Quantity',
@@ -496,6 +497,19 @@ export class ProductsService {
 								tags: 'Tags',
 								isActive: 'Is Active',
 								details: 'Details',
+								brand: 'Brand',
+								releaseDate: 'Release Date',
+								expirationDate: 'Expiration Date',
+								colors: 'Colors',
+								dimensionSize: 'Dimension Size',
+								dimensionHeight: 'Dimension Height',
+								dimensionWidth: 'Dimension Width',
+								dimensionLength: 'Dimension Length',
+								dimensionDepth: 'Dimension Depth',
+								dimensionDiameter: 'Dimension Diameter',
+								dimensionThickness: 'Dimension Thickness',
+								dimensionVolume: 'Dimension Volume',
+								dimensionWeight: 'Dimension Weight',
 								other: 'Other',
 							},
 						};
@@ -776,20 +790,35 @@ export class ProductsService {
 			const image: string = row.getCell('A')?.text?.trim();
 			const name: string = row.getCell('B')?.text?.trim();
 			const barcode: string = row.getCell('C')?.text?.trim();
-			const description: string = row.getCell('D')?.text?.trim();
-			const price: string = row.getCell('E')?.text?.trim();
-			const quantity: string = row.getCell('F')?.text?.trim();
-			const stores: string = row.getCell('G')?.text?.trim();
-			const categories: string = row.getCell('H')?.text?.trim();
-			const tags: string = row.getCell('I')?.text?.trim();
-			const isActive: string = row.getCell('J')?.text?.trim();
-			const details: string = row.getCell('K')?.text?.trim();
+			const sku: string = row.getCell('D')?.text?.trim();
+			const description: string = row.getCell('E')?.text?.trim();
+			const price: string = row.getCell('F')?.text?.trim();
+			const quantity: string = row.getCell('G')?.text?.trim();
+			const stores: string = row.getCell('H')?.text?.trim();
+			const categories: string = row.getCell('I')?.text?.trim();
+			const tags: string = row.getCell('J')?.text?.trim();
+			const isActive: string = row.getCell('K')?.text?.trim();
+			const details: string = row.getCell('L')?.text?.trim();
+			const brand: string = row.getCell('M')?.text?.trim();
+			const releaseDate: string = row.getCell('N')?.text?.trim();
+			const expirationDate: string = row.getCell('O')?.text?.trim();
+			const colors: string = row.getCell('P')?.text?.trim();
+			const dimensionSize: string = row.getCell('Q')?.text?.trim();
+			const dimensionHeight: string = row.getCell('R')?.text?.trim();
+			const dimensionWidth: string = row.getCell('S')?.text?.trim();
+			const dimensionLength: string = row.getCell('T')?.text?.trim();
+			const dimensionDepth: string = row.getCell('U')?.text?.trim();
+			const dimensionDiameter: string = row.getCell('V')?.text?.trim();
+			const dimensionThickness: string = row.getCell('W')?.text?.trim();
+			const dimensionVolume: string = row.getCell('X')?.text?.trim();
+			const dimensionWeight: string = row.getCell('Y')?.text?.trim();
 
 			productFileUploadTemplateRows.push({
 				rowNumber,
 				image,
 				name,
 				barcode,
+				sku,
 				description,
 				price,
 				quantity,
@@ -798,6 +827,19 @@ export class ProductsService {
 				tags,
 				isActive,
 				details,
+				brand,
+				releaseDate,
+				expirationDate,
+				colors,
+				dimensionSize,
+				dimensionHeight,
+				dimensionWidth,
+				dimensionLength,
+				dimensionDepth,
+				dimensionDiameter,
+				dimensionThickness,
+				dimensionVolume,
+				dimensionWeight,
 			});
 		}
 
@@ -915,33 +957,80 @@ export class ProductsService {
 
 				if (productToUpdate) {
 					productToUpdate.tagsIds = tagsIds as any[];
-
 					productToUpdate.categoriesIds = categoriesIds as any[];
-
 					productToUpdate.storeIds = storeIds as any[];
-
 					productToUpdate.description =
 						productFileUploadTemplateRow?.description ??
 						productToUpdate.description;
-
 					productToUpdate.details =
 						productFileUploadTemplateRow?.details ?? productToUpdate.details;
-
 					productToUpdate.price = productFileUploadTemplateRow.price?.toString()
 						?.length
 						? +productFileUploadTemplateRow.price
 						: productToUpdate.price;
-
 					productToUpdate.quantity =
 						productFileUploadTemplateRow.quantity?.toString()?.length
 							? +productFileUploadTemplateRow.quantity
 							: productToUpdate.quantity;
-
 					productToUpdate.isActive =
 						productFileUploadTemplateRow.isActive?.trim()
 							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
 							: productToUpdate.isActive;
+
+					// Update new fields
+					productToUpdate.sku = valueOrCreateUniqueSuffix(
+						productFileUploadTemplateRow.sku ?? productToUpdate.sku,
+					);
+					productToUpdate.brand =
+						productFileUploadTemplateRow.brand ?? productToUpdate.brand;
+					productToUpdate.releaseDate = productFileUploadTemplateRow.releaseDate
+						? parseToDate(productFileUploadTemplateRow.releaseDate)
+						: productToUpdate.releaseDate;
+					productToUpdate.expirationDate =
+						productFileUploadTemplateRow.expirationDate
+							? parseToDate(productFileUploadTemplateRow.expirationDate)
+							: productToUpdate.expirationDate;
+
+					if (productFileUploadTemplateRow.colors?.trim()) {
+						const colorsArray = productFileUploadTemplateRow.colors
+							.split(',')
+							.map((c) => c.trim())
+							.filter((c) => c);
+						productToUpdate.colors =
+							colorsArray.length > 0 ? colorsArray : productToUpdate.colors;
+					}
+
+					productToUpdate.dimensions = {
+						size:
+							productFileUploadTemplateRow.dimensionSize ??
+							productToUpdate.dimensions?.size ??
+							null,
+						height: productFileUploadTemplateRow.dimensionHeight
+							? +productFileUploadTemplateRow.dimensionHeight
+							: productToUpdate.dimensions?.height ?? null,
+						width: productFileUploadTemplateRow.dimensionWidth
+							? +productFileUploadTemplateRow.dimensionWidth
+							: productToUpdate.dimensions?.width ?? null,
+						length: productFileUploadTemplateRow.dimensionLength
+							? +productFileUploadTemplateRow.dimensionLength
+							: productToUpdate.dimensions?.length ?? null,
+						depth: productFileUploadTemplateRow.dimensionDepth
+							? +productFileUploadTemplateRow.dimensionDepth
+							: productToUpdate.dimensions?.depth ?? null,
+						diameter: productFileUploadTemplateRow.dimensionDiameter
+							? +productFileUploadTemplateRow.dimensionDiameter
+							: productToUpdate.dimensions?.diameter ?? null,
+						thickness: productFileUploadTemplateRow.dimensionThickness
+							? +productFileUploadTemplateRow.dimensionThickness
+							: productToUpdate.dimensions?.thickness ?? null,
+						volume: productFileUploadTemplateRow.dimensionVolume
+							? +productFileUploadTemplateRow.dimensionVolume
+							: productToUpdate.dimensions?.volume ?? null,
+						weight: productFileUploadTemplateRow.dimensionWeight
+							? +productFileUploadTemplateRow.dimensionWeight
+							: productToUpdate.dimensions?.weight ?? null,
+					};
 
 					const updatedProduct: IProduct = await this.updateOne(
 						{
@@ -971,19 +1060,17 @@ export class ProductsService {
 						price: productFileUploadTemplateRow.price?.toString()?.length
 							? +productFileUploadTemplateRow.price
 							: 0,
-
 						quantity: productFileUploadTemplateRow.quantity?.toString()?.length
 							? +productFileUploadTemplateRow.quantity
 							: 0,
-
 						isActive: productFileUploadTemplateRow.isActive?.trim()
 							? productFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
-							: productToUpdate.isActive,
+							: true,
 						barcode: valueOrCreateUniqueSuffix(
 							productFileUploadTemplateRow.barcode,
 						),
-						sku: valueOrCreateUniqueSuffix(''),
+						sku: valueOrCreateUniqueSuffix(productFileUploadTemplateRow.sku),
 						categoriesIds: categoriesIds as any[],
 						description: productFileUploadTemplateRow.description,
 						details: productFileUploadTemplateRow.details,
@@ -992,12 +1079,47 @@ export class ProductsService {
 						QRCode: null,
 						uploadFilename: filename,
 						previousBarcodes: [],
-						brand: null,
+						brand: productFileUploadTemplateRow.brand || null,
 						historicPrices: [],
-						releaseDate: null,
-						colors: [],
-						dimensions: null,
-						expirationDate: null,
+						releaseDate: productFileUploadTemplateRow.releaseDate
+							? parseToDate(productFileUploadTemplateRow.releaseDate)
+							: null,
+						expirationDate: productFileUploadTemplateRow.expirationDate
+							? parseToDate(productFileUploadTemplateRow.expirationDate)
+							: null,
+						colors: productFileUploadTemplateRow.colors?.trim()
+							? productFileUploadTemplateRow.colors
+									.split(',')
+									.map((c) => c.trim())
+									.filter((c) => c)
+							: [],
+						dimensions: {
+							size: productFileUploadTemplateRow.dimensionSize || null,
+							height: productFileUploadTemplateRow.dimensionHeight
+								? +productFileUploadTemplateRow.dimensionHeight
+								: null,
+							width: productFileUploadTemplateRow.dimensionWidth
+								? +productFileUploadTemplateRow.dimensionWidth
+								: null,
+							length: productFileUploadTemplateRow.dimensionLength
+								? +productFileUploadTemplateRow.dimensionLength
+								: null,
+							depth: productFileUploadTemplateRow.dimensionDepth
+								? +productFileUploadTemplateRow.dimensionDepth
+								: null,
+							diameter: productFileUploadTemplateRow.dimensionDiameter
+								? +productFileUploadTemplateRow.dimensionDiameter
+								: null,
+							thickness: productFileUploadTemplateRow.dimensionThickness
+								? +productFileUploadTemplateRow.dimensionThickness
+								: null,
+							volume: productFileUploadTemplateRow.dimensionVolume
+								? +productFileUploadTemplateRow.dimensionVolume
+								: null,
+							weight: productFileUploadTemplateRow.dimensionWeight
+								? +productFileUploadTemplateRow.dimensionWeight
+								: null,
+						},
 					});
 				}
 			} catch (error: any) {
