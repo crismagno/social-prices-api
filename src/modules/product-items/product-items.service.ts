@@ -14,6 +14,8 @@ import {
 } from 'mongoose';
 
 import {
+	forwardRef,
+	Inject,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
@@ -52,6 +54,7 @@ import {
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IProduct } from '../products/interfaces/product.interface';
+import { ProductsService } from '../products/products.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
@@ -96,6 +99,8 @@ export class ProductItemsService {
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _productItemsValidationService: ProductItemsValidationService,
 		private readonly _storeService: StoresService,
+		@Inject(forwardRef(() => ProductsService))
+		private readonly _productsService: ProductsService,
 	) {
 		this._logger = new Logger(ProductItemsService.name);
 	}
@@ -217,12 +222,19 @@ export class ProductItemsService {
 		return response;
 	}
 
-	public async findByUserIdAndProperties(
+	public async findByUserIdAndPropertiesNotDefault(
+		productId: string,
 		userId: string,
 		name: string,
 		barcode: string,
 	): Promise<IProductItem | null> {
-		return this._productItemModel.findOne({ name, userId, barcode: barcode });
+		return this._productItemModel.findOne({
+			name,
+			userId,
+			barcode: barcode,
+			productId,
+			isDefault: false,
+		});
 	}
 
 	public async create(
@@ -539,10 +551,13 @@ export class ProductItemsService {
 	}
 
 	public async uploadProductItems(
+		productId: string,
 		files: Express.Multer.File[],
 		userId: string,
 		employeeId: string,
 	): Promise<void> {
+		await this._productsService.findByIdOrFail(productId);
+
 		const hasUploadProcessing: boolean =
 			await this._filesUploadsService.hasUploadProductItemsProcessingByUserId(
 				userId,
@@ -604,6 +619,7 @@ export class ProductItemsService {
 								image: 'Image',
 								name: 'Name',
 								barcode: 'Barcode',
+								sku: 'SKU',
 								description: 'Description',
 								price: 'Price',
 								quantity: 'Quantity',
@@ -612,6 +628,19 @@ export class ProductItemsService {
 								tags: 'Tags',
 								isActive: 'Is Active',
 								details: 'Details',
+								brand: 'Brand',
+								releaseDate: 'Release Date',
+								expirationDate: 'Expiration Date',
+								colors: 'Colors',
+								dimensionSize: 'Dimension Size',
+								dimensionHeight: 'Dimension Height',
+								dimensionWidth: 'Dimension Width',
+								dimensionLength: 'Dimension Length',
+								dimensionDepth: 'Dimension Depth',
+								dimensionDiameter: 'Dimension Diameter',
+								dimensionThickness: 'Dimension Thickness',
+								dimensionVolume: 'Dimension Volume',
+								dimensionWeight: 'Dimension Weight',
 								other: 'Other',
 							},
 						};
@@ -630,6 +659,7 @@ export class ProductItemsService {
 
 						fileUploadTemplateError.rowsError =
 							await this._processProductItemFileUploadTemplateRows(
+								productId,
 								productItemFileUploadTemplateRows,
 								userId,
 								tags,
@@ -898,20 +928,35 @@ export class ProductItemsService {
 			const image: string = row.getCell('A')?.text?.trim();
 			const name: string = row.getCell('B')?.text?.trim();
 			const barcode: string = row.getCell('C')?.text?.trim();
-			const description: string = row.getCell('D')?.text?.trim();
-			const price: string = row.getCell('E')?.text?.trim();
-			const quantity: string = row.getCell('F')?.text?.trim();
-			const stores: string = row.getCell('G')?.text?.trim();
-			const categories: string = row.getCell('H')?.text?.trim();
-			const tags: string = row.getCell('I')?.text?.trim();
-			const isActive: string = row.getCell('J')?.text?.trim();
-			const details: string = row.getCell('K')?.text?.trim();
+			const sku: string = row.getCell('D')?.text?.trim();
+			const description: string = row.getCell('E')?.text?.trim();
+			const price: string = row.getCell('F')?.text?.trim();
+			const quantity: string = row.getCell('G')?.text?.trim();
+			const stores: string = row.getCell('H')?.text?.trim();
+			const categories: string = row.getCell('I')?.text?.trim();
+			const tags: string = row.getCell('J')?.text?.trim();
+			const isActive: string = row.getCell('K')?.text?.trim();
+			const details: string = row.getCell('L')?.text?.trim();
+			const brand: string = row.getCell('M')?.text?.trim();
+			const releaseDate: string = row.getCell('N')?.text?.trim();
+			const expirationDate: string = row.getCell('O')?.text?.trim();
+			const colors: string = row.getCell('P')?.text?.trim();
+			const dimensionSize: string = row.getCell('Q')?.text?.trim();
+			const dimensionHeight: string = row.getCell('R')?.text?.trim();
+			const dimensionWidth: string = row.getCell('S')?.text?.trim();
+			const dimensionLength: string = row.getCell('T')?.text?.trim();
+			const dimensionDepth: string = row.getCell('U')?.text?.trim();
+			const dimensionDiameter: string = row.getCell('V')?.text?.trim();
+			const dimensionThickness: string = row.getCell('W')?.text?.trim();
+			const dimensionVolume: string = row.getCell('X')?.text?.trim();
+			const dimensionWeight: string = row.getCell('Y')?.text?.trim();
 
 			productItemFileUploadTemplateRows.push({
 				rowNumber,
 				image,
 				name,
 				barcode,
+				sku,
 				description,
 				price,
 				quantity,
@@ -920,6 +965,19 @@ export class ProductItemsService {
 				tags,
 				isActive,
 				details,
+				brand,
+				releaseDate,
+				expirationDate,
+				colors,
+				dimensionSize,
+				dimensionHeight,
+				dimensionWidth,
+				dimensionLength,
+				dimensionDepth,
+				dimensionDiameter,
+				dimensionThickness,
+				dimensionVolume,
+				dimensionWeight,
 			});
 		}
 
@@ -927,6 +985,7 @@ export class ProductItemsService {
 	}
 
 	private async _processProductItemFileUploadTemplateRows(
+		productId: string,
 		productItemFileUploadTemplateRows: IProductItemFileUploadTemplateRow[],
 		userId: string,
 		tags: ITag[],
@@ -935,7 +994,7 @@ export class ProductItemsService {
 		now: Date,
 		filename: string,
 	): Promise<IFileUploadTemplateErrorRow<IProductItemFileUploadTemplateRow>[]> {
-		const productItemsToCreate: IProductItem[] = [];
+		const productItemsToCreate: Omit<IProductItem, '_id'>[] = [];
 
 		const fileUploadTemplateErrorRows: IFileUploadTemplateErrorRow<IProductItemFileUploadTemplateRow>[] =
 			[];
@@ -993,7 +1052,8 @@ export class ProductItemsService {
 				const productItemToUpdate: IProductItem | null =
 					productItemFileUploadTemplateRow.name &&
 					productItemFileUploadTemplateRow.barcode
-						? await this.findByUserIdAndProperties(
+						? await this.findByUserIdAndPropertiesNotDefault(
+								productId,
 								userId,
 								productItemFileUploadTemplateRow.name,
 								productItemFileUploadTemplateRow.barcode,
@@ -1037,34 +1097,77 @@ export class ProductItemsService {
 
 				if (productItemToUpdate) {
 					productItemToUpdate.tagsIds = tagsIds as any[];
-
 					productItemToUpdate.categoriesIds = categoriesIds as any[];
-
 					productItemToUpdate.storeIds = storeIds as any[];
-
 					productItemToUpdate.description =
 						productItemFileUploadTemplateRow?.description ??
 						productItemToUpdate.description;
-
 					productItemToUpdate.details =
 						productItemFileUploadTemplateRow?.details ??
 						productItemToUpdate.details;
-
 					productItemToUpdate.price =
 						productItemFileUploadTemplateRow.price?.toString()?.length
 							? +productItemFileUploadTemplateRow.price
 							: productItemToUpdate.price;
-
 					productItemToUpdate.quantity =
 						productItemFileUploadTemplateRow.quantity?.toString()?.length
 							? +productItemFileUploadTemplateRow.quantity
 							: productItemToUpdate.quantity;
-
 					productItemToUpdate.isActive =
 						productItemFileUploadTemplateRow.isActive?.trim()
 							? productItemFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
 							: productItemToUpdate.isActive;
+					productItemToUpdate.sku = valueOrCreateUniqueSuffix(
+						productItemFileUploadTemplateRow.sku ?? productItemToUpdate.sku,
+					);
+					productItemToUpdate.brand =
+						productItemFileUploadTemplateRow.brand ?? productItemToUpdate.brand;
+					productItemToUpdate.releaseDate =
+						productItemFileUploadTemplateRow.releaseDate
+							? parseToDate(productItemFileUploadTemplateRow.releaseDate)
+							: productItemToUpdate.releaseDate;
+
+					if (productItemFileUploadTemplateRow.colors?.trim()) {
+						const colorsArray: string[] =
+							productItemFileUploadTemplateRow.colors
+								.split(',')
+								.map((c) => c.trim())
+								.filter((c) => c);
+						productItemToUpdate.colors =
+							colorsArray.length > 0 ? colorsArray : productItemToUpdate.colors;
+					}
+
+					productItemToUpdate.dimensions = {
+						size:
+							productItemFileUploadTemplateRow.dimensionSize ??
+							productItemToUpdate.dimensions?.size ??
+							null,
+						height: productItemFileUploadTemplateRow.dimensionHeight
+							? +productItemFileUploadTemplateRow.dimensionHeight
+							: productItemToUpdate.dimensions?.height ?? null,
+						width: productItemFileUploadTemplateRow.dimensionWidth
+							? +productItemFileUploadTemplateRow.dimensionWidth
+							: productItemToUpdate.dimensions?.width ?? null,
+						length: productItemFileUploadTemplateRow.dimensionLength
+							? +productItemFileUploadTemplateRow.dimensionLength
+							: productItemToUpdate.dimensions?.length ?? null,
+						depth: productItemFileUploadTemplateRow.dimensionDepth
+							? +productItemFileUploadTemplateRow.dimensionDepth
+							: productItemToUpdate.dimensions?.depth ?? null,
+						diameter: productItemFileUploadTemplateRow.dimensionDiameter
+							? +productItemFileUploadTemplateRow.dimensionDiameter
+							: productItemToUpdate.dimensions?.diameter ?? null,
+						thickness: productItemFileUploadTemplateRow.dimensionThickness
+							? +productItemFileUploadTemplateRow.dimensionThickness
+							: productItemToUpdate.dimensions?.thickness ?? null,
+						volume: productItemFileUploadTemplateRow.dimensionVolume
+							? +productItemFileUploadTemplateRow.dimensionVolume
+							: productItemToUpdate.dimensions?.volume ?? null,
+						weight: productItemFileUploadTemplateRow.dimensionWeight
+							? +productItemFileUploadTemplateRow.dimensionWeight
+							: productItemToUpdate.dimensions?.weight ?? null,
+					};
 
 					await this.updateOne(
 						{
@@ -1072,6 +1175,9 @@ export class ProductItemsService {
 						},
 						{
 							$set: productItemToUpdate,
+						},
+						{
+							new: true,
 						},
 					);
 				} else {
@@ -1082,24 +1188,23 @@ export class ProductItemsService {
 						createdAt: now,
 						updatedAt: now,
 						userId: userId as any,
-						_id: null,
 						price: productItemFileUploadTemplateRow.price?.toString()?.length
 							? +productItemFileUploadTemplateRow.price
 							: 0,
-
 						quantity: productItemFileUploadTemplateRow.quantity?.toString()
 							?.length
 							? +productItemFileUploadTemplateRow.quantity
 							: 0,
-
 						isActive: productItemFileUploadTemplateRow.isActive?.trim()
 							? productItemFileUploadTemplateRow.isActive?.toUpperCase() ===
 							  CommonEnum.YesNo.YES
-							: productItemToUpdate.isActive,
+							: true,
 						barcode: valueOrCreateUniqueSuffix(
 							productItemFileUploadTemplateRow.barcode,
 						),
-						sku: valueOrCreateUniqueSuffix(''),
+						sku: valueOrCreateUniqueSuffix(
+							productItemFileUploadTemplateRow.sku,
+						),
 						categoriesIds: categoriesIds as any[],
 						description: productItemFileUploadTemplateRow.description,
 						details: productItemFileUploadTemplateRow.details,
@@ -1108,13 +1213,48 @@ export class ProductItemsService {
 						QRCode: null,
 						uploadFilename: filename,
 						previousBarcodes: [],
-						brand: null,
+						brand: productItemFileUploadTemplateRow.brand || null,
 						historicPrices: [],
-						releaseDate: null,
-						colors: [],
-						dimensions: null,
-						expirationDate: null,
-						productId: null,
+						releaseDate: productItemFileUploadTemplateRow.releaseDate
+							? parseToDate(productItemFileUploadTemplateRow.releaseDate)
+							: null,
+						expirationDate: productItemFileUploadTemplateRow.expirationDate
+							? parseToDate(productItemFileUploadTemplateRow.expirationDate)
+							: null,
+						colors: productItemFileUploadTemplateRow.colors?.trim()
+							? productItemFileUploadTemplateRow.colors
+									.split(',')
+									.map((c) => c.trim())
+									.filter((c) => c)
+							: [],
+						dimensions: {
+							size: productItemFileUploadTemplateRow.dimensionSize || null,
+							height: productItemFileUploadTemplateRow.dimensionHeight
+								? +productItemFileUploadTemplateRow.dimensionHeight
+								: null,
+							width: productItemFileUploadTemplateRow.dimensionWidth
+								? +productItemFileUploadTemplateRow.dimensionWidth
+								: null,
+							length: productItemFileUploadTemplateRow.dimensionLength
+								? +productItemFileUploadTemplateRow.dimensionLength
+								: null,
+							depth: productItemFileUploadTemplateRow.dimensionDepth
+								? +productItemFileUploadTemplateRow.dimensionDepth
+								: null,
+							diameter: productItemFileUploadTemplateRow.dimensionDiameter
+								? +productItemFileUploadTemplateRow.dimensionDiameter
+								: null,
+							thickness: productItemFileUploadTemplateRow.dimensionThickness
+								? +productItemFileUploadTemplateRow.dimensionThickness
+								: null,
+							volume: productItemFileUploadTemplateRow.dimensionVolume
+								? +productItemFileUploadTemplateRow.dimensionVolume
+								: null,
+							weight: productItemFileUploadTemplateRow.dimensionWeight
+								? +productItemFileUploadTemplateRow.dimensionWeight
+								: null,
+						},
+						productId: productId as any,
 						isDefault: false,
 					});
 				}

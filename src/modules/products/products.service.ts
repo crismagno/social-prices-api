@@ -215,6 +215,13 @@ export class ProductsService {
 		return this._productModel.findOne({ name, userId, barcode: barcode });
 	}
 
+	public async findByUserIdAndBarcode(
+		userId: string,
+		barcode: string,
+	): Promise<IProduct | null> {
+		return this._productModel.findOne({ userId, barcode });
+	}
+
 	public async create(
 		files: Express.Multer.File[],
 		createProductDto: CreateProductDto,

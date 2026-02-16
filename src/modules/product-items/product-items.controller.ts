@@ -16,8 +16,12 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
-import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
-import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import {
+	parseFilePipeBuilder,
+} from '../../shared/pipes/parse-file-builder-pipe';
+import {
+	ValidationParamsPipe,
+} from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -56,7 +60,6 @@ export class ProductItemsController {
 	public async update(
 		@UploadedFiles(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
 		files: Express.Multer.File[],
-		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateProductItemDto: UpdateProductItemDto,
 	): Promise<IProductItem> {
 		return await this._productItemsService.update(files, updateProductItemDto);
@@ -113,8 +116,10 @@ export class ProductItemsController {
 		@UploadedFiles(parseFilePipeBuilder({ allowOnlyTypes: ['spreadsheet'] }))
 		files: Express.Multer.File[],
 		@AuthPayload() authPayload: IAuthPayload,
+		@Body() data: any,
 	): Promise<void> {
 		return await this._productItemsService.uploadProductItems(
+			data.productId,
 			files,
 			authPayload._id,
 			authPayload.employeeId,
