@@ -759,18 +759,25 @@ export class ProductItemsService {
 			filter.tagsIds = { $in: filters.tagsIds };
 		}
 
+		if (filters.productIds?.length) {
+			filter.productId = { $in: filters.productIds };
+		}
+
 		if (!isNil(filters.isActive)) {
 			filter.isActive = filters.isActive;
 		}
 
-		const productItems: IProductItem[] = await this._productItemModel.find(
-			filter,
-			null,
-			queryOptionsBySort<IProductItem>({
-				field: filters.sortField as any,
-				order: filters.sortOrder,
-			}),
-		);
+		const productItems: IProductItem[] = await this._productItemModel
+			.find(
+				filter,
+				null,
+				queryOptionsBySort<IProductItem>({
+					field: filters.sortField as any,
+					order: filters.sortOrder,
+				}),
+			)
+			.populate('productId', 'name barcode')
+			.exec();
 
 		const tags: ITag[] = await this._tagsService.findByType(
 			userId,
@@ -791,14 +798,32 @@ export class ProductItemsService {
 			image: 'Image',
 			name: 'Name',
 			barcode: 'Barcode',
+			sku: 'SKU',
 			description: 'Description',
 			price: 'Price',
 			quantity: 'Quantity',
 			stores: 'Stores',
 			categories: 'Categories',
 			tags: 'Tags',
-			QRCode: 'QRCode',
+			isActive: 'Is Active',
+			isDefault: 'Is Default',
 			details: 'Details',
+			brand: 'Brand',
+			releaseDate: 'Release Date',
+			expirationDate: 'Expiration Date',
+			colors: 'Colors',
+			dimensionSize: 'Dimension Size',
+			dimensionHeight: 'Dimension Height',
+			dimensionWidth: 'Dimension Width',
+			dimensionLength: 'Dimension Length',
+			dimensionDepth: 'Dimension Depth',
+			dimensionDiameter: 'Dimension Diameter',
+			dimensionThickness: 'Dimension Thickness',
+			dimensionVolume: 'Dimension Volume',
+			dimensionWeight: 'Dimension Weight',
+			productName: 'Product Name',
+			productBarcode: 'Product Barcode',
+			QRCode: 'QRCode',
 			createdAt: 'Created At',
 			updatedAt: 'Updated At',
 		};
@@ -809,7 +834,7 @@ export class ProductItemsService {
 			sheetColumns.push({
 				header: columns[columnKey],
 				key: columnKey,
-				width: columnKey,
+				width: 20,
 			});
 		}
 
@@ -865,19 +890,39 @@ export class ProductItemsService {
 				'',
 			);
 
+			const relatedProduct = productItem.productId as any;
+
 			worksheet.addRow({
 				image: '',
 				name: productItem.name,
-				tags: tagsNames,
-				createdAt: productItem.createdAt,
 				barcode: productItem.barcode,
+				sku: productItem.sku || '',
 				description: productItem.description,
 				price: productItem.price,
 				quantity: productItem.quantity,
 				stores: storesNames,
 				categories: categoriesNames,
-				QRCode: productItem.QRCode,
+				tags: tagsNames,
+				isActive: productItem.isActive ? 'YES' : 'NO',
+				isDefault: productItem.isDefault ? 'YES' : 'NO',
 				details: productItem.details,
+				brand: productItem.brand || '',
+				releaseDate: productItem.releaseDate || '',
+				expirationDate: productItem.expirationDate || '',
+				colors: productItem.colors?.join(', ') || '',
+				dimensionSize: productItem.dimensions?.size || '',
+				dimensionHeight: productItem.dimensions?.height || '',
+				dimensionWidth: productItem.dimensions?.width || '',
+				dimensionLength: productItem.dimensions?.length || '',
+				dimensionDepth: productItem.dimensions?.depth || '',
+				dimensionDiameter: productItem.dimensions?.diameter || '',
+				dimensionThickness: productItem.dimensions?.thickness || '',
+				dimensionVolume: productItem.dimensions?.volume || '',
+				dimensionWeight: productItem.dimensions?.weight || '',
+				productName: relatedProduct?.name || '',
+				productBarcode: relatedProduct?.barcode || '',
+				QRCode: productItem.QRCode,
+				createdAt: productItem.createdAt,
 				updatedAt: productItem.updatedAt,
 			});
 		}

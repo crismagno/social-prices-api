@@ -37,6 +37,7 @@ export interface IFiltersDownloadProductItems {
 	tagsIds: string[];
 	categoriesIds: string[];
 	storeIds: string[];
+	productIds: string[];
 	isActive: boolean | null;
 	sortField: string;
 	sortOrder: TTableStateSortOrder;
