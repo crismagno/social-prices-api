@@ -8,6 +8,7 @@ import { EmployeesModule } from '../employees/employees.module';
 import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
 import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ProductItemsModule } from '../product-items/product-items.module';
 import { ProductsModule } from '../products/products.module';
 import { SocketsModule } from '../sockets/sockets.module';
 import { StoresModule } from '../stores/stores.module';
@@ -25,6 +26,7 @@ import { SalesService } from './sales.service';
 		StoresModule,
 		CustomersModule,
 		ProductsModule,
+		ProductItemsModule,
 		CountersModule,
 		TagsModule,
 		SocketsModule,

@@ -1,10 +1,6 @@
 import mongoose from 'mongoose';
 
-import {
-	Prop,
-	Schema,
-	SchemaFactory,
-} from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import {
 	IProductItem,

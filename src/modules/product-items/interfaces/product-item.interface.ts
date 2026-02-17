@@ -1,11 +1,7 @@
 import mongoose from 'mongoose';
 
-import {
-	ICreatedAtEntity,
-} from '../../../shared/common/global/created-at.interface';
-import {
-	IUpdatedAtEntity,
-} from '../../../shared/common/global/updated-at.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 
 export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {

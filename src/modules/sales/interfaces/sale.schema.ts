@@ -169,6 +169,16 @@ export class SaleStoreProduct implements ISaleStoreProduct {
 
 	@Prop({ required: true, type: Boolean })
 	isCompleted: boolean;
+
+	@Prop({ type: String })
+	sku: string;
+
+	@Prop({
+		required: true,
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'ProductItem',
+	})
+	productItemId: mongoose.Schema.Types.ObjectId;
 }
 
 export const SaleStoreProductSchema =
@@ -376,3 +386,10 @@ export class Sale extends Document implements ISale {
 }
 
 export const SaleSchema = SchemaFactory.createForClass(Sale);
+
+SaleSchema.virtual('stores.products.productItem', {
+	ref: 'ProductItem',
+	localField: 'stores.products.productItemId',
+	foreignField: '_id',
+	justOne: true,
+});

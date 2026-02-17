@@ -59,6 +59,14 @@ export class SaleStoreProductDto {
 
 	@IsBoolean()
 	isCompleted: boolean;
+
+	@IsString()
+	@IsOptional()
+	sku: string | null;
+
+	@IsString()
+	@IsNotEmpty()
+	productItemId: string;
 }
 
 export class SaleTotalsDiscountDto {

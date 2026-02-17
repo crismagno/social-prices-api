@@ -84,6 +84,8 @@ import {
 } from '../files-uploads/interfaces/files-uploads.type';
 import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IProductItem } from '../product-items/interfaces/product-item.interface';
+import { ProductItemsService } from '../product-items/product-items.service';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
@@ -159,6 +161,7 @@ export class SalesService {
 		private readonly _storesService: StoresService,
 		private readonly _customersService: CustomersService,
 		private readonly _productsService: ProductsService,
+		private readonly _productItemsService: ProductItemsService,
 		private readonly _countersService: CountersService,
 		private readonly _salesValidationService: SalesValidationService,
 		private readonly _tagsService: TagsService,
@@ -3378,8 +3381,8 @@ export class SalesService {
 			[],
 		);
 
-		const products: IProduct[] =
-			await this._productsService.findByUserIdAndBarcodes(
+		const productItems: IProductItem[] =
+			await this._productItemsService.findByUserIdAndBarcodes(
 				ownerUserId,
 				barcodes,
 			);
@@ -3451,16 +3454,16 @@ export class SalesService {
 					(
 						selectedProduct: ISaleFileUploadTemplateSelectedProductItemFormat,
 					): ISaleStoreProduct => {
-						const product: IProduct | undefined = find(
-							products,
-							(product: IProduct) =>
-								product.barcode.toUpperCase().trim() ===
+						const productItem: IProductItem | undefined = find(
+							productItems,
+							(productItemIterator: IProductItem) =>
+								productItemIterator.barcode.toUpperCase().trim() ===
 								selectedProduct.barcode.toUpperCase().trim(),
 						);
 
-						if (!product) {
+						if (!productItem) {
 							throw new Error(
-								`Product not found by barcode: ${selectedProduct.barcode}`,
+								`Product item not found by barcode: ${selectedProduct.barcode}`,
 							);
 						}
 
@@ -3479,7 +3482,7 @@ export class SalesService {
 							note: null,
 							price: selectedProduct.price,
 							quantity: selectedProduct.quantity,
-							productId: product._id as any,
+							productId: productItem.productId as any,
 							discount: discountByPercentage
 								? {
 										distributedAmount: +discountByPercentage.toFixed(2),
@@ -3487,6 +3490,8 @@ export class SalesService {
 								: null,
 							isCompleted: true,
 							isValid: true,
+							sku: productItem.sku,
+							productItemId: productItem._id as any,
 						};
 					},
 				);
