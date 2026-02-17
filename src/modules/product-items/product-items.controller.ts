@@ -16,12 +16,8 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
-import {
-	parseFilePipeBuilder,
-} from '../../shared/pipes/parse-file-builder-pipe';
-import {
-	ValidationParamsPipe,
-} from '../../shared/pipes/validation-params-pipe';
+import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
@@ -71,6 +67,14 @@ export class ProductItemsController {
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<IProductItem[]> {
 		return await this._productItemsService.findByUserId(authPayload._id);
+	}
+
+	@Get('/product/:productId')
+	@UsePipes(ValidationPipe)
+	public async findByProduct(
+		@Param('productId', ValidationParamsPipe) productId: string,
+	): Promise<IProductItem[]> {
+		return await this._productItemsService.findByProduct(productId);
 	}
 
 	@Get('/user/count')

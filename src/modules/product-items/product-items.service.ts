@@ -1,9 +1,5 @@
 import * as ExcelJS from 'exceljs';
-import {
-	find,
-	includes,
-	isNil,
-} from 'lodash';
+import { find, includes, isNil } from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -73,9 +69,7 @@ import {
 	IFiltersDownloadProductItems,
 	IProductItemFileUploadTemplateRow,
 } from './interfaces/product-items.type';
-import {
-	ProductItemsValidationService,
-} from './product-items-validation.service';
+import { ProductItemsValidationService } from './product-items-validation.service';
 
 @Injectable()
 export class ProductItemsService {
@@ -115,6 +109,10 @@ export class ProductItemsService {
 
 	public async findByIds(productItemIds: string[]): Promise<IProductItem[]> {
 		return this._productItemModel.find({ _id: { $in: productItemIds } });
+	}
+
+	public async findByProduct(productId: string): Promise<IProductItem[]> {
+		return await this._productItemModel.find({ productId });
 	}
 
 	public async findByIdOrFail(productItemId: string): Promise<IProductItem> {
