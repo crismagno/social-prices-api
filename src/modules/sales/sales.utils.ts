@@ -3,6 +3,7 @@ import { reduce } from 'lodash';
 import { unFreezeData } from '../../shared/utils/objects/objects';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import { IEmployee } from '../employees/interfaces/employee.interface';
+import { IProductItem } from '../product-items/interfaces/product-item.interface';
 import { IProduct } from '../products/interfaces/product.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import {
@@ -86,6 +87,9 @@ export const parsePopulatedSaleStores = (
 					return {
 						...product,
 						product: unFreezeData<IProduct>(product.productId as any),
+						productItem: unFreezeData<IProductItem>(
+							product.productItemId as any,
+						),
 					};
 				},
 			);

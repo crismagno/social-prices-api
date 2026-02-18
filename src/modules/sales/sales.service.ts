@@ -194,6 +194,10 @@ export class SalesService {
 			.populate({
 				path: 'updatedByEmployeeId',
 				model: 'Employee',
+			})
+			.populate({
+				path: 'stores.products.productItemId',
+				model: 'ProductItem',
 			});
 
 		if (!sale) {
@@ -243,6 +247,10 @@ export class SalesService {
 			.populate({
 				path: 'stores.products.productId',
 				model: 'Product',
+			})
+			.populate({
+				path: 'stores.products.productItemId',
+				model: 'ProductItem',
 			})
 			.populate({
 				path: 'stores.storeId',
@@ -394,6 +402,10 @@ export class SalesService {
 			.populate({
 				path: 'stores.products.productId',
 				model: 'Product',
+			})
+			.populate({
+				path: 'stores.products.productItemId',
+				model: 'ProductItem',
 			});
 
 		response.data = parsePopulatedSales(sales);

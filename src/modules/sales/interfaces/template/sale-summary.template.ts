@@ -13,7 +13,6 @@ import {
 	formatToMoneyDecimal,
 } from '../../../../shared/utils/strings/strings';
 import { ICustomer } from '../../../customers/interfaces/customer.interface';
-import { IProduct } from '../../../products/interfaces/product.interface';
 import { IUser } from '../../../users/interfaces/user.interface';
 import {
 	getQuantity,
@@ -70,6 +69,7 @@ export interface ISaleSummaryStoreProductTemplate {
 	image: string;
 	name: string;
 	barcode: string;
+	sku: string;
 	quantity: number;
 	price: string;
 	total: string;
@@ -153,10 +153,14 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 						(
 							saleStoreProduct: ISaleStoreProduct,
 						): ISaleSummaryStoreProductTemplate => {
-							const product: IProduct | undefined = saleStoreProduct.product;
+							const productItem = saleStoreProduct.productItem;
+							const product = saleStoreProduct.product;
 
-							const fileUrl: string = product?.mainUrl
-								? getImageUrl(product.mainUrl)
+							const name = productItem?.name || product?.name || '';
+							const mainUrl = productItem?.mainUrl || product?.mainUrl;
+
+							const fileUrl: string = mainUrl
+								? getImageUrl(mainUrl)
 								: getImageAvatarDefault();
 
 							const price: number = saleStoreProduct.price;
@@ -168,7 +172,8 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 							return {
 								barcode: saleStoreProduct.barcode ?? '',
 								image: fileUrl,
-								name: product?.name ?? '',
+								name: name,
+								sku: saleStoreProduct.sku ?? '',
 								price: formatToMoneyDecimal(price),
 								quantity: quantity,
 								total: formatToMoneyDecimal(total),
