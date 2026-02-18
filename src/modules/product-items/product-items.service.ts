@@ -107,6 +107,12 @@ export class ProductItemsService {
 		return this._productItemModel.findById(productItemId);
 	}
 
+	public async findDefaultByProductId(
+		productId: string,
+	): Promise<IProductItem | null> {
+		return this._productItemModel.findOne({ productId, isDefault: true });
+	}
+
 	public async findByIds(productItemIds: string[]): Promise<IProductItem[]> {
 		return this._productItemModel.find({ _id: { $in: productItemIds } });
 	}

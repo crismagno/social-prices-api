@@ -1,9 +1,5 @@
 import * as ExcelJS from 'exceljs';
-import {
-	find,
-	includes,
-	isNil,
-} from 'lodash';
+import { find, includes, isNil } from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -108,7 +104,17 @@ export class ProductsService {
 	// #region Public Methods
 
 	public async findById(productId: string): Promise<IProduct | null> {
-		return this._productModel.findById(productId);
+		const product: IProduct | null =
+			await this._productModel.findById(productId);
+
+		if (!product) {
+			return null;
+		}
+
+		product.productItemDefault =
+			await this._productItemsService.findDefaultByProductId(product._id);
+
+		return product;
 	}
 
 	public async findByIds(productIds: string[]): Promise<IProduct[]> {
