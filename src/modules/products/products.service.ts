@@ -23,6 +23,7 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
+import { unFreezeData } from '../../shared/utils/objects/objects';
 import {
 	arrayObjectIdToString,
 	arrayStringToObjectId,
@@ -104,12 +105,13 @@ export class ProductsService {
 	// #region Public Methods
 
 	public async findById(productId: string): Promise<IProduct | null> {
-		const product: IProduct | null =
-			await this._productModel.findById(productId);
+		let product: IProduct | null = await this._productModel.findById(productId);
 
 		if (!product) {
 			return null;
 		}
+
+		product = unFreezeData<IProduct>(product as any);
 
 		product.productItemDefault =
 			await this._productItemsService.findDefaultByProductId(product._id);
