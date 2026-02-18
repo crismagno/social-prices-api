@@ -3958,6 +3958,7 @@ export class SalesService {
 										: '',
 									quantity: saleStoreProduct.quantity,
 									price: saleStoreProduct.price.toFixed(2),
+									sku: saleStoreProduct.sku,
 								};
 							},
 						),
