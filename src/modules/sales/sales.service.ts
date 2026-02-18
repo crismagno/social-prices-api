@@ -1424,47 +1424,65 @@ export class SalesService {
 	private async _subtractProductsQuantityBySaleStores(
 		saleStores: ISaleStore[],
 	): Promise<void> {
-		const productsToSubtract: IProductToSubtract[] = reduce(
-			saleStores,
-			(acc: IProductToSubtract[], saleStore: ISaleStore) => {
-				forEach(
-					saleStore.products,
-					(saleStoreProduct: ISaleStoreProduct): void => {
-						const findProductToSubtract: IProductToSubtract | undefined = find(
-							acc,
-							{
-								productId: saleStoreProduct.productId,
-							},
-						) as IProductToSubtract | undefined;
+		const productItemsToSubtract: Map<
+			string,
+			{ productItemId: string; productId: string; quantity: number }
+		> = new Map();
 
-						if (findProductToSubtract) {
-							findProductToSubtract.quantity += saleStoreProduct.quantity;
-						} else {
-							acc.push({
-								productId: saleStoreProduct.productId.toString(),
-								quantity: saleStoreProduct.quantity,
-							});
-						}
-					},
-				);
+		// Group by productItemId instead of productId
+		saleStores.forEach((saleStore: ISaleStore) => {
+			saleStore.products.forEach((saleStoreProduct: ISaleStoreProduct) => {
+				const productItemId = saleStoreProduct.productItemId.toString();
+				const existing = productItemsToSubtract.get(productItemId);
 
-				return acc;
-			},
-			[],
-		);
+				if (existing) {
+					existing.quantity += saleStoreProduct.quantity;
+				} else {
+					productItemsToSubtract.set(productItemId, {
+						productItemId,
+						productId: saleStoreProduct.productId.toString(),
+						quantity: saleStoreProduct.quantity,
+					});
+				}
+			});
+		});
 
-		for await (const productToSubtract of productsToSubtract) {
-			await this._productsService.updateOne(
-				new mongoose.Types.ObjectId(productToSubtract.productId),
+		// Update stock for each product item
+		for await (const {
+			productItemId,
+			productId,
+			quantity,
+		} of productItemsToSubtract.values()) {
+			// Always update product item stock
+			const productItem: IProductItem =
+				await this._productItemsService.findByIdOrFail(productItemId);
+
+			await this._productItemsService.updateOne(
+				{ _id: new mongoose.Types.ObjectId(productItemId) },
 				{
 					$inc: {
-						quantity: -productToSubtract.quantity,
+						quantity: -quantity,
 					},
 				},
 				{
 					new: true,
 				},
 			);
+
+			// If product item is default, also update product stock
+			if (productItem.isDefault) {
+				await this._productsService.updateOne(
+					new mongoose.Types.ObjectId(productId),
+					{
+						$inc: {
+							quantity: -quantity,
+						},
+					},
+					{
+						new: true,
+					},
+				);
+			}
 		}
 	}
 

@@ -15,6 +15,7 @@ import SalesEnum from './sales.enum';
 
 export interface IProductToSubtract {
 	productId: string;
+	productItemId?: string;
 	quantity: number;
 }
 
