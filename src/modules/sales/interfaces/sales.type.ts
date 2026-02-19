@@ -8,6 +8,7 @@ import {
 import { TTableStateSortOrder } from '../../../shared/utils/table/table-state.interface';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { IFileUploadTemplateErrorRow } from '../../files-uploads/interfaces/files-uploads.type';
+import { IProductItem } from '../../product-items/interfaces/product-item.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 import { ITag } from '../../tags/interfaces/tags.interface';
 import { ISale } from './sale.interface';
@@ -58,6 +59,7 @@ export interface IGetSalesBalanceParams {
 	storeId?: string;
 	customerId?: string;
 	productIds?: string[];
+	productItemIds?: string[];
 }
 
 export interface IGetSalesBalanceResponse {
@@ -76,7 +78,9 @@ export interface IGetSalesBalanceTotalsResponse {
 
 export interface IGetSalesProductBalanceResponse {
 	product?: IProduct;
+	productItem?: IProductItem;
 	productId: string;
+	productItemId: string;
 	total: number;
 	quantity: number;
 }

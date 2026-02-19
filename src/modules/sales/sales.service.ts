@@ -1030,12 +1030,17 @@ export class SalesService {
 			filter['stores.products.productId'] = { $in: params.productIds };
 		}
 
+		if (params.productItemIds?.length) {
+			filter['stores.products.productItemId'] = { $in: params.productItemIds };
+		}
+
 		const sales: ISale[] = await this._saleModel.find(filter);
 
 		return this._parseSalesToSalesBalance({
 			sales,
 			storeId: params.storeId,
 			productIds: params.productIds,
+			productItemIds: params.productItemIds,
 		});
 	}
 
@@ -1883,10 +1888,12 @@ export class SalesService {
 		sales,
 		storeId,
 		productIds = [],
+		productItemIds = [],
 	}: {
 		sales: ISale[];
 		storeId?: string;
 		productIds: string[];
+		productItemIds: string[];
 	}): Promise<IGetSalesBalanceResponse> {
 		const salesBalanceResponse: IGetSalesBalanceResponse = {
 			annual: {
@@ -1948,10 +1955,11 @@ export class SalesService {
 				sale,
 				storeId,
 				productIds,
+				productItemIds,
 			});
 
 			const saleStoreProducts: ISaleStoreProduct[] = this._getSaleStoreProducts(
-				{ sale, storeId, productIds },
+				{ sale, storeId, productIds, productItemIds },
 			);
 
 			const sumSaleStoreProductsTotal: number =
@@ -2025,8 +2033,18 @@ export class SalesService {
 			...map(salesBalanceResponse.annual.productsBalance, 'productId'),
 		]);
 
+		const productItemIdsByUniq: string[] = uniq([
+			...map(salesBalanceResponse.hour.productsBalance, 'productItemId'),
+			...map(salesBalanceResponse.day.productsBalance, 'productItemId'),
+			...map(salesBalanceResponse.month.productsBalance, 'productItemId'),
+			...map(salesBalanceResponse.annual.productsBalance, 'productItemId'),
+		]);
+
 		const products: IProduct[] =
 			await this._productsService.findByIds(productIdsByUniq);
+
+		const productItems: IProductItem[] =
+			await this._productItemsService.findByIds(productItemIdsByUniq);
 
 		salesBalanceResponse.hour.productsBalance = map(
 			orderBy(
@@ -2040,6 +2058,11 @@ export class SalesService {
 					products,
 					(product: IProduct) =>
 						product._id.toString() === productBalance.productId,
+				),
+				productItem: find(
+					productItems,
+					(productItem: IProductItem) =>
+						productItem._id.toString() === productBalance.productItemId,
 				),
 			}),
 		);
@@ -2057,6 +2080,11 @@ export class SalesService {
 					(product: IProduct) =>
 						product._id.toString() === productBalance.productId,
 				),
+				productItem: find(
+					productItems,
+					(productItem: IProductItem) =>
+						productItem._id.toString() === productBalance.productItemId,
+				),
 			}),
 		);
 
@@ -2072,6 +2100,11 @@ export class SalesService {
 					products,
 					(product: IProduct) =>
 						product._id.toString() === productBalance.productId,
+				),
+				productItem: find(
+					productItems,
+					(productItem: IProductItem) =>
+						productItem._id.toString() === productBalance.productItemId,
 				),
 			}),
 		);
@@ -2089,6 +2122,11 @@ export class SalesService {
 					(product: IProduct) =>
 						product._id.toString() === productBalance.productId,
 				),
+				productItem: find(
+					productItems,
+					(productItem: IProductItem) =>
+						productItem._id.toString() === productBalance.productItemId,
+				),
 			}),
 		);
 
@@ -2099,10 +2137,12 @@ export class SalesService {
 		sale,
 		storeId,
 		productIds = [],
+		productItemIds = [],
 	}: {
 		sale: ISale;
 		storeId?: string;
 		productIds: string[];
+		productItemIds: string[];
 	}): number => {
 		return reduce(
 			sale.stores,
@@ -2125,6 +2165,16 @@ export class SalesService {
 							return accProduct;
 						}
 
+						if (
+							productItemIds.length > 0 &&
+							!includes(
+								productItemIds,
+								saleStoreProduct.productItemId.toString(),
+							)
+						) {
+							return accProduct;
+						}
+
 						accProduct += saleStoreProduct.quantity;
 						return accProduct;
 					},
@@ -2141,10 +2191,12 @@ export class SalesService {
 		sale,
 		storeId,
 		productIds,
+		productItemIds,
 	}: {
 		sale: ISale;
 		storeId?: string;
 		productIds: string[];
+		productItemIds: string[];
 	}): ISaleStoreProduct[] => {
 		return reduce(
 			sale.stores,
@@ -2164,6 +2216,15 @@ export class SalesService {
 					);
 				}
 
+				if (productItemIds.length > 0) {
+					saleStoreProducts = filter(
+						store.products,
+						(storeProduct: ISaleStoreProduct) =>
+							storeProduct.isValid &&
+							includes(productItemIds, storeProduct.productItemId.toString()),
+					);
+				}
+
 				accStore.push(...saleStoreProducts);
 				return accStore;
 			},
@@ -2179,7 +2240,10 @@ export class SalesService {
 			const findProductBalance: IGetSalesProductBalanceResponse | undefined =
 				productsBalance.find(
 					(productBalance: IGetSalesProductBalanceResponse) =>
-						productBalance.productId === saleStoreProduct.productId.toString(),
+						productBalance.productId ===
+							saleStoreProduct.productId.toString() &&
+						productBalance.productItemId ===
+							saleStoreProduct.productItemId.toString(),
 				);
 			if (findProductBalance) {
 				findProductBalance.quantity += saleStoreProduct.quantity;
@@ -2190,6 +2254,7 @@ export class SalesService {
 					productId: saleStoreProduct.productId.toString(),
 					quantity: saleStoreProduct.quantity,
 					total: saleStoreProduct.quantity * saleStoreProduct.price,
+					productItemId: saleStoreProduct.productItemId.toString(),
 				});
 			}
 		}
