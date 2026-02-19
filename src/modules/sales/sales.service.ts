@@ -376,6 +376,12 @@ export class SalesService {
 			};
 		}
 
+		if (tableState.filters?.productItemIds?.length) {
+			filter['stores.products.productItemId'] = {
+				$in: tableState.filters?.productItemIds,
+			};
+		}
+
 		if (tableState.filters?.customerIds?.length) {
 			filter['stores.customerId'] = { $in: tableState.filters.customerIds };
 		}
@@ -3896,6 +3902,12 @@ export class SalesService {
 		if (filters.selectedProductIds?.length) {
 			filter['stores.products.productId'] = {
 				$in: filters.selectedProductIds,
+			};
+		}
+
+		if (filters.selectedProductItemIds?.length) {
+			filter['stores.products.productItemId'] = {
+				$in: filters.selectedProductItemIds,
 			};
 		}
 

@@ -132,6 +132,7 @@ export interface IFiltersDownloadSales {
 	rangeDate: IRangeDate | null;
 	rangeField?: string;
 	selectedProductIds: string[];
+	selectedProductItemIds: string[];
 	deliveryTypes: SalesEnum.DeliveryType[];
 	status: SalesEnum.Status[];
 	paymentStatus: SalesEnum.PaymentStatus[];
