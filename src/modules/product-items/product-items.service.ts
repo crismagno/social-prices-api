@@ -202,6 +202,10 @@ export class ProductItemsService {
 			filter.productId = { $in: tableState.filters.productIds };
 		}
 
+		if (tableState?.filters?.productItemIds?.length) {
+			filter.$and = [{ _id: { $in: tableState.filters.productItemIds } }];
+		}
+
 		if (tableState?.filters?.rangeDate?.length) {
 			const [startDate, endDate] = tableState.filters.rangeDate;
 			const fieldDate = tableState.filters.fieldDate || 'createdAt';

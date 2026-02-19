@@ -964,6 +964,10 @@ export class SalesService {
 			filter['stores.products.productId'] = { $in: params.productIds };
 		}
 
+		if (params.productItemIds?.length) {
+			filter['stores.products.productItemId'] = { $in: params.productItemIds };
+		}
+
 		if (params.customerIds?.length) {
 			filter['stores.customerId'] = { $in: params.customerIds };
 		}
@@ -984,12 +988,14 @@ export class SalesService {
 				storesIds,
 				params.periodType,
 				params.productIds,
+				params.productItemIds,
 			);
 
 		const chartDataProducts = await this._parseSalesToChartDataProducts(
 			sales,
 			storesIds,
 			params.productIds,
+			params.productItemIds,
 		);
 
 		return {
@@ -1631,6 +1637,7 @@ export class SalesService {
 		storeIds: string[],
 		periodType: ChartsEnum.PeriodType,
 		productIds: string[] = [],
+		productItemIds: string[] = [],
 	): IChartDataPeriodTypeItem[] {
 		const chartDataItems: IChartDateTotalItem[] = reduce(
 			sales,
@@ -1654,6 +1661,16 @@ export class SalesService {
 											!includes(
 												productIds,
 												saleStoreProduct.productId.toString(),
+											)
+										) {
+											return acc2;
+										}
+
+										if (
+											productItemIds.length > 0 &&
+											!includes(
+												productItemIds,
+												saleStoreProduct.productItemId.toString(),
 											)
 										) {
 											return acc2;
@@ -1700,6 +1717,7 @@ export class SalesService {
 		sales: ISale[],
 		storeIds: string[],
 		productIds: string[] = [],
+		productItemIds: string[] = [],
 	): Promise<{
 		chartDataProductsByTotal: IChartDataProductItem[];
 		chartDataProductsByQuantity: IChartDataProductItem[];
@@ -1724,6 +1742,7 @@ export class SalesService {
 				price: saleStoreProduct.price,
 				quantity: saleStoreProduct.quantity,
 				productId: saleStoreProduct.productId.toString(),
+				productItemId: saleStoreProduct.productItemId.toString(),
 			}),
 		);
 
@@ -1740,9 +1759,17 @@ export class SalesService {
 					return acc;
 				}
 
+				if (
+					productItemIds.length > 0 &&
+					!includes(productItemIds, saleStoreProduct.productItemId)
+				) {
+					return acc;
+				}
+
 				const findChartDataProductItem: IChartDataProductItem | undefined =
 					find(acc, {
 						productId: saleStoreProduct.productId,
+						productItemId: saleStoreProduct.productItemId,
 					}) as IChartDataProductItem | undefined;
 
 				if (findChartDataProductItem) {
@@ -1756,6 +1783,7 @@ export class SalesService {
 						productId: saleStoreProduct.productId.toString(),
 						total: saleStoreProduct.price * saleStoreProduct.quantity,
 						mainUrl: '',
+						productItemId: saleStoreProduct.productItemId.toString(),
 					});
 				}
 
@@ -1803,6 +1831,7 @@ export class SalesService {
 						productId: curr.productId,
 						total: curr.total,
 						mainUrl: curr.mainUrl,
+						productItemId: curr.productItemId,
 					});
 				} else {
 					acc[ChartsEnum.DefaultItemsLength].total += curr.total;
@@ -1818,6 +1847,11 @@ export class SalesService {
 			map(chartDataProductItemsByOrder, 'productId'),
 		);
 
+		const productItems: IProductItem[] =
+			await this._productItemsService.findByIds(
+				map(chartDataProductItemsByOrder, 'productItemId'),
+			);
+
 		chartDataProductItemsByOrder = map(
 			chartDataProductItemsByOrder,
 			(item): IChartDataProductItem => {
@@ -1830,13 +1864,14 @@ export class SalesService {
 					(x) => x._id.toString() === item.productId,
 				);
 
-				if (product) {
-					return {
-						...item,
-						name: product.name,
-						mainUrl: product.mainUrl,
-					};
-				}
+				const productItem: IProductItem | undefined = find(
+					productItems,
+					(x) => x._id.toString() === item.productItemId,
+				);
+
+				item.name = productItem?.name || product?.name || item.name;
+				item.mainUrl = productItem?.mainUrl || product?.mainUrl || item.mainUrl;
+
 				return item;
 			},
 		);

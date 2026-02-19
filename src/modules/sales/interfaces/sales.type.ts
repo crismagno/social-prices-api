@@ -35,6 +35,7 @@ export interface IGetSalesAnalyticsParams {
 	periodType?: ChartsEnum.PeriodType;
 	paymentStatus?: SalesEnum.PaymentStatus[];
 	deliveryTypes?: SalesEnum.DeliveryType[];
+	productItemIds?: string[];
 }
 
 export interface IGetSalesAnalyticsResponse {
@@ -45,6 +46,7 @@ export interface IGetSalesAnalyticsResponse {
 
 export interface ISaleStoreProductString {
 	productId: string;
+	productItemId: string;
 	price: number;
 	quantity: number;
 	barcode: string;

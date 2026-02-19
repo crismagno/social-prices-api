@@ -16,6 +16,7 @@ export interface IChartDataProductItem {
 	quantity: number;
 	name: any;
 	productId: string;
+	productItemId: string;
 	mainUrl?: string;
 }
 
