@@ -392,6 +392,10 @@ export class SalesService {
 				: { $ne: null };
 		}
 
+		if (tableState.filters?.employeeIds?.length) {
+			filter.createdByEmployeeId = { $in: tableState.filters.employeeIds };
+		}
+
 		const response: ITableStateResponse<ISale[]> = {
 			data: [],
 			total: 0,
@@ -515,6 +519,10 @@ export class SalesService {
 			filter.softDelete = tableState.filters?.isActive[0]
 				? null
 				: { $ne: null };
+		}
+
+		if (tableState.filters?.employeeIds?.length) {
+			filter.createdByEmployeeId = { $in: tableState.filters.employeeIds };
 		}
 
 		const pipeline: PipelineStage[] = [
@@ -986,6 +994,10 @@ export class SalesService {
 			filter['header.deliveryType'] = { $in: params.deliveryTypes };
 		}
 
+		if (params.employeeIds?.length) {
+			filter.createdByEmployeeId = { $in: params.employeeIds };
+		}
+
 		const sales: ISale[] = await this._saleModel.find(filter);
 
 		const chartDataPeriodType: IChartDataPeriodTypeItem[] =
@@ -1038,6 +1050,10 @@ export class SalesService {
 
 		if (params.productItemIds?.length) {
 			filter['stores.products.productItemId'] = { $in: params.productItemIds };
+		}
+
+		if (params.employeeIds?.length) {
+			filter.createdByEmployeeId = { $in: params.employeeIds };
 		}
 
 		const sales: ISale[] = await this._saleModel.find(filter);
@@ -3920,6 +3936,12 @@ export class SalesService {
 		if (filters.isActive) {
 			filter.softDelete =
 				filters.isActive === CommonEnum.YesNo.YES ? null : { $ne: null };
+		}
+
+		if (filters.employeeIds?.length) {
+			filter.createdByEmployeeId = {
+				$in: filters.employeeIds,
+			};
 		}
 
 		let sales: ISale[] = await this._saleModel

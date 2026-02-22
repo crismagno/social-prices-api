@@ -37,6 +37,7 @@ export interface IGetSalesAnalyticsParams {
 	paymentStatus?: SalesEnum.PaymentStatus[];
 	deliveryTypes?: SalesEnum.DeliveryType[];
 	productItemIds?: string[];
+	employeeIds?: string[];
 }
 
 export interface IGetSalesAnalyticsResponse {
@@ -60,6 +61,7 @@ export interface IGetSalesBalanceParams {
 	customerId?: string;
 	productIds?: string[];
 	productItemIds?: string[];
+	employeeIds?: string[];
 }
 
 export interface IGetSalesBalanceResponse {
@@ -141,6 +143,7 @@ export interface IFiltersDownloadSales {
 	sortField: SalesEnum.SortField;
 	sortOrder: TTableStateSortOrder;
 	isActive: CommonEnum.YesNo | null;
+	employeeIds?: string[];
 }
 
 export interface ISaleFileUploadTemplateSelectedProductFormat {
