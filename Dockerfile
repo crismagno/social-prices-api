@@ -1,9 +1,28 @@
-FROM node:20-bullseye
-# Define diretório de trabalho
+# ──────────────────────────────────────────
+# Stage 1 — Builder
+# ──────────────────────────────────────────
+FROM node:20-bullseye AS builder
+
 WORKDIR /app
 
-# Instala dependências necessárias para Puppeteer (Chromium)
-RUN apt-get update && apt-get install -y \
+COPY package*.json ./
+RUN npm ci
+
+RUN npm install -g @nestjs/cli
+
+COPY . .
+RUN npm run build
+
+
+# ──────────────────────────────────────────
+# Stage 2 — Production runtime
+# ──────────────────────────────────────────
+FROM node:20-bullseye-slim AS production
+
+WORKDIR /app
+
+# Puppeteer / Chromium system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
     libasound2 \
@@ -34,27 +53,17 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     wget \
     xdg-utils \
-    # Ferramentas úteis
-    vim \
-    && rm -rf /var/lib/apt/lists/* \
-		# Instala o Chromium
-		&& apt-get update && apt-get install -y \
-		chromium \
-    chromium-sandbox
+    chromium \
+    chromium-sandbox \
+    && rm -rf /var/lib/apt/lists/*
 
-# Garante que o Puppeteer saiba onde está o Chromium
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV NODE_ENV=production
 
-# Copia package.json e instala dependências
-COPY package*.json ./
-RUN npm install -g @nestjs/cli && npm install
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+RUN npm ci --only=production
 
-# Copia código
-COPY . .
-
-# Expõe a porta da API
 EXPOSE 8080
-
-# Inicia em modo dev
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]
