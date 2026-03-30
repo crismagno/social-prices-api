@@ -40,3 +40,4 @@ lerna-debug.log*
 .env.production
 /uploads/*
 Dockerfile
+docker-compose.yml
