@@ -14,6 +14,14 @@ async function bootstrap() {
 
 	app.use(compression());
 
+	app.use('/', (req: any, res: any) => {
+		res.status(200).send('Welcome!');
+	});
+
+	app.use('/health', (req: any, res: any) => {
+		res.status(200).send('OK');
+	});
+
 	await app.listen(process.env.PORT);
 }
 

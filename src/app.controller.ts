@@ -42,10 +42,4 @@ export class AppController {
 	public getMe(@AuthPayload() user: UserEntity) {
 		return user;
 	}
-
-	@Public()
-	@Get('/health')
-	public getHealth() {
-		return { status: 'ok' };
-	}
 }
