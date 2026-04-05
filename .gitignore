@@ -41,3 +41,4 @@ lerna-debug.log*
 /uploads/*
 Dockerfile
 docker-compose.yml
+docker-compose-test.yml
