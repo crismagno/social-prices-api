@@ -1,7 +1,7 @@
 # ─────────────────────────
 # BUILD
 # ─────────────────────────
-FROM node:20-bookworm AS builder
+FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm run build
 # ─────────────────────────
 # PRODUCTION
 # ─────────────────────────
-FROM node:20-bookworm-slim
+FROM node:20-bullseye-slim
 
 WORKDIR /app
 
@@ -34,6 +34,6 @@ COPY --from=builder /app/package*.json ./
 
 RUN npm ci --omit=dev
 
-EXPOSE 8082
+EXPOSE 8080
 
 CMD ["node", "dist/main.js"]
