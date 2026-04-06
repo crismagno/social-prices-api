@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MulterModule } from '@nestjs/platform-express';
 
 import { AppController } from './app.controller';
+import { AppInitController } from './app.init.controller';
 import { AppService } from './app.service';
 import AuthorizationToken from './infra/authorization/authorization-token';
 import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
@@ -53,7 +54,7 @@ import { UsersModule } from './modules/users/users.module';
 		FilesUploadsModule,
 		ProductItemsModule,
 	],
-	controllers: [AppController],
+	controllers: [AppController, AppInitController],
 	providers: [
 		AppService,
 		AuthorizationToken,
