@@ -1541,8 +1541,10 @@ export class SalesService {
 				forEach(
 					saleStore.products,
 					(saleStoreProduct: ISaleStoreProduct): void => {
-						const productItemId: string =
-							saleStoreProduct.productItemId.toString();
+						const productItemId: string = (
+							saleStoreProduct.productItem?._id ??
+							saleStoreProduct.productItemId
+						).toString();
 
 						const findProductToSubtract: IProductToSubtract | undefined = find(
 							acc,
