@@ -122,7 +122,6 @@ import {
 	IGetSalesBalanceResponse,
 	IGetSalesProductBalanceResponse,
 	IGetSalesSummaryByUserTableStateResponse,
-	IProductQuantity,
 	IProductToSubtract,
 	ISaleFileUploadTemplateRow,
 	ISaleFileUploadTemplateRowPaymentFormat,
@@ -1535,25 +1534,27 @@ export class SalesService {
 		saleStoresDto: SaleStoreDto[],
 		saleStores: ISaleStore[],
 	): Promise<void> {
-		// Format all products on previous state of sale stores to productId and quantity
-		const productsQuantityBySaleStores: IProductQuantity[] = reduce(
+		// Format all products on previous state of sale stores to productItemId and quantity
+		const productsQuantityBySaleStores: IProductToSubtract[] = reduce(
 			saleStores,
-			(acc: IProductQuantity[], saleStore: ISaleStore) => {
+			(acc: IProductToSubtract[], saleStore: ISaleStore) => {
 				forEach(
 					saleStore.products,
 					(saleStoreProduct: ISaleStoreProduct): void => {
-						const findProductToSubtract: IProductQuantity | undefined = find(
+						const productItemId: string =
+							saleStoreProduct.productItemId.toString();
+
+						const findProductToSubtract: IProductToSubtract | undefined = find(
 							acc,
-							{
-								productId: saleStoreProduct.productId,
-							},
-						) as IProductToSubtract | undefined;
+							{ productItemId },
+						);
 
 						if (findProductToSubtract) {
 							findProductToSubtract.quantity += saleStoreProduct.quantity;
 						} else {
 							acc.push({
 								productId: saleStoreProduct.productId.toString(),
+								productItemId,
 								quantity: saleStoreProduct.quantity,
 							});
 						}
@@ -1565,17 +1566,17 @@ export class SalesService {
 			[],
 		);
 
-		// Format all products on sale stores dto to productId and quantity
-		const productsQuantityBySaleStoresDto: IProductQuantity[] = reduce(
+		// Format all products on sale stores dto to productItemId and quantity
+		const productsQuantityBySaleStoresDto: IProductToSubtract[] = reduce(
 			saleStoresDto,
-			(acc: IProductQuantity[], saleStoreDto: SaleStoreDto) => {
+			(acc: IProductToSubtract[], saleStoreDto: SaleStoreDto) => {
 				forEach(
 					saleStoreDto.products,
 					(saleStoreProductDto: SaleStoreProductDto): void => {
-						const findProductToSubtract: IProductQuantity | undefined = find(
+						const findProductToSubtract: IProductToSubtract | undefined = find(
 							acc,
 							{
-								productId: saleStoreProductDto.productId,
+								productItemId: saleStoreProductDto.productItemId,
 							},
 						);
 
@@ -1584,6 +1585,7 @@ export class SalesService {
 						} else {
 							acc.push({
 								productId: saleStoreProductDto.productId,
+								productItemId: saleStoreProductDto.productItemId,
 								quantity: saleStoreProductDto.quantity,
 							});
 						}
@@ -1595,21 +1597,22 @@ export class SalesService {
 			[],
 		);
 
-		// Make a logic to put a quantity by product and to increment or decrement based on state of new quantity
+		// Make a logic to put a quantity by product item and to increment or decrement based on state of new quantity
 		const productsToSubtract: IProductToSubtract[] = reduce(
 			productsQuantityBySaleStoresDto,
 			(
 				acc: IProductToSubtract[],
-				productQuantityBySaleStoreDto: IProductQuantity,
+				productQuantityBySaleStoreDto: IProductToSubtract,
 			) => {
-				const findProductQuantityBySaleStores: IProductQuantity | undefined =
+				const findProductQuantityBySaleStores: IProductToSubtract | undefined =
 					find(productsQuantityBySaleStores, {
-						productId: productQuantityBySaleStoreDto.productId,
+						productItemId: productQuantityBySaleStoreDto.productItemId,
 					});
 
 				if (findProductQuantityBySaleStores) {
 					acc.push({
 						productId: findProductQuantityBySaleStores.productId,
+						productItemId: findProductQuantityBySaleStores.productItemId,
 						quantity:
 							productQuantityBySaleStoreDto.quantity -
 							findProductQuantityBySaleStores.quantity,
@@ -1617,6 +1620,7 @@ export class SalesService {
 				} else {
 					acc.push({
 						productId: productQuantityBySaleStoreDto.productId,
+						productItemId: productQuantityBySaleStoreDto.productItemId,
 						quantity: productQuantityBySaleStoreDto.quantity,
 					});
 				}
@@ -1626,36 +1630,58 @@ export class SalesService {
 			[],
 		);
 
-		// Add new products to subtract when product was removed from sale stores
+		// Add new products to subtract when product item was removed from sale stores
 		productsQuantityBySaleStores.forEach(
-			(productQuantityBySaleStores: IProductQuantity) => {
+			(productQuantityBySaleStores: IProductToSubtract) => {
 				const productToSubtract: IProductToSubtract | undefined = find(
 					productsToSubtract,
-					{ productId: productQuantityBySaleStores.productId },
+					{ productItemId: productQuantityBySaleStores.productItemId },
 				);
 
 				if (!productToSubtract) {
 					productsToSubtract.push({
 						productId: productQuantityBySaleStores.productId,
+						productItemId: productQuantityBySaleStores.productItemId,
 						quantity: -productQuantityBySaleStores.quantity,
 					});
 				}
 			},
 		);
 
-		// Increment or decrement quantity products
-		for await (const productToSubtract of productsToSubtract) {
-			await this._productsService.updateOne(
-				new mongoose.Types.ObjectId(productToSubtract.productId),
+		// Increment or decrement quantity of product items (and product when default)
+		for await (const {
+			productId,
+			productItemId,
+			quantity,
+		} of productsToSubtract) {
+			const productItem: IProductItem =
+				await this._productItemsService.findByIdOrFail(productItemId);
+
+			await this._productItemsService.updateOne(
+				{ _id: new mongoose.Types.ObjectId(productItemId) },
 				{
 					$inc: {
-						quantity: -productToSubtract.quantity,
+						quantity: -quantity,
 					},
 				},
 				{
 					new: true,
 				},
 			);
+
+			if (productItem.isDefault) {
+				await this._productsService.updateOne(
+					new mongoose.Types.ObjectId(productId),
+					{
+						$inc: {
+							quantity: -quantity,
+						},
+					},
+					{
+						new: true,
+					},
+				);
+			}
 		}
 	}
 
