@@ -1,8 +1,8 @@
 namespace AppEnum {
 	export enum Environment {
-		DEVELOPMENT = 'DEVELOPMENT',
-		PRODUCTION = 'PRODUCTION',
-		TEST = 'TEST',
+		DEVELOPMENT = 'development',
+		PRODUCTION = 'production',
+		TEST = 'test',
 	}
 }
 

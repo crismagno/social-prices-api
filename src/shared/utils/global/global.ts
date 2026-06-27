@@ -11,7 +11,7 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 export const makeRandomCode = (lengthCode: number = 6): string => {
-	if (process.env.ENVIRONMENT === AppEnum.Environment.DEVELOPMENT) {
+	if (process.env.NODE_ENV === AppEnum.Environment.DEVELOPMENT) {
 		return GlobalEnum.RandomCodeTest;
 	}
 
