@@ -86,6 +86,10 @@ export class SalePaymentDto {
 
 	@IsOptional()
 	provider: any | null;
+
+	@IsOptional()
+	@IsString()
+	note: string | null;
 }
 
 export class SaleTotalsDto {

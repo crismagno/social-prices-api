@@ -66,6 +66,9 @@ export class SalePayment implements ISalePayment {
 
 	@Prop({ required: true, type: Number })
 	amount: number;
+
+	@Prop({ type: String })
+	note: string | null;
 }
 
 export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);

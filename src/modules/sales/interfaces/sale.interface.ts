@@ -91,6 +91,7 @@ export interface ISalePayment {
 	status: SalesEnum.PaymentStatus;
 	amount: number;
 	provider: any | null;
+	note: string | null;
 }
 
 export interface ISaleStoreProduct {

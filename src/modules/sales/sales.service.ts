@@ -3118,6 +3118,7 @@ export class SalesService {
 								type: payment.type,
 								provider: null,
 								status: SalesEnum.PaymentStatus.PENDING,
+								note: null,
 							}),
 						),
 						status: saleFileUploadTemplateRow.saleStatus
@@ -3205,6 +3206,7 @@ export class SalesService {
 								type: payment.type,
 								provider: null,
 								status: SalesEnum.PaymentStatus.PENDING,
+								note: null,
 							}),
 						),
 						status: saleFileUploadTemplateRow.saleStatus
