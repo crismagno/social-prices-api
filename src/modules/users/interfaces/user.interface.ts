@@ -5,9 +5,10 @@ import { ICreatedAtEntity } from '../../../shared/common/global/created-at.inter
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
 import PersonEnum from '../../../shared/common/person/person.enum';
 import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
+import { ISoftDeleteEntity } from '../../../shared/common/soft-delete/soft-delete.interface';
 import UsersEnum from './users.enum';
 
-export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity {
+export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity, ISoftDeleteEntity {
 	readonly _id: string;
 	uid: string;
 	email: string;

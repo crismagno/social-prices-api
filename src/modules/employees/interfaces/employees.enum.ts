@@ -15,6 +15,7 @@ namespace EmployeesEnum {
 		PENDING = 'PENDING',
 		ACTIVE = 'ACTIVE',
 		STOPPED = 'STOPPED',
+		INACTIVE = 'INACTIVE',
 	}
 }
 

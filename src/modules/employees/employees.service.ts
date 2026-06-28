@@ -1265,5 +1265,14 @@ export class EmployeesService {
 		return addresses;
 	}
 
+	public async deactivateByUserId(userId: string): Promise<void> {
+		await this._employeeModel.updateMany(
+			{ userId: new Types.ObjectId(userId) },
+			{
+				$set: { status: EmployeesEnum.Status.INACTIVE },
+			},
+		);
+	}
+
 	// #endregion
 }

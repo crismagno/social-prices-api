@@ -10,6 +10,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
+import { ISoftDelete } from '../../shared/common/soft-delete/soft-delete.interface';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
@@ -317,6 +318,21 @@ export class StoresService {
 		await this._notificationsService.updatedStore(user, updatedStore);
 
 		return updatedStore;
+	}
+
+	public async deactivateByUserId(
+		userId: string,
+		softDelete: ISoftDelete,
+	): Promise<void> {
+		await this._storeModel.updateMany(
+			{ userId: new Types.ObjectId(userId) },
+			{
+				$set: {
+					status: StoresEnum.Status.INACTIVE,
+					softDelete,
+				},
+			},
+		);
 	}
 
 	// #endregion

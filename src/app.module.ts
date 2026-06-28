@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import AuthorizationToken from './infra/authorization/authorization-token';
 import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
 import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
+import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -37,6 +38,7 @@ import { UsersModule } from './modules/users/users.module';
 		}),
 		MongooseModuleForRoot(),
 		JwtModuleRegister(),
+		AccountModule,
 		AuthModule,
 		UsersModule,
 		CategoriesModule,

@@ -16,6 +16,7 @@ import { CodesService } from '../codes/codes.service';
 import { FilesService } from '../files/files-service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ISoftDelete } from '../../shared/common/soft-delete/soft-delete.interface';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
@@ -327,6 +328,23 @@ export class UsersService {
 			new Types.ObjectId(userId),
 			{
 				$set: { status: UsersEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
+	}
+
+	public async removeAccount(
+		userId: string,
+		softDelete: ISoftDelete,
+	): Promise<void> {
+		await this._userModel.findByIdAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					status: UsersEnum.Status.INACTIVE,
+					softDelete,
+					updatedAt: new Date(),
+				},
 			},
 			{ new: true },
 		);

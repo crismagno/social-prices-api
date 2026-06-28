@@ -9,4 +9,5 @@ export interface ISoftDelete {
 	deletedAt: Date;
 	deletedByUserId: mongoose.Schema.Types.ObjectId;
 	deletedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+	reason: string | null;
 }

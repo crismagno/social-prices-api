@@ -794,6 +794,13 @@ export class ProductsService {
 		return buffer as Buffer;
 	}
 
+	public async deactivateByUserId(userId: string): Promise<void> {
+		await this._productModel.updateMany(
+			{ userId: new Types.ObjectId(userId) },
+			{ $set: { isActive: false } },
+		);
+	}
+
 	// #endregion
 
 	// #region Private Methods

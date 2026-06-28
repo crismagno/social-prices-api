@@ -4,6 +4,7 @@ import mongoose, { Schema } from 'mongoose';
 import { AddressSchema } from '../../../shared/common/address/address.schema';
 import PersonEnum from '../../../shared/common/person/person.enum';
 import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
+import { SoftDeleteSchema } from '../../../shared/common/soft-delete/soft-delete.schema';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 
@@ -58,6 +59,10 @@ const UserSchema = new mongoose.Schema<IUser>(
 				values: Object.keys(UsersEnum.Type),
 				message: '{VALUE} is not supported',
 			},
+		},
+		softDelete: {
+			type: SoftDeleteSchema,
+			optional: true,
 		},
 	},
 	{ timestamps: true, collection: 'users' },

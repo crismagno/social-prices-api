@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 
 import {
 	BadRequestException,
+	ForbiddenException,
 	Injectable,
 	Logger,
 	UnauthorizedException,
@@ -62,6 +63,10 @@ export class AuthService {
 	): Promise<IAuthLogin> {
 		const user: IUser =
 			await this._usersService.findOneByEmailOrUsernameOrFail(emailOrUsername);
+
+		if (user.status === UsersEnum.Status.INACTIVE) {
+			throw new ForbiddenException('Account removed. Please contact support.');
+		}
 
 		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
 			password,
@@ -192,6 +197,10 @@ export class AuthService {
 		const employee: IEmployee =
 			await this._employeesService.findByUsernameOrFail(username);
 
+		if (employee.status === EmployeesEnum.Status.INACTIVE) {
+			throw new ForbiddenException('Account removed. Please contact support.');
+		}
+
 		if (employee.status === EmployeesEnum.Status.STOPPED) {
 			throw new BadRequestException('Employee unavailable to login!');
 		}
@@ -199,6 +208,10 @@ export class AuthService {
 		const user: IUser = await this._usersService.findOneByIdOrFail(
 			employee.userId.toString(),
 		);
+
+		if (user.status === UsersEnum.Status.INACTIVE) {
+			throw new ForbiddenException('Account removed. Please contact support.');
+		}
 
 		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
 			password,
