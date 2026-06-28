@@ -3164,6 +3164,7 @@ export class SalesService {
 						noteToCustomer:
 							saleFileUploadTemplateRow.noteToCustomer ||
 							saleBySaleNumberManual.noteToCustomer,
+						categoriesIds: saleBySaleNumberManual.categoriesIds,
 					};
 				} else {
 					sale = {
@@ -3250,6 +3251,7 @@ export class SalesService {
 						updatedAt: now,
 						updatedByUserId: null,
 						noteToCustomer: saleFileUploadTemplateRow.noteToCustomer,
+						categoriesIds: [],
 					};
 				}
 
