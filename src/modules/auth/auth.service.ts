@@ -87,6 +87,12 @@ export class AuthService {
 			const findUserByEmail: IUser | undefined =
 				await this._usersService.findOneByEmail(createUserDto.email);
 
+			if (findUserByEmail?.status === UsersEnum.Status.INACTIVE) {
+				throw new ForbiddenException(
+					'Account removed. Please contact support.',
+				);
+			}
+
 			/**
 			 * This part is when user tries to create a new user by Google
 			 */
