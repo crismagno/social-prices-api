@@ -26,6 +26,7 @@ export interface IGetSalesAnalyticsParams {
 	status?: SalesEnum.Status[];
 	types?: SalesEnum.Type[];
 	tagsIds?: string[];
+	categoriesIds?: string[];
 	productIds?: string[];
 	rangeDate?: IRangeDate;
 	periodType?: ChartsEnum.PeriodType;
@@ -125,6 +126,7 @@ export interface ISaleFileUploadTemplateRow {
 export interface IFiltersDownloadSales {
 	search: string | null;
 	tagsIds: string[];
+	categoriesIds: string[];
 	types: SalesEnum.Type[];
 	rangeDate: IRangeDate | null;
 	rangeField?: string;

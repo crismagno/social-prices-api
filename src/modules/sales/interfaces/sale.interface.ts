@@ -38,6 +38,7 @@ export interface ISale
 	stores: ISaleStore[];
 	paymentStatus: SalesEnum.PaymentStatus;
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
 	deliveryAt: Date | null;
 	uploadFilename: string | null;
 	createdDate: Date; // Date of creation sale on his store parsed by user

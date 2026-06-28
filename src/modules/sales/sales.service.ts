@@ -369,6 +369,10 @@ export class SalesService {
 			filter.tagsIds = { $in: tableState.filters.tagsIds };
 		}
 
+		if (tableState?.filters?.categoriesIds?.length) {
+			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
+		}
+
 		if (tableState.filters?.productIds?.length) {
 			filter['stores.products.productId'] = {
 				$in: tableState.filters?.productIds,
@@ -502,6 +506,12 @@ export class SalesService {
 			};
 		}
 
+		if (tableState?.filters?.categoriesIds?.length) {
+			filter.categoriesIds = {
+				$in: arrayStringToObjectId(tableState.filters.categoriesIds),
+			};
+		}
+
 		if (tableState.filters?.productIds?.length) {
 			filter['stores.products.productId'] = {
 				$in: arrayStringToObjectId(tableState.filters?.productIds),
@@ -627,6 +637,7 @@ export class SalesService {
 				type: createSaleDto.type,
 				paymentStatus: createSaleDto.paymentStatus,
 				tagsIds: createSaleDto.tagsIds as any[],
+				categoriesIds: (createSaleDto.categoriesIds as any[]) ?? [],
 				createdByEmployeeId: createSaleDto.createdByEmployeeId as any,
 				softDelete: null,
 				updatedByEmployeeId: null,
@@ -740,6 +751,7 @@ export class SalesService {
 				type: updateSaleDto.type,
 				paymentStatus: updateSaleDto.paymentStatus,
 				tagsIds: updateSaleDto.tagsIds as any[],
+				categoriesIds: updateSaleDto.categoriesIds as any[],
 				updatedByEmployeeId: updateSaleDto.updatedByEmployeeId as any,
 				deliveryAt: updateSaleDto.deliveryAt,
 				createdDate:
@@ -971,6 +983,10 @@ export class SalesService {
 
 		if (params.tagsIds?.length) {
 			filter.tagsIds = { $in: params.tagsIds };
+		}
+
+		if (params.categoriesIds?.length) {
+			filter.categoriesIds = { $in: params.categoriesIds };
 		}
 
 		if (params.productIds?.length) {
@@ -3943,6 +3959,10 @@ export class SalesService {
 
 		if (filters.tagsIds?.length) {
 			filter.tagsIds = { $in: filters.tagsIds };
+		}
+
+		if (filters.categoriesIds?.length) {
+			filter.categoriesIds = { $in: filters.categoriesIds };
 		}
 
 		if (filters.selectedProductIds?.length) {

@@ -355,6 +355,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
+
 	@Prop({ type: String })
 	uploadFilename: string | null;
 
