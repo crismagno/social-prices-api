@@ -8,6 +8,7 @@ namespace UsersEnum {
 		PENDING = 'PENDING',
 		ACTIVE = 'ACTIVE',
 		STOPPED = 'STOPPED',
+		INACTIVE = 'INACTIVE',
 	}
 
 	export enum Type {

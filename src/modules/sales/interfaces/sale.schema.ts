@@ -193,6 +193,7 @@ export class SaleHeaderBilling implements ISaleHeaderBilling {
 export const SaleHeaderBillingSchema =
 	SchemaFactory.createForClass(SaleHeaderBilling);
 
+@Schema()
 export class SaleHeaderShipping implements ISaleHeaderShipping {
 	@Prop({ type: AddressSchema, _id: false })
 	address: IAddress | null;
