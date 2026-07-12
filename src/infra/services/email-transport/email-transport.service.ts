@@ -36,12 +36,12 @@ export default class EmailTransportService {
 			this._transporter = nodemailer.createTransport({
 				host: this._emailHost,
 				port: this._emailPort,
-				secure: true,
+				secure: false,
 				auth: {
 					user: this._emailUser,
 					pass: this._emailPass,
 				},
-				tls: { rejectUnauthorized: true, ciphers: 'SSLv3' },
+				// tls: { rejectUnauthorized: true, ciphers: 'SSLv3' },
 			});
 		} catch (error: any) {
 			this._logger.error(error);

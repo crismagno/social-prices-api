@@ -216,7 +216,7 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 				: getImageAvatarDefault(),
 			name: user?.name ?? '-',
 			email: user?.email ?? '-',
-			phoneNumber: user?.phoneNumbers?.[0].number ?? '-',
+			phoneNumber: user?.phoneNumbers?.[0]?.number ?? '-',
 		},
 	};
 };
