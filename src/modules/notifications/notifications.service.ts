@@ -10,6 +10,12 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import {
+	EmailHeroCategory,
+	getHeroImageByCategory,
+	renderEmailHtml,
+} from '../../shared/utils/templates/email/email-layout.template';
+import TemplatesEnum from '../../shared/utils/templates/templates.enum';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
@@ -136,7 +142,14 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Sign In Code`,
-				html: `Hi! here is your signIn code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Your Sign In Code',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SIGN_IN_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
 
 		if (!emailResponse) {
@@ -161,7 +174,14 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Recover Password Code`,
-				html: `Hi! here is your recover password code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Reset Your Password',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_RECOVER_PASSWORD_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
 
 		return {
@@ -178,7 +198,14 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Update Email Code`,
-				html: `Hi! here is your update email code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Confirm Your New Email',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_UPDATE_EMAIL_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
 
 		return {
@@ -383,8 +410,20 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: employee.email,
 				subject: `SignIn Employee Confirmation Code`,
-				html: `Hi! ${employee.name} here is your signIn employee username: <b>${employee.username}</b> and password: <b>${password}</b>,
-				 and confirmation code: <b>${code.value}</b>. To access account: <b>${user.name}</b>".`,
+				html: renderEmailHtml({
+					title: 'Employee Account Confirmation',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SIGN_IN_EMPLOYEE_CODE_BODY_HBS,
+					bodyData: {
+						employeeName: employee.name,
+						ownerName: user.name,
+						username: employee.username,
+						password,
+						code: code.value,
+					},
+				}),
 			});
 
 		if (!emailResponse) {
@@ -425,7 +464,17 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: sale.buyer.email,
 				subject: `Sale Completed`,
-				html: `Hi! ${sale.buyer.name} your sale has been completed. Sale number: <b>${sale.number}</b>!`,
+				html: renderEmailHtml({
+					title: 'Your Sale Is Complete',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.SALE),
+					heroImageAlt: 'Shopping cart',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SALE_COMPLETED_BODY_HBS,
+					bodyData: {
+						buyerName: sale.buyer.name,
+						saleNumber: sale.number,
+					},
+				}),
 			});
 		}
 
@@ -453,13 +502,18 @@ export class NotificationsService {
 		const emailResponse: string = await this._emailTransportService.sendEmail({
 			to: toEmail,
 			subject: `Download Sale Summary`,
-			html: `
-			<div>
-				Hi! ${sale.buyer.name}.
-				You can download your sale summary related to sale number: <b>${sale.number}</b>!
-				Just click here to do download: <a href="${pageUrl}" target="blank">Download Sale Summary</a>
-			</div>
-			`,
+			html: renderEmailHtml({
+				title: 'Your Sale Summary Is Ready',
+				heroImageSrc: getHeroImageByCategory(EmailHeroCategory.SALE),
+				heroImageAlt: 'Shopping cart',
+				bodyRelativePath:
+					TemplatesEnum.RelativePath.EMAIL_SALE_SUMMARY_LINK_BODY_HBS,
+				bodyData: {
+					buyerName: sale.buyer.name,
+					saleNumber: sale.number,
+					downloadUrl: pageUrl,
+				},
+			}),
 		});
 
 		if (!emailResponse) {

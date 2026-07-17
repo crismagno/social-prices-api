@@ -31,3 +31,12 @@ export const getImageAvatarDefault = (): string =>
 	`${apiAssetImageUrl()}/avatar-default.png`;
 
 export const getLogo1 = (): string => `${apiAssetImageUrl()}/logo1.png`;
+
+export const getPadlockBgImage = (): string =>
+	`${apiAssetImageUrl()}/padlock-bg.png`;
+
+export const getCartBgImage = (): string =>
+	`${apiAssetImageUrl()}/cart-bg.png`;
+
+export const getMessageBgImage = (): string =>
+	`${apiAssetImageUrl()}/message-bg.png`;
