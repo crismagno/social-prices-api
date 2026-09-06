@@ -1,5 +1,7 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+import { IDynamicField } from '../../../../shared/common/dynamic-field/dynamic-field.interface';
+
 export class CreateProductDimensionsDto {
 	@IsString()
 	@IsOptional()
@@ -80,4 +82,7 @@ export default class CreateProductDto {
 	dimensions: CreateProductDimensionsDto | null;
 
 	colors: string[] | null;
+
+	@IsOptional()
+	dynamicFields: IDynamicField[] | string | null;
 }

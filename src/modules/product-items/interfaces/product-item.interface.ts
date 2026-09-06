@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+import { IDynamicField } from '../../../shared/common/dynamic-field/dynamic-field.interface';
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
@@ -29,6 +30,7 @@ export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
 	expirationDate: Date | null;
 	dimensions: IProductItemDimensions | null;
 	colors: string[] | null;
+	dynamicFields: IDynamicField[];
 	productId: mongoose.Schema.Types.ObjectId;
 	product?: IProduct;
 	isDefault: boolean;

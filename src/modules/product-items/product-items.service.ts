@@ -21,6 +21,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
+import { parseDynamicFields } from '../../shared/common/dynamic-field/dynamic-field.utils';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import {
@@ -51,6 +52,7 @@ import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
+import { mapProductToDefaultProductItemFields } from './product-items.utils';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
@@ -309,6 +311,7 @@ export class ProductItemsService {
 				? parseToDate(createProductItemDto.expirationDate)
 				: null,
 			colors: createProductItemDto.colors,
+			dynamicFields: parseDynamicFields(createProductItemDto.dynamicFields),
 			dimensions: createProductItemDto.dimensions,
 			productId: createProductItemDto.productId,
 		});
@@ -320,31 +323,9 @@ export class ProductItemsService {
 		product: IProduct,
 	): Promise<IProductItem> {
 		const productItem = new this._productItemModel({
-			name: product.name,
-			description: product.description,
-			filesUrl: product.filesUrl || [],
-			isActive: product.isActive,
-			price: product.price,
-			quantity: product.quantity,
-			details: product.details,
-			storeIds: product.storeIds,
-			categoriesIds: product.categoriesIds,
-			tagsIds: product.tagsIds,
+			...mapProductToDefaultProductItemFields(product),
 			userId: product.userId,
-			mainUrl: product.mainUrl,
-			barcode: product.barcode,
-			sku: product.sku,
-			previousBarcodes: product.previousBarcodes,
-			QRCode: product.QRCode,
 			createdAt: product.createdAt,
-			updatedAt: product.updatedAt,
-			uploadFilename: product.uploadFilename,
-			brand: product.brand,
-			historicPrices: product.historicPrices,
-			releaseDate: product.releaseDate,
-			expirationDate: product.expirationDate,
-			colors: product.colors,
-			dimensions: product.dimensions,
 			productId: product._id,
 			isDefault: true,
 		});
@@ -356,31 +337,10 @@ export class ProductItemsService {
 		products: IProduct[],
 	): Promise<IProductItem[]> {
 		const productItems = products.map((product: IProduct) => ({
+			...mapProductToDefaultProductItemFields(product),
 			name: `${product.name} - Default`,
-			description: product.description,
-			filesUrl: product.filesUrl || [],
-			isActive: product.isActive,
-			price: product.price,
-			quantity: product.quantity,
-			details: product.details,
-			storeIds: product.storeIds,
-			categoriesIds: product.categoriesIds,
-			tagsIds: product.tagsIds,
 			userId: product.userId,
-			mainUrl: product.mainUrl,
-			barcode: product.barcode,
-			sku: product.sku,
-			previousBarcodes: product.previousBarcodes,
-			QRCode: product.QRCode,
 			createdAt: product.createdAt,
-			updatedAt: product.updatedAt,
-			uploadFilename: product.uploadFilename,
-			brand: product.brand,
-			historicPrices: product.historicPrices,
-			releaseDate: product.releaseDate,
-			expirationDate: product.expirationDate,
-			colors: product.colors,
-			dimensions: product.dimensions,
 			productId: product._id,
 			isDefault: true,
 		}));
@@ -402,31 +362,7 @@ export class ProductItemsService {
 			}
 
 			await this._productItemModel.findByIdAndUpdate(defaultProductItem._id, {
-				$set: {
-					name: product.name,
-					description: product.description,
-					filesUrl: product.filesUrl || [],
-					isActive: product.isActive,
-					price: product.price,
-					quantity: product.quantity,
-					details: product.details,
-					storeIds: product.storeIds,
-					categoriesIds: product.categoriesIds,
-					tagsIds: product.tagsIds,
-					mainUrl: product.mainUrl,
-					barcode: product.barcode,
-					sku: product.sku,
-					QRCode: product.QRCode,
-					updatedAt: product.updatedAt,
-					brand: product.brand,
-					releaseDate: product.releaseDate,
-					expirationDate: product.expirationDate,
-					colors: product.colors,
-					dimensions: product.dimensions,
-					historicPrices: product.historicPrices,
-					previousBarcodes: product.previousBarcodes,
-					uploadFilename: product.uploadFilename,
-				},
+				$set: mapProductToDefaultProductItemFields(product),
 			});
 		} catch (error: any) {
 			this._logger.error(
@@ -545,6 +481,7 @@ export class ProductItemsService {
 					? parseToDate(updateProductItemDto.expirationDate)
 					: null,
 				colors: updateProductItemDto.colors,
+				dynamicFields: parseDynamicFields(updateProductItemDto.dynamicFields),
 				dimensions: updateProductItemDto.dimensions,
 			},
 		});
@@ -1243,6 +1180,7 @@ export class ProductItemsService {
 				} else {
 					productItemsToCreate.push({
 						name: productItemFileUploadTemplateRow.name,
+						dynamicFields: [],
 						tagsIds: tagsIds as any[],
 						storeIds: storeIds as any[],
 						createdAt: now,

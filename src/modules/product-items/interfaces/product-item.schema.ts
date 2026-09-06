@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
+import { IDynamicField } from '../../../shared/common/dynamic-field/dynamic-field.interface';
+import { DynamicFieldSchema } from '../../../shared/common/dynamic-field/dynamic-field.schema';
+
 import {
 	IProductItem,
 	IProductItemDimensions,
@@ -130,6 +133,9 @@ export class ProductItem implements IProductItem {
 
 	@Prop({ type: [String] })
 	colors: string[] | null;
+
+	@Prop({ type: [DynamicFieldSchema], default: [] })
+	dynamicFields: IDynamicField[];
 
 	@Prop({
 		type: mongoose.Schema.Types.ObjectId,

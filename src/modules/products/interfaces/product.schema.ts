@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
+import { IDynamicField } from '../../../shared/common/dynamic-field/dynamic-field.interface';
+import { DynamicFieldSchema } from '../../../shared/common/dynamic-field/dynamic-field.schema';
+
 import {
 	IProduct,
 	IProductDimensions,
@@ -128,6 +131,9 @@ export class Product implements IProduct {
 
 	@Prop({ type: [String] })
 	colors: string[] | null;
+
+	@Prop({ type: [DynamicFieldSchema], default: [] })
+	dynamicFields: IDynamicField[];
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

@@ -21,6 +21,7 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
+import { parseDynamicFields } from '../../shared/common/dynamic-field/dynamic-field.utils';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import { unFreezeData } from '../../shared/utils/objects/objects';
@@ -293,6 +294,7 @@ export class ProductsService {
 				? parseToDate(createProductDto.expirationDate)
 				: null,
 			colors: createProductDto.colors,
+			dynamicFields: parseDynamicFields(createProductDto.dynamicFields),
 			dimensions: createProductDto.dimensions,
 		});
 
@@ -414,6 +416,7 @@ export class ProductsService {
 						? parseToDate(updateProductDto.expirationDate)
 						: null,
 					colors: updateProductDto.colors,
+					dynamicFields: parseDynamicFields(updateProductDto.dynamicFields),
 					dimensions: updateProductDto.dimensions,
 				},
 			},
@@ -1104,6 +1107,7 @@ export class ProductsService {
 				} else {
 					productsToCreate.push({
 						name: productFileUploadTemplateRow.name,
+						dynamicFields: [],
 						tagsIds: tagsIds as any[],
 						storeIds: storeIds as any[],
 						createdAt: now,
