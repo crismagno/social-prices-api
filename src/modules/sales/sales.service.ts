@@ -46,6 +46,7 @@ import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import {
 	createUsernameByName,
 	isValidEmail,
+	removeSpaces,
 } from '../../shared/utils/global/global';
 import { countries } from '../../shared/utils/mock-data/countries';
 import {
@@ -2579,7 +2580,7 @@ export class SalesService {
 
 			const row: ExcelJS.Row = worksheet.getRow(rowNumber);
 
-			const uniqName: string = row.getCell('A')?.text?.trim();
+			const uniqName: string = removeSpaces(row.getCell('A')?.text);
 			const name: string = row.getCell('B')?.text?.trim();
 			const email: string = row.getCell('C')?.text?.trim();
 			const birthDate: string = row.getCell('D')?.text?.trim();
@@ -2691,7 +2692,9 @@ export class SalesService {
 			let customer: ICustomer | undefined;
 
 			try {
-				const rowUniqName: string = saleFileUploadTemplateRow.uniqName?.trim();
+				const rowUniqName: string = removeSpaces(
+					saleFileUploadTemplateRow.uniqName,
+				);
 				if (rowUniqName) {
 					customer = await this._customersService.findByOwnerUserIdAndUniqName(
 						ownerUserId,

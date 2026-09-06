@@ -29,6 +29,7 @@ import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import {
 	createUsernameByName,
 	isValidEmail,
+	removeSpaces,
 } from '../../shared/utils/global/global';
 import { countries } from '../../shared/utils/mock-data/countries';
 import {
@@ -188,13 +189,15 @@ export class CustomersService {
 		uniqName?: string,
 		customerId?: string,
 	): Promise<void> {
-		if (!uniqName?.trim()) {
+		const sanitizedUniqName: string = removeSpaces(uniqName);
+
+		if (!sanitizedUniqName) {
 			return;
 		}
 
 		const customer: ICustomer = await this._customerModel.findOne({
 			ownerUserId,
-			uniqName,
+			uniqName: sanitizedUniqName,
 		});
 
 		if (customer && customer?._id.toString() !== customerId) {
@@ -294,9 +297,9 @@ export class CustomersService {
 			createdAt: now,
 			updatedAt: now,
 			userId: createCustomerDto.userId,
-			uniqName:
-				createCustomerDto.uniqName?.trim() ??
-				createUsernameByName(createCustomerDto.name),
+			uniqName: createCustomerDto.uniqName
+				? removeSpaces(createCustomerDto.uniqName)
+				: createUsernameByName(createCustomerDto.name),
 			uploadFilename: null,
 		});
 
@@ -351,7 +354,7 @@ export class CustomersService {
 			tagsIds: updateCustomerDto.tagsIds,
 			updatedAt: now,
 			uniqName: updateCustomerDto.uniqName
-				? updateCustomerDto.uniqName?.trim()
+				? removeSpaces(updateCustomerDto.uniqName)
 				: createUsernameByName(updateCustomerDto.name),
 		};
 

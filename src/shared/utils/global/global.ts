@@ -31,15 +31,22 @@ export const makeRandomCode = (lengthCode: number = 6): string => {
 export const createUniqueSuffix = (length: number = 1e9): string =>
 	`${Date.now()}${Math.round(Math.random() * length)}`;
 
+/**
+ * Removes every whitespace character (leading, trailing and in the middle).
+ * Used to keep uniqName/username values free of spaces.
+ */
+export const removeSpaces = (value?: string | null): string =>
+	`${value ?? ''}`.replace(/\s+/g, '');
+
 export const createUsernameByEmail = (email: string): string => {
 	const firstPartEmail: string = email.split('@')[0];
 	const uniqueSuffix: string = createUniqueSuffix(10);
-	return `${firstPartEmail}${uniqueSuffix}`.replace(' ', '');
+	return removeSpaces(`${firstPartEmail}${uniqueSuffix}`);
 };
 
 export const createUsernameByName = (name: string): string => {
 	const uniqueSuffix: string = createUniqueSuffix(10);
-	return `${name}${uniqueSuffix}`.replace(' ', '');
+	return removeSpaces(`${name}${uniqueSuffix}`);
 };
 
 export const createNameByEmail = (email: string): string => {

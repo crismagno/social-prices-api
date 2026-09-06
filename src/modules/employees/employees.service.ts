@@ -22,6 +22,7 @@ import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import {
 	createUsernameByName,
 	isValidEmail,
+	removeSpaces,
 } from '../../shared/utils/global/global';
 import { countries } from '../../shared/utils/mock-data/countries';
 import {
@@ -289,7 +290,7 @@ export class EmployeesService {
 			avatar: createEmployeeDto.avatar || responseFile?.Key || null,
 			name: createEmployeeDto.name,
 			username:
-				createEmployeeDto.username ||
+				removeSpaces(createEmployeeDto.username) ||
 				createUsernameByName(createEmployeeDto.name),
 			email: createEmployeeDto.email,
 			password: hashPassword,
