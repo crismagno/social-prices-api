@@ -27,7 +27,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION_1 }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Test AWS identity
         run: aws sts get-caller-identity
