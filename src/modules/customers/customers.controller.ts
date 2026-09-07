@@ -1,17 +1,21 @@
+import { Response } from 'express';
+
 import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
 	Put,
-	Request,
+	Res,
 	UploadedFile,
+	UploadedFiles,
 	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
@@ -19,10 +23,11 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { CustomersService } from './customers.service';
 import { ICustomer } from './interfaces/customer.interface';
+import { IFiltersDownloadCustomers } from './interfaces/customers.type';
 import CreateCustomerDto from './interfaces/dto/createCustomer.dto';
 import UpdateCustomerDto from './interfaces/dto/updateCustomer.dto';
 
@@ -34,14 +39,16 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async create(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
-		@Request() request: any,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() createCustomerDto: CreateCustomerDto,
 	): Promise<ICustomer> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.create(
 			file,
 			createCustomerDto,
@@ -53,14 +60,16 @@ export class CustomersController {
 	@UsePipes(ValidationPipe)
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async update(
-		@UploadedFile(parseFilePipeBuilder({ build: { fileIsRequired: false } }))
+		@UploadedFile(
+			parseFilePipeBuilder({
+				build: { fileIsRequired: false },
+				allowOnlyTypes: ['image'],
+			}),
+		)
 		file: Express.Multer.File,
-		@Request() request: any,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() updateCustomerDto: UpdateCustomerDto,
 	): Promise<ICustomer> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.update(
 			file,
 			updateCustomerDto,
@@ -71,23 +80,17 @@ export class CustomersController {
 	@Get('/ownerUserId')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserId(
-		@Request() request: any,
+		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<ICustomer[]> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.findByOwnerUserId(authPayload._id);
 	}
 
 	@Post('/ownerUserTableState')
 	@UsePipes(ValidationPipe)
 	public async findByOwnerUserTableState(
-		@Request() request: any,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<ICustomer>,
 	): Promise<ITableStateResponse<ICustomer[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._customersService.findByOwnerUserTableState(
 			authPayload._id,
 			tableState,
@@ -96,10 +99,9 @@ export class CustomersController {
 
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
-	public async countByOwnerUserId(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countByOwnerUserId(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._customersService.countByOwnerUserId(authPayload._id);
 	}
 
@@ -109,5 +111,45 @@ export class CustomersController {
 		@Param('customerId', ValidationParamsPipe) customerId: string,
 	): Promise<ICustomer | null> {
 		return await this._customersService.findById(customerId);
+	}
+
+	@Post('/uploadCustomers')
+	@UsePipes(ValidationPipe)
+	@UseInterceptors(FilesInterceptor('files'))
+	public async uploadCustomers(
+		@UploadedFiles(parseFilePipeBuilder({ allowOnlyTypes: ['spreadsheet'] }))
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		return await this._customersService.uploadCustomers(
+			files,
+			authPayload._id,
+			authPayload.employeeId,
+		);
+	}
+
+	@Post('/downloadCustomers')
+	@UsePipes(ValidationPipe)
+	public async downloadCustomers(
+		@Res() res: Response,
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() filters: IFiltersDownloadCustomers,
+	): Promise<any> {
+		const buffer: Buffer = await this._customersService.downloadCustomers(
+			authPayload._id,
+			filters,
+		);
+
+		if (!buffer) {
+			throw new InternalServerErrorException(
+				'Error when attempt download customers',
+			);
+		}
+
+		res.set({
+			'Content-Disposition': `attachment; filename=fileDownloadCustomers.xlsx`,
+		});
+
+		res.send(buffer);
 	}
 }

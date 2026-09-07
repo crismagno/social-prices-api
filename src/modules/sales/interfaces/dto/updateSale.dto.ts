@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
 	IsArray,
+	IsBoolean,
 	IsEnum,
 	IsNotEmpty,
 	IsOptional,
@@ -25,6 +26,10 @@ export default class UpdateSaleDto {
 	@IsString()
 	@IsNotEmpty()
 	updatedByUserId: string;
+
+	@IsString()
+	@IsNotEmpty()
+	updatedByEmployeeId: string;
 
 	@Type(() => SaleBuyerDto)
 	@IsOptional()
@@ -59,4 +64,31 @@ export default class UpdateSaleDto {
 	@Type(() => SaleStoreDto)
 	@ValidateNested({ each: true })
 	stores: SaleStoreDto[];
+
+	@IsArray()
+	@Type(() => String)
+	tagsIds: string[];
+
+	@IsArray()
+	@IsOptional()
+	categoriesIds: string[];
+
+	@IsString()
+	@IsOptional()
+	deliveryAt: Date | null;
+
+	@IsString()
+	@IsOptional()
+	createdDate: Date | null;
+
+	@IsString()
+	@IsOptional()
+	numberManual: string | null;
+
+	@IsString()
+	@IsOptional()
+	noteToCustomer: string | null;
+
+	@IsBoolean()
+	isSendCustomerNotifications: boolean;
 }

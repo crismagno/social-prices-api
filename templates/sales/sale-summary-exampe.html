@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html lang='pt-BR'>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta charset='UTF-8' />
+
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 12px;
+			padding: 50px;
+		}
+
+		.container {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.sub-container {
+			width: 700px;
+		}
+
+		h2 {
+			margin-top:
+				0;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 20px;
+		}
+
+		th,
+		td {
+			border: 1px solid #ccc;
+			padding: 6px;
+			text-align: left;
+		}
+
+		hr {
+			border-color: #ccc4
+		}
+
+		.totals td {
+			font-weight: bold !important;
+		}
+
+		.flex {
+			display: flex !important;
+		}
+
+		.flex-col {
+			flex-direction: column !important;
+		}
+
+		.w-full {
+			width: 100% !important;
+		}
+
+		.justify-center {
+			justify-content: center !important;
+		}
+
+		.items-center {
+			align-items: center !important;
+		}
+
+		.mt-5 {
+			margin-top: 50px !important;
+		}
+
+		.mt-3 {
+			margin-top: 30px !important;
+		}
+
+		.text-center {
+			text-align: center !important;
+		}
+
+		.justify-between {
+			justify-content: space-between !important;
+		}
+
+		.pr-10 {
+			padding-right: 100px !important;
+		}
+
+		.mt-2 {
+			margin-top: 20px !important;
+		}
+
+		.font-bold {
+			font:
+				700 !important;
+		}
+
+		.mr-1 {
+			margin-right: 10px !important;
+		}
+
+		.mr-3 {
+			margin-right: 30px !important;
+		}
+
+		.rounded {
+			border-radius: 100% !important;
+		}
+
+		.divider {
+			display: flex;
+			align-items: center;
+			text-align: center;
+			color: #999;
+			font-size: 14px;
+			margin: 10px 0;
+			width: 100%;
+		}
+
+		.divider::before,
+		.divider::after {
+			content: "";
+			flex: 1;
+			border-top: 1px solid #e8e8e8;
+		}
+
+		.divider:not(:empty)::before {
+			margin-right: 0.75em;
+		}
+
+		.divider:not(:empty)::after {
+			margin-left: 0.75em;
+		}
+
+		label {
+			font-size: medium;
+			font-weight: lighter !important;
+		}
+
+		.mt-1 {
+			margin-top: 5px;
+		}
+
+		.fs-medium {
+			font-size: medium !important;
+		}
+
+		.font-bold {
+			font-weight: bold !important;
+		}
+
+		.mb-2 {
+			margin-bottom: 20px;
+		}
+
+		.bg-completed {
+			background-color: #DCFCE6 !important;
+		}
+
+		.bg-invalid {
+			background-color: #FDE2E1 !important;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="sub-container flex" style="justify-content: space-between !important; align-items: flex-start;">
+			<div class="flex" style="align-items: center;">
+				<div class="mr-1">
+					<img src="{{user.avatar}}" width='70' height="70" class='rounded' />
+				</div>
+				<div class="flex flex-col">
+					<label>{{user.name}}</label>
+					<a href="mailto:{{user.email}}" style="font-size: 14px;">{{user.email}}</a>
+					<a href="tel:{{user.phoneNumber}}" style="font-size: 14px;">{{user.phoneNumber}}</a>
+				</div>
+			</div>
+
+			<label style="font-size: 13px;">
+				Last Updated: {{lastUpdated}}
+			</label>
+		</div>
+
+
+		<div class="sub-container flex flex-col justify-center items-center mt-1">
+			<div class="divider"></div>
+
+			<h2 class="mt-1">Sale Summary: {{saleNumber}}</h2>
+
+			<div class='flex flex-col justify-center items-center mt-2'>
+				<img src='{{customer.avatar}}' width='80' height="80" class='rounded' />
+
+				<label class='mt-2'>{{customer.name}}</label>
+
+				<label class="mt-1">
+					{{customer.email}}
+					/
+					{{customer.phone}}
+				</label>
+
+				<label class="mt-1">
+					{{customer.birthDate}}
+					/
+					{{customer.gender}}
+				</label class="mt-1">
+
+				<div class='text-center mt-1'>
+					<b class="fs-medium">Shipping Address: </b>
+
+					<label>{{shippingAddress}}</label>
+				</div>
+			</div>
+
+			<div class="divider mt-2"></div>
+
+			<div class="text-center mt-1">
+				<b class="fs-medium">Delivery Type: </b>
+				<label>{{deliveryType}}</label>
+			</div>
+
+			<div class="divider mt-2"></div>
+
+			<div class=" flex flex-col w-full">
+				<div class="w-full text-center mb-2">
+					<label class="font-bold">Store Products</label>
+				</div>
+
+				{{#each stores}}
+				<div class="w-full">
+					<h2 class="mt-1">{{name}}</h2>
+
+					<div class="flex flex-col mt-1 w-full">
+						{{#each products}}
+						<div class="flex w-full justify-between bg-{{status}}">
+							<div class="flex">
+								<div class="mr-1">
+									<img src='{{image}}' width='40' height="40" class='rounded' />
+								</div>
+
+								<div class="flex flex-col mr-3">
+									<label>{{name}}</label>
+									<label style="font-size: 0.75rem;line-height: 1rem;">{{barcode}}</label>
+								</div>
+
+								<div>
+									<label>
+										x {{quantity}}
+									</label>
+								</div>
+							</div>
+
+							<div class="flex">
+								<label class="mr-3">{{price}}</label>
+
+								<label>{{total}}</label>
+							</div>
+						</div>
+						{{/each}}
+					</div>
+				</div>
+				{{/each}}
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="flex justify-between w-full mt-1 w-full">
+				<label class="font-bold">Quantity: </label>
+				<label>x {{totals.quantity}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Subtotal: </label>
+				<label>{{totals.subtotal}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Discount: </label>
+				<label>
+					{{totals.discount}}
+				</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Total After Discount: </label>
+				<label>{{totals.totalAfterDiscount}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Shipping: </label>
+				<label>{{totals.shipping}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Tax: </label>
+				<label>{{totals.tax}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Total: </label>
+				<label>{{totals.total}}</label>
+			</div>
+
+			<div class="divider"></div>
+
+			<div class=" flex flex-col w-full">
+				<div class="w-full text-center">
+					<label class="font-bold">Payment</label>
+				</div>
+
+				{{#each payments}}
+				<div class="flex justify-between mt-1 w-full">
+					<label class="font-bold">
+						{{type}}
+					</label>
+					<label>{{amount}}</label>
+				</div>
+				{{/each}}
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Total Payment: </label>
+				<label>{{totalPayment}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Total After Payment: </label>
+				<label>{{totalAfterPayment}}</label>
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Sale Status: </label>
+				<label>{{saleStatus}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Payment Status: </label>
+				<label>{{paymentStatus}}</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Delivery At: </label>
+				<label>
+					{{deliveryAt}}
+				</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Created Date: </label>
+				<label>
+					{{createdDate}}
+				</label>
+			</div>
+
+			<div class="flex justify-between w-full mt-1">
+				<label class="font-bold">Sale Number Manual: </label>
+				<label>{{saleNumberManual}}</label>
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="flex w-full mt-1">
+				<label class="flex font-bold mr-1">Note to Customer: </label>
+				<label>{{noteToCustomer}}</label>
+			</div>
+
+			<div class="divider mt-2"></div>
+		</div>
+
+		<div class="sub-container flex"
+			style="justify-content: space-between !important; align-items: baseline; margin-top: 30px;">
+			<div style="width: 50px;"></div>
+
+			<img src="{{logoSrc}}" width='50' height="50" class='rounded' />
+
+			<label style="font-size: 13px;">
+				{{dateNow}}
+			</label>
+		</div>
+	</div>
+</body>
+
+</html>

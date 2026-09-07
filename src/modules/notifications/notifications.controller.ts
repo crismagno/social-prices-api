@@ -4,7 +4,6 @@ import {
 	Get,
 	Param,
 	Post,
-	Request,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -14,7 +13,7 @@ import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
-import AuthEnum from '../auth/interfaces/auth.enum';
+import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import UpdateToSeenDto from './interfaces/dto/updateToSeen.dto';
 import { INotification } from './interfaces/notification.interface';
@@ -27,12 +26,9 @@ export class NotificationsController {
 	@Post('/userTableState')
 	@UsePipes(ValidationPipe)
 	public async findByUserTableState(
-		@Request() request: any,
+		@AuthPayload() authPayload: IAuthPayload,
 		@Body() tableState: ITableStateRequest<INotification>,
 	): Promise<ITableStateResponse<INotification[]>> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
 		return await this._notificationsService.findByUserTableState(
 			authPayload._id,
 			tableState,
@@ -41,10 +37,9 @@ export class NotificationsController {
 
 	@Get('/countNotSeenByUser')
 	@UsePipes(ValidationPipe)
-	public async countNotSeenByUser(@Request() request: any): Promise<number> {
-		const authPayload: IAuthPayload =
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD];
-
+	public async countNotSeenByUser(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<number> {
 		return await this._notificationsService.countNotSeenByUser(authPayload._id);
 	}
 

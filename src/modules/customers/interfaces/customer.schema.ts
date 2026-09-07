@@ -1,20 +1,16 @@
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
-import {
-  Prop,
-  Schema,
-  SchemaFactory,
-} from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import { AddressSchema } from '../../../shared/schemas/address.schema';
-import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
-import UsersEnum from '../../users/interfaces/users.enum';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { AddressSchema } from '../../../shared/common/address/address.schema';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
+import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
 import { ICustomer } from './customer.interface';
 
 @Schema()
-export class Customer extends Document implements ICustomer {
+export class Customer implements ICustomer {
 	readonly _id: string;
 
 	@Prop({ type: String })
@@ -32,11 +28,11 @@ export class Customer extends Document implements ICustomer {
 	@Prop({
 		type: String,
 		enum: {
-			values: Object.keys(UsersEnum.Gender),
+			values: Object.keys(PersonEnum.Gender),
 			message: '{VALUE} is not supported',
 		},
 	})
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 
 	@Prop({ type: String })
 	about: string | null;
@@ -52,6 +48,15 @@ export class Customer extends Document implements ICustomer {
 
 	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
 	ownerUserId: mongoose.Schema.Types.ObjectId;
+
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	tagsIds: mongoose.Schema.Types.ObjectId[];
+
+	@Prop({ type: String })
+	uniqName: string | null;
+
+	@Prop({ type: String })
+	uploadFilename: string | null;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;

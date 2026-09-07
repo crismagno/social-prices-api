@@ -1,0 +1,14 @@
+import mongoose from 'mongoose';
+
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import TagsEnum from './tags.enum';
+
+export interface ITag extends ICreatedAtEntity, IUpdatedAtEntity {
+	readonly _id: string;
+	userId: mongoose.Schema.Types.ObjectId;
+	name: string;
+	description: string | null;
+	color: string | null;
+	type: TagsEnum.Type;
+}

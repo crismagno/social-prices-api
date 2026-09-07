@@ -1,16 +1,28 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
+import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SocketsModule } from '../sockets/sockets.module';
+import { TagsModule } from '../tags/tags.module';
 import { UsersModule } from '../users/users.module';
+import { CustomersValidationService } from './customers-validation.service';
 import { CustomersController } from './customers.controller';
 import { CustomersService } from './customers.service';
 
 @Module({
-	imports: [schemasModule.customer, NotificationsModule, UsersModule],
+	imports: [
+		schemasModule.customer,
+		NotificationsModule,
+		UsersModule,
+		TagsModule,
+		SocketsModule,
+		FilesModule,
+		FilesUploadsModule,
+	],
 	controllers: [CustomersController],
-	providers: [CustomersService, AmazonFilesService],
+	providers: [CustomersService, CustomersValidationService],
 	exports: [CustomersService],
 })
 export class CustomersModule {}

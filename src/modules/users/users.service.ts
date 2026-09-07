@@ -1,28 +1,22 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { randomUUID } from 'crypto';
 import { Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
-	forwardRef,
-	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
-	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-import AuthorizationToken from '../../infra/authorization/authorization-token';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
-import { createUsernameByEmail } from '../../shared/utils/global';
-import { IAuthPayload } from '../auth/interfaces/auth.types';
+import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { CodesService } from '../codes/codes.service';
+import { FilesService } from '../files/files-service';
 import { INotificationResponse } from '../notifications/interfaces/notification.types';
 import { NotificationsService } from '../notifications/notifications.service';
-import CreateUserDto from './interfaces/dto/createUser.dto';
+import { ISoftDelete } from '../../shared/common/soft-delete/soft-delete.interface';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
@@ -46,11 +40,9 @@ export class UsersService {
 	constructor(
 		@InjectModel(schemasName.user) private readonly _userModel: Model<IUser>,
 		private readonly _hashCrypt: HashCrypt,
-		private readonly _authorizationToken: AuthorizationToken,
-		@Inject(forwardRef(() => NotificationsService))
 		private readonly _notificationsService: NotificationsService,
+		private readonly _filesService: FilesService,
 		private readonly _codesService: CodesService,
-		private readonly _amazonFilesService: AmazonFilesService,
 	) {
 		this._logger = new Logger(UsersService.name);
 	}
@@ -77,12 +69,12 @@ export class UsersService {
 		return user;
 	}
 
-	public async findOneByUserId(userId: string): Promise<IUser | undefined> {
-		return this._userModel.findById(userId);
-	}
-
-	public async findOneByUserIdOrFail(userId: string): Promise<IUser> {
-		const user: IUser | undefined = await this.findOneByUserId(userId);
+	public async findOneByEmailOrUsernameOrFail(
+		emailOrUsername: string,
+	): Promise<IUser> {
+		const user: IUser | undefined = await this._userModel.findOne({
+			$or: [{ email: emailOrUsername }, { username: emailOrUsername }],
+		});
 
 		if (!user) {
 			throw new NotFoundException('User not found!');
@@ -91,116 +83,24 @@ export class UsersService {
 		return user;
 	}
 
-	public async signIn(email: string, password: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByEmailOrFail(email);
-
-		const isPasswordMatch: boolean = await this._hashCrypt.isMatchCompare(
-			password,
-			user.password,
-		);
-
-		if (!isPasswordMatch) {
-			throw new UnauthorizedException();
-		}
-
-		await this._notificationSendSignInCode(user);
-
-		return this._getUserEntityWithToken(user);
+	public async findOneById(userId: string): Promise<IUser | undefined> {
+		return this._userModel.findById(userId);
 	}
 
-	public async signUp(createUserDto: CreateUserDto): Promise<IUserEntity> {
-		try {
-			const findUserByEmail: IUser | undefined = await this.findOneByEmail(
-				createUserDto.email,
-			);
+	public async findOneByIdOrFail(userId: string): Promise<IUser> {
+		const user: IUser | undefined = await this.findOneById(userId);
 
-			/**
-			 * This part is when user tries to create a new user by Google
-			 */
-			if (findUserByEmail && createUserDto.authProvider) {
-				await this._notificationSendSignInCode(findUserByEmail);
-
-				return await this._getUserEntityWithToken(findUserByEmail);
-			} else if (findUserByEmail) {
-				this._logger.warn('signUp', createUserDto);
-				throw new BadRequestException('User credentials error.');
-			}
-
-			const hashPassword: string = await this._hashCrypt.generateHash(
-				createUserDto.password,
-			);
-
-			const now: Date = new Date();
-
-			const newUser: IUser = new this._userModel({
-				email: createUserDto.email,
-				username: createUsernameByEmail(createUserDto.email),
-				password: hashPassword,
-				authProvider:
-					createUserDto.authProvider ?? UsersEnum.Provider.SOCIAL_PRICES,
-				phoneNumbers: createUserDto.phoneNumbers ?? [],
-				status: UsersEnum.Status.PENDING,
-				uid: createUserDto.uid ?? randomUUID(),
-				avatar: createUserDto.avatar,
-				extraDataProvider: createUserDto.extraDataProvider,
-				addresses: [],
-				name: null,
-				birthDate: null,
-				gender: UsersEnum.Gender.OTHER,
-				about: createUserDto.about,
-				createdAt: now,
-				updatedAt: now,
-			});
-
-			const user: IUser = await newUser.save();
-
-			await this._notificationSendSignInCode(user);
-
-			return await this._getUserEntityWithToken(user);
-		} catch (error: any) {
-			this._logger.error(error);
-			throw error;
-		}
-	}
-
-	public async validateSignInCode(
-		userId: string,
-		value: string,
-	): Promise<boolean> {
-		const isValidatedSignInCode: boolean =
-			await this._codesService.validateSignIn(userId, value);
-
-		if (!isValidatedSignInCode) {
-			return false;
+		if (!user) {
+			throw new NotFoundException('User not found!');
 		}
 
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
-
-		if (user.status === UsersEnum.Status.ACTIVE) {
-			return true;
-		}
-
-		await this._userModel.findByIdAndUpdate(
-			userId,
-			{
-				$set: { status: UsersEnum.Status.ACTIVE },
-			},
-			{ new: true },
-		);
-
-		return true;
+		return user;
 	}
 
-	public async getUserWIthTokenByUserId(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+	public async insert(user: any): Promise<IUser> {
+		const newUser = new this._userModel(user);
 
-		return this._getUserEntityWithToken(user);
-	}
-
-	public async getUserByUserId(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
-
-		return this._getUserEntity(user);
+		return await newUser.save();
 	}
 
 	public async sendRecoverPasswordCode(email: string): Promise<void> {
@@ -249,8 +149,6 @@ export class UsersService {
 		userId: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
@@ -267,15 +165,13 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateUserAddresses(
 		userId: string,
 		updateUserAddressesDto: UpdateUserAddressesDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
@@ -289,15 +185,13 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateUserPhoneNumbers(
 		userId: string,
 		updatePhoneNumbers: UpdateUserPhoneNumbersDto,
 	): Promise<IUserEntity> {
-		await this.findOneByUserIdOrFail(userId);
-
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
 			{
@@ -311,19 +205,19 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return new UserEntity(userUpdated);
 	}
 
 	public async updateAvatar(
 		userId: string,
 		file: Express.Multer.File,
 	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		const response: ManagedUpload.SendData =
-			await this._amazonFilesService.uploadFile(file);
+			await this._filesService.uploadFile(file);
 
-		await this._amazonFilesService.deleteFile(user.avatar);
+		await this._filesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -338,13 +232,13 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return new UserEntity(userUpdated);
 	}
 
 	public async removeAvatar(userId: string): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
-		await this._amazonFilesService.deleteFile(user.avatar);
+		await this._filesService.deleteFile(user.avatar);
 
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
@@ -359,14 +253,14 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntity(userUpdated);
+		return new UserEntity(userUpdated);
 	}
 
 	public async sendUpdateEmailCode(
 		userId: string,
 		email: string,
 	): Promise<void> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		if (user.email != email) {
 			throw new BadRequestException('Incorrect user email.');
@@ -386,7 +280,7 @@ export class UsersService {
 		userId: string,
 		updateEmailDto: UpdateEmailDto,
 	): Promise<IUserEntity> {
-		const user: IUser = await this.findOneByUserIdOrFail(userId);
+		const user: IUser = await this.findOneByIdOrFail(userId);
 
 		if (user.email != updateEmailDto.email) {
 			throw new BadRequestException('Incorrect user email.');
@@ -426,38 +320,34 @@ export class UsersService {
 			},
 		);
 
-		return this._getUserEntityWithToken(newUser);
+		return new UserEntity(newUser);
 	}
 
-	//#rendegion
-
-	//#region Private Methods
-
-	private async _notificationSendSignInCode(user: IUser): Promise<void> {
-		const notificationResponse: INotificationResponse =
-			await this._notificationsService.sendSignInCode(user);
-
-		if (!notificationResponse.email) {
-			throw new BadRequestException(
-				'Error when attempt to send signIn code to user',
-			);
-		}
+	public async findByIdAndActive(userId: string): Promise<void> {
+		await this._userModel.findByIdAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: { status: UsersEnum.Status.ACTIVE },
+			},
+			{ new: true },
+		);
 	}
 
-	private async _getUserEntityWithToken(user: IUser): Promise<IUserEntity> {
-		const payload: IAuthPayload = {
-			_id: user._id,
-			uid: user.uid,
-			email: user.email,
-		};
-
-		const token: string = await this._authorizationToken.generateToken(payload);
-
-		return new UserEntity(user).addToken(token);
-	}
-
-	private _getUserEntity(user: IUser): IUserEntity {
-		return new UserEntity(user);
+	public async removeAccount(
+		userId: string,
+		softDelete: ISoftDelete,
+	): Promise<void> {
+		await this._userModel.findByIdAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					status: UsersEnum.Status.INACTIVE,
+					softDelete,
+					updatedAt: new Date(),
+				},
+			},
+			{ new: true },
+		);
 	}
 
 	//#rendegion

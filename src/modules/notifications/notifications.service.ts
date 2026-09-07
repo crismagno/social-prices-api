@@ -1,23 +1,29 @@
 import { FilterQuery, Model } from 'mongoose';
 
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import EmailTransportService from '../../infra/services/email-transport/email-transport-service';
+import EmailTransportService from '../../infra/services/email-transport/email-transport.service';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import {
+	EmailHeroCategory,
+	getHeroImageByCategory,
+	renderEmailHtml,
+} from '../../shared/utils/templates/email/email-layout.template';
+import TemplatesEnum from '../../shared/utils/templates/templates.enum';
 import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
+import { IEmployee } from '../employees/interfaces/employee.interface';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ISale } from '../sales/interfaces/sale.interface';
 import { IStore } from '../stores/interfaces/store.interface';
 import { IUser } from '../users/interfaces/user.interface';
-import { UsersService } from '../users/users.service';
 import { INotification } from './interfaces/notification.interface';
 import { Notification } from './interfaces/notification.schema';
 import { INotificationResponse } from './interfaces/notification.types';
@@ -38,8 +44,6 @@ export class NotificationsService {
 		private readonly _notificationModel: Model<Notification>,
 		private readonly _emailTransportService: EmailTransportService,
 		private readonly _codesService: CodesService,
-		@Inject(forwardRef(() => UsersService))
-		private readonly _usersService: UsersService,
 	) {
 		this._logger = new Logger(NotificationsService.name);
 	}
@@ -78,7 +82,7 @@ export class NotificationsService {
 
 		if (tableState.filters?.type?.length) {
 			filter.type = {
-				$in: tableState.filters?.type as NotificationsEnum.Type[],
+				$in: tableState.filters.type as NotificationsEnum.Type[],
 			};
 		}
 
@@ -138,8 +142,21 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Sign In Code`,
-				html: `Hi! here is your signIn code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Your Sign In Code',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SIGN_IN_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to user',
+			);
+		}
 
 		return {
 			email: emailResponse,
@@ -157,7 +174,14 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Recover Password Code`,
-				html: `Hi! here is your recover password code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Reset Your Password',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_RECOVER_PASSWORD_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
 
 		return {
@@ -174,7 +198,14 @@ export class NotificationsService {
 			await this._emailTransportService.sendEmail({
 				to: user.email,
 				subject: `Update Email Code`,
-				html: `Hi! here is your update email code: <b>${code.value}</b>`,
+				html: renderEmailHtml({
+					title: 'Confirm Your New Email',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_UPDATE_EMAIL_CODE_BODY_HBS,
+					bodyData: { code: code.value },
+				}),
 			});
 
 		return {
@@ -338,6 +369,189 @@ export class NotificationsService {
 			createdByUserId: userId,
 			subtitle: null,
 			title: 'Sale Deleted',
+			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
+	}
+
+	public async createdEmployee(
+		user: IUser,
+		employee: IEmployee,
+		password: string,
+	): Promise<INotificationResponse> {
+		const userId: string = user._id;
+
+		const content: string = `
+			Hi! ${user.name}, you have created a new employee <b>${employee.name}</b> and username for this employee: <b>${employee.username}</b>.`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'New Employee',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+
+		return await this.sendSignInEmployeeCode(user, employee, password);
+	}
+
+	public async sendSignInEmployeeCode(
+		user: IUser,
+		employee: IEmployee,
+		password: string,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createSignInEmployee(
+			user._id,
+			employee._id,
+		);
+
+		const emailResponse: string | null =
+			await this._emailTransportService.sendEmail({
+				to: employee.email,
+				subject: `SignIn Employee Confirmation Code`,
+				html: renderEmailHtml({
+					title: 'Employee Account Confirmation',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SIGN_IN_EMPLOYEE_CODE_BODY_HBS,
+					bodyData: {
+						employeeName: employee.name,
+						ownerName: user.name,
+						username: employee.username,
+						password,
+						code: code.value,
+					},
+				}),
+			});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to user',
+			);
+		}
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async updatedEmployee(
+		user: IUser,
+		employee: IEmployee,
+	): Promise<void> {
+		const userId: string = user._id;
+
+		const content: string = `Hi! ${user.name}, you have updated employee <b>${employee.name}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Employee Updated',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
+	public async completedSale(
+		sale: ISale,
+		user: IUser,
+		employee: IEmployee,
+	): Promise<void> {
+		if (sale.isSendCustomerNotifications) {
+			await this._emailTransportService.sendEmail({
+				to: sale.buyer.email,
+				subject: `Sale Completed`,
+				html: renderEmailHtml({
+					title: 'Your Sale Is Complete',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.SALE),
+					heroImageAlt: 'Shopping cart',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_SALE_COMPLETED_BODY_HBS,
+					bodyData: {
+						buyerName: sale.buyer.name,
+						saleNumber: sale.number,
+					},
+				}),
+			});
+		}
+
+		const userId: string = user._id;
+
+		const content: string = `Hi! ${user.name}, sale has been completed by ${employee.name}. Sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Completed',
+			type: NotificationsEnum.Type.NEWS,
+			userId,
+		});
+	}
+
+	public async sendSaleSummaryLink(
+		sale: ISale,
+		toEmail: string,
+		token: string,
+	): Promise<INotificationResponse> {
+		const pageUrl: string = `${process.env.SOCIAL_PRICES_URL}download/sales/summary?i=${token}`;
+
+		const emailResponse: string = await this._emailTransportService.sendEmail({
+			to: toEmail,
+			subject: `Download Sale Summary`,
+			html: renderEmailHtml({
+				title: 'Your Sale Summary Is Ready',
+				heroImageSrc: getHeroImageByCategory(EmailHeroCategory.SALE),
+				heroImageAlt: 'Shopping cart',
+				bodyRelativePath:
+					TemplatesEnum.RelativePath.EMAIL_SALE_SUMMARY_LINK_BODY_HBS,
+				bodyData: {
+					buyerName: sale.buyer.name,
+					saleNumber: sale.number,
+					downloadUrl: pageUrl,
+				},
+			}),
+		});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send sale summary link',
+			);
+		}
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async activatedSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have activated a sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Sale Activated',
+			type: NotificationsEnum.Type.WARNING,
+			userId,
+		});
+	}
+
+	public async updatedCustomerOnSale(sale: ISale, user: IUser): Promise<void> {
+		const userId: string = sale.createdByUserId.toString();
+
+		const content: string = `Hi! ${user.name}, you have updated customer on sale. sale number: <b>${sale.number}</b>!`;
+
+		await this.create({
+			content,
+			createdByUserId: userId,
+			subtitle: null,
+			title: 'Customer Updated on Sale',
 			type: NotificationsEnum.Type.WARNING,
 			userId,
 		});

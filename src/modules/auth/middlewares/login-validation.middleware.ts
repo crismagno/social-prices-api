@@ -2,11 +2,12 @@ import { validate } from 'class-validator';
 import { NextFunction, Request, Response } from 'express';
 
 import {
-	BadRequestException,
 	Injectable,
 	NestMiddleware,
+	UnauthorizedException,
 } from '@nestjs/common';
 
+import AuthEnum from '../interfaces/auth.enum';
 import { LoginRequestBody } from '../models/LoginRequestBody';
 
 @Injectable()
@@ -21,11 +22,14 @@ export class LoginValidationMiddleware implements NestMiddleware {
 		const validations = await validate(loginRequestBody);
 
 		if (validations.length) {
-			throw new BadRequestException(
-				validations.reduce((acc, curr) => {
+			throw new UnauthorizedException({
+				error: AuthEnum.AuthErrors.UNAUTHORIZED,
+				type: AuthEnum.AuthTypes.LOGIN_VALIDATION,
+				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+				extra: validations.reduce((acc, curr) => {
 					return [...acc, ...Object.values(curr.constraints)];
 				}, []),
-			);
+			});
 		}
 
 		next();

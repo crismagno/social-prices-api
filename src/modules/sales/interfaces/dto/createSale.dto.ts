@@ -11,9 +11,9 @@ import {
 	ValidateNested,
 } from 'class-validator';
 
-import { CreateAddressDto } from '../../../../shared/dtos/CreateAddress.dto';
-import { CreatePhoneNumberDto } from '../../../../shared/dtos/CreatePhoneNumber.dto';
-import UsersEnum from '../../../users/interfaces/users.enum';
+import { CreateAddressDto } from '../../../../shared/common/address/CreateAddress.dto';
+import PersonEnum from '../../../../shared/common/person/person.enum';
+import { CreatePhoneNumberDto } from '../../../../shared/common/phone/CreatePhoneNumber.dto';
 import SalesEnum from '../sales.enum';
 
 export class SaleAmountNoteDto {
@@ -23,6 +23,12 @@ export class SaleAmountNoteDto {
 	@IsString()
 	@IsOptional()
 	note: string | null;
+}
+
+export class SaleStoreProductDiscountDto {
+	@IsNumber()
+	@IsOptional()
+	distributedAmount: number | null;
 }
 
 export class SaleStoreProductDto {
@@ -38,16 +44,34 @@ export class SaleStoreProductDto {
 
 	@IsString()
 	@IsNotEmpty()
-	barCode: string;
+	barcode: string;
 
 	@IsString()
 	@IsOptional()
 	note: string | null;
+
+	@Type(() => SaleStoreProductDiscountDto)
+	@IsOptional()
+	discount: SaleStoreProductDiscountDto | null;
+
+	@IsBoolean()
+	isValid: boolean;
+
+	@IsBoolean()
+	isCompleted: boolean;
+
+	@IsString()
+	@IsOptional()
+	sku: string | null;
+
+	@IsString()
+	@IsNotEmpty()
+	productItemId: string;
 }
 
 export class SaleTotalsDiscountDto {
 	@Type(() => SaleAmountNoteDto)
-	normal: SaleAmountNoteDto;
+	distributed: SaleAmountNoteDto;
 }
 
 export class SalePaymentDto {
@@ -62,6 +86,10 @@ export class SalePaymentDto {
 
 	@IsOptional()
 	provider: any | null;
+
+	@IsOptional()
+	@IsString()
+	note: string | null;
 }
 
 export class SaleTotalsDto {
@@ -71,6 +99,32 @@ export class SaleTotalsDto {
 	@Type(() => SaleTotalsDiscountDto)
 	@IsOptional()
 	discount: SaleTotalsDiscountDto | null;
+
+	@IsOptional()
+	@Type(() => SaleAmountNoteDto)
+	tax: SaleAmountNoteDto | null;
+
+	@IsOptional()
+	@Type(() => SaleAmountNoteDto)
+	shipping: SaleAmountNoteDto | null;
+
+	@IsNumber()
+	totalFinalAmount: number;
+}
+
+export class SaleStoreTotalsDiscountDto {
+	@IsNumber()
+	@IsOptional()
+	distributedAmount: number | null;
+}
+
+export class SaleStoreTotalsDto {
+	@IsNumber()
+	subtotalAmount: number;
+
+	@Type(() => SaleStoreTotalsDiscountDto)
+	@IsOptional()
+	discount: SaleStoreTotalsDiscountDto | null;
 
 	@IsOptional()
 	@Type(() => SaleAmountNoteDto)
@@ -128,8 +182,8 @@ export class SaleBuyerDto {
 
 	@IsString()
 	@IsOptional()
-	@IsEnum(UsersEnum.Gender)
-	gender: UsersEnum.Gender | null;
+	@IsEnum(PersonEnum.Gender)
+	gender: PersonEnum.Gender | null;
 
 	@Type(() => CreatePhoneNumberDto)
 	@IsOptional()
@@ -154,14 +208,18 @@ export class SaleStoreDto {
 	@ValidateNested({ each: true })
 	products: SaleStoreProductDto[];
 
-	@Type(() => SaleTotalsDto)
-	totals: SaleTotalsDto;
+	@Type(() => SaleStoreTotalsDto)
+	totals: SaleStoreTotalsDto;
 }
 
 export default class CreateSaleDto {
 	@IsString()
 	@IsNotEmpty()
 	createdByUserId: string;
+
+	@IsString()
+	@IsNotEmpty()
+	createdByEmployeeId: string;
 
 	@Type(() => SaleBuyerDto)
 	@IsOptional()
@@ -199,4 +257,31 @@ export default class CreateSaleDto {
 
 	@IsBoolean()
 	isCreateQuote: boolean;
+
+	@IsArray()
+	@Type(() => String)
+	tagsIds: string[];
+
+	@IsArray()
+	@IsOptional()
+	categoriesIds: string[];
+
+	@IsString()
+	@IsOptional()
+	deliveryAt: Date | null;
+
+	@IsString()
+	@IsOptional()
+	createdDate: Date | null;
+
+	@IsString()
+	@IsOptional()
+	numberManual: string | null;
+
+	@IsString()
+	@IsOptional()
+	noteToCustomer: string | null;
+
+	@IsBoolean()
+	isSendCustomerNotifications: boolean;
 }

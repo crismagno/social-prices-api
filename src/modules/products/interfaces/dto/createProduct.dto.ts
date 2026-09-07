@@ -1,5 +1,37 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
+import { IDynamicField } from '../../../../shared/common/dynamic-field/dynamic-field.interface';
+
+export class CreateProductDimensionsDto {
+	@IsString()
+	@IsOptional()
+	size: string | null;
+
+	@IsOptional()
+	height: number | null;
+
+	@IsOptional()
+	width: number | null;
+
+	@IsOptional()
+	length: number | null;
+
+	@IsOptional()
+	depth: number | null;
+
+	@IsOptional()
+	diameter: number | null;
+
+	@IsOptional()
+	thickness: number | null;
+
+	@IsOptional()
+	volume: number | null;
+
+	@IsOptional()
+	weight: number | null;
+}
+
 export default class CreateProductDto {
 	@IsString()
 	@IsNotEmpty()
@@ -7,7 +39,11 @@ export default class CreateProductDto {
 
 	@IsString()
 	@IsOptional()
-	barCode: string | null;
+	barcode: string | null;
+
+	@IsString()
+	@IsOptional()
+	sku: string | null;
 
 	@IsString()
 	@IsOptional()
@@ -29,5 +65,24 @@ export default class CreateProductDto {
 	@IsOptional()
 	QRCode: string | null;
 
+	@IsString()
+	@IsOptional()
+	brand: string | null;
+
 	categoriesIds: string[];
+
+	tagsIds: string[];
+
+	@IsOptional()
+	releaseDate: Date | null;
+
+	@IsOptional()
+	expirationDate: Date | null;
+
+	dimensions: CreateProductDimensionsDto | null;
+
+	colors: string[] | null;
+
+	@IsOptional()
+	dynamicFields: IDynamicField[] | string | null;
 }

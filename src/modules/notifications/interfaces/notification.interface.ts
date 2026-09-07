@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
 import NotificationsEnum from './notifications.enum';
 
 export interface INotification extends ICreatedAtEntity, IUpdatedAtEntity {

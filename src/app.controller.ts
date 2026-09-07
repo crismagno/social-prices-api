@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
 
 import { AppService } from './app.service';
-import { CurrentUser } from './modules/auth/decorators/current-user.decorator';
+import { AuthPayload } from './modules/auth/decorators/current-user.decorator';
 import UserEntity from './modules/users/interfaces/user.entity';
 import { Public } from './shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from './shared/pipes/validation-params-pipe';
@@ -27,8 +27,19 @@ export class AppController {
 		});
 	}
 
+	@Public()
+	@Get('/assets/images/:filename')
+	public getAssetImage(
+		@Res() res: any,
+		@Param('filename', ValidationParamsPipe) filename: string,
+	) {
+		return res.sendFile(filename, {
+			root: './assets/images',
+		});
+	}
+
 	@Get('/me')
-	public getMe(@CurrentUser() user: UserEntity) {
+	public getMe(@AuthPayload() user: UserEntity) {
 		return user;
 	}
 }

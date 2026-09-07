@@ -2,13 +2,13 @@ import mongoose, { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import { ISoftDelete } from '../../../shared/interfaces/soft-delete.interface';
-import { AddressSchema } from '../../../shared/schemas/address.schema';
-import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
-import { SoftDeleteSchema } from '../../../shared/schemas/soft-delete.schema';
-import UsersEnum from '../../users/interfaces/users.enum';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { AddressSchema } from '../../../shared/common/address/address.schema';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
+import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
+import { ISoftDelete } from '../../../shared/common/soft-delete/soft-delete.interface';
+import { SoftDeleteSchema } from '../../../shared/common/soft-delete/soft-delete.schema';
 import {
 	ISale,
 	ISaleAmountNote,
@@ -19,6 +19,9 @@ import {
 	ISalePayment,
 	ISaleStore,
 	ISaleStoreProduct,
+	ISaleStoreProductDiscount,
+	ISaleStoreTotals,
+	ISaleStoreTotalsDiscount,
 	ISaleTotals,
 	ISaleTotalsDiscount,
 } from './sale.interface';
@@ -63,6 +66,9 @@ export class SalePayment implements ISalePayment {
 
 	@Prop({ required: true, type: Number })
 	amount: number;
+
+	@Prop({ type: String })
+	note: string | null;
 }
 
 export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);
@@ -70,11 +76,21 @@ export const SalePaymentSchema = SchemaFactory.createForClass(SalePayment);
 @Schema()
 export class SaleTotalsDiscount implements ISaleTotalsDiscount {
 	@Prop({ required: true, type: SaleAmountNoteSchema, _id: false })
-	normal: ISaleAmountNote;
+	distributed: ISaleAmountNote;
 }
 
 export const SaleTotalsDiscountSchema =
 	SchemaFactory.createForClass(SaleTotalsDiscount);
+
+@Schema()
+export class SaleStoreProductDiscount implements ISaleStoreProductDiscount {
+	@Prop({ type: Number })
+	distributedAmount: number | null;
+}
+
+export const SaleStoreProductDiscountSchema = SchemaFactory.createForClass(
+	SaleStoreProductDiscount,
+);
 
 @Schema()
 export class SaleTotals implements ISaleTotals {
@@ -97,9 +113,44 @@ export class SaleTotals implements ISaleTotals {
 export const SaleTotalsSchema = SchemaFactory.createForClass(SaleTotals);
 
 @Schema()
+export class SaleStoreTotalsDiscount implements ISaleStoreTotalsDiscount {
+	@Prop({ type: Number })
+	distributedAmount: number | null;
+}
+
+export const SaleStoreTotalsDiscountSchema = SchemaFactory.createForClass(
+	SaleStoreProductDiscount,
+);
+
+@Schema()
+export class SaleStoreTotals implements ISaleStoreTotals {
+	@Prop({ required: true, type: Number })
+	subtotalAmount: number;
+
+	@Prop({ type: SaleStoreTotalsDiscountSchema, _id: false })
+	discount: ISaleStoreTotalsDiscount | null;
+
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	tax: ISaleAmountNote | null;
+
+	@Prop({ type: SaleAmountNoteSchema, _id: false })
+	shipping: ISaleAmountNote | null;
+
+	@Prop({ required: true, type: Number })
+	totalFinalAmount: number;
+}
+
+export const SaleStoreTotalsSchema =
+	SchemaFactory.createForClass(SaleStoreTotals);
+
+@Schema()
 export class SaleStoreProduct implements ISaleStoreProduct {
-	@Prop({ required: true, type: String })
-	productId: string;
+	@Prop({
+		required: true,
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'Product',
+	})
+	productId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: Number })
 	price: number;
@@ -108,10 +159,29 @@ export class SaleStoreProduct implements ISaleStoreProduct {
 	quantity: number;
 
 	@Prop({ required: true, type: String })
-	barCode: string;
+	barcode: string;
 
 	@Prop({ type: String })
 	note: string | null;
+
+	@Prop({ type: SaleStoreProductDiscountSchema, _id: false })
+	discount: ISaleStoreProductDiscount | null;
+
+	@Prop({ required: true, type: Boolean })
+	isValid: boolean;
+
+	@Prop({ required: true, type: Boolean })
+	isCompleted: boolean;
+
+	@Prop({ type: String })
+	sku: string;
+
+	@Prop({
+		required: true,
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'ProductItem',
+	})
+	productItemId: mongoose.Schema.Types.ObjectId;
 }
 
 export const SaleStoreProductSchema =
@@ -126,6 +196,7 @@ export class SaleHeaderBilling implements ISaleHeaderBilling {
 export const SaleHeaderBillingSchema =
 	SchemaFactory.createForClass(SaleHeaderBilling);
 
+@Schema()
 export class SaleHeaderShipping implements ISaleHeaderShipping {
 	@Prop({ type: AddressSchema, _id: false })
 	address: IAddress | null;
@@ -157,14 +228,14 @@ export const SaleHeaderSchema = SchemaFactory.createForClass(SaleHeader);
 
 @Schema()
 export class SaleStore implements ISaleStore {
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId })
+	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Store' })
 	storeId: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ required: true, type: [SaleStoreProductSchema], _id: false })
 	products: ISaleStoreProduct[];
 
-	@Prop({ required: true, type: SaleTotalsSchema, _id: false })
-	totals: ISaleTotals;
+	@Prop({ required: true, type: SaleStoreTotalsSchema, _id: false })
+	totals: ISaleStoreTotals;
 
 	@Prop({
 		type: mongoose.Schema.Types.ObjectId,
@@ -195,11 +266,11 @@ export class SaleBuyer implements ISaleBuyer {
 	@Prop({
 		type: String,
 		enum: {
-			values: Object.keys(UsersEnum.Gender),
+			values: Object.keys(PersonEnum.Gender),
 			message: '{VALUE} is not supported',
 		},
 	})
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 
 	@Prop({ type: PhoneNumberSchema })
 	phoneNumber: IPhoneNumber | null;
@@ -212,13 +283,20 @@ export const SaleBuyerSchema = SchemaFactory.createForClass(SaleBuyer);
 
 @Schema()
 export class Sale extends Document implements ISale {
-	readonly _id: string;
+	@Prop({ type: mongoose.Schema.Types.ObjectId })
+	readonly _id: mongoose.Schema.Types.ObjectId;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	createdByUserId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	updatedByUserId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Employee' })
+	createdByEmployeeId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Employee' })
+	updatedByEmployeeId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ type: SaleBuyerSchema, _id: false })
 	buyer: ISaleBuyer | null;
@@ -271,8 +349,41 @@ export class Sale extends Document implements ISale {
 	})
 	paymentStatus: SalesEnum.PaymentStatus;
 
-	@Prop({ type: SoftDeleteSchema, _id: false })
+	@Prop({ type: SoftDeleteSchema })
 	softDelete: ISoftDelete | null;
+
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	tagsIds: mongoose.Schema.Types.ObjectId[];
+
+	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
+	categoriesIds: mongoose.Schema.Types.ObjectId[];
+
+	@Prop({ type: String })
+	uploadFilename: string | null;
+
+	@Prop({ type: String })
+	numberManual: string | null;
+
+	@Prop({ type: Date })
+	deliveryAt: Date | null;
+
+	@Prop({ required: true, type: Date })
+	createdDate: Date;
+
+	@Prop({ type: [String] })
+	filesUrl: string[];
+
+	@Prop({ type: String })
+	noteToCustomer: string | null;
+
+	@Prop({ type: [String] })
+	previousCustomerIds: string[];
+
+	@Prop({ type: Boolean, required: true })
+	isSendCustomerNotifications: boolean;
+
+	@Prop({ type: Date })
+	completedAt: Date;
 
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
@@ -282,3 +393,10 @@ export class Sale extends Document implements ISale {
 }
 
 export const SaleSchema = SchemaFactory.createForClass(Sale);
+
+SaleSchema.virtual('stores.products.productItem', {
+	ref: 'ProductItem',
+	localField: 'stores.products.productItemId',
+	foreignField: '_id',
+	justOne: true,
+});

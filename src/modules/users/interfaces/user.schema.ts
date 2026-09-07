@@ -1,8 +1,10 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
-import { AddressSchema } from '../../../shared/schemas/address.schema';
-import { PhoneNumberSchema } from '../../../shared/schemas/phone-number.schema';
+import { AddressSchema } from '../../../shared/common/address/address.schema';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
+import { SoftDeleteSchema } from '../../../shared/common/soft-delete/soft-delete.schema';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 
@@ -45,10 +47,21 @@ const UserSchema = new mongoose.Schema<IUser>(
 		gender: {
 			type: String,
 			enum: {
-				values: Object.keys(UsersEnum.Gender),
+				values: Object.keys(PersonEnum.Gender),
 				message: '{VALUE} is not supported',
-				default: UsersEnum.Gender.OTHER,
+				default: PersonEnum.Gender.OTHER,
 			},
+			optional: true,
+		},
+		type: {
+			type: String,
+			enum: {
+				values: Object.keys(UsersEnum.Type),
+				message: '{VALUE} is not supported',
+			},
+		},
+		softDelete: {
+			type: SoftDeleteSchema,
 			optional: true,
 		},
 	},

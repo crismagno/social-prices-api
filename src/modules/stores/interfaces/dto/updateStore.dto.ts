@@ -33,7 +33,17 @@ export default class UpdateStoreDto {
 
 	categoriesIds: string[];
 
+	tagsIds: string[];
+
 	@IsString()
 	@IsOptional()
-	status: StoresEnum.Status;
+	status: StoresEnum.Status | null;
+
+	@IsString()
+	@IsOptional()
+	cnpj: string | null;
+
+	@IsString()
+	@IsOptional()
+	type: StoresEnum.Type | null;
 }

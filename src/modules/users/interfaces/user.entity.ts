@@ -1,5 +1,6 @@
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
 import { IUserEntity } from './users.types';
@@ -17,8 +18,6 @@ export default class UserEntity implements IUserEntity {
 
 	public avatar: string;
 
-	public authToken: string;
-
 	public authProvider: UsersEnum.Provider;
 
 	public phoneNumbers: IPhoneNumber[];
@@ -33,9 +32,11 @@ export default class UserEntity implements IUserEntity {
 
 	public addresses: IAddress[];
 
-	public gender: UsersEnum.Gender;
+	public gender: PersonEnum.Gender;
 
 	public about: string | null;
+
+	public type: UsersEnum.Type;
 
 	public createdAt: Date;
 
@@ -49,7 +50,6 @@ export default class UserEntity implements IUserEntity {
 		this._id = _user._id;
 		this.uid = _user.uid;
 		this.authProvider = _user.authProvider;
-		this.authToken = null;
 		this.avatar = _user.avatar;
 		this.email = _user.email;
 		this.phoneNumbers = _user.phoneNumbers;
@@ -61,14 +61,9 @@ export default class UserEntity implements IUserEntity {
 		this.name = _user.name;
 		this.gender = _user.gender;
 		this.about = _user.about;
+		this.type = _user.type;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
-	}
-
-	public async addToken(token: string): Promise<this> {
-		this.authToken = token;
-
-		return this;
 	}
 
 	//#endregion

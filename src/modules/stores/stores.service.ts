@@ -10,18 +10,20 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
-import { AmazonFilesService } from '../../infra/services/amazon/amazon-files-service';
+import { ISoftDelete } from '../../shared/common/soft-delete/soft-delete.interface';
 import { queryOptions } from '../../shared/utils/table/table-state';
 import {
 	ITableStateRequest,
 	ITableStateResponse,
 } from '../../shared/utils/table/table-state.interface';
+import { FilesService } from '../files/files-service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CreateStoreDto from './interfaces/dto/createStore.dto';
 import UpdateStoreDto from './interfaces/dto/updateStore.dto';
 import { IStore } from './interfaces/store.interface';
+import { Store } from './interfaces/store.schema';
 import StoresEnum from './interfaces/stores.enum';
 
 @Injectable()
@@ -35,10 +37,10 @@ export class StoresService {
 	// #region Constructor
 
 	constructor(
-		@InjectModel(schemasName.store) private readonly _storeModel: Model<IStore>,
+		@InjectModel(schemasName.store) private readonly _storeModel: Model<Store>,
 		private readonly _notificationsService: NotificationsService,
 		private readonly _usersService: UsersService,
-		private readonly _amazonFilesService: AmazonFilesService,
+		private readonly _filesService: FilesService,
 	) {
 		this._logger = new Logger(StoresService.name);
 	}
@@ -79,7 +81,11 @@ export class StoresService {
 
 		const storesIds: string[] = stores.map((store: IStore) => store._id);
 
-		return storesIds;
+		return storesIds.map((storeId) => storeId.toString());
+	}
+
+	public async findStoresByUserId(userId: string): Promise<IStore[]> {
+		return this._storeModel.find({ userId });
 	}
 
 	public async findByUserTableState(
@@ -109,6 +115,10 @@ export class StoresService {
 
 		if (tableState?.filters?.categoriesIds) {
 			filter.categoriesIds = { $in: tableState.filters.categoriesIds };
+		}
+
+		if (tableState?.filters?.tagsIds) {
+			filter.tagsIds = { $in: tableState.filters.tagsIds };
 		}
 
 		const response: ITableStateResponse<IStore[]> = {
@@ -167,13 +177,13 @@ export class StoresService {
 	): Promise<IStore> {
 		await this.validateCreate(createStoreDto.name, createStoreDto.email);
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(userId);
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		let logo: string | null = null;
 
 		if (file) {
 			const responseFile: ManagedUpload.SendData =
-				await this._amazonFilesService.uploadFile(file);
+				await this._filesService.uploadFile(file);
 
 			logo = responseFile.Key;
 		}
@@ -190,6 +200,10 @@ export class StoresService {
 			createStoreDto.categoriesIds = JSON.parse(createStoreDto.categoriesIds);
 		}
 
+		if (typeof createStoreDto.tagsIds === 'string') {
+			createStoreDto.tagsIds = JSON.parse(createStoreDto.tagsIds);
+		}
+
 		const now: Date = new Date();
 
 		const store = new this._storeModel({
@@ -204,8 +218,11 @@ export class StoresService {
 			startedAt: createStoreDto.startedAt,
 			about: createStoreDto.about,
 			categoriesIds: createStoreDto.categoriesIds,
+			tagsIds: createStoreDto.tagsIds,
 			createdAt: now,
 			updatedAt: now,
+			cnpj: createStoreDto.cnpj,
+			type: createStoreDto.type,
 		});
 
 		const newStore: IStore = await store.save();
@@ -253,7 +270,11 @@ export class StoresService {
 			updateStoreDto.categoriesIds = JSON.parse(updateStoreDto.categoriesIds);
 		}
 
-		const user: IUser = await this._usersService.findOneByUserIdOrFail(
+		if (typeof updateStoreDto.tagsIds === 'string') {
+			updateStoreDto.tagsIds = JSON.parse(updateStoreDto.tagsIds);
+		}
+
+		const user: IUser = await this._usersService.findOneByIdOrFail(
 			store.userId.toString(),
 		);
 
@@ -269,16 +290,19 @@ export class StoresService {
 			about: updateStoreDto.about,
 			status: updateStoreDto.status,
 			categoriesIds: updateStoreDto.categoriesIds,
+			tagsIds: updateStoreDto.tagsIds,
 			updatedAt: now,
+			cnpj: updateStoreDto.cnpj,
+			type: updateStoreDto.type,
 		};
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
 		if (file) {
-			responseFile = await this._amazonFilesService.uploadFile(file);
+			responseFile = await this._filesService.uploadFile(file);
 			$set.logo = responseFile.Key;
 
-			await this._amazonFilesService.deleteFile(store.logo);
+			await this._filesService.deleteFile(store.logo);
 		}
 
 		const updatedStore: IStore = await this._storeModel.findOneAndUpdate(
@@ -294,6 +318,21 @@ export class StoresService {
 		await this._notificationsService.updatedStore(user, updatedStore);
 
 		return updatedStore;
+	}
+
+	public async deactivateByUserId(
+		userId: string,
+		softDelete: ISoftDelete,
+	): Promise<void> {
+		await this._storeModel.updateMany(
+			{ userId: new Types.ObjectId(userId) },
+			{
+				$set: {
+					status: StoresEnum.Status.INACTIVE,
+					softDelete,
+				},
+			},
+		);
 	}
 
 	// #endregion

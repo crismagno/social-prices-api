@@ -7,7 +7,7 @@ import {
 	IsString,
 } from 'class-validator';
 
-import { IPhoneNumber } from '../../../../shared/interfaces/phone-number';
+import { IPhoneNumber } from '../../../../shared/common/phone/phone-number.interface';
 import UsersEnum from '../users.enum';
 
 export default class CreateUserDto {
@@ -43,4 +43,7 @@ export default class CreateUserDto {
 	@IsOptional()
 	@IsString()
 	about: string | null;
+
+	@IsEnum(UsersEnum.Type)
+	type: UsersEnum.Type;
 }

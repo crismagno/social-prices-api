@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import { ICreatedAtEntity } from '../../../shared/interfaces/created-at.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import { IUpdatedAtEntity } from '../../../shared/interfaces/updated-at.interface';
-import UsersEnum from '../../users/interfaces/users.enum';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 
 export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
@@ -15,7 +15,10 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	name: string | null;
 	birthDate: Date | null;
 	addresses: IAddress[];
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	about: string | null;
 	phoneNumbers: IPhoneNumber[];
+	tagsIds: mongoose.Schema.Types.ObjectId[];
+	uniqName: string | null;
+	uploadFilename: string | null;
 }

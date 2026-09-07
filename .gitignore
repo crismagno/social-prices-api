@@ -1,6 +1,7 @@
 # compiled output
 /dist
 /node_modules
+.git
 
 # Logs
 logs
@@ -36,4 +37,8 @@ lerna-debug.log*
 
 # Enviroment variables
 .env
-/uploads
+.env.production
+/uploads/*
+Dockerfile
+docker-compose.yml
+docker-compose-test.yml

@@ -1,11 +1,8 @@
-import { IAddress } from '../../../shared/interfaces/address.interface';
-import {
-  ICreatedAtEntity,
-} from '../../../shared/interfaces/created-at.interface';
-import { IPhoneNumber } from '../../../shared/interfaces/phone-number';
-import {
-  IUpdatedAtEntity,
-} from '../../../shared/interfaces/updated-at.interface';
+import { IAddress } from '../../../shared/common/address/address.interface';
+import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
+import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import PersonEnum from '../../../shared/common/person/person.enum';
+import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
 import UsersEnum from './users.enum';
 
 export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -14,7 +11,6 @@ export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	email: string;
 	username: string;
 	avatar: string | null;
-	authToken: string | null;
 	authProvider: UsersEnum.Provider;
 	phoneNumbers: IPhoneNumber[];
 	status: UsersEnum.Status;
@@ -22,6 +18,7 @@ export interface IUserEntity extends ICreatedAtEntity, IUpdatedAtEntity {
 	name: string | null;
 	birthDate: Date | null;
 	addresses: IAddress[] | null;
-	gender: UsersEnum.Gender | null;
+	gender: PersonEnum.Gender | null;
 	about: string | null;
+	type: UsersEnum.Type;
 }
