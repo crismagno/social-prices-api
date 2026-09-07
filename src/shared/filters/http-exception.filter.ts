@@ -4,15 +4,20 @@ import {
 	ExceptionFilter,
 	HttpException,
 	HttpStatus,
+	Injectable,
 	Logger,
 } from '@nestjs/common';
 import { HttpArgumentsHost } from '@nestjs/common/interfaces';
 
+import AuthEnum from '../../modules/auth/interfaces/auth.enum';
+import { LogsService } from '../../modules/logs/logs.service';
+
+@Injectable()
 @Catch()
 export class AllExceptionFilter implements ExceptionFilter {
 	private readonly _logger: Logger;
 
-	constructor() {
+	constructor(private readonly _logsService: LogsService) {
 		this._logger = new Logger(AllExceptionFilter.name);
 	}
 
@@ -26,14 +31,31 @@ export class AllExceptionFilter implements ExceptionFilter {
 				? exception.getStatus()
 				: HttpStatus.INTERNAL_SERVER_ERROR;
 
-		console.log(exception);
-
 		const message: any =
 			exception instanceof HttpException ? exception.getResponse() : exception;
 
 		this._logger.error(
 			`Status: ${status}, message: ${JSON.stringify(message)}`,
 		);
+
+		/**
+		 * Deliberately not awaited: persisting a log must not delay or block
+		 * the response. LogsService never throws, and the catch here covers a
+		 * synchronous rejection so the response is always sent.
+		 */
+		try {
+			void this._logsService
+				.error(`Status: ${status}, message: ${JSON.stringify(message)}`, {
+					statusCode: status,
+					path: request?.url ?? null,
+					method: request?.method ?? null,
+					stack: exception?.stack ?? null,
+					userId: request?.[AuthEnum.RequestProps.AUTH_PAYLOAD]?._id ?? null,
+				})
+				.catch(() => undefined);
+		} catch {
+			// A failure to log must never affect the response.
+		}
 
 		response.status(status).json({
 			timestamp: new Date().toISOString(),

@@ -9,6 +9,9 @@ import LogsEnum from './logs.enum';
 export class Log implements ILog {
 	readonly _id: mongoose.Schema.Types.ObjectId;
 
+	@Prop({ required: true, type: Number })
+	number: number;
+
 	@Prop({ required: true, type: String })
 	message: string;
 
@@ -33,3 +36,4 @@ export const LogSchema = SchemaFactory.createForClass(Log);
 
 LogSchema.index({ createdAt: -1 });
 LogSchema.index({ type: 1 });
+LogSchema.index({ number: 1 }, { unique: true, sparse: true });

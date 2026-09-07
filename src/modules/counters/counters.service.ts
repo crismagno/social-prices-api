@@ -30,9 +30,13 @@ export class CountersService {
 	//#region Public Methods
 
 	public async findNextNumberBySaleType(): Promise<number> {
+		return this.findNextNumberByType(CountersEnum.Type.SALE);
+	}
+
+	public async findNextNumberByType(type: CountersEnum.Type): Promise<number> {
 		const counter: ICounter | undefined =
 			await this._counterModel.findOneAndUpdate(
-				{ type: CountersEnum.Type.SALE },
+				{ type },
 				{ $inc: { count: 1 } },
 				{ returnOriginal: false, upsert: true },
 			);
@@ -45,14 +49,14 @@ export class CountersService {
 
 		const newCounterModel = new this._counterModel({
 			count: 1,
-			type: CountersEnum.Type.SALE,
+			type,
 			createdAt: now,
 			updatedAt: now,
 		});
 
-		const newCustomer: ICounter = await newCounterModel.save();
+		const newCounter: ICounter = await newCounterModel.save();
 
-		return newCustomer.count;
+		return newCounter.count;
 	}
 
 	//#endregion

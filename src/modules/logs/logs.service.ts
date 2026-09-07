@@ -4,6 +4,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
+import { CountersService } from '../counters/counters.service';
+import CountersEnum from '../counters/interfaces/counters.enum';
 import { Log } from './interfaces/log.schema';
 import LogsEnum from './interfaces/logs.enum';
 
@@ -20,6 +22,7 @@ export class LogsService {
 	constructor(
 		@InjectModel(schemasName.log)
 		private readonly _logModel: Model<Log>,
+		private readonly _countersService: CountersService,
 	) {
 		this._logger = new Logger(LogsService.name);
 	}
@@ -59,7 +62,12 @@ export class LogsService {
 		data: any,
 	): Promise<void> {
 		try {
+			const number: number = await this._countersService.findNextNumberByType(
+				CountersEnum.Type.LOG,
+			);
+
 			const log = new this._logModel({
+				number,
 				message,
 				data: data ?? null,
 				type,
