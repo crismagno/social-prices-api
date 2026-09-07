@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { MulterModule } from '@nestjs/platform-express';
 
 import { AppController } from './app.controller';
@@ -19,6 +19,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module';
 import { FilesModule } from './modules/files/files.module';
+import { LogsModule } from './modules/logs/logs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductItemsModule } from './modules/product-items/product-items.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -27,6 +28,7 @@ import { SocketsModule } from './modules/sockets/sockets.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { UsersModule } from './modules/users/users.module';
+import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 
 @Module({
 	imports: [
@@ -54,6 +56,7 @@ import { UsersModule } from './modules/users/users.module';
 		FilesModule,
 		SocketsModule,
 		FilesUploadsModule,
+		LogsModule,
 		ProductItemsModule,
 	],
 	controllers: [AppController, AppInitController],
@@ -63,6 +66,10 @@ import { UsersModule } from './modules/users/users.module';
 		{
 			provide: APP_GUARD,
 			useClass: AuthGuard,
+		},
+		{
+			provide: APP_FILTER,
+			useClass: AllExceptionFilter,
 		},
 	],
 })
