@@ -53,5 +53,38 @@ jobs:
       - name: Build
         run: npm run build
 
-      # - name: Build Docker image
-      #   run: docker build -t social-prices-api:test .
+      - name: Build Docker image
+        run: docker build -t social-prices-api:${{ github.sha }} .
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            social-prices-api:${{ github.sha }} \
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            docker tag \
+              social-prices-api:${{ github.sha }} \
+              ${{ vars.ECR_REPOSITORY_URI }}:develop
+          fi
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            docker tag \
+              social-prices-api:${{ github.sha }} \
+              ${{ vars.ECR_REPOSITORY_URI }}:latest
+          fi
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            docker push \
+              ${{ vars.ECR_REPOSITORY_URI }}:develop
+          fi
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            docker push \
+              ${{ vars.ECR_REPOSITORY_URI }}:latest
+          fi
