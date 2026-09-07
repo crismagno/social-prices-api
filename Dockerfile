@@ -1,7 +1,7 @@
 # ─────────────────────────
 # BUILD
 # ─────────────────────────
-FROM node:20-bullseye AS builder
+FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm run build
 # ─────────────────────────
 # PRODUCTION
 # ─────────────────────────
-FROM node:20-bullseye-slim
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 

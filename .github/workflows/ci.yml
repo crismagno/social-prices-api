@@ -12,6 +12,7 @@ on:
       - main
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -21,6 +22,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Test AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -38,3 +52,39 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build Docker image
+        run: docker build -t social-prices-api:${{ github.sha }} .
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            social-prices-api:${{ github.sha }} \
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            docker tag \
+              social-prices-api:${{ github.sha }} \
+              ${{ vars.ECR_REPOSITORY_URI }}:develop
+          fi
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            docker tag \
+              social-prices-api:${{ github.sha }} \
+              ${{ vars.ECR_REPOSITORY_URI }}:latest
+          fi
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            docker push \
+              ${{ vars.ECR_REPOSITORY_URI }}:develop
+          fi
+
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            docker push \
+              ${{ vars.ECR_REPOSITORY_URI }}:latest
+          fi

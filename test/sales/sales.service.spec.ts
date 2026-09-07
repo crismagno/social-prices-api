@@ -1,10 +1,8 @@
-import { Model } from 'mongoose';
-
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import HashCrypt from '../../src/infra/hash-crypt/hash-crypt';
 import { schemasName } from '../../src/infra/database/mongo/schemas';
+import HashCrypt from '../../src/infra/hash-crypt/hash-crypt';
 import { CountersService } from '../../src/modules/counters/counters.service';
 import { CustomersService } from '../../src/modules/customers/customers.service';
 import { EmployeesService } from '../../src/modules/employees/employees.service';
@@ -13,7 +11,6 @@ import { FilesService } from '../../src/modules/files/files-service';
 import { NotificationsService } from '../../src/modules/notifications/notifications.service';
 import { ProductItemsService } from '../../src/modules/product-items/product-items.service';
 import { ProductsService } from '../../src/modules/products/products.service';
-import { Sale } from '../../src/modules/sales/interfaces/sale.schema';
 import { SalesValidationService } from '../../src/modules/sales/sales-validation.service';
 import { SalesService } from '../../src/modules/sales/sales.service';
 import { SocketsGateway } from '../../src/modules/sockets/sockets.gateway';
