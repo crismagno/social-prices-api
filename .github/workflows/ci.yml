@@ -39,5 +39,5 @@ jobs:
       - name: Build
         run: npm run build
 
-			- name: Build Docker image
+      - name: Build Docker image
         run: docker build -t social-prices-api:test .
