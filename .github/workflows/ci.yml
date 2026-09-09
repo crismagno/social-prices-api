@@ -16,25 +16,12 @@ permissions:
   contents: read
 
 jobs:
-  test-and-build:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Test AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -53,8 +40,28 @@ jobs:
       - name: Build
         run: npm run build
 
+  docker:
+    needs: ci
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Build Docker image
-        run: docker build -t social-prices-api:${{ github.sha }} .
+        run: |
+          docker build \
+            -t social-prices-api:${{ github.sha }} .
 
       - name: Tag Docker image
         run: |
