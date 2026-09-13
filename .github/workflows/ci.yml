@@ -95,3 +95,42 @@ jobs:
             docker push \
               ${{ vars.ECR_REPOSITORY_URI }}:latest
           fi
+
+  deploy-develop:
+    needs: docker
+    if: github.event_name == 'push' && github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ vars.ECS_TASK_DEFINITION_DEVELOP }} \
+            --region ${{ vars.AWS_REGION }} \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Render new task definition
+        id: render-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: social-prices-api
+          image: ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+          service: ${{ vars.ECS_SERVICE_NAME_DEVELOP }}
+          cluster: ${{ vars.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true
