@@ -6,7 +6,7 @@ FROM node:20-bookworm AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --verbose
 
 COPY . .
 RUN npm run build

@@ -100,6 +100,7 @@ jobs:
     needs: docker
     if: github.event_name == 'push' && github.ref_name == 'develop'
     runs-on: ubuntu-latest
+    environment: development
 
     steps:
       - name: Checkout
@@ -114,7 +115,7 @@ jobs:
       - name: Download current task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ${{ vars.ECS_TASK_DEFINITION_DEVELOP }} \
+            --task-definition ${{ vars.ECS_TASK_DEFINITION }} \
             --region ${{ vars.AWS_REGION }} \
             --query taskDefinition \
             > task-definition.json
@@ -131,6 +132,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
-          service: ${{ vars.ECS_SERVICE_NAME_DEVELOP }}
+          service: ${{ vars.ECS_SERVICE_NAME }}
           cluster: ${{ vars.ECS_CLUSTER_NAME }}
           wait-for-service-stability: true
