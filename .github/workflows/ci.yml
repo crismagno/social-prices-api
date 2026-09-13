@@ -58,43 +58,30 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
+      - name: Set Docker tag
+        id: docker-tag
         run: |
-          docker build \
-            -t social-prices-api:${{ github.sha }} .
-
-      - name: Tag Docker image
-        run: |
-          docker tag \
-            social-prices-api:${{ github.sha }} \
-            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
-
-          if [ "${{ github.ref_name }}" = "develop" ]; then
-            docker tag \
-              social-prices-api:${{ github.sha }} \
-              ${{ vars.ECR_REPOSITORY_URI }}:develop
-          fi
-
           if [ "${{ github.ref_name }}" = "main" ]; then
-            docker tag \
-              social-prices-api:${{ github.sha }} \
-              ${{ vars.ECR_REPOSITORY_URI }}:latest
+            echo "environment_tag=latest" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_name }}" = "staging" ]; then
+            echo "environment_tag=staging" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_name }}" = "develop" ]; then
+            echo "environment_tag=develop" >> "$GITHUB_OUTPUT"
+          else
+            echo "Unsupported branch"
+            exit 1
           fi
 
-      - name: Push Docker image
-        run: |
-          docker push \
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
             ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
-
-          if [ "${{ github.ref_name }}" = "develop" ]; then
-            docker push \
-              ${{ vars.ECR_REPOSITORY_URI }}:develop
-          fi
-
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            docker push \
-              ${{ vars.ECR_REPOSITORY_URI }}:latest
-          fi
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ steps.docker-tag.outputs.environment_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy-develop:
     needs: docker

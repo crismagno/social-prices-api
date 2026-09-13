@@ -1,20 +1,19 @@
-# ─────────────────────────
-# BUILD
-# ─────────────────────────
+# syntax=docker/dockerfile:1
+
 FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
 COPY package*.json ./
-RUN npm ci --verbose
+
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY . .
+
 RUN npm run build
 
-
-# ─────────────────────────
-# PRODUCTION
-# ─────────────────────────
 FROM node:20-bookworm-slim
 
 WORKDIR /app
