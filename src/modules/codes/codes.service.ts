@@ -14,6 +14,7 @@ import { makeRandomCode } from '../../shared/utils/global/global';
 import { ICode } from './interfaces/code.interface';
 import { Code } from './interfaces/code.schema';
 import CodesEnum from './interfaces/codes.enum';
+import { ICodeOwner } from './interfaces/codes.types';
 
 @Injectable()
 export class CodesService {
@@ -36,50 +37,71 @@ export class CodesService {
 
 	// #endregion
 
-	// #region Public Methods
+	// #region Public Methods - User
 
 	public async createSignIn(userId: string): Promise<ICode> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-		return await this._getByUserIdAndType(userId, type);
+		return await this._getByOwnerAndType(
+			this._owner({ userId }),
+			CodesEnum.Type.SIGN_IN,
+		);
 	}
 
 	public async validateSignIn(userId: string, value: string): Promise<boolean> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN;
-		return await this._validateCode(userId, type, value);
+		return await this._validateCode(
+			this._owner({ userId }),
+			CodesEnum.Type.SIGN_IN,
+			value,
+		);
 	}
 
 	public async createRecoverPassword(userId: string): Promise<ICode> {
-		const type: CodesEnum.Type = CodesEnum.Type.RECOVER_PASSWORD;
-		return await this._getByUserIdAndType(userId, type);
+		return await this._getByOwnerAndType(
+			this._owner({ userId }),
+			CodesEnum.Type.RECOVER_PASSWORD,
+		);
 	}
 
 	public async validateRecoverPassword(
 		userId: string,
 		value: string,
 	): Promise<boolean> {
-		const type: CodesEnum.Type = CodesEnum.Type.RECOVER_PASSWORD;
-		return await this._validateCode(userId, type, value);
+		return await this._validateCode(
+			this._owner({ userId }),
+			CodesEnum.Type.RECOVER_PASSWORD,
+			value,
+		);
 	}
 
 	public async createUpdateEmail(userId: string): Promise<ICode> {
-		const type: CodesEnum.Type = CodesEnum.Type.UPDATE_EMAIL;
-		return await this._getByUserIdAndType(userId, type);
+		return await this._getByOwnerAndType(
+			this._owner({ userId }),
+			CodesEnum.Type.UPDATE_EMAIL,
+		);
 	}
 
 	public async validateUpdateEmail(
 		userId: string,
 		value: string,
 	): Promise<boolean> {
-		const type: CodesEnum.Type = CodesEnum.Type.UPDATE_EMAIL;
-		return await this._validateCode(userId, type, value);
+		return await this._validateCode(
+			this._owner({ userId }),
+			CodesEnum.Type.UPDATE_EMAIL,
+			value,
+		);
 	}
+
+	// #endregion
+
+	// #region Public Methods - Employee
 
 	public async createSignInEmployee(
 		userId: string,
 		employeeId: string,
 	): Promise<ICode> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
-		return await this._getByUserIdAndType(userId, type, employeeId);
+		return await this._getByOwnerAndType(
+			this._owner({ userId, employeeId }),
+			CodesEnum.Type.SIGN_IN_EMPLOYEE,
+		);
 	}
 
 	public async validateSignInEmployee(
@@ -87,8 +109,11 @@ export class CodesService {
 		value: string,
 		employeeId: string,
 	): Promise<boolean> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
-		return await this._validateCode(userId, type, value, employeeId);
+		return await this._validateCode(
+			this._owner({ userId, employeeId }),
+			CodesEnum.Type.SIGN_IN_EMPLOYEE,
+			value,
+		);
 	}
 
 	public async validateCreateSignInEmployee(
@@ -96,23 +121,68 @@ export class CodesService {
 		employeeId: string,
 		value: string,
 	): Promise<boolean> {
-		const type: CodesEnum.Type = CodesEnum.Type.SIGN_IN_EMPLOYEE;
-		return await this._validateCode(userId, type, value, employeeId);
+		return await this._validateCode(
+			this._owner({ userId, employeeId }),
+			CodesEnum.Type.SIGN_IN_EMPLOYEE,
+			value,
+		);
 	}
 
-	public async findOneByUserIdAndCode(
-		userId: string,
+	// #endregion
+
+	// #region Public Methods - Manager
+
+	public async createManagerSignIn(managerId: string): Promise<ICode> {
+		return await this._getByOwnerAndType(
+			this._owner({ managerId }),
+			CodesEnum.Type.MANAGER_SIGN_IN,
+		);
+	}
+
+	public async validateManagerSignIn(
+		managerId: string,
+		value: string,
+	): Promise<boolean> {
+		return await this._validateCode(
+			this._owner({ managerId }),
+			CodesEnum.Type.MANAGER_SIGN_IN,
+			value,
+		);
+	}
+
+	public async createManagerRecoverPassword(managerId: string): Promise<ICode> {
+		return await this._getByOwnerAndType(
+			this._owner({ managerId }),
+			CodesEnum.Type.MANAGER_RECOVER_PASSWORD,
+		);
+	}
+
+	public async validateManagerRecoverPassword(
+		managerId: string,
+		value: string,
+	): Promise<boolean> {
+		return await this._validateCode(
+			this._owner({ managerId }),
+			CodesEnum.Type.MANAGER_RECOVER_PASSWORD,
+			value,
+		);
+	}
+
+	// #endregion
+
+	// #region Public Methods - Lookup
+
+	public async findOneByOwnerAndType(
+		owner: ICodeOwner,
 		type: CodesEnum.Type,
-		employeeId: string | null = null,
 	): Promise<ICode> {
 		const code: ICode | undefined = await this._codeModel.findOne({
-			userId,
+			...owner,
 			type,
-			employeeId,
 		});
 
 		if (!code) {
-			this._logger.warn('Code not found!', { userId, type, employeeId });
+			this._logger.warn('Code not found!', { ...owner, type });
 
 			throw new NotFoundException('Code not found!');
 		}
@@ -120,19 +190,36 @@ export class CodesService {
 		return code;
 	}
 
-	// #endregion
-
-	//#region Private Methods
-
-	private async _getByUserIdAndType(
+	public async findOneByUserIdAndCode(
 		userId: string,
 		type: CodesEnum.Type,
 		employeeId: string | null = null,
 	): Promise<ICode> {
-		const findCodeByUserAndType: ICode = await this._codeModel.findOne({
-			userId,
+		return await this.findOneByOwnerAndType(
+			this._owner({ userId, employeeId }),
 			type,
-			employeeId,
+		);
+	}
+
+	// #endregion
+
+	//#region Private Methods
+
+	private _owner(params: Partial<ICodeOwner>): ICodeOwner {
+		return {
+			userId: params.userId ?? null,
+			employeeId: params.employeeId ?? null,
+			managerId: params.managerId ?? null,
+		};
+	}
+
+	private async _getByOwnerAndType(
+		owner: ICodeOwner,
+		type: CodesEnum.Type,
+	): Promise<ICode> {
+		const findCode: ICode = await this._codeModel.findOne({
+			...owner,
+			type,
 		});
 
 		const value: string = makeRandomCode();
@@ -140,13 +227,13 @@ export class CodesService {
 			.add(this._codeExpiresInDays, 'days')
 			.toDate();
 
-		if (findCodeByUserAndType) {
-			if (moment().isBefore(findCodeByUserAndType.expiresIn)) {
-				return findCodeByUserAndType;
+		if (findCode) {
+			if (moment().isBefore(findCode.expiresIn)) {
+				return findCode;
 			}
 
 			return this._codeModel.findOneAndUpdate(
-				new Types.ObjectId(findCodeByUserAndType._id),
+				new Types.ObjectId(findCode._id),
 				{
 					$set: {
 						value: value,
@@ -160,11 +247,10 @@ export class CodesService {
 		const now: Date = new Date();
 
 		const newCode = new this._codeModel({
-			userId,
+			...owner,
 			value,
 			type,
 			expiresIn,
-			employeeId,
 			createdAt: now,
 			updatedAt: now,
 		});
@@ -173,23 +259,18 @@ export class CodesService {
 	}
 
 	private async _validateCode(
-		userId: string,
+		owner: ICodeOwner,
 		type: CodesEnum.Type,
 		value: string,
-		employeeId: string | null = null,
 	): Promise<boolean> {
-		const code: ICode = await this.findOneByUserIdAndCode(
-			userId,
-			type,
-			employeeId,
-		);
+		const code: ICode = await this.findOneByOwnerAndType(owner, type);
 
 		if (moment().isAfter(code.expiresIn)) {
 			throw new BadRequestException('Code expired!');
 		}
 
 		if (code.value === value) {
-			await this._updateCode(userId, type, employeeId);
+			await this._updateCode(owner, type);
 			return true;
 		}
 
@@ -197,15 +278,10 @@ export class CodesService {
 	}
 
 	private async _updateCode(
-		userId: string,
+		owner: ICodeOwner,
 		type: CodesEnum.Type,
-		employeeId: string | null = null,
 	): Promise<ICode> {
-		const code: ICode = await this.findOneByUserIdAndCode(
-			userId,
-			type,
-			employeeId,
-		);
+		const code: ICode = await this.findOneByOwnerAndType(owner, type);
 
 		const value: string = makeRandomCode();
 		const expiresIn: Date = moment()

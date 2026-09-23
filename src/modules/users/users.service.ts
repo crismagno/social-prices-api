@@ -1,5 +1,5 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
@@ -11,6 +11,11 @@ import { InjectModel } from '@nestjs/mongoose';
 
 import { schemasName } from '../../infra/database/mongo/schemas';
 import HashCrypt from '../../infra/hash-crypt/hash-crypt';
+import { queryOptions } from '../../shared/utils/table/table-state';
+import {
+	ITableStateRequest,
+	ITableStateResponse,
+} from '../../shared/utils/table/table-state.interface';
 import { createUsernameByEmail } from '../../shared/utils/global/global';
 import { CodesService } from '../codes/codes.service';
 import { FilesService } from '../files/files-service';
@@ -95,6 +100,41 @@ export class UsersService {
 		}
 
 		return user;
+	}
+
+	public async findByTableState(
+		tableState: ITableStateRequest<IUser>,
+	): Promise<ITableStateResponse<IUserEntity[]>> {
+		const filter: FilterQuery<IUser> = {
+			'softDelete.isDeleted': { $ne: true },
+		};
+
+		if (tableState?.search) {
+			const search = new RegExp(tableState.search, 'ig');
+
+			filter.$or = [{ name: search }, { email: search }, { username: search }];
+		}
+
+		if (tableState?.filters?.status?.length) {
+			filter.status = { $in: tableState.filters.status };
+		}
+
+		if (tableState?.filters?.type?.length) {
+			filter.type = { $in: tableState.filters.type };
+		}
+
+		const total: number = await this._userModel.countDocuments(filter);
+
+		const users: IUser[] = await this._userModel.find(
+			filter,
+			null,
+			queryOptions<IUser>(tableState),
+		);
+
+		return {
+			total,
+			data: users.map((user: IUser) => new UserEntity(user)),
+		};
 	}
 
 	public async insert(user: any): Promise<IUser> {

@@ -34,6 +34,7 @@ export class AccountService {
 			deletedAt: now,
 			deletedByUserId: userId as any,
 			deletedByEmployeeId: null,
+			deletedByManagerId: null,
 			reason,
 		};
 

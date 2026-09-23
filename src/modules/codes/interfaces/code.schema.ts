@@ -9,11 +9,14 @@ import CodesEnum from './codes.enum';
 export class Code implements ICode {
 	readonly _id: string;
 
-	@Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
-	userId: mongoose.Schema.Types.ObjectId;
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
+	userId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Employee' })
 	employeeId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Manager' })
+	managerId: mongoose.Schema.Types.ObjectId | null;
 
 	@Prop({ required: true, type: String })
 	value: string;

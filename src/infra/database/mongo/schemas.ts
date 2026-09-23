@@ -7,6 +7,7 @@ import { CustomerSchema } from '../../../modules/customers/interfaces/customer.s
 import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';
 import { FileUploadSchema } from '../../../modules/files-uploads/interfaces/file-upload.schema';
 import { LogSchema } from '../../../modules/logs/interfaces/log.schema';
+import ManagerSchema from '../../../modules/managers/interfaces/manager.schema';
 import { NotificationSchema } from '../../../modules/notifications/interfaces/notification.schema';
 import { ProductItemSchema } from '../../../modules/product-items/interfaces/product-item.schema';
 import { ProductSchema } from '../../../modules/products/interfaces/product.schema';
@@ -29,6 +30,7 @@ export const schemasName = {
 	employee: 'Employee',
 	fileUpload: 'FileUpload',
 	log: 'Log',
+	manager: 'Manager',
 	productItem: 'ProductItem',
 };
 
@@ -71,6 +73,9 @@ export const schemasModule = {
 	]),
 	log: MongooseModule.forFeature([
 		{ name: schemasName.log, schema: LogSchema },
+	]),
+	manager: MongooseModule.forFeature([
+		{ name: schemasName.manager, schema: ManagerSchema },
 	]),
 	productItem: MongooseModule.forFeature([
 		{

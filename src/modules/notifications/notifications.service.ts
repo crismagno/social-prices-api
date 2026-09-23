@@ -20,6 +20,8 @@ import { CodesService } from '../codes/codes.service';
 import { ICode } from '../codes/interfaces/code.interface';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import { IEmployee } from '../employees/interfaces/employee.interface';
+import { IManager } from '../managers/interfaces/manager.interface';
+import ManagersEnum from '../managers/interfaces/managers.enum';
 import { IProduct } from '../products/interfaces/product.interface';
 import { ISale } from '../sales/interfaces/sale.interface';
 import { IStore } from '../stores/interfaces/store.interface';
@@ -431,6 +433,93 @@ export class NotificationsService {
 				'Error when attempt to send signIn code to user',
 			);
 		}
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async sendManagerSignInCode(
+		manager: IManager,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createManagerSignIn(
+			manager._id,
+		);
+
+		const emailResponse: string | null =
+			await this._emailTransportService.sendEmail({
+				to: manager.email,
+				subject: `Manager Sign In Code`,
+				html: renderEmailHtml({
+					title: 'Your Manager Sign In Code',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_MANAGER_SIGN_IN_CODE_BODY_HBS,
+					bodyData: { managerName: manager.name, code: code.value },
+				}),
+			});
+
+		if (!emailResponse) {
+			throw new BadRequestException(
+				'Error when attempt to send signIn code to manager',
+			);
+		}
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async sendManagerRecoverPasswordCode(
+		manager: IManager,
+	): Promise<INotificationResponse> {
+		const code: ICode = await this._codesService.createManagerRecoverPassword(
+			manager._id,
+		);
+
+		const emailResponse: string | null =
+			await this._emailTransportService.sendEmail({
+				to: manager.email,
+				subject: `Manager Recover Password Code`,
+				html: renderEmailHtml({
+					title: 'Reset Your Manager Password',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath
+							.EMAIL_MANAGER_RECOVER_PASSWORD_CODE_BODY_HBS,
+					bodyData: { managerName: manager.name, code: code.value },
+				}),
+			});
+
+		return {
+			email: emailResponse,
+		};
+	}
+
+	public async sendManagerCreatedCredentials(
+		manager: IManager,
+		password: string,
+	): Promise<INotificationResponse> {
+		const emailResponse: string | null =
+			await this._emailTransportService.sendEmail({
+				to: manager.email,
+				subject: `Your Manager Account`,
+				html: renderEmailHtml({
+					title: 'Welcome to the Manager Panel',
+					heroImageSrc: getHeroImageByCategory(EmailHeroCategory.AUTH),
+					heroImageAlt: 'Security padlock',
+					bodyRelativePath:
+						TemplatesEnum.RelativePath.EMAIL_MANAGER_CREATED_BODY_HBS,
+					bodyData: {
+						managerName: manager.name,
+						levelLabel: ManagersEnum.LevelLabels[manager.level],
+						email: manager.email,
+						password,
+					},
+				}),
+			});
 
 		return {
 			email: emailResponse,

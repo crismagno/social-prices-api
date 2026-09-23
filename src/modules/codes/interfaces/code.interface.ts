@@ -6,8 +6,9 @@ import CodesEnum from './codes.enum';
 
 export interface ICode extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: string;
-	userId: mongoose.Schema.Types.ObjectId;
+	userId: mongoose.Schema.Types.ObjectId | null;
 	employeeId: mongoose.Schema.Types.ObjectId | null;
+	managerId: mongoose.Schema.Types.ObjectId | null;
 	value: string;
 	type: CodesEnum.Type;
 	expiresIn: Date;

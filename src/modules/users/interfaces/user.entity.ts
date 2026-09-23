@@ -46,7 +46,10 @@ export default class UserEntity implements IUserEntity {
 
 	//#region Constructor
 
-	constructor(private _user: IUser) {
+	// A plain parameter, NOT `private _user`: a parameter property is a real
+	// instance field and JSON.stringify would ship the raw document, password
+	// hash included, in every response that returns this entity.
+	constructor(_user: IUser) {
 		this._id = _user._id;
 		this.uid = _user.uid;
 		this.authProvider = _user.authProvider;

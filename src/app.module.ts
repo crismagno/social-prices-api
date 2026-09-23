@@ -20,6 +20,9 @@ import { EmployeesModule } from './modules/employees/employees.module';
 import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module';
 import { FilesModule } from './modules/files/files.module';
 import { LogsModule } from './modules/logs/logs.module';
+import { ManagerAuthModule } from './modules/manager-auth/manager-auth.module';
+import { ManagerUsersModule } from './modules/manager-users/manager-users.module';
+import { ManagersModule } from './modules/managers/managers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProductItemsModule } from './modules/product-items/product-items.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -57,6 +60,9 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		SocketsModule,
 		FilesUploadsModule,
 		LogsModule,
+		ManagersModule,
+		ManagerAuthModule,
+		ManagerUsersModule,
 		ProductItemsModule,
 	],
 	controllers: [AppController, AppInitController],

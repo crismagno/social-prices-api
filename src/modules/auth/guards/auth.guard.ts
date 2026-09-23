@@ -9,9 +9,13 @@ import {
 import { Reflector } from '@nestjs/core';
 
 import AuthorizationToken from '../../../infra/authorization/authorization-token';
-import { IS_PUBLIC_KEY } from '../../../shared/decorators/custom.decorator';
+import {
+	ALLOWS_UNVALIDATED_SIGN_IN_KEY,
+	IS_MANAGER_ROUTE_KEY,
+	IS_PUBLIC_KEY,
+} from '../../../shared/decorators/custom.decorator';
 import AuthEnum from '../interfaces/auth.enum';
-import { IAuthPayload } from '../interfaces/auth.types';
+import { IDecodedTokenPayload } from '../interfaces/auth.types';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -36,6 +40,18 @@ export class AuthGuard implements CanActivate {
 			return true;
 		}
 
+		const isManagerRoute: boolean =
+			!!this._reflector.getAllAndOverride<boolean>(IS_MANAGER_ROUTE_KEY, [
+				context.getHandler(),
+				context.getClass(),
+			]);
+
+		const allowsUnvalidatedSignIn: boolean =
+			!!this._reflector.getAllAndOverride<boolean>(
+				ALLOWS_UNVALIDATED_SIGN_IN_KEY,
+				[context.getHandler(), context.getClass()],
+			);
+
 		const request: any = context.switchToHttp().getRequest();
 
 		const token: string = this._extractTokenFromHeader(request);
@@ -48,11 +64,11 @@ export class AuthGuard implements CanActivate {
 			});
 		}
 
-		try {
-			const payload: IAuthPayload =
-				await this._authorizationToken.getToken<IAuthPayload>(token);
+		let payload: IDecodedTokenPayload;
 
-			request[AuthEnum.RequestProps.AUTH_PAYLOAD] = payload;
+		try {
+			payload =
+				await this._authorizationToken.getToken<IDecodedTokenPayload>(token);
 		} catch {
 			throw new UnauthorizedException({
 				error: AuthEnum.AuthErrors.UNAUTHORIZED,
@@ -60,6 +76,32 @@ export class AuthGuard implements CanActivate {
 				message: AuthEnum.AuthErrors.UNAUTHORIZED,
 			});
 		}
+
+		const isManagerPayload: boolean =
+			(payload?.type ?? AuthEnum.PayloadType.USER) ===
+			AuthEnum.PayloadType.MANAGER;
+
+		if (isManagerRoute !== isManagerPayload) {
+			throw new UnauthorizedException({
+				error: AuthEnum.AuthErrors.UNAUTHORIZED,
+				type: AuthEnum.AuthTypes.WRONG_IDENTITY,
+				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+			});
+		}
+
+		if (
+			isManagerPayload &&
+			!payload?.isSignInValidated &&
+			!allowsUnvalidatedSignIn
+		) {
+			throw new UnauthorizedException({
+				error: AuthEnum.AuthErrors.UNAUTHORIZED,
+				type: AuthEnum.AuthTypes.SIGN_IN_NOT_VALIDATED,
+				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+			});
+		}
+
+		request[AuthEnum.RequestProps.AUTH_PAYLOAD] = payload;
 
 		return true;
 	}
