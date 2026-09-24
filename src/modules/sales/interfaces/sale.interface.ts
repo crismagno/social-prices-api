@@ -132,6 +132,9 @@ export interface ISaleBuyer {
 	gender: PersonEnum.Gender | null;
 	phoneNumber: IPhoneNumber | null;
 	address: IAddress | null;
+	idNumber: string | null;
+	cpf: string | null;
+	cnpj: string | null;
 }
 
 export interface ISaleAmountNote {

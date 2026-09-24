@@ -31,6 +31,18 @@ export default class UpdateCustomerDto {
 	@IsOptional()
 	about: string | null;
 
+	@IsString()
+	@IsOptional()
+	idNumber: string | null;
+
+	@IsString()
+	@IsOptional()
+	cpf: string | null;
+
+	@IsString()
+	@IsOptional()
+	cnpj: string | null;
+
 	addresses: any[];
 
 	phoneNumbers: any[];

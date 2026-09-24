@@ -112,7 +112,14 @@ export class UsersService {
 		if (tableState?.search) {
 			const search = new RegExp(tableState.search, 'ig');
 
-			filter.$or = [{ name: search }, { email: search }, { username: search }];
+			filter.$or = [
+				{ name: search },
+				{ email: search },
+				{ username: search },
+				{ idNumber: search },
+				{ cpf: search },
+				{ cnpj: search },
+			];
 		}
 
 		if (tableState?.filters?.status?.length) {
@@ -197,6 +204,9 @@ export class UsersService {
 					birthDate: updateUserDto.birthDate,
 					gender: updateUserDto.gender,
 					about: updateUserDto.about,
+					idNumber: updateUserDto.idNumber || null,
+					cpf: updateUserDto.cpf || null,
+					cnpj: updateUserDto.cnpj || null,
 					updatedAt: new Date(),
 				},
 			},

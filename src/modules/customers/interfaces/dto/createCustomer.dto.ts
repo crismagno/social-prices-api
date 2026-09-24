@@ -29,6 +29,18 @@ export default class CreateCustomerDto {
 
 	@IsString()
 	@IsOptional()
+	idNumber: string | null;
+
+	@IsString()
+	@IsOptional()
+	cpf: string | null;
+
+	@IsString()
+	@IsOptional()
+	cnpj: string | null;
+
+	@IsString()
+	@IsOptional()
 	userId: string | null;
 
 	addresses: any[];

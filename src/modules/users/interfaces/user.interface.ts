@@ -25,5 +25,8 @@ export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity, ISo
 	addresses: IAddress[] | null;
 	gender: PersonEnum.Gender | null;
 	about: string | null;
+	idNumber: string | null;
+	cpf: string | null;
+	cnpj: string | null;
 	type: UsersEnum.Type;
 }

@@ -226,6 +226,15 @@ export class CustomersService {
 				{
 					uniqName: search,
 				},
+				{
+					idNumber: search,
+				},
+				{
+					cpf: search,
+				},
+				{
+					cnpj: search,
+				},
 			];
 		}
 
@@ -291,6 +300,9 @@ export class CustomersService {
 			addresses: createCustomerDto.addresses,
 			gender: createCustomerDto.gender,
 			about: createCustomerDto.about,
+			idNumber: createCustomerDto.idNumber || null,
+			cpf: createCustomerDto.cpf || null,
+			cnpj: createCustomerDto.cnpj || null,
 			phoneNumbers: createCustomerDto.phoneNumbers,
 			tagsIds: createCustomerDto.tagsIds,
 			ownerUserId,
@@ -350,6 +362,9 @@ export class CustomersService {
 			addresses: updateCustomerDto.addresses,
 			gender: updateCustomerDto.gender,
 			about: updateCustomerDto.about,
+			idNumber: updateCustomerDto.idNumber || null,
+			cpf: updateCustomerDto.cpf || null,
+			cnpj: updateCustomerDto.cnpj || null,
 			phoneNumbers: updateCustomerDto.phoneNumbers,
 			tagsIds: updateCustomerDto.tagsIds,
 			updatedAt: now,
@@ -578,6 +593,9 @@ export class CustomersService {
 			gender: 'Gender',
 			tags: 'Tags',
 			about: 'About',
+			idNumber: 'ID Number',
+			cpf: 'CPF',
+			cnpj: 'CNPJ',
 			addresses: 'Addresses',
 			phones: 'Phones',
 			createdAt: 'Created At',
@@ -641,6 +659,9 @@ export class CustomersService {
 				gender: PersonEnum.GenderLabels[customer.gender],
 				tags: tagsNames,
 				about: customer.about,
+				idNumber: customer.idNumber,
+				cpf: customer.cpf,
+				cnpj: customer.cnpj,
 				addresses: addresses,
 				phones: phones,
 				createdAt: customer.createdAt,
@@ -938,6 +959,9 @@ export class CustomersService {
 				} else {
 					customersToCreate.push({
 						avatar: null,
+						idNumber: null,
+						cpf: null,
+						cnpj: null,
 						name: customerFileUploadTemplateRow.name,
 						email: customerFileUploadTemplateRow.email,
 						birthDate: birthDate,

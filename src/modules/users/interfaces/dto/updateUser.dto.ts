@@ -18,4 +18,16 @@ export default class UpdateUserDto {
 	@IsString()
 	@IsOptional()
 	about: string | null;
+
+	@IsString()
+	@IsOptional()
+	idNumber: string | null;
+
+	@IsString()
+	@IsOptional()
+	cpf: string | null;
+
+	@IsString()
+	@IsOptional()
+	cnpj: string | null;
 }

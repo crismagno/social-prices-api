@@ -277,6 +277,15 @@ export class SaleBuyer implements ISaleBuyer {
 
 	@Prop({ type: AddressSchema })
 	address: IAddress | null;
+
+	@Prop({ type: String })
+	idNumber: string | null;
+
+	@Prop({ type: String })
+	cpf: string | null;
+
+	@Prop({ type: String })
+	cnpj: string | null;
 }
 
 export const SaleBuyerSchema = SchemaFactory.createForClass(SaleBuyer);

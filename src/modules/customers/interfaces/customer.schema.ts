@@ -37,6 +37,15 @@ export class Customer implements ICustomer {
 	@Prop({ type: String })
 	about: string | null;
 
+	@Prop({ type: String })
+	idNumber: string | null;
+
+	@Prop({ type: String })
+	cpf: string | null;
+
+	@Prop({ type: String })
+	cnpj: string | null;
+
 	@Prop({ type: [AddressSchema] })
 	addresses: IAddress[];
 

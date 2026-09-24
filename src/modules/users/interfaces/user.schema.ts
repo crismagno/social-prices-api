@@ -16,6 +16,9 @@ const UserSchema = new mongoose.Schema<IUser>(
 		email: { type: String, unique: true, required: true },
 		avatar: { type: String, optional: true },
 		about: { type: String, optional: true },
+		idNumber: { type: String, optional: true },
+		cpf: { type: String, optional: true },
+		cnpj: { type: String, optional: true },
 		authToken: String,
 		authProvider: {
 			type: String,

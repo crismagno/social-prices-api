@@ -36,6 +36,12 @@ export default class UserEntity implements IUserEntity {
 
 	public about: string | null;
 
+	public idNumber: string | null;
+
+	public cpf: string | null;
+
+	public cnpj: string | null;
+
 	public type: UsersEnum.Type;
 
 	public createdAt: Date;
@@ -64,6 +70,9 @@ export default class UserEntity implements IUserEntity {
 		this.name = _user.name;
 		this.gender = _user.gender;
 		this.about = _user.about;
+		this.idNumber = _user.idNumber ?? null;
+		this.cpf = _user.cpf ?? null;
+		this.cnpj = _user.cnpj ?? null;
 		this.type = _user.type;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;

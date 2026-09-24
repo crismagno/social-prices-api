@@ -607,6 +607,9 @@ export class SalesService {
 							name: createSaleDto.buyer.name,
 							phoneNumber: createSaleDto.buyer.phoneNumber,
 							userId: createSaleDto.buyer.userId as any,
+							idNumber: createSaleDto.buyer.idNumber || null,
+							cpf: createSaleDto.buyer.cpf || null,
+							cnpj: createSaleDto.buyer.cnpj || null,
 					  }
 					: null,
 				createdAt: now,
@@ -723,6 +726,9 @@ export class SalesService {
 							name: updateSaleDto.buyer.name,
 							phoneNumber: updateSaleDto.buyer.phoneNumber,
 							userId: updateSaleDto.buyer.userId,
+							idNumber: updateSaleDto.buyer.idNumber || null,
+							cpf: updateSaleDto.buyer.cpf || null,
+							cnpj: updateSaleDto.buyer.cnpj || null,
 					  }
 					: null,
 				updatedAt: now,
@@ -1215,6 +1221,9 @@ export class SalesService {
 							name: newCustomer.name,
 							phoneNumber: newCustomer.phoneNumbers[0],
 							userId: newCustomer.userId,
+							idNumber: newCustomer.idNumber ?? null,
+							cpf: newCustomer.cpf ?? null,
+							cnpj: newCustomer.cnpj ?? null,
 						},
 						header: {
 							billing: sale.header.billing
@@ -1407,6 +1416,9 @@ export class SalesService {
 				if (!customer) {
 					const createCustomerDto: CreateCustomerDto = {
 						about: null,
+						idNumber: createSaleDto.buyer.idNumber || null,
+						cpf: createSaleDto.buyer.cpf || null,
+						cnpj: createSaleDto.buyer.cnpj || null,
 						addresses: createSaleDto.buyer.address
 							? [
 									this._parseCreateAddressDtoToAddress(
@@ -2997,6 +3009,9 @@ export class SalesService {
 					customer = {
 						uploadFilename: filename,
 						avatar: null,
+						idNumber: null,
+						cpf: null,
+						cnpj: null,
 						name: saleFileUploadTemplateRow.name,
 						email: saleFileUploadTemplateRow.email,
 						birthDate: birthDate,
@@ -3105,6 +3120,9 @@ export class SalesService {
 							name: saleFileUploadTemplateRow.name,
 							phoneNumber: salePhoneNumber,
 							userId: customer.userId ?? null,
+							idNumber: customer.idNumber ?? null,
+							cpf: customer.cpf ?? null,
+							cnpj: customer.cnpj ?? null,
 						},
 						createdDate: createdDate ?? saleBySaleNumberManual.createdDate,
 						createdAt: saleBySaleNumberManual.createdAt,
@@ -3194,6 +3212,9 @@ export class SalesService {
 							name: saleFileUploadTemplateRow.name,
 							phoneNumber: salePhoneNumber,
 							userId: customer.userId ?? null,
+							idNumber: customer.idNumber ?? null,
+							cpf: customer.cpf ?? null,
+							cnpj: customer.cnpj ?? null,
 						},
 						createdDate: createdDate ?? now,
 						createdAt: now,
