@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -8,7 +9,13 @@ import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 
 @Module({
-	imports: [schemasModule.store, NotificationsModule, UsersModule, FilesModule],
+	imports: [
+		FeatureLimitsModule,
+		schemasModule.store,
+		NotificationsModule,
+		UsersModule,
+		FilesModule,
+	],
 	providers: [StoresService],
 	controllers: [StoresController],
 	exports: [StoresService],

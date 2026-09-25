@@ -1,5 +1,7 @@
 import { FilterQuery, Model } from 'mongoose';
 
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import {
 	BadRequestException,
 	Injectable,
@@ -34,6 +36,7 @@ export class TagsService {
 	constructor(
 		@InjectModel(schemasName.tag)
 		private readonly _tagModel: Model<Tag>,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(TagsService.name);
 	}
@@ -137,6 +140,13 @@ export class TagsService {
 	}
 
 	public async create(createTagDto: CreateTagDto): Promise<ITag> {
+		if (createTagDto.userId) {
+			await this._featureLimitsService.assertCanCreate(
+				String(createTagDto.userId),
+				FeatureLimitsEnum.Feature.TAGS,
+			);
+		}
+
 		const now: Date = new Date();
 
 		await this.validateCreateOrUpdate(
@@ -189,6 +199,26 @@ export class TagsService {
 	}
 
 	public async createMulti(createTagsDto: CreateTagMultiDto): Promise<void> {
+		const amountByOwner: Map<string, number> = new Map();
+
+		for (const item of createTagsDto.tags) {
+			if (!item.userId) {
+				continue;
+			}
+
+			const owner: string = String(item.userId);
+
+			amountByOwner.set(owner, (amountByOwner.get(owner) ?? 0) + 1);
+		}
+
+		for (const [owner, amount] of amountByOwner) {
+			await this._featureLimitsService.assertCanCreate(
+				owner,
+				FeatureLimitsEnum.Feature.TAGS,
+				amount,
+			);
+		}
+
 		const now: Date = new Date();
 
 		const tagsToCreate = await Promise.all(

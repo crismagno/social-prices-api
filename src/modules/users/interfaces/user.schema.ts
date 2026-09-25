@@ -1,12 +1,28 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
+import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
 import { AddressSchema } from '../../../shared/common/address/address.schema';
 import PersonEnum from '../../../shared/common/person/person.enum';
 import { PhoneNumberSchema } from '../../../shared/common/phone/phone-number.schema';
 import { SoftDeleteSchema } from '../../../shared/common/soft-delete/soft-delete.schema';
 import { IUser } from './user.interface';
 import UsersEnum from './users.enum';
+
+const UserLimitsSchema = new mongoose.Schema(
+	{
+		features: new mongoose.Schema(
+			Object.fromEntries(
+				Object.values(FeatureLimitsEnum.Feature).map((feature: string) => [
+					feature,
+					{ type: Number, min: 0 },
+				]),
+			),
+			{ _id: false },
+		),
+	},
+	{ _id: false },
+);
 
 const UserSchema = new mongoose.Schema<IUser>(
 	{
@@ -63,6 +79,7 @@ const UserSchema = new mongoose.Schema<IUser>(
 				message: '{VALUE} is not supported',
 			},
 		},
+		limits: { type: UserLimitsSchema, optional: true },
 		softDelete: {
 			type: SoftDeleteSchema,
 			optional: true,

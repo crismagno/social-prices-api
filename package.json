@@ -12,6 +12,7 @@
 		"start:dev": "nest start --watch",
 		"start:debug": "nest start --debug --watch",
 		"start:prod": "node dist/main",
+		"script:backfill-user-limits": "ts-node -r tsconfig-paths/register src/scripts/backfill-user-limits.ts",
 		"script:create-main-manager": "ts-node -r tsconfig-paths/register src/scripts/create-main-manager.ts",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"test": "jest",

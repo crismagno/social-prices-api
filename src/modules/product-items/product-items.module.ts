@@ -1,8 +1,6 @@
-import {
-	forwardRef,
-	Module,
-} from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { CategoriesModule } from '../categories/categories.module';
 import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
@@ -13,14 +11,13 @@ import { SocketsModule } from '../sockets/sockets.module';
 import { StoresModule } from '../stores/stores.module';
 import { TagsModule } from '../tags/tags.module';
 import { UsersModule } from '../users/users.module';
-import {
-	ProductItemsValidationService,
-} from './product-items-validation.service';
+import { ProductItemsValidationService } from './product-items-validation.service';
 import { ProductItemsController } from './product-items.controller';
 import { ProductItemsService } from './product-items.service';
 
 @Module({
 	imports: [
+		FeatureLimitsModule,
 		schemasModule.productItem,
 		NotificationsModule,
 		UsersModule,

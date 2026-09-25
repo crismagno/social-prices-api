@@ -1,8 +1,10 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { FilterQuery, Model, Types } from 'mongoose';
 
 import {
 	BadRequestException,
+	ConflictException,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -24,7 +26,9 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { ISoftDelete } from '../../shared/common/soft-delete/soft-delete.interface';
 import RecoverPasswordDto from './interfaces/dto/recoverPassword.dto';
 import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
+import UpdateUserByManagerDto from './interfaces/dto/updateUserByManager.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
+import UpdateUserLimitsDto from './interfaces/dto/updateUserLimits.dto';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
 import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
 import UserEntity from './interfaces/user.entity';
@@ -142,6 +146,85 @@ export class UsersService {
 			total,
 			data: users.map((user: IUser) => new UserEntity(user)),
 		};
+	}
+
+	public async updateUserByManager(
+		userId: string,
+		dto: UpdateUserByManagerDto,
+	): Promise<IUserEntity> {
+		const sameLogin: IUser | null = await this._userModel.findOne({
+			$or: [{ email: dto.email }, { username: dto.username }],
+			_id: { $ne: new Types.ObjectId(userId) },
+		});
+
+		if (sameLogin) {
+			throw new ConflictException(
+				'Another user already uses this email or username.',
+			);
+		}
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					name: dto.name,
+					email: dto.email,
+					username: dto.username,
+					birthDate: dto.birthDate,
+					gender: dto.gender,
+					about: dto.about,
+					idNumber: dto.idNumber || null,
+					cpf: dto.cpf || null,
+					cnpj: dto.cnpj || null,
+					status: dto.status,
+					type: dto.type,
+					...(dto.phoneNumbers ? { phoneNumbers: dto.phoneNumbers } : {}),
+					...(dto.addresses ? { addresses: dto.addresses } : {}),
+					updatedAt: new Date(),
+				},
+			},
+			{ new: true },
+		);
+
+		return new UserEntity(userUpdated);
+	}
+
+	public async updateUserLimits(
+		userId: string,
+		dto: UpdateUserLimitsDto,
+	): Promise<IUserEntity> {
+		const features: Record<string, number> = {};
+
+		for (const feature of Object.values(FeatureLimitsEnum.Feature)) {
+			const value: unknown = dto.features?.[feature];
+
+			if (typeof value === 'number') {
+				features[feature] = value;
+			}
+		}
+
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{ $set: { 'limits.features': features, updatedAt: new Date() } },
+			{ new: true },
+		);
+
+		return new UserEntity(userUpdated);
+	}
+
+	/**
+	 * Fills the default feature limits on users that never got any. Users that
+	 * already have `limits` (even partial) are left untouched.
+	 */
+	public async backfillMissingLimits(): Promise<number> {
+		const result = await this._userModel.updateMany(
+			{ limits: { $exists: false } },
+			{
+				$set: { limits: { features: { ...FeatureLimitsEnum.DefaultLimits } } },
+			},
+		);
+
+		return result.modifiedCount;
 	}
 
 	public async insert(user: any): Promise<IUser> {

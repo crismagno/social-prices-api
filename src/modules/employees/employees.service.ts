@@ -1,4 +1,6 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import * as ExcelJS from 'exceljs';
 import { find, includes, some } from 'lodash';
 import { AnyKeys, AnyObject, FilterQuery, Model, Types } from 'mongoose';
@@ -92,6 +94,7 @@ export class EmployeesService {
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _filesUploadsService: FilesUploadsService,
 		private readonly _employeesValidationService: EmployeesValidationService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(EmployeesService.name);
 	}
@@ -251,6 +254,11 @@ export class EmployeesService {
 		createEmployeeDto: CreateEmployeeDto,
 		userId: string,
 	): Promise<IEmployee> {
+		await this._featureLimitsService.assertCanCreate(
+			userId,
+			FeatureLimitsEnum.Feature.EMPLOYEES,
+		);
+
 		await this.validateCreateOrUpdate(
 			userId,
 			createEmployeeDto.name,
@@ -560,6 +568,12 @@ export class EmployeesService {
 								totalToProcess: employeeFileUploadTemplateRows.length,
 							},
 						});
+
+						await this._featureLimitsService.assertCanCreate(
+							userId,
+							FeatureLimitsEnum.Feature.EMPLOYEES,
+							employeeFileUploadTemplateRows.length,
+						);
 
 						fileUploadTemplateError.rowsError =
 							await this._processEmployeeFileUploadTemplateRows(

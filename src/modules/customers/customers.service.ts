@@ -1,4 +1,6 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import * as ExcelJS from 'exceljs';
 import { find, includes, some } from 'lodash';
 import mongoose, {
@@ -97,6 +99,7 @@ export class CustomersService {
 		private readonly _tagsService: TagsService,
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _filesUploadsService: FilesUploadsService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -266,6 +269,11 @@ export class CustomersService {
 		createCustomerDto: CreateCustomerDto,
 		ownerUserId: string,
 	): Promise<ICustomer> {
+		await this._featureLimitsService.assertCanCreate(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.CUSTOMERS,
+		);
+
 		const user: IUser = await this._usersService.findOneByIdOrFail(ownerUserId);
 
 		await this.validateUniqName(ownerUserId, createCustomerDto.uniqName);
@@ -482,6 +490,12 @@ export class CustomersService {
 							},
 						});
 
+						await this._featureLimitsService.assertCanCreate(
+							userId,
+							FeatureLimitsEnum.Feature.CUSTOMERS,
+							customerFileUploadTemplateRows.length,
+						);
+
 						fileUploadTemplateError.rowsError =
 							await this._processCustomerFileUploadTemplateRows(
 								customerFileUploadTemplateRows,
@@ -682,6 +696,13 @@ export class CustomersService {
 	}
 
 	public async insert(customer: ICustomer): Promise<ICustomer> {
+		if (customer.userId) {
+			await this._featureLimitsService.assertCanCreate(
+				String(customer.userId),
+				FeatureLimitsEnum.Feature.CUSTOMERS,
+			);
+		}
+
 		return await this._customerModel.create(customer);
 	}
 

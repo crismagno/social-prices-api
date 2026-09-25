@@ -20,6 +20,7 @@ import { EmployeesService } from '../employees/employees.service';
 import { IEmployee } from '../employees/interfaces/employee.interface';
 import EmployeesEnum from '../employees/interfaces/employees.enum';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import UserEntity from '../users/interfaces/user.entity';
@@ -134,6 +135,7 @@ export class AuthService {
 				createdAt: now,
 				updatedAt: now,
 				type: createUserDto.type,
+				limits: { features: { ...FeatureLimitsEnum.DefaultLimits } },
 			});
 
 			await this._notificationsService.sendSignInCode(user);

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
 import { FilesModule } from '../files/files.module';
@@ -13,6 +14,7 @@ import { CustomersService } from './customers.service';
 
 @Module({
 	imports: [
+		FeatureLimitsModule,
 		schemasModule.customer,
 		NotificationsModule,
 		UsersModule,

@@ -1,4 +1,6 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
 
 import {
@@ -41,6 +43,7 @@ export class StoresService {
 		private readonly _notificationsService: NotificationsService,
 		private readonly _usersService: UsersService,
 		private readonly _filesService: FilesService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(StoresService.name);
 	}
@@ -175,6 +178,11 @@ export class StoresService {
 		createStoreDto: CreateStoreDto,
 		userId: string,
 	): Promise<IStore> {
+		await this._featureLimitsService.assertCanCreate(
+			userId,
+			FeatureLimitsEnum.Feature.STORES,
+		);
+
 		await this.validateCreate(createStoreDto.name, createStoreDto.email);
 
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);

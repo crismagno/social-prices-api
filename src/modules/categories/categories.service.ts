@@ -1,5 +1,7 @@
 import { FilterQuery, Model } from 'mongoose';
 
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import {
 	BadRequestException,
 	Injectable,
@@ -36,6 +38,7 @@ export class CategoriesService {
 		@InjectModel(schemasName.category)
 		private readonly _categoryModel: Model<Category>,
 		private readonly _usersService: UsersService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(CategoriesService.name);
 	}
@@ -148,6 +151,13 @@ export class CategoriesService {
 		createCategoryDto: CreateCategoryDto,
 		userId: string,
 	): Promise<ICategory> {
+		if (createCategoryDto.ownerUserId) {
+			await this._featureLimitsService.assertCanCreate(
+				String(createCategoryDto.ownerUserId),
+				FeatureLimitsEnum.Feature.CATEGORIES,
+			);
+		}
+
 		const now: Date = new Date();
 
 		await this.validateCreateOrUpdate(
@@ -207,6 +217,26 @@ export class CategoriesService {
 		createCategoriesDto: CreateCategoryMultiDto,
 		userId: string,
 	): Promise<void> {
+		const amountByOwner: Map<string, number> = new Map();
+
+		for (const item of createCategoriesDto.categories) {
+			if (!item.ownerUserId) {
+				continue;
+			}
+
+			const owner: string = String(item.ownerUserId);
+
+			amountByOwner.set(owner, (amountByOwner.get(owner) ?? 0) + 1);
+		}
+
+		for (const [owner, amount] of amountByOwner) {
+			await this._featureLimitsService.assertCanCreate(
+				owner,
+				FeatureLimitsEnum.Feature.CATEGORIES,
+				amount,
+			);
+		}
+
 		const now: Date = new Date();
 
 		const categoriesToCreate = await Promise.all(

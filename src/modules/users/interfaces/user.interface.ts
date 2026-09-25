@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 
+import { IUserLimits } from '../../feature-limits/interfaces/feature-limits.types';
 import { IAddress } from '../../../shared/common/address/address.interface';
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
@@ -29,4 +30,5 @@ export interface IUser extends Document, ICreatedAtEntity, IUpdatedAtEntity, ISo
 	cpf: string | null;
 	cnpj: string | null;
 	type: UsersEnum.Type;
+	limits: IUserLimits | null;
 }

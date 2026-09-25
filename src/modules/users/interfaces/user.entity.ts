@@ -1,3 +1,4 @@
+import { IUserLimits } from '../../feature-limits/interfaces/feature-limits.types';
 import { IAddress } from '../../../shared/common/address/address.interface';
 import PersonEnum from '../../../shared/common/person/person.enum';
 import { IPhoneNumber } from '../../../shared/common/phone/phone-number.interface';
@@ -44,6 +45,8 @@ export default class UserEntity implements IUserEntity {
 
 	public type: UsersEnum.Type;
 
+	public limits: IUserLimits | null;
+
 	public createdAt: Date;
 
 	public updatedAt: Date;
@@ -74,6 +77,7 @@ export default class UserEntity implements IUserEntity {
 		this.cpf = _user.cpf ?? null;
 		this.cnpj = _user.cnpj ?? null;
 		this.type = _user.type;
+		this.limits = _user.limits ?? null;
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
 	}

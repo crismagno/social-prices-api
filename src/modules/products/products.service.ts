@@ -1,4 +1,6 @@
 import * as ExcelJS from 'exceljs';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import { find, includes, isNil } from 'lodash';
 import {
 	FilterQuery,
@@ -97,6 +99,7 @@ export class ProductsService {
 		private readonly _storeService: StoresService,
 		@Inject(forwardRef(() => ProductItemsService))
 		private readonly _productItemsService: ProductItemsService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {
 		this._logger = new Logger(ProductsService.name);
 	}
@@ -236,6 +239,11 @@ export class ProductsService {
 		createProductDto: CreateProductDto,
 		userId: string,
 	): Promise<IProduct> {
+		await this._featureLimitsService.assertCanCreate(
+			userId,
+			FeatureLimitsEnum.Feature.PRODUCTS,
+		);
+
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
 		if (typeof createProductDto.storeIds === 'string') {
@@ -541,6 +549,12 @@ export class ProductsService {
 								totalToProcess: productFileUploadTemplateRows.length,
 							},
 						});
+
+						await this._featureLimitsService.assertCanCreate(
+							userId,
+							FeatureLimitsEnum.Feature.PRODUCTS,
+							productFileUploadTemplateRows.length,
+						);
 
 						fileUploadTemplateError.rowsError =
 							await this._processProductFileUploadTemplateRows(
