@@ -28,6 +28,7 @@ export const mapProductToDefaultProductItemFields = (product: IProduct) => ({
 	QRCode: product.QRCode,
 	updatedAt: product.updatedAt,
 	brand: product.brand,
+	location: product.location,
 	releaseDate: product.releaseDate,
 	expirationDate: product.expirationDate,
 	colors: product.colors,

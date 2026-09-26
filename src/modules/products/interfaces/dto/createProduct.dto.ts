@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 import { IDynamicField } from '../../../../shared/common/dynamic-field/dynamic-field.interface';
 
@@ -68,6 +68,11 @@ export default class CreateProductDto {
 	@IsString()
 	@IsOptional()
 	brand: string | null;
+
+	@IsString()
+	@IsOptional()
+	@MaxLength(200)
+	location: string | null;
 
 	categoriesIds: string[];
 

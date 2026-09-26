@@ -25,6 +25,7 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	uploadFilename: string | null;
 	brand: string | null;
+	location: string | null;
 	historicPrices: IProductHistoricPrice[];
 	releaseDate: Date | null;
 	expirationDate: Date | null;

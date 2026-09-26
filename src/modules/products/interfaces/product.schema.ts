@@ -117,6 +117,9 @@ export class Product implements IProduct {
 	@Prop({ type: String })
 	brand: string | null;
 
+	@Prop({ type: String, default: null })
+	location: string | null;
+
 	@Prop({ type: Date })
 	releaseDate: Date | null;
 

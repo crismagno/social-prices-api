@@ -1,7 +1,7 @@
 import * as ExcelJS from 'exceljs';
 import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
-import { find, includes, isNil } from 'lodash';
+import { escapeRegExp, find, includes, isNil } from 'lodash';
 import {
 	FilterQuery,
 	Model,
@@ -187,6 +187,14 @@ export class ProductItemsService {
 			filter.isActive = tableState.filters.isActive[0];
 		}
 
+		const locationFilter: string | undefined = tableState.filters?.location?.[0]
+			?.toString()
+			.trim();
+
+		if (locationFilter) {
+			filter.location = new RegExp(escapeRegExp(locationFilter), 'i');
+		}
+
 		if (tableState.filters?.isDefault?.length === 1) {
 			filter.isDefault = tableState.filters.isDefault[0];
 		}
@@ -311,6 +319,7 @@ export class ProductItemsService {
 			updatedAt: now,
 			uploadFilename: null,
 			brand: createProductItemDto.brand,
+			location: createProductItemDto.location?.trim() || null,
 			historicPrices: [],
 			releaseDate: createProductItemDto.releaseDate
 				? parseToDate(createProductItemDto.releaseDate)
@@ -481,6 +490,7 @@ export class ProductItemsService {
 				QRCode: updateProductItemDto.QRCode,
 				updatedAt: now,
 				brand: updateProductItemDto.brand,
+				location: updateProductItemDto.location?.trim() || null,
 				historicPrices,
 				releaseDate: updateProductItemDto.releaseDate
 					? parseToDate(updateProductItemDto.releaseDate)
@@ -1226,6 +1236,7 @@ export class ProductItemsService {
 						uploadFilename: filename,
 						previousBarcodes: [],
 						brand: productItemFileUploadTemplateRow.brand || null,
+						location: null,
 						historicPrices: [],
 						releaseDate: productItemFileUploadTemplateRow.releaseDate
 							? parseToDate(productItemFileUploadTemplateRow.releaseDate)
