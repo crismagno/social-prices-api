@@ -200,6 +200,9 @@ export const SaleHeaderBillingSchema =
 export class SaleHeaderShipping implements ISaleHeaderShipping {
 	@Prop({ type: AddressSchema, _id: false })
 	address: IAddress | null;
+
+	@Prop({ type: String, default: null })
+	trackingNumber: string | null;
 }
 
 export const SaleHeaderShippingSchema =

@@ -33,6 +33,8 @@ export interface ISaleSummaryTemplate {
 	saleNumber: string;
 	customer: ISaleSummaryCustomerTemplate;
 	shippingAddress?: string;
+	trackingNumber?: string;
+	trackingNumberUrl?: string;
 	deliveryType: string;
 	stores: ISaleSummaryStoreTemplate[];
 	payments: ISaleSummaryPaymentTemplate[];
@@ -100,6 +102,9 @@ export interface ISaleSummaryUser {
 
 export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 	const buyer: ISaleBuyer = sale.buyer;
+
+	const trackingNumber: string | null =
+		sale.header?.shipping?.trackingNumber?.trim() || null;
 
 	const customer: ICustomer | undefined = sale?.stores?.[0].customer;
 
@@ -195,6 +200,13 @@ export const getSaleSummaryTemplate = (sale: ISale): ISaleSummaryTemplate => {
 		totalAfterPayment: formatToMoneyDecimal(totalAfterPayment),
 		totalPayment: formatToMoneyDecimal(totalPayment),
 		shippingAddress: createAddressName(buyer.address),
+		trackingNumber: trackingNumber ?? undefined,
+		// Only real http(s) links become clickable, so a stored value can never
+		// inject a javascript: URL into the PDF.
+		trackingNumberUrl:
+			trackingNumber && /^https?:\/\//i.test(trackingNumber)
+				? trackingNumber
+				: undefined,
 		totals: {
 			discount: formatToMoneyDecimal(
 				sale.totals.discount?.distributed.amount ?? 0,

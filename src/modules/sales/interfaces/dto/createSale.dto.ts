@@ -8,6 +8,7 @@ import {
 	IsNumber,
 	IsOptional,
 	IsString,
+	MaxLength,
 	ValidateNested,
 } from 'class-validator';
 
@@ -148,6 +149,11 @@ export class SaleHeaderShippingDto {
 	@Type(() => CreateAddressDto)
 	@IsOptional()
 	address: CreateAddressDto | null;
+
+	@IsString()
+	@IsOptional()
+	@MaxLength(300)
+	trackingNumber: string | null;
 }
 
 export class SaleHeaderDto {

@@ -628,6 +628,8 @@ export class SalesService {
 								address: this._parseCreateAddressDtoToAddress(
 									createSaleDto.header.shipping.address,
 								),
+								trackingNumber:
+									createSaleDto.header.shipping.trackingNumber?.trim() || null,
 						  }
 						: null,
 					deliveryType: createSaleDto.header.deliveryType,
@@ -746,6 +748,8 @@ export class SalesService {
 								address: this._parseCreateAddressDtoToAddress(
 									updateSaleDto.header.shipping.address,
 								),
+								trackingNumber:
+									updateSaleDto.header.shipping.trackingNumber?.trim() || null,
 						  }
 						: null,
 					deliveryType: updateSaleDto.header.deliveryType,
@@ -1234,6 +1238,7 @@ export class SalesService {
 							shipping: sale.header.shipping
 								? {
 										address: saleAddress,
+										trackingNumber: sale.header.shipping.trackingNumber ?? null,
 								  }
 								: null,
 							deliveryType: sale.header.deliveryType,
@@ -3139,6 +3144,7 @@ export class SalesService {
 							shipping: saleAddress
 								? {
 										address: saleAddress,
+										trackingNumber: null,
 								  }
 								: null,
 							deliveryType: saleFileUploadTemplateRow.deliveryType
@@ -3231,6 +3237,7 @@ export class SalesService {
 							shipping: saleAddress
 								? {
 										address: saleAddress,
+										trackingNumber: null,
 								  }
 								: null,
 							deliveryType: saleFileUploadTemplateRow.deliveryType

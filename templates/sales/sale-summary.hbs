@@ -216,6 +216,18 @@
 
 					<label>{{shippingAddress}}</label>
 				</div>
+
+				{{#if trackingNumber}}
+				<div class='text-center mt-1'>
+					<b class="fs-medium">Tracking Number: </b>
+
+					{{#if trackingNumberUrl}}
+					<a href="{{trackingNumberUrl}}">{{trackingNumber}}</a>
+					{{else}}
+					<label>{{trackingNumber}}</label>
+					{{/if}}
+				</div>
+				{{/if}}
 			</div>
 
 			<div class="divider mt-2"></div>
