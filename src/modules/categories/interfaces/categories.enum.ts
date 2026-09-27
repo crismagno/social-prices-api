@@ -4,6 +4,7 @@ namespace CategoriesEnum {
 		STORE = 'STORE',
 		SALE = 'SALE',
 		TRANSACTION = 'TRANSACTION',
+		NOTE = 'NOTE',
 	}
 
 	export const TypeLabels = {
@@ -11,6 +12,7 @@ namespace CategoriesEnum {
 		[Type.STORE]: 'Store',
 		[Type.SALE]: 'Sale',
 		[Type.TRANSACTION]: 'Transaction',
+		[Type.NOTE]: 'Note',
 	};
 }
 

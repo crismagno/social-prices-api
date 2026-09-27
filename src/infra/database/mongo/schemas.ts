@@ -15,6 +15,7 @@ import { ProductSchema } from '../../../modules/products/interfaces/product.sche
 import { SaleSchema } from '../../../modules/sales/interfaces/sale.schema';
 import { StoreSchema } from '../../../modules/stores/interfaces/store.schema';
 import { TagSchema } from '../../../modules/tags/interfaces/tags.schema';
+import { NoteSchema } from '../../../modules/notes/interfaces/note.schema';
 import { TransactionSchema } from '../../../modules/transactions/interfaces/transaction.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
 
@@ -28,6 +29,7 @@ export const schemasName = {
 	notification: 'Notification',
 	feedback: 'Feedback',
 	transaction: 'Transaction',
+	note: 'Note',
 	sale: 'Sale',
 	counter: 'Counter',
 	tag: 'Tag',
@@ -56,6 +58,9 @@ export const schemasModule = {
 	]),
 	customer: MongooseModule.forFeature([
 		{ name: schemasName.customer, schema: CustomerSchema },
+	]),
+	note: MongooseModule.forFeature([
+		{ name: schemasName.note, schema: NoteSchema },
 	]),
 	transaction: MongooseModule.forFeature([
 		{ name: schemasName.transaction, schema: TransactionSchema },
