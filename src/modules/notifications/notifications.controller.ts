@@ -53,6 +53,13 @@ export class NotificationsController {
 		);
 	}
 
+	@Post('/updateAllToSeen')
+	public async updateAllToSeen(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		await this._notificationsService.updateAllToSeenByUser(authPayload._id);
+	}
+
 	@Get('/:notificationId')
 	@UsePipes(ValidationPipe)
 	public async findById(

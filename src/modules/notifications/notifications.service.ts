@@ -331,6 +331,20 @@ export class NotificationsService {
 		);
 	}
 
+	public async updateAllToSeenByUser(userId: string): Promise<void> {
+		await this._notificationModel.updateMany(
+			{
+				userId,
+				isSeen: false,
+			},
+			{
+				$set: {
+					isSeen: true,
+				},
+			},
+		);
+	}
+
 	public async createdManualSale(sale: ISale, user: IUser): Promise<void> {
 		const userId: string = sale.createdByUserId.toString();
 
