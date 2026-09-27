@@ -17,6 +17,7 @@ import { CodesModule } from './modules/codes/codes.module';
 import { CountersModule } from './modules/counters/counters.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { EmployeesModule } from './modules/employees/employees.module';
+import { FeedbacksModule } from './modules/feedbacks/feedbacks.module';
 import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module';
 import { FilesModule } from './modules/files/files.module';
 import { LogsModule } from './modules/logs/logs.module';
@@ -51,6 +52,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		CustomersModule,
 		CountersModule,
 		EmployeesModule,
+		FeedbacksModule,
 		NotificationsModule,
 		ProductsModule,
 		SalesModule,

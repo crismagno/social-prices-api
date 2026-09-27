@@ -5,6 +5,7 @@ import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
 import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
 import { CustomerSchema } from '../../../modules/customers/interfaces/customer.schema';
 import { EmployeeSchema } from '../../../modules/employees/interfaces/employee.schema';
+import { FeedbackSchema } from '../../../modules/feedbacks/interfaces/feedback.schema';
 import { FileUploadSchema } from '../../../modules/files-uploads/interfaces/file-upload.schema';
 import { LogSchema } from '../../../modules/logs/interfaces/log.schema';
 import ManagerSchema from '../../../modules/managers/interfaces/manager.schema';
@@ -24,6 +25,7 @@ export const schemasName = {
 	category: 'Category',
 	customer: 'Customer',
 	notification: 'Notification',
+	feedback: 'Feedback',
 	sale: 'Sale',
 	counter: 'Counter',
 	tag: 'Tag',
@@ -52,6 +54,9 @@ export const schemasModule = {
 	]),
 	customer: MongooseModule.forFeature([
 		{ name: schemasName.customer, schema: CustomerSchema },
+	]),
+	feedback: MongooseModule.forFeature([
+		{ name: schemasName.feedback, schema: FeedbackSchema },
 	]),
 	notification: MongooseModule.forFeature([
 		{ name: schemasName.notification, schema: NotificationSchema },
