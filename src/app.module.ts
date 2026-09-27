@@ -31,6 +31,7 @@ import { SalesModule } from './modules/sales/sales.module';
 import { SocketsModule } from './modules/sockets/sockets.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 
@@ -58,6 +59,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		SalesModule,
 		StoresModule,
 		TagsModule,
+		TransactionsModule,
 		FilesModule,
 		SocketsModule,
 		FilesUploadsModule,
