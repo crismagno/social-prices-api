@@ -27,3 +27,5 @@ export class Counter implements ICounter {
 }
 
 export const CounterSchema = SchemaFactory.createForClass(Counter);
+
+CounterSchema.index({ type: 1 }, { unique: true }); // atomic $inc upsert: one counter per type

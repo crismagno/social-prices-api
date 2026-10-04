@@ -88,4 +88,6 @@ const UserSchema = new mongoose.Schema<IUser>(
 	{ timestamps: true, collection: 'users' },
 );
 
+UserSchema.index({ username: 1 }); // login by username
+
 export default UserSchema;

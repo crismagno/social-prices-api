@@ -42,3 +42,7 @@ export class Code implements ICode {
 }
 
 export const CodeSchema = SchemaFactory.createForClass(Code);
+
+CodeSchema.index({ userId: 1, type: 1 }); // lookup by owner and type
+CodeSchema.index({ employeeId: 1, type: 1 }); // lookup by owner and type
+CodeSchema.index({ managerId: 1, type: 1 }); // lookup by owner and type

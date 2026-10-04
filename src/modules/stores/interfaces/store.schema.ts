@@ -81,3 +81,6 @@ export class Store implements IStore {
 }
 
 export const StoreSchema = SchemaFactory.createForClass(Store);
+
+StoreSchema.index({ userId: 1, createdAt: 1 }); // table list + default sort
+StoreSchema.index({ email: 1 }); // findOneByEmail

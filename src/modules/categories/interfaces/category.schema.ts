@@ -45,3 +45,5 @@ export class Category implements ICategory {
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
+
+CategorySchema.index({ ownerUserId: 1, type: 1, name: 1 }); // list by type + duplicate name check

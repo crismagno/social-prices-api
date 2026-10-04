@@ -64,3 +64,6 @@ export class FileUpload implements IFileUpload {
 }
 
 export const FileUploadSchema = SchemaFactory.createForClass(FileUpload);
+
+FileUploadSchema.index({ userId: 1, createdAt: -1 }); // table list + default sort
+FileUploadSchema.index({ userId: 1, status: 1 }); // pending uploads count

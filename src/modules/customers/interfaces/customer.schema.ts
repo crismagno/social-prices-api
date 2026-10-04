@@ -75,3 +75,7 @@ export class Customer implements ICustomer {
 }
 
 export const CustomerSchema = SchemaFactory.createForClass(Customer);
+
+CustomerSchema.index({ ownerUserId: 1, createdAt: 1 }); // table list + default sort
+CustomerSchema.index({ ownerUserId: 1, uniqName: 1 }); // uniqName lookups
+CustomerSchema.index({ ownerUserId: 1, email: 1 }); // duplicate checks by email

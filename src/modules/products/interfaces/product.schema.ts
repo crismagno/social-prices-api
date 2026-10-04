@@ -146,3 +146,6 @@ export class Product implements IProduct {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+ProductSchema.index({ userId: 1, createdAt: 1 }); // table list + default sort
+ProductSchema.index({ userId: 1, barcode: 1 }); // barcode lookups

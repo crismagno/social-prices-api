@@ -45,3 +45,6 @@ export class Notification implements INotification {
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
+
+NotificationSchema.index({ userId: 1, isSeen: 1 }); // unread count / mark all seen
+NotificationSchema.index({ userId: 1, createdAt: -1 }); // table list + default sort

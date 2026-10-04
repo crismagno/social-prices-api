@@ -38,3 +38,5 @@ export class Tag implements ITag {
 }
 
 export const TagSchema = SchemaFactory.createForClass(Tag);
+
+TagSchema.index({ userId: 1, type: 1, name: 1 }); // list by type + duplicate name check

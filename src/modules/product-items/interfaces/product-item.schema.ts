@@ -159,6 +159,10 @@ export class ProductItem implements IProductItem {
 
 export const ProductItemSchema = SchemaFactory.createForClass(ProductItem);
 
+ProductItemSchema.index({ userId: 1, createdAt: 1 }); // table list + default sort
+ProductItemSchema.index({ userId: 1, barcode: 1 }); // barcode lookups
+ProductItemSchema.index({ productId: 1, isDefault: 1 }); // default item of a product
+
 // Virtual field for populated product
 ProductItemSchema.virtual('product', {
 	ref: 'Product',

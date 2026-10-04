@@ -90,3 +90,6 @@ export class Employee implements IEmployee {
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
+
+EmployeeSchema.index({ userId: 1, createdAt: 1 }); // table list + default sort
+EmployeeSchema.index({ email: 1 }); // login by email or username

@@ -406,6 +406,14 @@ export class Sale extends Document implements ISale {
 
 export const SaleSchema = SchemaFactory.createForClass(Sale);
 
+SaleSchema.index({ createdByUserId: 1, createdAt: -1 }); // sales list/count: $or branch 1 + default sort
+SaleSchema.index({ 'stores.storeId': 1, createdAt: -1 }); // sales list/count: $or branch 2 (multikey) + date range
+SaleSchema.index({ 'stores.storeId': 1, createdDate: -1 }); // charts/reports by store and period
+SaleSchema.index({ 'stores.customerId': 1, createdDate: -1 }); // sales by customer
+SaleSchema.index({ 'stores.products.productId': 1 }); // sales filtered by product
+SaleSchema.index({ 'stores.products.productItemId': 1 }); // sales filtered by product item
+SaleSchema.index({ numberManual: 1 }); // findByNumberManual
+
 SaleSchema.virtual('stores.products.productItem', {
 	ref: 'ProductItem',
 	localField: 'stores.products.productItemId',
