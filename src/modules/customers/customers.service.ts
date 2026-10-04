@@ -2,7 +2,7 @@ import { ManagedUpload } from 'aws-sdk/clients/s3';
 import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import * as ExcelJS from 'exceljs';
-import { find, includes, some } from 'lodash';
+import { escapeRegExp, find, includes, some } from 'lodash';
 import mongoose, {
 	AnyKeys,
 	AnyObject,
@@ -247,6 +247,14 @@ export class CustomersService {
 
 		if (tableState?.filters?.tagsIds?.length) {
 			filter.tagsIds = { $in: tableState.filters.tagsIds };
+		}
+
+		for (const field of ['name', 'uniqName', 'email'] as const) {
+			const text: string | undefined = tableState?.filters?.[field]?.[0]?.trim();
+
+			if (text) {
+				filter[field] = new RegExp(escapeRegExp(text), 'i');
+			}
 		}
 
 		const response: ITableStateResponse<ICustomer[]> = {
