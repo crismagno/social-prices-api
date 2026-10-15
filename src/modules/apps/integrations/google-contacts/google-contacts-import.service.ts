@@ -5,7 +5,10 @@ import { FeatureLimitsService } from '../../../feature-limits/feature-limits.ser
 import FeatureLimitsEnum from '../../../feature-limits/interfaces/feature-limits.enum';
 import { AppConnectionsService } from '../../connections/app-connections.service';
 import AppsEnum from '../../interfaces/apps.enum';
-import { IAppImportResult } from '../../interfaces/apps.types';
+import {
+	IAppImportResponse,
+	IAppImportResult,
+} from '../../interfaces/apps.types';
 import { GoogleAccessTokenProvider } from './google-contacts.access-token';
 import { GooglePeopleClient } from './google-contacts.client';
 import { ExistingCustomersIndex } from './google-contacts.existing-index';
@@ -45,7 +48,7 @@ export class GoogleContactsImportService {
 	public async importSelected(
 		ownerUserId: string,
 		externalIds: string[],
-	): Promise<IAppImportResult> {
+	): Promise<IAppImportResponse> {
 		const ids: string[] = [...new Set(externalIds)];
 
 		const summary: IAppImportResult = {
@@ -57,8 +60,10 @@ export class GoogleContactsImportService {
 			finishedAt: new Date(),
 		};
 
+		const savedExternalIds: string[] = [];
+
 		if (!ids.length) {
-			return summary;
+			return { ...summary, savedExternalIds };
 		}
 
 		const { connection, accessToken } =
@@ -101,6 +106,7 @@ export class GoogleContactsImportService {
 						)
 					) {
 						summary.linked++;
+						savedExternalIds.push(contact.externalId);
 						index.register(match.customerId, contact);
 					} else {
 						summary.skipped++;
@@ -120,6 +126,7 @@ export class GoogleContactsImportService {
 					);
 
 					summary.created++;
+					savedExternalIds.push(contact.externalId);
 					index.register(created._id, contact);
 				}
 			} catch (error) {
@@ -141,7 +148,7 @@ export class GoogleContactsImportService {
 
 		await this._connectionsService.saveSyncResult(connection._id, summary);
 
-		return summary;
+		return { ...summary, savedExternalIds };
 	}
 
 	//#endregion

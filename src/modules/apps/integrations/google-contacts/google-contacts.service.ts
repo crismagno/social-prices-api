@@ -8,7 +8,7 @@ import { IAppConnection } from '../../interfaces/app-connection.interface';
 import AppsEnum from '../../interfaces/apps.enum';
 import {
 	IAppContext,
-	IAppImportResult,
+	IAppImportResponse,
 	IAppIntegration,
 	IAppSyncPreview,
 } from '../../interfaces/apps.types';
@@ -162,7 +162,7 @@ export class GoogleContactsService implements IAppIntegration {
 	public async importSelected(
 		ctx: IAppContext,
 		externalIds: string[],
-	): Promise<IAppImportResult> {
+	): Promise<IAppImportResponse> {
 		return await this._withProviderErrors(() =>
 			this._importService.importSelected(ctx.ownerUserId, externalIds),
 		);

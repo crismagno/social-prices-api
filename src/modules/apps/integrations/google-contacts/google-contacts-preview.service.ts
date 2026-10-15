@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import AppsEnum from '../../interfaces/apps.enum';
-import {
-	IAppContactRow,
-	IAppSyncPreview,
-} from '../../interfaces/apps.types';
+import { IAppContactRow, IAppSyncPreview } from '../../interfaces/apps.types';
 import { GoogleAccessTokenProvider } from './google-contacts.access-token';
 import { GooglePeopleClient } from './google-contacts.client';
-import {
-	GoogleContactsCustomersRepository,
-} from './google-contacts.customers.repository';
+import { GoogleContactsCustomersRepository } from './google-contacts.customers.repository';
 import { ExistingCustomersIndex } from './google-contacts.existing-index';
 import {
 	IMappedContact,

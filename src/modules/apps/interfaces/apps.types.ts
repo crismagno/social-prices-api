@@ -38,6 +38,11 @@ export interface IAppCatalogItem {
 	lastSyncSummary: IAppImportResult | null;
 }
 
+/** What the save endpoint answers: the stored summary plus which contacts were saved. */
+export interface IAppImportResponse extends IAppImportResult {
+	savedExternalIds: string[];
+}
+
 /**
  * The extension point. One class per app; `sync` is optional so an app that
  * only signs in (or does nothing yet) is not forced to stub it.
@@ -55,5 +60,5 @@ export interface IAppIntegration {
 	importSelected?(
 		ctx: IAppContext,
 		externalIds: string[],
-	): Promise<IAppImportResult>;
+	): Promise<IAppImportResponse>;
 }

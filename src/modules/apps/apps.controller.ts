@@ -27,7 +27,7 @@ import ImportAppContactsDto from './interfaces/dto/importAppContacts.dto';
 import {
 	IAppCatalogItem,
 	IAppContext,
-	IAppImportResult,
+	IAppImportResponse,
 	IAppSyncPreview,
 } from './interfaces/apps.types';
 
@@ -89,7 +89,7 @@ export class AppsController {
 		@Param('appId', new ParseEnumPipe(AppsEnum.App)) appId: AppsEnum.App,
 		@AuthPayload() authPayload: IAuthPayload,
 		@Body() dto: ImportAppContactsDto,
-	): Promise<IAppImportResult> {
+	): Promise<IAppImportResponse> {
 		return await this._appsService.importSelected(
 			appId,
 			toContext(authPayload),

@@ -173,6 +173,43 @@ describe('GoogleContactsImportService', () => {
 		expect(result).toMatchObject({ failed: 1, created: 1 });
 	});
 
+	it('tells which contacts were saved (created or linked), and stores no id list', async () => {
+		const { service, connections } = build({
+			people: [person(1), person(2), person(3)],
+			existing: [
+				{ _id: 'k2', email: 'p2@example.com', externalSources: [] },
+				{
+					_id: 'k3',
+					email: 'p3@example.com',
+					externalSources: [
+						{ appId: AppsEnum.App.GOOGLE_CONTACTS, externalId: 'people/c3' },
+					],
+				},
+			],
+		});
+
+		const result = await service.importSelected('u1', [
+			'people/c1',
+			'people/c2',
+			'people/c3',
+		]);
+
+		expect(result.savedExternalIds.sort()).toEqual(['people/c1', 'people/c2']);
+
+		const stored = connections.saveSyncResult.mock.calls[0][1];
+		expect(stored).not.toHaveProperty('savedExternalIds');
+		expect(stored).toMatchObject({ created: 1, linked: 1, skipped: 1 });
+	});
+
+	it('does not list a contact whose save failed', async () => {
+		const create = jest.fn().mockRejectedValue(new Error('db down'));
+		const { service } = build({ people: [person(1)], create });
+
+		const result = await service.importSelected('u1', ['people/c1']);
+
+		expect(result.savedExternalIds).toEqual([]);
+	});
+
 	it('after linking, a second selected contact with that e-mail is skipped', async () => {
 		const { service, customers } = build({
 			people: [

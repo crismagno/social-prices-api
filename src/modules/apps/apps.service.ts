@@ -10,7 +10,7 @@ import AppsEnum from './interfaces/apps.enum';
 import {
 	IAppCatalogItem,
 	IAppContext,
-	IAppImportResult,
+	IAppImportResponse,
 	IAppSyncPreview,
 } from './interfaces/apps.types';
 
@@ -89,7 +89,7 @@ export class AppsService {
 		appId: AppsEnum.App,
 		ctx: IAppContext,
 		externalIds: string[],
-	): Promise<IAppImportResult> {
+	): Promise<IAppImportResponse> {
 		const integration = this._registry.get(appId);
 
 		if (!integration.importSelected) {
