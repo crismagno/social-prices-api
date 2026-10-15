@@ -11,7 +11,10 @@ import {
 } from '../../interfaces/apps.types';
 import { GoogleAccessTokenProvider } from './google-contacts.access-token';
 import { GooglePeopleClient } from './google-contacts.client';
-import { ExistingCustomersIndex } from './google-contacts.existing-index';
+import {
+	ExistingCustomersIndex,
+	IExistingCustomer,
+} from './google-contacts.existing-index';
 import { GoogleContactsCustomersRepository } from './google-contacts.customers.repository';
 import {
 	IMappedContact,
@@ -78,7 +81,7 @@ export class GoogleContactsImportService {
 
 		summary.skipped += ids.length - contacts.length;
 
-		const index = new ExistingCustomersIndex(
+		const existingCustomers: IExistingCustomer[] =
 			await this._customersRepository.findExisting(
 				ownerUserId,
 				APP_ID,
@@ -86,9 +89,24 @@ export class GoogleContactsImportService {
 				contacts
 					.map((contact: IMappedContact) => contact.email)
 					.filter((email: string | null): email is string => !!email),
-			),
-			APP_ID,
+			);
+
+		// Ask for the whole amount first. Past the limit nothing is saved, not
+		// even the links, so the user fixes the selection instead of getting half.
+		const newCustomers: number = this._countNewCustomers(
+			contacts,
+			existingCustomers,
 		);
+
+		if (newCustomers > 0) {
+			await this._featureLimitsService.assertCanCreate(
+				ownerUserId,
+				FeatureLimitsEnum.Feature.CUSTOMERS,
+				newCustomers,
+			);
+		}
+
+		const index = new ExistingCustomersIndex(existingCustomers, APP_ID);
 
 		for (const contact of contacts) {
 			const match = index.match(contact);
@@ -149,6 +167,33 @@ export class GoogleContactsImportService {
 		await this._connectionsService.saveSyncResult(connection._id, summary);
 
 		return { ...summary, savedExternalIds };
+	}
+
+	//#endregion
+
+	//#region Private Methods
+
+	/**
+	 * How many customers this selection would create. Contacts that match a
+	 * customer only get linked, and two selected contacts with the same e-mail
+	 * make one customer, so neither counts against the limit.
+	 */
+	private _countNewCustomers(
+		contacts: IMappedContact[],
+		existingCustomers: IExistingCustomer[],
+	): number {
+		const planned = new ExistingCustomersIndex(existingCustomers, APP_ID);
+
+		let count: number = 0;
+
+		for (const contact of contacts) {
+			if (!planned.match(contact)) {
+				count++;
+				planned.register('planned', contact);
+			}
+		}
+
+		return count;
 	}
 
 	//#endregion

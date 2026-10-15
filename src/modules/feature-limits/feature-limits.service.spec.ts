@@ -134,7 +134,7 @@ describe('FeatureLimitsService', () => {
 			);
 
 			expect(models.customers.countDocuments).toHaveBeenCalledWith({
-				userId: USER_ID,
+				ownerUserId: USER_ID,
 				'softDelete.isDeleted': { $ne: true },
 			});
 		});
@@ -167,6 +167,53 @@ describe('FeatureLimitsService', () => {
 
 			expect(usage.products).toEqual({ limit: 500, used: 12 });
 			expect(usage.tags).toEqual({ limit: null, used: 4 });
+		});
+	});
+
+	describe('which field identifies the owner of what is counted', () => {
+		// Customers and categories keep the owner in `ownerUserId`; on a customer
+		// `userId` is the (usually empty) account the customer is linked to, so
+		// counting by it always gave 0 and the limit never applied.
+		it.each([
+			[FeatureLimitsEnum.Feature.CUSTOMERS, 'ownerUserId'],
+			[FeatureLimitsEnum.Feature.CATEGORIES, 'ownerUserId'],
+			[FeatureLimitsEnum.Feature.PRODUCTS, 'userId'],
+			[FeatureLimitsEnum.Feature.PRODUCT_ITEMS, 'userId'],
+			[FeatureLimitsEnum.Feature.EMPLOYEES, 'userId'],
+			[FeatureLimitsEnum.Feature.STORES, 'userId'],
+			[FeatureLimitsEnum.Feature.TAGS, 'userId'],
+		])(
+			'counts %s by %s, skipping soft-deleted ones',
+			async (feature, field) => {
+				const { service, models } = buildService({ _id: USER_ID });
+
+				await service.getUsage(USER_ID);
+
+				expect(models[feature].countDocuments).toHaveBeenCalledWith({
+					[field]: USER_ID,
+					'softDelete.isDeleted': { $ne: true },
+				});
+			},
+		);
+
+		it('reports the customers already created, so the limit can apply', async () => {
+			const { service } = buildService(userWithLimits({ customers: 10 }), {
+				customers: 8,
+			});
+
+			const usage = await service.getUsage(USER_ID);
+
+			expect(usage.customers).toEqual({ limit: 10, used: 8 });
+		});
+
+		it('blocks a new customer once the real count reaches the limit', async () => {
+			const { service } = buildService(userWithLimits({ customers: 8 }), {
+				customers: 8,
+			});
+
+			await expect(
+				service.assertCanCreate(USER_ID, FeatureLimitsEnum.Feature.CUSTOMERS),
+			).rejects.toBeInstanceOf(FeatureLimitReachedException);
 		});
 	});
 });

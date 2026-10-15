@@ -9,6 +9,11 @@ import { FeatureLimitReachedException } from './feature-limit-reached.exception'
 import FeatureLimitsEnum from './interfaces/feature-limits.enum';
 import { IFeaturesUsage } from './interfaces/feature-limits.types';
 
+const OWNER_USER_ID_FEATURES: FeatureLimitsEnum.Feature[] = [
+	FeatureLimitsEnum.Feature.CUSTOMERS,
+	FeatureLimitsEnum.Feature.CATEGORIES,
+];
+
 @Injectable()
 export class FeatureLimitsService {
 	//#region Private Properties
@@ -107,10 +112,11 @@ export class FeatureLimitsService {
 		userId: string,
 		feature: FeatureLimitsEnum.Feature,
 	): Promise<number> {
-		const ownerField: string =
-			feature === FeatureLimitsEnum.Feature.CATEGORIES
-				? 'ownerUserId'
-				: 'userId';
+		// Customers and categories keep their owner in `ownerUserId`. On a customer
+		// `userId` is the account it is linked to (usually none), not who owns it.
+		const ownerField: string = OWNER_USER_ID_FEATURES.includes(feature)
+			? 'ownerUserId'
+			: 'userId';
 
 		const filter: FilterQuery<any> = {
 			[ownerField]: userId,

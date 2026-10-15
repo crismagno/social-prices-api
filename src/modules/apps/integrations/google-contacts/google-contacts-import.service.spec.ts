@@ -266,12 +266,13 @@ describe('GoogleContactsImportService', () => {
 		]);
 	});
 
-	it('stops creating at the customers limit and reports it', async () => {
+	it('still stops safely if the limit fills up while saving (race after the up-front check)', async () => {
 		const { service, customers, featureLimits } = build({
 			people: [person(1), person(2), person(3)],
 		});
 		featureLimits.assertCanCreate
-			.mockResolvedValueOnce(undefined)
+			.mockResolvedValueOnce(undefined) // the up-front check passed
+			.mockResolvedValueOnce(undefined) // first customer
 			.mockRejectedValue(
 				new FeatureLimitReachedException(
 					FeatureLimitsEnum.Feature.CUSTOMERS,
@@ -292,7 +293,97 @@ describe('GoogleContactsImportService', () => {
 			skipped: 2,
 			limitReached: true,
 		});
-		expect(featureLimits.assertCanCreate).toHaveBeenCalledTimes(2);
+	});
+
+	describe('customers limit, checked before anything is saved', () => {
+		const rejectsOver = (featureLimits: any, remaining: number) =>
+			featureLimits.assertCanCreate.mockImplementation(
+				async (_owner: string, _feature: string, amount: number = 1) => {
+					if (amount > remaining) {
+						throw new FeatureLimitReachedException(
+							FeatureLimitsEnum.Feature.CUSTOMERS,
+							10,
+							10 - remaining,
+						);
+					}
+				},
+			);
+
+		it('asks for exactly the new customers: links and repeated e-mails do not count', async () => {
+			const { service, featureLimits } = build({
+				people: [
+					person(1),
+					person(2),
+					person(3, { emailAddresses: [{ value: 'p1@example.com' }] }),
+					person(4),
+				],
+				existing: [{ _id: 'k4', email: 'p4@example.com', externalSources: [] }],
+			});
+
+			await service.importSelected('u1', [
+				'people/c1',
+				'people/c2',
+				'people/c3',
+				'people/c4',
+			]);
+
+			expect(featureLimits.assertCanCreate).toHaveBeenNthCalledWith(
+				1,
+				'u1',
+				FeatureLimitsEnum.Feature.CUSTOMERS,
+				2,
+			);
+		});
+
+		it('rejects the whole request, saving nothing, when the new ones exceed what is left', async () => {
+			const { service, customers, featureLimits, connections } = build({
+				people: [person(1), person(2), person(3), person(4)],
+				existing: [{ _id: 'k4', email: 'p4@example.com', externalSources: [] }],
+			});
+			rejectsOver(featureLimits, 2);
+
+			await expect(
+				service.importSelected('u1', [
+					'people/c1',
+					'people/c2',
+					'people/c3',
+					'people/c4',
+				]),
+			).rejects.toBeInstanceOf(FeatureLimitReachedException);
+
+			expect(customers.create).not.toHaveBeenCalled();
+			expect(customers.linkExternalSource).not.toHaveBeenCalled();
+			expect(connections.saveSyncResult).not.toHaveBeenCalled();
+		});
+
+		it('allows exactly the remaining amount', async () => {
+			const { service, customers, featureLimits } = build({
+				people: [person(1), person(2)],
+			});
+			rejectsOver(featureLimits, 2);
+
+			const result = await service.importSelected('u1', [
+				'people/c1',
+				'people/c2',
+			]);
+
+			expect(customers.create).toHaveBeenCalledTimes(2);
+			expect(result).toMatchObject({ created: 2, limitReached: false });
+		});
+
+		it('links existing customers even when there is no room for new ones', async () => {
+			const { service, customers, featureLimits } = build({
+				people: [person(2)],
+				existing: [{ _id: 'k2', email: 'p2@example.com', externalSources: [] }],
+			});
+			rejectsOver(featureLimits, 0);
+
+			const result = await service.importSelected('u1', ['people/c2']);
+
+			expect(customers.linkExternalSource).toHaveBeenCalledTimes(1);
+			expect(result).toMatchObject({ linked: 1, created: 0 });
+			expect(featureLimits.assertCanCreate).not.toHaveBeenCalled();
+		});
 	});
 
 	it('counts a failing contact and keeps going', async () => {
