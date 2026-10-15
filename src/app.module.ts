@@ -10,6 +10,7 @@ import AuthorizationToken from './infra/authorization/authorization-token';
 import { JwtModuleRegister } from './infra/authorization/authorization-token.enum';
 import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
 import { AccountModule } from './modules/account/account.module';
+import { AppsModule } from './modules/apps/apps.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -70,6 +71,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		ManagerAuthModule,
 		ManagerUsersModule,
 		ProductItemsModule,
+		AppsModule,
 	],
 	controllers: [AppController, AppInitController],
 	providers: [

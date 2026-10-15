@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Schema } from 'mongoose';
 
+import AppsEnum from '../../apps/interfaces/apps.enum';
 import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
 import { AddressSchema } from '../../../shared/common/address/address.schema';
 import PersonEnum from '../../../shared/common/person/person.enum';
@@ -80,6 +81,10 @@ const UserSchema = new mongoose.Schema<IUser>(
 			},
 		},
 		limits: { type: UserLimitsSchema, optional: true },
+		enabledApps: {
+			type: [{ type: String, enum: Object.values(AppsEnum.App) }],
+			default: [],
+		},
 		softDelete: {
 			type: SoftDeleteSchema,
 			optional: true,

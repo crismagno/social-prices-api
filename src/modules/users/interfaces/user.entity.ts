@@ -1,3 +1,4 @@
+import AppsEnum from '../../apps/interfaces/apps.enum';
 import { IUserLimits } from '../../feature-limits/interfaces/feature-limits.types';
 import { IAddress } from '../../../shared/common/address/address.interface';
 import PersonEnum from '../../../shared/common/person/person.enum';
@@ -47,6 +48,8 @@ export default class UserEntity implements IUserEntity {
 
 	public limits: IUserLimits | null;
 
+	public enabledApps: AppsEnum.App[];
+
 	public createdAt: Date;
 
 	public updatedAt: Date;
@@ -78,6 +81,7 @@ export default class UserEntity implements IUserEntity {
 		this.cnpj = _user.cnpj ?? null;
 		this.type = _user.type;
 		this.limits = _user.limits ?? null;
+		this.enabledApps = _user.enabledApps ?? [];
 		this.createdAt = _user.createdAt;
 		this.updatedAt = _user.updatedAt;
 	}

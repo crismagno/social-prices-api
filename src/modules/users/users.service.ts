@@ -29,6 +29,8 @@ import UpdateEmailDto from './interfaces/dto/updateEmail.dto';
 import UpdateUserByManagerDto from './interfaces/dto/updateUserByManager.dto';
 import UpdateUserDto from './interfaces/dto/updateUser.dto';
 import UpdateUserLimitsDto from './interfaces/dto/updateUserLimits.dto';
+import UpdateUserAppsDto from '../apps/interfaces/dto/updateUserApps.dto';
+import { sanitizeEnabledApps } from '../apps/interfaces/sanitize-enabled-apps';
 import UpdateUserAddressesDto from './interfaces/dto/updateUserAddresses.dto';
 import UpdateUserPhoneNumbersDto from './interfaces/dto/updateUserPhoneNumbers.dto';
 import UserEntity from './interfaces/user.entity';
@@ -208,6 +210,28 @@ export class UsersService {
 			{ $set: { 'limits.features': features, updatedAt: new Date() } },
 			{ new: true },
 		);
+
+		return new UserEntity(userUpdated);
+	}
+
+	public async updateUserApps(
+		userId: string,
+		dto: UpdateUserAppsDto,
+	): Promise<IUserEntity> {
+		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
+			new Types.ObjectId(userId),
+			{
+				$set: {
+					enabledApps: sanitizeEnabledApps(dto.enabledApps),
+					updatedAt: new Date(),
+				},
+			},
+			{ new: true },
+		);
+
+		if (!userUpdated) {
+			throw new NotFoundException('User not found.');
+		}
 
 		return new UserEntity(userUpdated);
 	}

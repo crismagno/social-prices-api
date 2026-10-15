@@ -1,5 +1,6 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { AppConnectionSchema } from '../../../modules/apps/interfaces/app-connection.schema';
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
 import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
 import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
@@ -38,6 +39,7 @@ export const schemasName = {
 	log: 'Log',
 	manager: 'Manager',
 	productItem: 'ProductItem',
+	appConnection: 'AppConnection',
 };
 
 export const schemasModule = {
@@ -98,5 +100,8 @@ export const schemasModule = {
 			schema: ProductItemSchema,
 			collection: 'product-items',
 		},
+	]),
+	appConnection: MongooseModule.forFeature([
+		{ name: schemasName.appConnection, schema: AppConnectionSchema },
 	]),
 };

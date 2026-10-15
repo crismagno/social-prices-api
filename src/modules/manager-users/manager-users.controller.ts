@@ -21,6 +21,7 @@ import {
 	ManagerLevels,
 } from '../manager-auth/guards/manager-level.guard';
 import ManagersEnum from '../managers/interfaces/managers.enum';
+import UpdateUserAppsDto from '../apps/interfaces/dto/updateUserApps.dto';
 import UpdateUserByManagerDto from '../users/interfaces/dto/updateUserByManager.dto';
 import UpdateUserLimitsDto from '../users/interfaces/dto/updateUserLimits.dto';
 import UserEntity from '../users/interfaces/user.entity';
@@ -76,5 +77,15 @@ export class ManagerUsersController {
 		@Body() dto: UpdateUserLimitsDto,
 	): Promise<IUserEntity> {
 		return await this._usersService.updateUserLimits(id, dto);
+	}
+
+	@Patch('/:id/apps')
+	@ManagerLevels(ManagersEnum.Level.ADMIN, ManagersEnum.Level.MANAGER)
+	@UsePipes(new ValidationPipe({ transform: true }))
+	public async updateApps(
+		@Param('id') id: string,
+		@Body() dto: UpdateUserAppsDto,
+	): Promise<IUserEntity> {
+		return await this._usersService.updateUserApps(id, dto);
 	}
 }
