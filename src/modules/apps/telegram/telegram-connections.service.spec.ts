@@ -110,6 +110,18 @@ describe('TelegramConnectionsService', () => {
 		);
 	});
 
+	it('saveWebhookInfo stores everything Telegram reported, with when it was checked', async () => {
+		const { service, model } = build();
+		const info: any = { url: 'https://x/hook', pendingUpdateCount: 2 };
+
+		await service.saveWebhookInfo('c1', info);
+
+		expect(model.updateOne).toHaveBeenCalledWith(
+			{ _id: 'c1' },
+			{ $set: { webhookInfo: { ...info, checkedAt: expect.any(Date) } } },
+		);
+	});
+
 	it('touchLastUpdate records when the last message arrived', async () => {
 		const { service, model } = build();
 		const at = new Date('2030-01-01');

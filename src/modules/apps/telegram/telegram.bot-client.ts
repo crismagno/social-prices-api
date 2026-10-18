@@ -69,6 +69,13 @@ export class TelegramBotClient {
 			lastErrorDate: info.last_error_date
 				? new Date(info.last_error_date * 1000)
 				: null,
+			lastSynchronizationErrorDate: info.last_synchronization_error_date
+				? new Date(info.last_synchronization_error_date * 1000)
+				: null,
+			hasCustomCertificate: info.has_custom_certificate ?? false,
+			ipAddress: info.ip_address ?? null,
+			maxConnections: info.max_connections ?? null,
+			allowedUpdates: info.allowed_updates ?? [],
 		};
 	}
 

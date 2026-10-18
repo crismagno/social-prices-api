@@ -3,7 +3,10 @@ import mongoose from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import AppsEnum from '../interfaces/apps.enum';
-import { ITelegramConnection } from './telegram-connection.interface';
+import {
+	ITelegramConnection,
+	ITelegramStoredWebhookInfo,
+} from './telegram-connection.interface';
 
 @Schema({ timestamps: true, collection: 'telegram_connections' })
 export class TelegramConnection implements Partial<ITelegramConnection> {
@@ -43,6 +46,9 @@ export class TelegramConnection implements Partial<ITelegramConnection> {
 
 	@Prop({ type: Date, default: null })
 	lastUpdateAt: Date | null;
+
+	@Prop({ type: Object })
+	webhookInfo?: ITelegramStoredWebhookInfo;
 }
 
 export const TelegramConnectionSchema =

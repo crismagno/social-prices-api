@@ -137,6 +137,33 @@ describe('TelegramBotClient', () => {
 			pendingUpdateCount: 3,
 			lastErrorMessage: 'Wrong response from the webhook: 500',
 			lastErrorDate: new Date(1_760_000_000 * 1000),
+			lastSynchronizationErrorDate: null,
+			hasCustomCertificate: false,
+			ipAddress: null,
+			maxConnections: null,
+			allowedUpdates: [],
+		});
+	});
+
+	it('getWebhookInfo returns every field Telegram sends', async () => {
+		fetchMock.mockResolvedValue(
+			ok({
+				url: 'https://x.example/hook',
+				has_custom_certificate: true,
+				pending_update_count: 0,
+				ip_address: '149.154.167.220',
+				last_synchronization_error_date: 1_760_000_100,
+				max_connections: 40,
+				allowed_updates: ['message'],
+			}),
+		);
+
+		await expect(client.getWebhookInfo(TOKEN)).resolves.toMatchObject({
+			hasCustomCertificate: true,
+			ipAddress: '149.154.167.220',
+			lastSynchronizationErrorDate: new Date(1_760_000_100 * 1000),
+			maxConnections: 40,
+			allowedUpdates: ['message'],
 		});
 	});
 

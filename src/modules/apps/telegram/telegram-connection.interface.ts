@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import { ITelegramWebhookInfo } from './telegram.types';
 import AppsEnum from '../interfaces/apps.enum';
 
 /** One user's Telegram bot, and what is needed to talk to it and hear from it. */
@@ -25,4 +26,10 @@ export interface ITelegramConnection
 	/** When the webhook was last pointed at this system (connecting or registering again). */
 	webhookRegisteredAt?: Date;
 	lastUpdateAt: Date | null;
+	/** Everything Telegram's getWebhookInfo returned at the last check. */
+	webhookInfo?: ITelegramStoredWebhookInfo;
+}
+
+export interface ITelegramStoredWebhookInfo extends ITelegramWebhookInfo {
+	checkedAt: Date;
 }

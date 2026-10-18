@@ -52,6 +52,11 @@ export interface ITelegramWebhookInfo {
 	pendingUpdateCount: number;
 	lastErrorMessage: string | null;
 	lastErrorDate: Date | null;
+	lastSynchronizationErrorDate: Date | null;
+	hasCustomCertificate: boolean;
+	ipAddress: string | null;
+	maxConnections: number | null;
+	allowedUpdates: string[];
 }
 
 /** What the bot token's owner sees about the connection. Never the token. */

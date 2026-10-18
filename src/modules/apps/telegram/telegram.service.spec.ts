@@ -75,6 +75,7 @@ const build = (
 		}),
 		touchLastUpdate: jest.fn().mockResolvedValue(undefined),
 		updateWebhook: jest.fn().mockResolvedValue(undefined),
+		saveWebhookInfo: jest.fn().mockResolvedValue(undefined),
 		deleteByOwner: jest.fn().mockResolvedValue(undefined),
 	};
 	const messages: any = {
@@ -425,13 +426,17 @@ describe('TelegramService', () => {
 
 	describe('getWebhookStatus', () => {
 		it('shows what Telegram has pending and whether its url is still the right one', async () => {
-			const { service, bot } = build({
+			const { service, bot, connections } = build({
 				connection: { ...connectionWithSecret().connection, webhookKey: 'KEY' },
 			});
 
 			const status = await service.getWebhookStatus('u1');
 
 			expect(bot.getWebhookInfo).toHaveBeenCalledWith(TOKEN);
+			expect(connections.saveWebhookInfo).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({ pendingUpdateCount: 0 }),
+			);
 			expect(status).toMatchObject({
 				pendingUpdateCount: 0,
 				lastErrorMessage: null,

@@ -208,6 +208,8 @@ export class TelegramService {
 			this._connectionsService.readToken(connection),
 		);
 
+		await this._connectionsService.saveWebhookInfo(connection._id, info);
+
 		const expectedUrl: string = `${this._webhookBaseUrl()}${WEBHOOK_PATH}/${
 			connection.webhookKey
 		}`;

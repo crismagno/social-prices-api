@@ -9,7 +9,7 @@ import { IAppConnectionStatus } from '../core/status/app-status.types';
 import AppsEnum from '../interfaces/apps.enum';
 import { ITelegramConnection } from './telegram-connection.interface';
 import { TelegramConnection } from './telegram-connection.schema';
-import { ITelegramBotInfo } from './telegram.types';
+import { ITelegramBotInfo, ITelegramWebhookInfo } from './telegram.types';
 
 export interface ISaveTelegramConnectionInput {
 	ownerUserId: string;
@@ -107,6 +107,16 @@ export class TelegramConnectionsService {
 					webhookRegisteredAt: new Date(),
 				},
 			},
+		);
+	}
+
+	public async saveWebhookInfo(
+		connectionId: string,
+		info: ITelegramWebhookInfo,
+	): Promise<void> {
+		await this._connectionModel.updateOne(
+			{ _id: connectionId },
+			{ $set: { webhookInfo: { ...info, checkedAt: new Date() } } },
 		);
 	}
 
