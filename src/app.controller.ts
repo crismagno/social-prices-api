@@ -42,4 +42,25 @@ export class AppController {
 	public getMe(@AuthPayload() user: UserEntity) {
 		return user;
 	}
+
+	// @Public()
+	// @Get('/webhooks/instagram')
+	// public getWebhooksInstagram(@Res() res: Response, @Req() req: Request) {
+	// 	console.log('===========Validation Webhook Instagram=============');
+	// 	console.log('req.body: ', req.body);
+	// 	console.log('req.query: ', req.query);
+	// 	console.log('=========================================');
+	// 	return res.status(200).send(req.query['hub.challenge']);
+	// }
+
+	// @Public()
+	// @Post('/webhooks/instagram')
+	// public postWebhooksInstagram(@Res() res: Response, @Req() req: Request) {
+	// 	console.log('===========Webhook Instagram=============');
+	// 	console.log(JSON.stringify(req.body));
+	// 	console.log(JSON.stringify(req.query));
+	// 	console.log(JSON.stringify(req.params));
+	// 	console.log('=========================================');
+	// 	return res.status(200).send('ok');
+	// }
 }

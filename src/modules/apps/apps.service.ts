@@ -1,27 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import { AppSyncNotSupportedException } from './apps.exceptions';
-import { AppsRegistry } from './apps.registry';
-import { AppConnectionsService } from './connections/app-connections.service';
-import { IAppConnection } from './interfaces/app-connection.interface';
-import AppsEnum from './interfaces/apps.enum';
 import {
-	IAppCatalogItem,
-	IAppContext,
-	IAppImportResponse,
-	IAppSyncPreview,
-} from './interfaces/apps.types';
+	APP_STATUS_PROVIDERS,
+	IAppConnectionStatus,
+	IAppStatusProvider,
+} from './core/status/app-status.types';
+import AppsEnum from './interfaces/apps.enum';
+import { IAppCatalogItem } from './interfaces/apps.types';
 
+const NOT_CONNECTED: IAppConnectionStatus = {
+	connected: false,
+	status: null,
+	accountLabel: null,
+};
+
+/**
+ * Only what every app has in common: is it enabled for this user, and is it
+ * connected. Each app answers the second through its own status provider; an
+ * app without one is a catalog-only card.
+ */
 @Injectable()
 export class AppsService {
 	//#region Constructor
 
 	constructor(
 		private readonly _usersService: UsersService,
-		private readonly _connectionsService: AppConnectionsService,
-		private readonly _registry: AppsRegistry,
+		@Inject(APP_STATUS_PROVIDERS)
+		private readonly _statusProviders: IAppStatusProvider[],
 	) {}
 
 	//#endregion
@@ -30,73 +37,27 @@ export class AppsService {
 
 	public async getCatalog(ownerUserId: string): Promise<IAppCatalogItem[]> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(ownerUserId);
-		const connections: IAppConnection[] =
-			await this._connectionsService.findByOwner(ownerUserId);
 		const enabledApps: AppsEnum.App[] = user.enabledApps ?? [];
 
-		return Object.values(AppsEnum.App).map((appId: AppsEnum.App) => {
-			const connection: IAppConnection | null =
-				connections.find((c: IAppConnection) => c.appId === appId) ?? null;
+		return await Promise.all(
+			Object.values(AppsEnum.App).map(async (appId: AppsEnum.App) => {
+				const provider: IAppStatusProvider | undefined =
+					this._statusProviders.find(
+						(candidate: IAppStatusProvider) => candidate.appId === appId,
+					);
 
-			return {
-				id: appId,
-				enabled: enabledApps.includes(appId),
-				integrated: this._registry.has(appId),
-				connected: connection?.status === AppsEnum.ConnectionStatus.CONNECTED,
-				status: connection?.status ?? null,
-				accountLabel: connection?.accountLabel ?? null,
-				lastSyncAt: connection?.lastSyncAt ?? null,
-				lastSyncSummary: connection?.lastSyncSummary ?? null,
-			};
-		});
-	}
+				const connection: IAppConnectionStatus = provider
+					? await provider.getStatus(ownerUserId)
+					: NOT_CONNECTED;
 
-	public async connect(
-		appId: AppsEnum.App,
-		ctx: IAppContext,
-	): Promise<{ url: string }> {
-		return { url: await this._registry.get(appId).getConnectUrl(ctx) };
-	}
-
-	public async handleCallback(
-		appId: AppsEnum.App,
-		params: Record<string, string>,
-	): Promise<{ redirectTo: string }> {
-		return await this._registry.get(appId).handleCallback(params);
-	}
-
-	public async disconnect(
-		appId: AppsEnum.App,
-		ctx: IAppContext,
-	): Promise<void> {
-		await this._registry.get(appId).disconnect(ctx);
-	}
-
-	public async sync(
-		appId: AppsEnum.App,
-		ctx: IAppContext,
-	): Promise<IAppSyncPreview> {
-		const integration = this._registry.get(appId);
-
-		if (!integration.sync) {
-			throw new AppSyncNotSupportedException(appId);
-		}
-
-		return await integration.sync(ctx);
-	}
-
-	public async importSelected(
-		appId: AppsEnum.App,
-		ctx: IAppContext,
-		externalIds: string[],
-	): Promise<IAppImportResponse> {
-		const integration = this._registry.get(appId);
-
-		if (!integration.importSelected) {
-			throw new AppSyncNotSupportedException(appId);
-		}
-
-		return await integration.importSelected(ctx, externalIds);
+				return {
+					id: appId,
+					enabled: enabledApps.includes(appId),
+					integrated: !!provider,
+					...connection,
+				};
+			}),
+		);
 	}
 
 	//#endregion

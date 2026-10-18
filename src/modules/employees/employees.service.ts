@@ -49,7 +49,7 @@ import {
 import {
 	IEmployeeFileUploadTemplateRow,
 	IFiltersDownloadEmployees,
-} from '../employees/interfaces/employees.types';
+} from './interfaces/employees.types';
 import { FilesUploadsService } from '../files-uploads/files-uploads.service';
 import { IFileUpload } from '../files-uploads/interfaces/file-upload.interface';
 import FilesUploadsEnum from '../files-uploads/interfaces/files-uploads.enum';

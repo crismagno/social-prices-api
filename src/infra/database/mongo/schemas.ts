@@ -1,6 +1,6 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { AppConnectionSchema } from '../../../modules/apps/interfaces/app-connection.schema';
+import { GoogleContactsConnectionSchema } from '../../../modules/apps/google-contacts/google-contacts-connection.schema';
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
 import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
 import { CounterSchema } from '../../../modules/counters/interfaces/counter.schema';
@@ -39,7 +39,7 @@ export const schemasName = {
 	log: 'Log',
 	manager: 'Manager',
 	productItem: 'ProductItem',
-	appConnection: 'AppConnection',
+	googleContactsConnection: 'GoogleContactsConnection',
 };
 
 export const schemasModule = {
@@ -101,7 +101,10 @@ export const schemasModule = {
 			collection: 'product-items',
 		},
 	]),
-	appConnection: MongooseModule.forFeature([
-		{ name: schemasName.appConnection, schema: AppConnectionSchema },
+	googleContactsConnection: MongooseModule.forFeature([
+		{
+			name: schemasName.googleContactsConnection,
+			schema: GoogleContactsConnectionSchema,
+		},
 	]),
 };

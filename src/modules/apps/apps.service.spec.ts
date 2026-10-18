@@ -1,159 +1,110 @@
-import { AppSyncNotSupportedException } from './apps.exceptions';
-import { AppsRegistry } from './apps.registry';
-import { AppsService } from './apps.service';
 import AppsEnum from './interfaces/apps.enum';
+import { AppsService } from './apps.service';
 
-const CTX = { ownerUserId: 'u1', employeeId: null };
+const googleProvider = (status: any = null) => ({
+	appId: AppsEnum.App.GOOGLE_CONTACTS,
+	getStatus: jest
+		.fn()
+		.mockResolvedValue(
+			status ?? { connected: false, status: null, accountLabel: null },
+		),
+});
 
-const build = (
-	opts: { enabledApps?: any; connections?: any[]; integration?: any } = {},
-) => {
+const build = (opts: { enabledApps?: any; providers?: any[] } = {}) => {
 	const usersService: any = {
 		findOneByIdOrFail: jest
 			.fn()
 			.mockResolvedValue({ _id: 'u1', enabledApps: opts.enabledApps }),
 	};
-	const connectionsService: any = {
-		findByOwner: jest.fn().mockResolvedValue(opts.connections ?? []),
-	};
-	const integration = opts.integration ?? {
-		appId: AppsEnum.App.GOOGLE_CONTACTS,
-		getConnectUrl: jest.fn().mockResolvedValue('https://google/auth'),
-		handleCallback: jest.fn().mockResolvedValue({ redirectTo: '/apps' }),
-		disconnect: jest.fn().mockResolvedValue(undefined),
-		sync: jest.fn().mockResolvedValue({ contacts: [], hasMore: false }),
-		importSelected: jest.fn().mockResolvedValue({ created: 1 }),
-	};
-	const registry = new AppsRegistry([integration]);
 
-	return {
-		integration,
-		service: new AppsService(usersService, connectionsService, registry),
-	};
+	return new AppsService(usersService, opts.providers ?? []);
 };
 
-describe('AppsService', () => {
-	describe('getCatalog', () => {
-		it('lists every app with enabled / integrated / connected flags', async () => {
-			const { service } = build({
-				enabledApps: [AppsEnum.App.GOOGLE_CONTACTS, AppsEnum.App.TELEGRAM],
-				connections: [
-					{
-						appId: AppsEnum.App.GOOGLE_CONTACTS,
-						status: AppsEnum.ConnectionStatus.CONNECTED,
-						accountLabel: 'me@example.com',
-						lastSyncAt: null,
-						lastSyncSummary: null,
-					},
-				],
-			});
-
-			const catalog = await service.getCatalog('u1');
-
-			expect(catalog.map((item) => item.id)).toEqual(
-				Object.values(AppsEnum.App),
-			);
-
-			const google = catalog.find((i) => i.id === AppsEnum.App.GOOGLE_CONTACTS);
-			expect(google).toMatchObject({
-				enabled: true,
-				integrated: true,
-				connected: true,
-				accountLabel: 'me@example.com',
-			});
-
-			const telegram = catalog.find((i) => i.id === AppsEnum.App.TELEGRAM);
-			expect(telegram).toMatchObject({
-				enabled: true,
-				integrated: false,
-				connected: false,
-				status: null,
-			});
-
-			const instagram = catalog.find((i) => i.id === AppsEnum.App.INSTAGRAM);
-			expect(instagram.enabled).toBe(false);
+describe('AppsService.getCatalog', () => {
+	it('lists every app with its enabled / integrated / connected facts', async () => {
+		const service = build({
+			enabledApps: [AppsEnum.App.GOOGLE_CONTACTS, AppsEnum.App.TELEGRAM],
+			providers: [
+				googleProvider({
+					connected: true,
+					status: AppsEnum.ConnectionStatus.CONNECTED,
+					accountLabel: 'me@example.com',
+				}),
+			],
 		});
 
-		it('treats an EXPIRED connection as not connected but exposes its status', async () => {
-			const { service } = build({
-				enabledApps: [AppsEnum.App.GOOGLE_CONTACTS],
-				connections: [
-					{
-						appId: AppsEnum.App.GOOGLE_CONTACTS,
-						status: AppsEnum.ConnectionStatus.EXPIRED,
-					},
-				],
-			});
+		const catalog = await service.getCatalog('u1');
 
-			const google = (await service.getCatalog('u1')).find(
-				(i) => i.id === AppsEnum.App.GOOGLE_CONTACTS,
-			);
+		expect(catalog.map((item) => item.id)).toEqual(Object.values(AppsEnum.App));
 
-			expect(google.connected).toBe(false);
-			expect(google.status).toBe(AppsEnum.ConnectionStatus.EXPIRED);
+		expect(catalog.find((i) => i.id === AppsEnum.App.GOOGLE_CONTACTS)).toEqual({
+			id: AppsEnum.App.GOOGLE_CONTACTS,
+			enabled: true,
+			integrated: true,
+			connected: true,
+			status: AppsEnum.ConnectionStatus.CONNECTED,
+			accountLabel: 'me@example.com',
 		});
 
-		it('handles a user that has no enabledApps field at all', async () => {
-			const { service } = build({ enabledApps: undefined });
+		// enabled by the manager, but no integration of its own yet
+		expect(catalog.find((i) => i.id === AppsEnum.App.TELEGRAM)).toEqual({
+			id: AppsEnum.App.TELEGRAM,
+			enabled: true,
+			integrated: false,
+			connected: false,
+			status: null,
+			accountLabel: null,
+		});
 
-			const catalog = await service.getCatalog('u1');
+		expect(catalog.find((i) => i.id === AppsEnum.App.INSTAGRAM).enabled).toBe(
+			false,
+		);
+	});
 
-			expect(catalog.every((item) => item.enabled === false)).toBe(true);
+	it('only apps that bring a status provider are integrated', async () => {
+		const catalog = await build({ providers: [googleProvider()] }).getCatalog(
+			'u1',
+		);
+
+		expect(catalog.filter((i) => i.integrated).map((i) => i.id)).toEqual([
+			AppsEnum.App.GOOGLE_CONTACTS,
+		]);
+	});
+
+	it('asks each provider about this owner, and only the app it belongs to', async () => {
+		const provider = googleProvider();
+
+		await build({ providers: [provider] }).getCatalog('u1');
+
+		expect(provider.getStatus).toHaveBeenCalledTimes(1);
+		expect(provider.getStatus).toHaveBeenCalledWith('u1');
+	});
+
+	it('exposes an EXPIRED connection as not connected, with its status', async () => {
+		const service = build({
+			enabledApps: [AppsEnum.App.GOOGLE_CONTACTS],
+			providers: [
+				googleProvider({
+					connected: false,
+					status: AppsEnum.ConnectionStatus.EXPIRED,
+					accountLabel: 'me@example.com',
+				}),
+			],
+		});
+
+		const google = (await service.getCatalog('u1')).find(
+			(i) => i.id === AppsEnum.App.GOOGLE_CONTACTS,
+		);
+
+		expect(google).toMatchObject({
+			connected: false,
+			status: AppsEnum.ConnectionStatus.EXPIRED,
 		});
 	});
 
-	it('connect wraps the integration url', async () => {
-		const { service } = build();
+	it('handles a user that has no enabledApps field at all', async () => {
+		const catalog = await build({ enabledApps: undefined }).getCatalog('u1');
 
-		await expect(
-			service.connect(AppsEnum.App.GOOGLE_CONTACTS, CTX),
-		).resolves.toEqual({ url: 'https://google/auth' });
-	});
-
-	it('sync delegates to the integration', async () => {
-		const { service, integration } = build();
-
-		await service.sync(AppsEnum.App.GOOGLE_CONTACTS, CTX);
-
-		expect(integration.sync).toHaveBeenCalledWith(CTX);
-	});
-
-	it('importSelected delegates to the integration with the ids', async () => {
-		const { service, integration } = build();
-
-		await expect(
-			service.importSelected(AppsEnum.App.GOOGLE_CONTACTS, CTX, ['people/c1']),
-		).resolves.toEqual({ created: 1 });
-		expect(integration.importSelected).toHaveBeenCalledWith(CTX, ['people/c1']);
-	});
-
-	it('importSelected refuses an integration without import support', async () => {
-		const { service } = build({
-			integration: {
-				appId: AppsEnum.App.GOOGLE_CONTACTS,
-				getConnectUrl: jest.fn(),
-				handleCallback: jest.fn(),
-				disconnect: jest.fn(),
-			},
-		});
-
-		await expect(
-			service.importSelected(AppsEnum.App.GOOGLE_CONTACTS, CTX, ['people/c1']),
-		).rejects.toBeInstanceOf(AppSyncNotSupportedException);
-	});
-
-	it('sync refuses an integration without sync support', async () => {
-		const { service } = build({
-			integration: {
-				appId: AppsEnum.App.GOOGLE_CONTACTS,
-				getConnectUrl: jest.fn(),
-				handleCallback: jest.fn(),
-				disconnect: jest.fn(),
-			},
-		});
-
-		await expect(
-			service.sync(AppsEnum.App.GOOGLE_CONTACTS, CTX),
-		).rejects.toBeInstanceOf(AppSyncNotSupportedException);
+		expect(catalog.every((item) => item.enabled === false)).toBe(true);
 	});
 });
