@@ -12,6 +12,7 @@ import { TelegramConnectionsService } from './telegram-connections.service';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import { TelegramMessagesService } from './telegram-messages.service';
 import { TelegramBotClient } from './telegram.bot-client';
+import TelegramEnum from './telegram.enum';
 import {
 	ICustomerRef,
 	TelegramCustomersRepository,
@@ -24,6 +25,9 @@ import {
 	TelegramCustomerAlreadyLinkedException,
 	TelegramCustomerNotFoundException,
 	TelegramInvalidTokenException,
+	TelegramMediaNotFoundException,
+	TelegramMessageNotDeletableException,
+	TelegramMessageNotFoundException,
 	TelegramNotConnectedException,
 	TelegramWebhookRejectedException,
 	TelegramWebhookUrlMissingException,
@@ -34,7 +38,9 @@ import {
 	ITelegramBotInfo,
 	ITelegramChatView,
 	ITelegramConnectionView,
+	ITelegramSentMessage,
 	ITelegramUpdate,
+	ITelegramUploadFile,
 	ITelegramWebhookInfo,
 	TelegramApiError,
 } from './telegram.types';
@@ -325,51 +331,133 @@ export class TelegramService {
 		chatId: number,
 		text: string,
 	): Promise<ITelegramMessageRecord> {
+		const sent: ITelegramSentMessage = await this._deliver(
+			ctx,
+			chatId,
+			async (token: string): Promise<ITelegramSentMessage> => ({
+				...(await this._botClient.sendMessage(token, chatId, text)),
+				contentType: TelegramEnum.ContentType.TEXT,
+			}),
+		);
+
+		return await this._recordSent(ctx, chatId, text, sent);
+	}
+
+	/** Same as sendMessage, with a file; the text, when there is one, is its caption. */
+	public async sendMedia(
+		ctx: IAppContext,
+		chatId: number,
+		file: ITelegramUploadFile,
+		caption: string | null,
+		asVoice: boolean = false,
+	): Promise<ITelegramMessageRecord> {
+		const sent: ITelegramSentMessage = await this._deliver(
+			ctx,
+			chatId,
+			(token: string) =>
+				asVoice
+					? this._botClient.sendMedia(token, chatId, file, caption, true)
+					: this._botClient.sendMedia(token, chatId, file, caption),
+		);
+
+		return await this._recordSent(ctx, chatId, caption, sent);
+	}
+
+	/**
+	 * Removes a message for both sides. Telegram goes first: if it refuses (older
+	 * than 48 hours, say) the message stays here too. One it no longer has is
+	 * simply cleaned up here.
+	 */
+	public async deleteMessage(
+		ownerUserId: string,
+		chatId: number,
+		messageRecordId: string,
+	): Promise<void> {
 		const connection: ITelegramConnection | null =
-			await this._connectionsService.findWithToken(ctx.ownerUserId);
+			await this._connectionsService.findWithToken(ownerUserId);
 
 		if (!connection) {
 			throw new TelegramNotConnectedException();
 		}
 
-		await this._getChatOrFail(ctx.ownerUserId, chatId);
-
-		let sent: { messageId: number; sentAt: Date };
-
-		try {
-			sent = await this._botClient.sendMessage(
-				this._connectionsService.readToken(connection),
+		const record: ITelegramMessageRecord | null =
+			await this._messagesService.findOwned(
+				ownerUserId,
 				chatId,
-				text,
+				messageRecordId,
 			);
-		} catch (error) {
-			if (
-				error instanceof TelegramApiError &&
-				UNDELIVERABLE_STATUSES.includes(error.status)
-			) {
-				throw new TelegramChatUnavailableException(error.description);
-			}
 
-			throw error;
+		if (!record) {
+			throw new TelegramMessageNotFoundException();
 		}
 
-		const record: ITelegramMessageRecord =
-			await this._messagesService.saveOutgoing(ctx.ownerUserId, {
+		try {
+			await this._botClient.deleteMessage(
+				this._connectionsService.readToken(connection),
 				chatId,
-				messageId: sent.messageId,
-				text,
-				sentAt: sent.sentAt,
-				sentByEmployeeId: ctx.employeeId,
-			});
+				record.messageId,
+			);
+		} catch (error) {
+			if (!this._isAlreadyGone(error)) {
+				if (
+					error instanceof TelegramApiError &&
+					UNDELIVERABLE_STATUSES.includes(error.status)
+				) {
+					throw new TelegramMessageNotDeletableException(error.description);
+				}
 
-		await this._chatsService.registerOutgoing(
-			ctx.ownerUserId,
+				throw error;
+			}
+		}
+
+		await this._messagesService.deleteOwned(
+			ownerUserId,
 			chatId,
-			text,
-			sent.sentAt,
+			messageRecordId,
 		);
 
-		return record;
+		const latest: ITelegramMessageRecord | null =
+			await this._messagesService.findLatest(ownerUserId, chatId);
+
+		if (latest) {
+			await this._chatsService.setLastMessage(ownerUserId, chatId, latest);
+		}
+	}
+
+	/** The bytes of the file of one message, fetched from Telegram when asked for. */
+	public async getMedia(
+		ownerUserId: string,
+		chatId: number,
+		messageRecordId: string,
+	): Promise<{ buffer: Buffer; mimeType: string; fileName: string }> {
+		const connection: ITelegramConnection | null =
+			await this._connectionsService.findWithToken(ownerUserId);
+
+		if (!connection) {
+			throw new TelegramNotConnectedException();
+		}
+
+		const record: ITelegramMessageRecord | null =
+			await this._messagesService.findWithMedia(
+				ownerUserId,
+				chatId,
+				messageRecordId,
+			);
+
+		if (!record?.media) {
+			throw new TelegramMediaNotFoundException();
+		}
+
+		const file = await this._botClient.downloadFile(
+			this._connectionsService.readToken(connection),
+			record.media.fileId,
+		);
+
+		return {
+			buffer: file.buffer,
+			mimeType: record.media.mimeType ?? 'application/octet-stream',
+			fileName: record.media.fileName ?? file.filePath.split('/').pop(),
+		};
 	}
 
 	public async linkCustomer(
@@ -550,6 +638,72 @@ export class TelegramService {
 	}
 
 	/** An error counts only if it came after both the webhook was (re)registered and the last message received. */
+	private _isAlreadyGone(error: unknown): boolean {
+		return (
+			error instanceof TelegramApiError &&
+			error.status === 400 &&
+			/message to delete not found/i.test(error.description)
+		);
+	}
+
+	/** Runs one send through the bot of this user, for a chat that is theirs. */
+	private async _deliver(
+		ctx: IAppContext,
+		chatId: number,
+		send: (token: string) => Promise<ITelegramSentMessage>,
+	): Promise<ITelegramSentMessage> {
+		const connection: ITelegramConnection | null =
+			await this._connectionsService.findWithToken(ctx.ownerUserId);
+
+		if (!connection) {
+			throw new TelegramNotConnectedException();
+		}
+
+		await this._getChatOrFail(ctx.ownerUserId, chatId);
+
+		try {
+			return await send(this._connectionsService.readToken(connection));
+		} catch (error) {
+			if (
+				error instanceof TelegramApiError &&
+				UNDELIVERABLE_STATUSES.includes(error.status)
+			) {
+				throw new TelegramChatUnavailableException(error.description);
+			}
+
+			throw error;
+		}
+	}
+
+	private async _recordSent(
+		ctx: IAppContext,
+		chatId: number,
+		text: string | null,
+		sent: ITelegramSentMessage,
+	): Promise<ITelegramMessageRecord> {
+		const record: ITelegramMessageRecord =
+			await this._messagesService.saveOutgoing(ctx.ownerUserId, {
+				chatId,
+				messageId: sent.messageId,
+				text,
+				...(sent.media
+					? { contentType: sent.contentType, media: sent.media }
+					: {}),
+				sentAt: sent.sentAt,
+				sentByEmployeeId: ctx.employeeId,
+			});
+
+		await this._chatsService.registerOutgoing(
+			ctx.ownerUserId,
+			chatId,
+			text,
+			sent.sentAt,
+			...(sent.media ? [sent.contentType] : []),
+		);
+
+		return record;
+	}
+
 	private _isErrorNewer(
 		errorDate: Date | null,
 		connection: ITelegramConnection,

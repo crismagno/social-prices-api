@@ -178,6 +178,149 @@ describe('TelegramBotClient', () => {
 		});
 	});
 
+	describe('sendMedia', () => {
+		const file = (mimeType: string, size = 10, fileName = 'f.bin') => ({
+			buffer: Buffer.alloc(size),
+			fileName,
+			mimeType,
+		});
+
+		const sentWith = (message: any) =>
+			fetchMock.mockResolvedValue(
+				ok({ message_id: 9, date: 1_760_000_000, ...message }),
+			);
+
+		it.each([
+			['image/jpeg', 10, 'sendPhoto', 'photo'],
+			['image/png', 10, 'sendPhoto', 'photo'],
+			['image/gif', 10, 'sendDocument', 'document'],
+			['image/jpeg', 11 * 1024 * 1024, 'sendDocument', 'document'],
+			['video/mp4', 10, 'sendVideo', 'video'],
+			['audio/mpeg', 10, 'sendAudio', 'audio'],
+			['application/pdf', 10, 'sendDocument', 'document'],
+		])(
+			'%p of %p bytes goes through %s as "%s"',
+			async (mimeType, size, method, field) => {
+				sentWith({ text: 'x' });
+
+				await client.sendMedia(TOKEN, 555, file(mimeType, size), null);
+
+				const [url, init] = fetchMock.mock.calls[0];
+				expect(url).toBe(`https://api.telegram.org/bot${TOKEN}/${method}`);
+				expect(init.method).toBe('POST');
+				expect(init.body).toBeInstanceOf(FormData);
+				expect(init.body.get('chat_id')).toBe('555');
+				expect(init.body.get(field)).toBeInstanceOf(Blob);
+				expect(init.body.has('caption')).toBe(false);
+			},
+		);
+
+		it('sends a recording as a voice message when asked to', async () => {
+			sentWith({ voice: { file_id: 'V', duration: 3 } });
+
+			const sent = await client.sendMedia(
+				TOKEN,
+				555,
+				file('audio/mpeg'),
+				null,
+				true,
+			);
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url).toBe(`https://api.telegram.org/bot${TOKEN}/sendVoice`);
+			expect(init.body.get('voice')).toBeInstanceOf(Blob);
+			expect(sent.contentType).toBe('VOICE');
+		});
+
+		it('sends a voice message that is not mp3 as the file it is', async () => {
+			sentWith({ text: 'x' });
+
+			await client.sendMedia(TOKEN, 555, file('image/png'), null, true);
+
+			expect(fetchMock.mock.calls[0][0]).toContain('/sendPhoto');
+		});
+
+		it('sends the caption along and reads the file Telegram kept', async () => {
+			sentWith({
+				document: { file_id: 'FID', file_name: 'a.pdf', file_size: 10 },
+			});
+
+			const sent = await client.sendMedia(
+				TOKEN,
+				555,
+				file('application/pdf', 10, 'a.pdf'),
+				'segue',
+			);
+
+			expect(fetchMock.mock.calls[0][1].body.get('caption')).toBe('segue');
+			expect(sent).toMatchObject({
+				messageId: 9,
+				sentAt: new Date(1_760_000_000 * 1000),
+				contentType: 'DOCUMENT',
+				media: { fileId: 'FID', fileName: 'a.pdf' },
+			});
+		});
+
+		it('never lets the token reach the error of a failed upload', async () => {
+			fetchMock.mockRejectedValue(new Error(`failed ${TOKEN}`));
+
+			const error = await client
+				.sendMedia(TOKEN, 555, file('image/jpeg'), null)
+				.catch((e) => e);
+
+			expect(error).toBeInstanceOf(TelegramApiError);
+			expect(error.message).not.toContain(TOKEN);
+		});
+	});
+
+	it('deleteMessage asks Telegram to remove one message of a chat', async () => {
+		fetchMock.mockResolvedValue(ok(true));
+
+		await client.deleteMessage(TOKEN, 555, 9);
+
+		const [url, init] = fetchMock.mock.calls[0];
+		expect(url).toBe(`https://api.telegram.org/bot${TOKEN}/deleteMessage`);
+		expect(JSON.parse(init.body)).toEqual({ chat_id: 555, message_id: 9 });
+	});
+
+	describe('downloadFile', () => {
+		it('asks where the file is, then fetches its bytes', async () => {
+			fetchMock
+				.mockResolvedValueOnce(ok({ file_path: 'photos/file_1.jpg' }))
+				.mockResolvedValueOnce({
+					ok: true,
+					status: 200,
+					arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+				});
+
+			const file = await client.downloadFile(TOKEN, 'FID');
+
+			expect(fetchMock.mock.calls[0][0]).toBe(
+				`https://api.telegram.org/bot${TOKEN}/getFile`,
+			);
+			expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+				file_id: 'FID',
+			});
+			expect(fetchMock.mock.calls[1][0]).toBe(
+				`https://api.telegram.org/file/bot${TOKEN}/photos/file_1.jpg`,
+			);
+			expect(file.filePath).toBe('photos/file_1.jpg');
+			expect([...file.buffer]).toEqual([1, 2, 3]);
+		});
+
+		it('says so when Telegram will not give the file, without the token', async () => {
+			fetchMock
+				.mockResolvedValueOnce(ok({ file_path: 'x.jpg' }))
+				.mockResolvedValueOnce({ ok: false, status: 404 });
+
+			const error = await client.downloadFile(TOKEN, 'FID').catch((e) => e);
+
+			expect(error).toBeInstanceOf(TelegramApiError);
+			expect(error.status).toBe(404);
+			expect(error.message).not.toContain(TOKEN);
+		});
+	});
+
 	it("turns an API refusal into a TelegramApiError carrying Telegram's reason", async () => {
 		fetchMock.mockResolvedValue(fail(401, 'Unauthorized'));
 

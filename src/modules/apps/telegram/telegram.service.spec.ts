@@ -1,13 +1,15 @@
 import { ForbiddenException } from '@nestjs/common';
 
 import AppsEnum from '../interfaces/apps.enum';
-import TelegramEnum from './telegram.enum';
 import { FeatureLimitReachedException } from '../../feature-limits/feature-limit-reached.exception';
 import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
 import {
 	TelegramBotAlreadyConnectedException,
 	TelegramChatAlreadyLinkedException,
 	TelegramChatNotFoundException,
+	TelegramMediaNotFoundException,
+	TelegramMessageNotDeletableException,
+	TelegramMessageNotFoundException,
 	TelegramChatUnavailableException,
 	TelegramCustomerAlreadyLinkedException,
 	TelegramCustomerNotFoundException,
@@ -82,11 +84,16 @@ const build = (
 		saveIncoming: jest.fn().mockResolvedValue(true),
 		saveOutgoing: jest.fn().mockResolvedValue({ _id: 'out1', text: 'claro!' }),
 		listByChat: jest.fn().mockResolvedValue([{ _id: 'm1' }]),
+		findWithMedia: jest.fn().mockResolvedValue(null),
+		findOwned: jest.fn().mockResolvedValue(null),
+		deleteOwned: jest.fn().mockResolvedValue(undefined),
+		findLatest: jest.fn().mockResolvedValue(null),
 	};
 	const chats: any = {
 		registerIncoming: jest.fn().mockResolvedValue(false),
 		registerOutgoing: jest.fn().mockResolvedValue(undefined),
 		markRead: jest.fn().mockResolvedValue(undefined),
+		setLastMessage: jest.fn().mockResolvedValue(undefined),
 		setCustomer: jest.fn().mockResolvedValue(undefined),
 		list: jest.fn().mockResolvedValue([]),
 		findByChatId: jest.fn().mockResolvedValue(opts.chat ?? null),
@@ -700,6 +707,263 @@ describe('TelegramService', () => {
 			await service.handleWebhook(creds.key, creds.secret, textUpdate());
 
 			expect(customers.findByTelegramUserId).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('sendMedia', () => {
+		const chat = { chatId: 555, telegramUserId: 555 };
+		const file = {
+			buffer: Buffer.alloc(4),
+			fileName: 'a.pdf',
+			mimeType: 'application/pdf',
+		};
+		const media = { fileId: 'FID', fileName: 'a.pdf' };
+
+		it('uploads through the bot, keeps the file reference and previews it in the inbox', async () => {
+			const { service, bot, messages, chats } = build({
+				connection: { token: 'ENC' },
+				chat,
+			});
+			bot.sendMedia = jest.fn().mockResolvedValue({
+				messageId: 43,
+				sentAt: new Date('2030-01-02'),
+				contentType: 'DOCUMENT',
+				media,
+			});
+
+			await service.sendMedia(CTX, 555, file, 'segue');
+
+			expect(bot.sendMedia).toHaveBeenCalledWith(TOKEN, 555, file, 'segue');
+			expect(messages.saveOutgoing).toHaveBeenCalledWith('u1', {
+				chatId: 555,
+				messageId: 43,
+				text: 'segue',
+				contentType: 'DOCUMENT',
+				media,
+				sentAt: new Date('2030-01-02'),
+				sentByEmployeeId: CTX.employeeId,
+			});
+			expect(chats.registerOutgoing).toHaveBeenCalledWith(
+				'u1',
+				555,
+				'segue',
+				new Date('2030-01-02'),
+				'DOCUMENT',
+			);
+		});
+
+		it('passes along that a recording goes as a voice message', async () => {
+			const { service, bot } = build({ connection: { token: 'ENC' }, chat });
+			bot.sendMedia = jest.fn().mockResolvedValue({
+				messageId: 44,
+				sentAt: new Date('2030-01-02'),
+				contentType: 'VOICE',
+				media,
+			});
+
+			await service.sendMedia(CTX, 555, file, null, true);
+
+			expect(bot.sendMedia).toHaveBeenCalledWith(TOKEN, 555, file, null, true);
+		});
+
+		it("refuses a conversation that is not this user's, uploading nothing", async () => {
+			const { service, bot } = build({ connection: { token: 'ENC' } });
+			bot.sendMedia = jest.fn();
+
+			await expect(
+				service.sendMedia(CTX, 999, file, null),
+			).rejects.toBeInstanceOf(TelegramChatNotFoundException);
+			expect(bot.sendMedia).not.toHaveBeenCalled();
+		});
+
+		it('explains when Telegram refuses the file, keeping nothing', async () => {
+			const { service, bot, messages } = build({
+				connection: { token: 'ENC' },
+				chat,
+			});
+			bot.sendMedia = jest
+				.fn()
+				.mockRejectedValue(
+					new TelegramApiError(400, 'Bad Request: wrong file'),
+				);
+
+			await expect(
+				service.sendMedia(CTX, 555, file, null),
+			).rejects.toBeInstanceOf(TelegramChatUnavailableException);
+			expect(messages.saveOutgoing).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('deleteMessage', () => {
+		const record = { _id: 'm1', chatId: 555, messageId: 42 };
+
+		const setup = (botBehaviour?: jest.Mock) => {
+			const built = build({
+				connection: { token: 'ENC' },
+				chat: { chatId: 555 },
+			});
+			built.messages.findOwned.mockResolvedValue(record);
+			built.bot.deleteMessage =
+				botBehaviour ?? jest.fn().mockResolvedValue(undefined);
+
+			return built;
+		};
+
+		it('removes it at Telegram, then here, and fixes the inbox preview', async () => {
+			const { service, bot, messages, chats } = setup();
+			const newest = { _id: 'm0', text: 'oi' };
+			messages.findLatest.mockResolvedValue(newest);
+
+			await service.deleteMessage('u1', 555, 'm1');
+
+			expect(bot.deleteMessage).toHaveBeenCalledWith(TOKEN, 555, 42);
+			expect(messages.deleteOwned).toHaveBeenCalledWith('u1', 555, 'm1');
+			expect(chats.setLastMessage).toHaveBeenCalledWith('u1', 555, newest);
+		});
+
+		it('leaves the preview alone when the conversation has no message left', async () => {
+			const { service, chats } = setup();
+
+			await service.deleteMessage('u1', 555, 'm1');
+
+			expect(chats.setLastMessage).not.toHaveBeenCalled();
+		});
+
+		it('still removes it here when Telegram says it is already gone', async () => {
+			const { service, messages } = setup(
+				jest
+					.fn()
+					.mockRejectedValue(
+						new TelegramApiError(
+							400,
+							'Bad Request: message to delete not found',
+						),
+					),
+			);
+
+			await service.deleteMessage('u1', 555, 'm1');
+
+			expect(messages.deleteOwned).toHaveBeenCalled();
+		});
+
+		it.each([400, 403])(
+			'keeps it, and says why, when Telegram refuses (status %p)',
+			async (status) => {
+				const { service, messages } = setup(
+					jest
+						.fn()
+						.mockRejectedValue(
+							new TelegramApiError(
+								status,
+								"Bad Request: message can't be deleted",
+							),
+						),
+				);
+
+				const error = await service
+					.deleteMessage('u1', 555, 'm1')
+					.catch((e) => e);
+
+				expect(error).toBeInstanceOf(TelegramMessageNotDeletableException);
+				expect(JSON.stringify(error.getResponse())).toContain(
+					"can't be deleted",
+				);
+				expect(messages.deleteOwned).not.toHaveBeenCalled();
+			},
+		);
+
+		it('lets other failures through and keeps the message', async () => {
+			const { service, messages } = setup(
+				jest
+					.fn()
+					.mockRejectedValue(
+						new TelegramApiError(0, 'Could not reach Telegram.'),
+					),
+			);
+
+			await expect(
+				service.deleteMessage('u1', 555, 'm1'),
+			).rejects.toBeInstanceOf(TelegramApiError);
+			expect(messages.deleteOwned).not.toHaveBeenCalled();
+		});
+
+		it("does not know a message that is not this user's", async () => {
+			const { service, bot, messages } = setup();
+			messages.findOwned.mockResolvedValue(null);
+
+			await expect(
+				service.deleteMessage('u1', 555, 'm1'),
+			).rejects.toBeInstanceOf(TelegramMessageNotFoundException);
+			expect(bot.deleteMessage).not.toHaveBeenCalled();
+		});
+
+		it('refuses when no bot is connected', async () => {
+			await expect(
+				build().service.deleteMessage('u1', 555, 'm1'),
+			).rejects.toBeInstanceOf(TelegramNotConnectedException);
+		});
+	});
+
+	describe('getMedia', () => {
+		it("downloads the file of one of this user's messages", async () => {
+			const { service, bot, messages } = build({
+				connection: { token: 'ENC' },
+			});
+			messages.findWithMedia.mockResolvedValue({
+				media: {
+					fileId: 'FID',
+					fileName: 'a.pdf',
+					mimeType: 'application/pdf',
+				},
+			});
+			bot.downloadFile = jest.fn().mockResolvedValue({
+				buffer: Buffer.from('x'),
+				filePath: 'docs/a.pdf',
+			});
+
+			const result = await service.getMedia('u1', 555, 'm1');
+
+			expect(messages.findWithMedia).toHaveBeenCalledWith('u1', 555, 'm1');
+			expect(bot.downloadFile).toHaveBeenCalledWith(TOKEN, 'FID');
+			expect(result).toEqual({
+				buffer: Buffer.from('x'),
+				mimeType: 'application/pdf',
+				fileName: 'a.pdf',
+			});
+		});
+
+		it('falls back to the type and name Telegram gave for the path', async () => {
+			const { service, bot, messages } = build({
+				connection: { token: 'ENC' },
+			});
+			messages.findWithMedia.mockResolvedValue({
+				media: { fileId: 'FID', fileName: null, mimeType: null },
+			});
+			bot.downloadFile = jest.fn().mockResolvedValue({
+				buffer: Buffer.from('x'),
+				filePath: 'photos/file_1.jpg',
+			});
+
+			await expect(service.getMedia('u1', 555, 'm1')).resolves.toMatchObject({
+				mimeType: 'application/octet-stream',
+				fileName: 'file_1.jpg',
+			});
+		});
+
+		it('does not know a message without a file, or from someone else', async () => {
+			const { service, bot } = build({ connection: { token: 'ENC' } });
+			bot.downloadFile = jest.fn();
+
+			await expect(service.getMedia('u1', 555, 'm1')).rejects.toBeInstanceOf(
+				TelegramMediaNotFoundException,
+			);
+			expect(bot.downloadFile).not.toHaveBeenCalled();
+		});
+
+		it('refuses when no bot is connected', async () => {
+			await expect(
+				build().service.getMedia('u1', 555, 'm1'),
+			).rejects.toBeInstanceOf(TelegramNotConnectedException);
 		});
 	});
 

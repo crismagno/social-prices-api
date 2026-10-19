@@ -111,6 +111,47 @@ describe('TelegramChatsService', () => {
 		expect(update).not.toHaveProperty('$inc');
 	});
 
+	it('registerOutgoing previews a file by its kind when it has no caption', async () => {
+		const { service, model } = build();
+
+		await service.registerOutgoing(
+			OWNER,
+			555,
+			null,
+			new Date('2030-01-02'),
+			TelegramEnum.ContentType.PHOTO,
+		);
+
+		expect(model.updateOne.mock.calls[0][1].$set).toMatchObject({
+			lastMessageText: '[PHOTO]',
+			lastContentType: TelegramEnum.ContentType.PHOTO,
+		});
+	});
+
+	it('setLastMessage points the inbox at the message that is now the newest', async () => {
+		const { service, model } = build();
+		const sentAt = new Date('2030-01-02');
+
+		await service.setLastMessage(OWNER, 555, {
+			direction: TelegramEnum.Direction.IN,
+			contentType: TelegramEnum.ContentType.PHOTO,
+			text: null,
+			sentAt,
+		} as any);
+
+		expect(model.updateOne).toHaveBeenCalledWith(
+			{ ownerUserId: OWNER, chatId: 555 },
+			{
+				$set: {
+					lastMessageAt: sentAt,
+					lastMessageText: '[PHOTO]',
+					lastMessageDirection: TelegramEnum.Direction.IN,
+					lastContentType: TelegramEnum.ContentType.PHOTO,
+				},
+			},
+		);
+	});
+
 	it('markRead clears the unread count', async () => {
 		const { service, model } = build();
 

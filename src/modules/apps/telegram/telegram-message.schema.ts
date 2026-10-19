@@ -4,6 +4,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import TelegramEnum from './telegram.enum';
+import { ITelegramMedia } from './telegram.types';
 
 @Schema({
 	timestamps: { createdAt: true, updatedAt: false },
@@ -35,6 +36,9 @@ export class TelegramMessage implements Partial<ITelegramMessageRecord> {
 
 	@Prop({ type: String, default: null })
 	text: string | null;
+
+	@Prop({ type: Object })
+	media?: ITelegramMedia;
 
 	@Prop({ required: true, type: Date })
 	sentAt: Date;

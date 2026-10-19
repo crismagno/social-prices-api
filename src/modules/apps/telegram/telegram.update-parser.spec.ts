@@ -147,4 +147,82 @@ describe('parseTelegramUpdate', () => {
 	])('does not choke on malformed input %p', (input) => {
 		expect(parseTelegramUpdate(input as any)).toBeNull();
 	});
+
+	describe('media', () => {
+		const media = (extra: any) =>
+			parseTelegramUpdate(privateMessage(extra))?.media;
+
+		it('takes the biggest size of a photo and keeps the caption as text', () => {
+			const parsed = parseTelegramUpdate(
+				privateMessage({
+					caption: 'olha isso',
+					photo: [
+						{ file_id: 'small', width: 90, height: 60, file_size: 1000 },
+						{ file_id: 'big', width: 1280, height: 853, file_size: 90000 },
+					],
+				}),
+			);
+
+			expect(parsed?.contentType).toBe(TelegramEnum.ContentType.PHOTO);
+			expect(parsed?.text).toBe('olha isso');
+			expect(parsed?.media).toEqual({
+				fileId: 'big',
+				fileName: null,
+				mimeType: 'image/jpeg',
+				size: 90000,
+				width: 1280,
+				height: 853,
+				duration: null,
+			});
+		});
+
+		it('keeps name, type and size of a document', () => {
+			expect(
+				media({
+					document: {
+						file_id: 'd1',
+						file_name: 'orcamento.pdf',
+						mime_type: 'application/pdf',
+						file_size: 2048,
+					},
+				}),
+			).toMatchObject({
+				fileId: 'd1',
+				fileName: 'orcamento.pdf',
+				mimeType: 'application/pdf',
+				size: 2048,
+			});
+		});
+
+		it.each([
+			['voice', { file_id: 'v', duration: 4 }, 'audio/ogg'],
+			[
+				'video',
+				{ file_id: 'v', duration: 9, width: 640, height: 360 },
+				'video/mp4',
+			],
+			['video_note', { file_id: 'v', duration: 3 }, 'video/mp4'],
+			['audio', { file_id: 'v', mime_type: 'audio/mpeg' }, 'audio/mpeg'],
+		])('reads a %s', (key, body, mimeType) => {
+			expect(media({ [key]: body })).toMatchObject({ fileId: 'v', mimeType });
+		});
+
+		it('tells static, video and animated stickers apart by type', () => {
+			expect(media({ sticker: { file_id: 's' } })?.mimeType).toBe('image/webp');
+			expect(
+				media({ sticker: { file_id: 's', is_video: true } })?.mimeType,
+			).toBe('video/webm');
+			expect(
+				media({ sticker: { file_id: 's', is_animated: true } })?.mimeType,
+			).toBe('application/x-tgsticker');
+		});
+
+		it('has no media for text, locations or a file without an id', () => {
+			expect(media({ text: 'oi' })).toBeUndefined();
+			expect(
+				media({ location: { latitude: 1, longitude: 2 } }),
+			).toBeUndefined();
+			expect(media({ document: { file_name: 'x' } })).toBeUndefined();
+		});
+	});
 });

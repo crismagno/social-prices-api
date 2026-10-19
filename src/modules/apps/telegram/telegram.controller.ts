@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -9,10 +10,16 @@ import {
 	ParseIntPipe,
 	Post,
 	Query,
+	Res,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 
 import { Public } from '../../../shared/decorators/custom.decorator';
 import { AuthPayload } from '../../auth/decorators/current-user.decorator';
@@ -26,8 +33,11 @@ import ConnectTelegramBotDto from './telegram-connect.dto';
 import {
 	ChatMessagesQueryDto,
 	LinkTelegramCustomerDto,
+	MAX_TELEGRAM_UPLOAD_BYTES,
+	SendTelegramMediaDto,
 	SendTelegramMessageDto,
 } from './telegram-chat.dto';
+import { mediaResponseHeaders } from './telegram.media-response';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import { ITelegramWebhookStatus, TelegramService } from './telegram.service';
 import {
@@ -148,6 +158,73 @@ export class TelegramController {
 			chatId,
 			dto.text,
 		);
+	}
+
+	// Removing a message removes it for the customer too, so it needs more than replying.
+	@Delete('chats/:chatId/messages/:messageId')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	public async deleteMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('chatId', ParseIntPipe) chatId: number,
+		@Param('messageId') messageId: string,
+	): Promise<void> {
+		await this._telegramService.deleteMessage(
+			authPayload._id,
+			chatId,
+			messageId,
+		);
+	}
+
+	@Post('chats/:chatId/media')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard)
+	@UsePipes(validation)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			limits: { fileSize: MAX_TELEGRAM_UPLOAD_BYTES },
+		}),
+	)
+	public async sendMedia(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('chatId', ParseIntPipe) chatId: number,
+		@UploadedFile() file: Express.Multer.File,
+		@Body() dto: SendTelegramMediaDto,
+	): Promise<ITelegramMessageRecord> {
+		if (!file?.buffer?.length) {
+			throw new BadRequestException('A file is required.');
+		}
+
+		return await this._telegramService.sendMedia(
+			toContext(authPayload),
+			chatId,
+			{
+				buffer: file.buffer,
+				// Multer reads the name as latin1; the browser sent UTF-8.
+				fileName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+				mimeType: file.mimetype,
+			},
+			dto.caption?.trim() || null,
+			dto.voice === true,
+		);
+	}
+
+	@Get('chats/:chatId/messages/:messageId/media')
+	@UseGuards(AppEnabledGuard)
+	public async getMedia(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('chatId', ParseIntPipe) chatId: number,
+		@Param('messageId') messageId: string,
+		@Res() res: Response,
+	): Promise<void> {
+		const media = await this._telegramService.getMedia(
+			authPayload._id,
+			chatId,
+			messageId,
+		);
+
+		res.set(mediaResponseHeaders(media.mimeType, media.fileName));
+		res.send(media.buffer);
 	}
 
 	@Post('chats/:chatId/read')

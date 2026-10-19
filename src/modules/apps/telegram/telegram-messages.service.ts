@@ -7,7 +7,7 @@ import { schemasName } from '../../../infra/database/mongo/schemas';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import { TelegramMessage } from './telegram-message.schema';
 import TelegramEnum from './telegram.enum';
-import { INormalizedTelegramMessage } from './telegram.types';
+import { INormalizedTelegramMessage, ITelegramMedia } from './telegram.types';
 
 const DEFAULT_LIMIT: number = 50;
 const MAX_LIMIT: number = 100;
@@ -16,7 +16,9 @@ const DUPLICATE_KEY_CODE: number = 11000;
 export interface IOutgoingTelegramMessage {
 	chatId: number;
 	messageId: number;
-	text: string;
+	text: string | null;
+	contentType?: TelegramEnum.ContentType;
+	media?: ITelegramMedia;
 	sentAt: Date;
 	sentByEmployeeId: string | null;
 }
@@ -63,13 +65,59 @@ export class TelegramMessagesService {
 			direction: TelegramEnum.Direction.OUT,
 			chatId: message.chatId,
 			messageId: message.messageId,
-			contentType: TelegramEnum.ContentType.TEXT,
+			contentType: message.contentType ?? TelegramEnum.ContentType.TEXT,
 			text: message.text,
+			...(message.media ? { media: message.media } : {}),
 			sentAt: message.sentAt,
 			sentByEmployeeId: message.sentByEmployeeId,
 		});
 
 		return saved as unknown as ITelegramMessageRecord;
+	}
+
+	public async findOwned(
+		ownerUserId: string,
+		chatId: number,
+		id: string,
+	): Promise<ITelegramMessageRecord | null> {
+		return await this._messageModel
+			.findOne({ _id: id, ownerUserId, chatId })
+			.lean<ITelegramMessageRecord>();
+	}
+
+	public async deleteOwned(
+		ownerUserId: string,
+		chatId: number,
+		id: string,
+	): Promise<void> {
+		await this._messageModel.deleteOne({ _id: id, ownerUserId, chatId });
+	}
+
+	/** The newest message a conversation still has, if any. */
+	public async findLatest(
+		ownerUserId: string,
+		chatId: number,
+	): Promise<ITelegramMessageRecord | null> {
+		return await this._messageModel
+			.findOne({ ownerUserId, chatId })
+			.sort({ sentAt: -1, _id: -1 })
+			.lean<ITelegramMessageRecord>();
+	}
+
+	/** One message of this owner's chat, as long as it has a file to give. */
+	public async findWithMedia(
+		ownerUserId: string,
+		chatId: number,
+		id: string,
+	): Promise<ITelegramMessageRecord | null> {
+		return await this._messageModel
+			.findOne({
+				_id: id,
+				ownerUserId,
+				chatId,
+				'media.fileId': { $exists: true },
+			})
+			.lean<ITelegramMessageRecord>();
 	}
 
 	/** One conversation, newest first. `before` is the id of the oldest one already loaded. */

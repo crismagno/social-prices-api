@@ -26,6 +26,17 @@ export interface ITelegramUpdate {
 	[otherUpdateType: string]: unknown;
 }
 
+/** The file behind a photo, document, voice note, etc. The bytes stay at Telegram. */
+export interface ITelegramMedia {
+	fileId: string;
+	fileName: string | null;
+	mimeType: string | null;
+	size: number | null;
+	width: number | null;
+	height: number | null;
+	duration: number | null;
+}
+
 /** A customer's message, ready to store. */
 export interface INormalizedTelegramMessage {
 	updateId: number;
@@ -38,7 +49,27 @@ export interface INormalizedTelegramMessage {
 	fromLanguageCode: string | null;
 	contentType: TelegramEnum.ContentType;
 	text: string | null;
+	media?: ITelegramMedia;
 	sentAt: Date;
+}
+
+/** What Telegram answers after a message or a file was sent. */
+export interface ITelegramSentMessage {
+	messageId: number;
+	sentAt: Date;
+	contentType: TelegramEnum.ContentType;
+	media?: ITelegramMedia;
+}
+
+export interface ITelegramUploadFile {
+	buffer: Buffer;
+	fileName: string;
+	mimeType: string;
+}
+
+export interface ITelegramDownloadedFile {
+	buffer: Buffer;
+	filePath: string;
 }
 
 export interface ITelegramBotInfo {

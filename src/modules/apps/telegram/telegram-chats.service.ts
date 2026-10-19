@@ -6,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../../infra/database/mongo/schemas';
 import { ITelegramChat } from './telegram-chat.interface';
 import { TelegramChat } from './telegram-chat.schema';
+import { ITelegramMessageRecord } from './telegram-message.interface';
 import TelegramEnum from './telegram.enum';
 import { INormalizedTelegramMessage } from './telegram.types';
 
@@ -51,20 +52,40 @@ export class TelegramChatsService {
 		return result.upsertedCount > 0;
 	}
 
+	/** After a message was deleted: the inbox shows what is now the newest one. */
+	public async setLastMessage(
+		ownerUserId: string,
+		chatId: number,
+		latest: ITelegramMessageRecord,
+	): Promise<void> {
+		await this._chatModel.updateOne(
+			{ ownerUserId, chatId },
+			{
+				$set: {
+					lastMessageAt: latest.sentAt,
+					lastMessageText: this._preview(latest.text, latest.contentType),
+					lastMessageDirection: latest.direction,
+					lastContentType: latest.contentType,
+				},
+			},
+		);
+	}
+
 	public async registerOutgoing(
 		ownerUserId: string,
 		chatId: number,
-		text: string,
+		text: string | null,
 		at: Date,
+		contentType: TelegramEnum.ContentType = TelegramEnum.ContentType.TEXT,
 	): Promise<void> {
 		await this._chatModel.updateOne(
 			{ ownerUserId, chatId },
 			{
 				$set: {
 					lastMessageAt: at,
-					lastMessageText: this._preview(text, TelegramEnum.ContentType.TEXT),
+					lastMessageText: this._preview(text, contentType),
 					lastMessageDirection: TelegramEnum.Direction.OUT,
-					lastContentType: TelegramEnum.ContentType.TEXT,
+					lastContentType: contentType,
 				},
 			},
 		);

@@ -71,6 +71,42 @@ export const TELEGRAM_CUSTOMER_NOT_FOUND_CODE: string =
 export const TELEGRAM_CUSTOMER_ALREADY_LINKED_CODE: string =
 	'TELEGRAM_CUSTOMER_ALREADY_LINKED';
 
+export const TELEGRAM_MEDIA_NOT_FOUND_CODE: string = 'TELEGRAM_MEDIA_NOT_FOUND';
+
+export class TelegramMediaNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: TELEGRAM_MEDIA_NOT_FOUND_CODE,
+			message: 'This message has no file.',
+		});
+	}
+}
+
+export const TELEGRAM_MESSAGE_NOT_FOUND_CODE: string =
+	'TELEGRAM_MESSAGE_NOT_FOUND';
+export const TELEGRAM_MESSAGE_NOT_DELETABLE_CODE: string =
+	'TELEGRAM_MESSAGE_NOT_DELETABLE';
+
+export class TelegramMessageNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: TELEGRAM_MESSAGE_NOT_FOUND_CODE,
+			message: 'This message does not exist.',
+		});
+	}
+}
+
+/** Telegram only lets a bot delete messages from the last 48 hours. */
+export class TelegramMessageNotDeletableException extends ConflictException {
+	constructor(reason: string) {
+		super({
+			code: TELEGRAM_MESSAGE_NOT_DELETABLE_CODE,
+			message: `Telegram could not delete the message: ${reason}`,
+			reason,
+		});
+	}
+}
+
 export class TelegramChatNotFoundException extends NotFoundException {
 	constructor() {
 		super({

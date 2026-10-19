@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import TelegramEnum from './telegram.enum';
+import { ITelegramMedia } from './telegram.types';
 
 /** One message of a conversation: what a customer wrote, or what was answered here. */
 export interface ITelegramMessageRecord extends ICreatedAtEntity {
@@ -12,6 +13,8 @@ export interface ITelegramMessageRecord extends ICreatedAtEntity {
 	messageId: number;
 	contentType: TelegramEnum.ContentType;
 	text: string | null;
+	/** The file of a photo, document, voice note, etc. Its bytes stay at Telegram. */
+	media?: ITelegramMedia;
 	sentAt: Date;
 	/** IN only: Telegram's id of the update. Kept for tracing, not for de-duplication. */
 	updateId?: number;
