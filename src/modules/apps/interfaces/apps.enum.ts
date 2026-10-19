@@ -16,7 +16,7 @@ namespace AppsEnum {
 	export const AppLabels = {
 		[App.GOOGLE_CONTACTS]: 'Google Contacts',
 		[App.INSTAGRAM]: 'Instagram',
-		[App.FACEBOOK]: 'Facebook',
+		[App.FACEBOOK]: 'Messenger',
 		[App.WHATSAPP]: 'WhatsApp',
 		[App.TELEGRAM]: 'Telegram',
 	};

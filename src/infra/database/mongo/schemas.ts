@@ -1,5 +1,8 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { MessengerChatSchema } from '../../../modules/apps/messenger/messenger-chat.schema';
+import { MessengerConnectionSchema } from '../../../modules/apps/messenger/messenger-connection.schema';
+import { MessengerMessageSchema } from '../../../modules/apps/messenger/messenger-message.schema';
 import { TelegramChatSchema } from '../../../modules/apps/telegram/telegram-chat.schema';
 import { TelegramConnectionSchema } from '../../../modules/apps/telegram/telegram-connection.schema';
 import { TelegramMessageSchema } from '../../../modules/apps/telegram/telegram-message.schema';
@@ -43,6 +46,9 @@ export const schemasName = {
 	manager: 'Manager',
 	productItem: 'ProductItem',
 	googleContactsConnection: 'GoogleContactsConnection',
+	messengerConnection: 'MessengerConnection',
+	messengerMessage: 'MessengerMessage',
+	messengerChat: 'MessengerChat',
 	telegramConnection: 'TelegramConnection',
 	telegramMessage: 'TelegramMessage',
 	telegramChat: 'TelegramChat',
@@ -112,6 +118,18 @@ export const schemasModule = {
 			name: schemasName.googleContactsConnection,
 			schema: GoogleContactsConnectionSchema,
 		},
+	]),
+	messengerConnection: MongooseModule.forFeature([
+		{
+			name: schemasName.messengerConnection,
+			schema: MessengerConnectionSchema,
+		},
+	]),
+	messengerMessage: MongooseModule.forFeature([
+		{ name: schemasName.messengerMessage, schema: MessengerMessageSchema },
+	]),
+	messengerChat: MongooseModule.forFeature([
+		{ name: schemasName.messengerChat, schema: MessengerChatSchema },
 	]),
 	telegramConnection: MongooseModule.forFeature([
 		{ name: schemasName.telegramConnection, schema: TelegramConnectionSchema },

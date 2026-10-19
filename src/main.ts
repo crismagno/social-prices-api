@@ -7,6 +7,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
 		cors: true,
+		// The Meta webhook signs the exact bytes of the body, so they are kept.
+		rawBody: true,
 	});
 
 	app.use(compression());
