@@ -34,9 +34,15 @@ const build = (
 	opts: { chat?: any; connection?: any; enabledApps?: any } = {},
 ) => {
 	const graph: any = {
+		sendAttachment: jest.fn().mockResolvedValue({
+			mid: 'mid.8',
+			sentAt: new Date('2030-01-02'),
+			type: 'file',
+		}),
 		sendText: jest
 			.fn()
 			.mockResolvedValue({ mid: 'mid.9', sentAt: new Date('2030-01-02') }),
+		getParticipantName: jest.fn().mockResolvedValue(null),
 		getProfile: jest
 			.fn()
 			.mockResolvedValue({ name: 'Ana Souza', profilePic: 'https://x/p.jpg' }),
@@ -62,6 +68,7 @@ const build = (
 	};
 	const chats: any = {
 		registerIncoming: jest.fn().mockResolvedValue(false),
+		registerEcho: jest.fn().mockResolvedValue(false),
 		registerOutgoing: jest.fn().mockResolvedValue(undefined),
 		setProfile: jest.fn().mockResolvedValue(undefined),
 		markRead: jest.fn().mockResolvedValue(undefined),
@@ -71,6 +78,7 @@ const build = (
 	};
 	const messages: any = {
 		saveIncoming: jest.fn().mockResolvedValue(true),
+		saveEcho: jest.fn().mockResolvedValue(true),
 		saveOutgoing: jest.fn().mockResolvedValue({ _id: 'out1' }),
 		listByChat: jest.fn().mockResolvedValue([{ _id: 'm1' }]),
 		findOwned: jest.fn().mockResolvedValue(null),
@@ -89,7 +97,10 @@ const build = (
 		assertCanCreate: jest.fn().mockResolvedValue(undefined),
 	};
 
+	const realtime: any = { notifyInboxUpdated: jest.fn() };
+
 	return {
+		realtime,
 		graph,
 		connections,
 		chats,
@@ -105,6 +116,7 @@ const build = (
 			messages,
 			customers,
 			featureLimits,
+			realtime,
 		),
 	};
 };
@@ -180,15 +192,70 @@ describe('MessengerService inbox', () => {
 			});
 		});
 
-		it('keeps the message even when the profile cannot be read', async () => {
+		it('keeps the message even when no name can be found', async () => {
 			const { service, chats, graph, messages } = build();
 			chats.registerIncoming.mockResolvedValue(true);
 			graph.getProfile.mockRejectedValue(new MetaApiError(400, 100, 'no'));
+			graph.getParticipantName.mockResolvedValue(null);
 
 			await service.handleWebhook(webhookBody());
 
 			expect(messages.saveIncoming).toHaveBeenCalled();
 			expect(chats.setProfile).not.toHaveBeenCalled();
+		});
+
+		it("takes the name from the conversation when Facebook refuses the person's profile", async () => {
+			const { service, chats, graph } = build();
+			chats.registerIncoming.mockResolvedValue(true);
+			graph.getProfile.mockRejectedValue(
+				new MetaApiError(400, 100, 'missing permissions'),
+			);
+			graph.getParticipantName.mockResolvedValue('Cristhofer Magno');
+
+			await service.handleWebhook(webhookBody());
+
+			expect(graph.getParticipantName).toHaveBeenCalledWith(
+				'PAGE_TOKEN',
+				'PAGE1',
+				'PSID1',
+			);
+			expect(chats.setProfile).toHaveBeenCalledWith('u1', 'PSID1', {
+				name: 'Cristhofer Magno',
+				profilePic: null,
+			});
+		});
+
+		it('does not look further when the profile already had the name', async () => {
+			const { service, chats, graph } = build();
+			chats.registerIncoming.mockResolvedValue(true);
+
+			await service.handleWebhook(webhookBody());
+
+			expect(chats.setProfile).toHaveBeenCalled();
+			expect(graph.getParticipantName).not.toHaveBeenCalled();
+		});
+
+		it('tries again to learn the name on a later message when the conversation still has none', async () => {
+			const { service, chats, graph } = build({
+				chat: { psid: 'PSID1', name: null },
+			});
+			chats.registerIncoming.mockResolvedValue(false);
+
+			await service.handleWebhook(webhookBody());
+
+			expect(graph.getProfile).toHaveBeenCalledWith('PAGE_TOKEN', 'PSID1');
+			expect(chats.setProfile).toHaveBeenCalled();
+		});
+
+		it('does not ask again once the conversation has a name', async () => {
+			const { service, chats, graph } = build({
+				chat: { psid: 'PSID1', name: 'Ana Souza' },
+			});
+			chats.registerIncoming.mockResolvedValue(false);
+
+			await service.handleWebhook(webhookBody());
+
+			expect(graph.getProfile).not.toHaveBeenCalled();
 		});
 
 		it('links a person who already is a customer, on their first message only', async () => {
@@ -219,6 +286,80 @@ describe('MessengerService inbox', () => {
 			await expect(service.handleWebhook(webhookBody())).rejects.toThrow(
 				'db down',
 			);
+		});
+
+		describe('echoes: what the Page sent from Messenger or Business Suite', () => {
+			const echoBody = () => ({
+				object: 'page',
+				entry: [
+					{
+						id: 'PAGE1',
+						messaging: [
+							{
+								sender: { id: 'PAGE1' },
+								recipient: { id: 'PSID1' },
+								timestamp: 1_760_000_000_000,
+								message: {
+									mid: 'e1',
+									text: 'pelo Business Suite',
+									is_echo: true,
+								},
+							},
+						],
+					},
+				],
+			});
+
+			it('keeps it as a message the Page sent, in the conversation of the person it went to', async () => {
+				const { service, messages, chats, connections } = build();
+
+				await service.handleWebhook(echoBody());
+
+				expect(messages.saveEcho).toHaveBeenCalledWith(
+					'u1',
+					expect.objectContaining({
+						psid: 'PSID1',
+						mid: 'e1',
+						text: 'pelo Business Suite',
+					}),
+				);
+				expect(messages.saveIncoming).not.toHaveBeenCalled();
+				expect(chats.registerEcho).toHaveBeenCalledWith(
+					'u1',
+					expect.objectContaining({ psid: 'PSID1' }),
+				);
+				expect(chats.registerIncoming).not.toHaveBeenCalled();
+				expect(connections.touchLastUpdate).not.toHaveBeenCalled();
+			});
+
+			it('does nothing more for an echo it already had, such as one of a message sent from here', async () => {
+				const { service, messages, chats } = build();
+				messages.saveEcho.mockResolvedValue(false);
+
+				await service.handleWebhook(echoBody());
+
+				expect(chats.registerEcho).not.toHaveBeenCalled();
+			});
+
+			it('learns who the person is when the Page wrote to them first', async () => {
+				const { service, chats, graph } = build();
+				chats.registerEcho.mockResolvedValue(true);
+
+				await service.handleWebhook(echoBody());
+
+				expect(graph.getProfile).toHaveBeenCalledWith('PAGE_TOKEN', 'PSID1');
+				expect(chats.setProfile).toHaveBeenCalled();
+			});
+
+			it('ignores the echo of a Page nobody connected, and of a user without the app', async () => {
+				const unknown = build({ connection: null });
+				await unknown.service.handleWebhook(echoBody());
+				expect(unknown.messages.saveEcho).not.toHaveBeenCalled();
+
+				const disabled = build({ enabledApps: [] });
+				await disabled.service.handleWebhook(echoBody());
+				expect(disabled.messages.saveEcho).not.toHaveBeenCalled();
+			});
 		});
 
 		it('ignores a body that is not a customer message', async () => {
@@ -335,6 +476,95 @@ describe('MessengerService inbox', () => {
 
 			await expect(
 				service.sendMessage(CTX, 'PSID1', 'oi'),
+			).rejects.toBeInstanceOf(MetaApiError);
+		});
+	});
+
+	describe('sendAttachment', () => {
+		const file = {
+			buffer: Buffer.alloc(2048),
+			fileName: 'orcamento.pdf',
+			mimeType: 'application/pdf',
+		};
+
+		it('uploads through the Page, then keeps the message with what is known of the file', async () => {
+			const { service, graph, messages, chats } = build({ chat: freshChat() });
+
+			await service.sendAttachment(CTX, 'PSID1', file);
+
+			expect(graph.sendAttachment).toHaveBeenCalledWith(
+				'PAGE_TOKEN',
+				'PSID1',
+				file,
+			);
+			expect(messages.saveOutgoing).toHaveBeenCalledWith('u1', {
+				psid: 'PSID1',
+				mid: 'mid.8',
+				text: null,
+				localAttachment: {
+					type: 'file',
+					fileName: 'orcamento.pdf',
+					size: 2048,
+				},
+				sentAt: new Date('2030-01-02'),
+				sentByEmployeeId: 'e1',
+			});
+			expect(chats.registerOutgoing).toHaveBeenCalledWith(
+				'u1',
+				'PSID1',
+				null,
+				new Date('2030-01-02'),
+				'file',
+			);
+		});
+
+		it("refuses, uploading nothing, when no Page is connected, the conversation is not this user's or the window closed", async () => {
+			const none = build({ chat: freshChat(), connection: null });
+			await expect(
+				none.service.sendAttachment(CTX, 'PSID1', file),
+			).rejects.toBeInstanceOf(MessengerNotConnectedException);
+
+			const foreign = build({ chat: null });
+			await expect(
+				foreign.service.sendAttachment(CTX, 'PSID9', file),
+			).rejects.toBeInstanceOf(MessengerChatNotFoundException);
+
+			const closed = build({
+				chat: freshChat({ lastIncomingAt: new Date(Date.now() - 25 * HOUR) }),
+			});
+			await expect(
+				closed.service.sendAttachment(CTX, 'PSID1', file),
+			).rejects.toBeInstanceOf(MessengerReplyWindowClosedException);
+			expect(closed.graph.sendAttachment).not.toHaveBeenCalled();
+		});
+
+		it('explains when Facebook refuses the window or the person, keeping nothing', async () => {
+			const closed = build({ chat: freshChat() });
+			closed.graph.sendAttachment.mockRejectedValue(
+				new MetaApiError(400, 10, 'outside window'),
+			);
+			await expect(
+				closed.service.sendAttachment(CTX, 'PSID1', file),
+			).rejects.toBeInstanceOf(MessengerReplyWindowClosedException);
+			expect(closed.messages.saveOutgoing).not.toHaveBeenCalled();
+
+			const blocked = build({ chat: freshChat() });
+			blocked.graph.sendAttachment.mockRejectedValue(
+				new MetaApiError(400, 551, 'unavailable'),
+			);
+			await expect(
+				blocked.service.sendAttachment(CTX, 'PSID1', file),
+			).rejects.toBeInstanceOf(MessengerChatUnavailableException);
+		});
+
+		it('lets other failures through, such as a file Facebook does not accept', async () => {
+			const { service, graph } = build({ chat: freshChat() });
+			graph.sendAttachment.mockRejectedValue(
+				new MetaApiError(400, 100, 'bad file'),
+			);
+
+			await expect(
+				service.sendAttachment(CTX, 'PSID1', file),
 			).rejects.toBeInstanceOf(MetaApiError);
 		});
 	});
@@ -473,6 +703,82 @@ describe('MessengerService inbox', () => {
 				service.getAttachment('u1', 'PSID1', 'm1', 5),
 			).rejects.toBeInstanceOf(MessengerAttachmentNotFoundException);
 			expect(graph.fetchAttachment).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('real time: the open pages of the account hear about every change', () => {
+		const told = (r: any, psid = 'PSID1') =>
+			expect(r.notifyInboxUpdated).toHaveBeenCalledWith(
+				'u1',
+				AppsEnum.App.FACEBOOK,
+				psid,
+			);
+
+		it('a message that arrived, and an echo of what the Page sent elsewhere', async () => {
+			const incoming = build();
+			await incoming.service.handleWebhook(webhookBody());
+			told(incoming.realtime);
+
+			const echo = build();
+			await echo.service.handleWebhook({
+				object: 'page',
+				entry: [
+					{
+						id: 'PAGE1',
+						messaging: [
+							{
+								sender: { id: 'PAGE1' },
+								recipient: { id: 'PSID1' },
+								timestamp: 1_760_000_000_000,
+								message: {
+									mid: 'e1',
+									text: 'pelo Business Suite',
+									is_echo: true,
+								},
+							},
+						],
+					},
+				],
+			});
+			told(echo.realtime);
+		});
+
+		it('says nothing for a message it already had, or ignored', async () => {
+			const duplicate = build();
+			duplicate.messages.saveIncoming.mockResolvedValue(false);
+			await duplicate.service.handleWebhook(webhookBody());
+			expect(duplicate.realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+
+			const unknown = build({ connection: null });
+			await unknown.service.handleWebhook(webhookBody());
+			expect(unknown.realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+		});
+
+		it('a reply, a file, and a conversation that was read', async () => {
+			const reply = build({ chat: freshChat() });
+			await reply.service.sendMessage(CTX, 'PSID1', 'oi');
+			told(reply.realtime);
+
+			const file = build({ chat: freshChat() });
+			await file.service.sendAttachment(CTX, 'PSID1', {
+				buffer: Buffer.alloc(4),
+				fileName: 'a.pdf',
+				mimeType: 'application/pdf',
+			});
+			told(file.realtime);
+
+			const read = build({ chat: freshChat() });
+			await read.service.markRead('u1', 'PSID1');
+			told(read.realtime);
+		});
+
+		it('tells nothing when the send was refused', async () => {
+			const { service, graph, realtime } = build({ chat: freshChat() });
+			graph.sendText.mockRejectedValue(new MetaApiError(0, null, 'down'));
+
+			await service.sendMessage(CTX, 'PSID1', 'oi').catch(() => undefined);
+
+			expect(realtime.notifyInboxUpdated).not.toHaveBeenCalled();
 		});
 	});
 });

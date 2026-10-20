@@ -3,6 +3,7 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { FeatureLimitsService } from '../../feature-limits/feature-limits.service';
 import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
 import { UsersService } from '../../users/users.service';
+import { AppsRealtimeGateway } from '../core/realtime/apps-realtime.gateway';
 import AppsEnum from '../interfaces/apps.enum';
 import { IAppContext } from '../interfaces/apps.types';
 import { ITelegramConnection } from './telegram-connection.interface';
@@ -85,6 +86,7 @@ export class TelegramService {
 		private readonly _customersRepository: TelegramCustomersRepository,
 		private readonly _featureLimitsService: FeatureLimitsService,
 		private readonly _usersService: UsersService,
+		private readonly _realtime: AppsRealtimeGateway,
 	) {}
 
 	//#endregion
@@ -277,6 +279,8 @@ export class TelegramService {
 
 		await this._connectionsService.touchLastUpdate(connection._id, new Date());
 
+		this._notify(ownerUserId, message.chatId);
+
 		return 'SAVED';
 	}
 
@@ -320,6 +324,8 @@ export class TelegramService {
 		await this._getChatOrFail(ownerUserId, chatId);
 
 		await this._chatsService.markRead(ownerUserId, chatId);
+
+		this._notify(ownerUserId, chatId);
 	}
 
 	/**
@@ -422,6 +428,8 @@ export class TelegramService {
 		if (latest) {
 			await this._chatsService.setLastMessage(ownerUserId, chatId, latest);
 		}
+
+		this._notify(ownerUserId, chatId);
 	}
 
 	/** The bytes of the file of one message, fetched from Telegram when asked for. */
@@ -638,6 +646,15 @@ export class TelegramService {
 	}
 
 	/** An error counts only if it came after both the webhook was (re)registered and the last message received. */
+	/** Tells the open pages of this account that its inbox changed. Never throws. */
+	private _notify(ownerUserId: string, chatId: number): void {
+		this._realtime.notifyInboxUpdated(
+			ownerUserId,
+			AppsEnum.App.TELEGRAM,
+			String(chatId),
+		);
+	}
+
 	private _isAlreadyGone(error: unknown): boolean {
 		return (
 			error instanceof TelegramApiError &&
@@ -700,6 +717,8 @@ export class TelegramService {
 			sent.sentAt,
 			...(sent.media ? [sent.contentType] : []),
 		);
+
+		this._notify(ctx.ownerUserId, chatId);
 
 		return record;
 	}

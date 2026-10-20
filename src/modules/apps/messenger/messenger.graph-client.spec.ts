@@ -141,7 +141,7 @@ describe('MessengerGraphClient', () => {
 			expect(init.headers.Authorization).toBe('Bearer PAGE_TOKEN');
 			expect(
 				new URLSearchParams(init.body).get('subscribed_fields')!.split(','),
-			).toEqual(['messages', 'messaging_postbacks']);
+			).toEqual(['messages', 'messaging_postbacks', 'message_echoes']);
 		});
 
 		it('unsubscribes with DELETE', async () => {
@@ -341,6 +341,125 @@ describe('MessengerGraphClient', () => {
 				granted: [],
 				declined: [],
 			});
+		});
+	});
+
+	describe('getParticipantName', () => {
+		it("reads the person's name from the conversation of the Page with them", async () => {
+			fetchMock.mockResolvedValue(
+				ok({
+					data: [
+						{
+							participants: {
+								data: [
+									{ id: 'PSID1', name: 'Ana Souza' },
+									{ id: 'PAGE1', name: 'Social Prices' },
+								],
+							},
+						},
+					],
+				}),
+			);
+
+			await expect(
+				client.getParticipantName('PAGE_TOKEN', 'PAGE1', 'PSID1'),
+			).resolves.toBe('Ana Souza');
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url).toContain('/v23.0/PAGE1/conversations?');
+			expect(url).toContain('user_id=PSID1');
+			expect(url).toContain('fields=participants');
+			expect(init.headers.Authorization).toBe('Bearer PAGE_TOKEN');
+		});
+
+		it('is null when the conversation is not there, or the person is not in it', async () => {
+			fetchMock.mockResolvedValue(ok({ data: [] }));
+			await expect(
+				client.getParticipantName('T', 'PAGE1', 'PSID1'),
+			).resolves.toBeNull();
+
+			fetchMock.mockResolvedValue(
+				ok({
+					data: [{ participants: { data: [{ id: 'PAGE1', name: 'Loja' }] } }],
+				}),
+			);
+			await expect(
+				client.getParticipantName('T', 'PAGE1', 'PSID1'),
+			).resolves.toBeNull();
+		});
+	});
+
+	describe('sendAttachment', () => {
+		const file = (mimeType: string, fileName = 'f.bin') => ({
+			buffer: Buffer.alloc(8),
+			fileName,
+			mimeType,
+		});
+
+		it.each([
+			['image/jpeg', 'image'],
+			['image/png', 'image'],
+			['image/gif', 'image'],
+			['video/mp4', 'video'],
+			['audio/wav', 'audio'],
+			['audio/x-wav', 'audio'],
+			['audio/mpeg', 'audio'],
+			['audio/mp4', 'audio'],
+			['audio/aac', 'audio'],
+			['application/pdf', 'file'],
+			['audio/ogg', 'file'],
+			['image/svg+xml', 'file'],
+		])('%s goes as "%s"', async (mimeType, type) => {
+			fetchMock.mockResolvedValue(
+				ok({ recipient_id: 'PSID1', message_id: 'mid.7' }),
+			);
+
+			const sent = await client.sendAttachment(
+				'PAGE_TOKEN',
+				'PSID1',
+				file(mimeType),
+			);
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url).toBe('https://graph.facebook.com/v23.0/me/messages');
+			expect(init.method).toBe('POST');
+			expect(init.headers.Authorization).toBe('Bearer PAGE_TOKEN');
+			// A form sets its own content type, boundary included.
+			expect(init.headers['Content-Type']).toBeUndefined();
+			expect(init.body).toBeInstanceOf(FormData);
+			expect(JSON.parse(init.body.get('recipient'))).toEqual({ id: 'PSID1' });
+			expect(init.body.get('messaging_type')).toBe('RESPONSE');
+			expect(JSON.parse(init.body.get('message'))).toEqual({
+				attachment: { type, payload: { is_reusable: false } },
+			});
+			expect(init.body.get('filedata')).toBeInstanceOf(Blob);
+			expect(sent).toMatchObject({ mid: 'mid.7', type });
+			expect(sent.sentAt).toBeInstanceOf(Date);
+		});
+
+		it('keeps the file name', async () => {
+			fetchMock.mockResolvedValue(ok({ message_id: 'mid.7' }));
+
+			await client.sendAttachment(
+				'T',
+				'P',
+				file('application/pdf', 'orcamento.pdf'),
+			);
+
+			expect(fetchMock.mock.calls[0][1].body.get('filedata').name).toBe(
+				'orcamento.pdf',
+			);
+		});
+
+		it('never lets the token reach the error of a failed upload', async () => {
+			fetchMock.mockRejectedValue(new Error(`failed ${TOKEN}`));
+
+			const error = await client
+				.sendAttachment(TOKEN, 'P', file('image/png'))
+				.catch((e) => e);
+
+			expect(error).toBeInstanceOf(MetaApiError);
+			expect(error.message).not.toContain(TOKEN);
 		});
 	});
 });

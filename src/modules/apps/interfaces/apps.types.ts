@@ -13,4 +13,6 @@ export interface IAppCatalogItem {
 	connected: boolean;
 	status: AppsEnum.ConnectionStatus | null;
 	accountLabel: string | null;
+	/** Messages waiting to be read; 0 for an app without an inbox. */
+	unreadCount: number;
 }

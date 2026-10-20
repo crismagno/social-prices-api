@@ -20,6 +20,9 @@ export class SendMessengerMessageDto {
 	text: string;
 }
 
+// Facebook takes attachments up to 25 MB.
+export const MAX_MESSENGER_UPLOAD_BYTES: number = 25 * 1024 * 1024;
+
 export class LinkMessengerCustomerDto {
 	@IsMongoId()
 	customerId: string;

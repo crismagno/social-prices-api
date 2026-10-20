@@ -2,7 +2,10 @@ import mongoose from 'mongoose';
 
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import MessengerEnum from './messenger.enum';
-import { IMessengerAttachment } from './messenger.types';
+import {
+	IMessengerAttachment,
+	IMessengerLocalAttachment,
+} from './messenger.types';
 
 /** One message of a conversation: what a customer wrote, or what was answered here. */
 export interface IMessengerMessageRecord extends ICreatedAtEntity {
@@ -14,6 +17,8 @@ export interface IMessengerMessageRecord extends ICreatedAtEntity {
 	mid: string;
 	text: string | null;
 	attachments: IMessengerAttachment[];
+	/** OUT only: the file this system sent, until its echo brings the address. */
+	localAttachment?: IMessengerLocalAttachment;
 	sentAt: Date;
 	/** OUT only: the employee who answered, when it was not the owner. */
 	sentByEmployeeId?: string | null;

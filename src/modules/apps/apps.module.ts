@@ -6,6 +6,8 @@ import { APP_STATUS_PROVIDERS } from './core/status/app-status.types';
 import { AppsCoreModule } from './core/apps-core.module';
 import { GoogleContactsModule } from './google-contacts/google-contacts.module';
 import { GoogleContactsStatusProvider } from './google-contacts/google-contacts.status.provider';
+import { InstagramModule } from './instagram/instagram.module';
+import { InstagramStatusProvider } from './instagram/instagram.status.provider';
 import { MessengerModule } from './messenger/messenger.module';
 import { MessengerStatusProvider } from './messenger/messenger.status.provider';
 import { TelegramModule } from './telegram/telegram.module';
@@ -20,6 +22,7 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 		GoogleContactsModule,
 		TelegramModule,
 		MessengerModule,
+		InstagramModule,
 	],
 	controllers: [AppsController],
 	providers: [
@@ -30,11 +33,13 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 				google: GoogleContactsStatusProvider,
 				telegram: TelegramStatusProvider,
 				messenger: MessengerStatusProvider,
-			): IAppStatusProvider[] => [google, telegram, messenger],
+				instagram: InstagramStatusProvider,
+			): IAppStatusProvider[] => [google, telegram, messenger, instagram],
 			inject: [
 				GoogleContactsStatusProvider,
 				TelegramStatusProvider,
 				MessengerStatusProvider,
+				InstagramStatusProvider,
 			],
 		},
 	],

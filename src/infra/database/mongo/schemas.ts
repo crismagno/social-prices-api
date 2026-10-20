@@ -1,5 +1,8 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { InstagramChatSchema } from '../../../modules/apps/instagram/instagram-chat.schema';
+import { InstagramConnectionSchema } from '../../../modules/apps/instagram/instagram-connection.schema';
+import { InstagramMessageSchema } from '../../../modules/apps/instagram/instagram-message.schema';
 import { MessengerChatSchema } from '../../../modules/apps/messenger/messenger-chat.schema';
 import { MessengerConnectionSchema } from '../../../modules/apps/messenger/messenger-connection.schema';
 import { MessengerMessageSchema } from '../../../modules/apps/messenger/messenger-message.schema';
@@ -46,6 +49,9 @@ export const schemasName = {
 	manager: 'Manager',
 	productItem: 'ProductItem',
 	googleContactsConnection: 'GoogleContactsConnection',
+	instagramConnection: 'InstagramConnection',
+	instagramMessage: 'InstagramMessage',
+	instagramChat: 'InstagramChat',
 	messengerConnection: 'MessengerConnection',
 	messengerMessage: 'MessengerMessage',
 	messengerChat: 'MessengerChat',
@@ -118,6 +124,18 @@ export const schemasModule = {
 			name: schemasName.googleContactsConnection,
 			schema: GoogleContactsConnectionSchema,
 		},
+	]),
+	instagramConnection: MongooseModule.forFeature([
+		{
+			name: schemasName.instagramConnection,
+			schema: InstagramConnectionSchema,
+		},
+	]),
+	instagramMessage: MongooseModule.forFeature([
+		{ name: schemasName.instagramMessage, schema: InstagramMessageSchema },
+	]),
+	instagramChat: MongooseModule.forFeature([
+		{ name: schemasName.instagramChat, schema: InstagramChatSchema },
 	]),
 	messengerConnection: MongooseModule.forFeature([
 		{

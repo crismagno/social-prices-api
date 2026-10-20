@@ -1,3 +1,4 @@
+import MessengerEnum from './messenger.enum';
 import { parseMessengerWebhook } from './messenger.update-parser';
 
 const body = (messaging: any[], pageId = 'PAGE1'): any => ({
@@ -23,6 +24,7 @@ describe('parseMessengerWebhook', () => {
 			{
 				pageId: 'PAGE1',
 				psid: 'PSID1',
+				direction: MessengerEnum.Direction.IN,
 				mid: 'm1',
 				text: 'oi, tudo bem?',
 				attachments: [],
@@ -87,11 +89,10 @@ describe('parseMessengerWebhook', () => {
 		]);
 	});
 
-	it('ignores what is not a customer message: echoes, deliveries, reads and postbacks', () => {
+	it('ignores what is not a message: deliveries, reads, postbacks and a Page writing to itself', () => {
 		expect(
 			parseMessengerWebhook(
 				body([
-					event({ mid: 'e', text: 'enviada por nós', is_echo: true }),
 					event(undefined, { delivery: { mids: ['x'] } }),
 					event(undefined, { read: { watermark: 1 } }),
 					event(undefined, { postback: { payload: 'GET_STARTED' } }),
@@ -102,6 +103,62 @@ describe('parseMessengerWebhook', () => {
 				]),
 			),
 		).toEqual([]);
+	});
+
+	describe('echoes: what the Page itself sent, from Messenger, Business Suite or this system', () => {
+		const echo = (message: any, over: any = {}) =>
+			event(
+				{ is_echo: true, app_id: 123, ...message },
+				{ sender: { id: 'PAGE1' }, recipient: { id: 'PSID1' }, ...over },
+			);
+
+		it('is an OUT message of the conversation with the person it was sent to', () => {
+			expect(
+				parseMessengerWebhook(
+					body([echo({ mid: 'e1', text: 'enviada pelo Business Suite' })]),
+				),
+			).toEqual([
+				{
+					pageId: 'PAGE1',
+					psid: 'PSID1',
+					direction: MessengerEnum.Direction.OUT,
+					mid: 'e1',
+					text: 'enviada pelo Business Suite',
+					attachments: [],
+					sentAt: new Date(1_760_000_000_000),
+				},
+			]);
+		});
+
+		it('keeps the files of an echo too', () => {
+			const [message] = parseMessengerWebhook(
+				body([
+					echo({
+						mid: 'e2',
+						attachments: [
+							{
+								type: 'image',
+								payload: { url: 'https://cdn.fbsbx.com/a.jpg' },
+							},
+						],
+					}),
+				]),
+			);
+
+			expect(message.attachments).toHaveLength(1);
+		});
+
+		it('is dropped when it was not sent by this Page, or has no one it was sent to', () => {
+			expect(
+				parseMessengerWebhook(
+					body([
+						echo({ mid: 'e3', text: 'x' }, { sender: { id: 'SOMEONE' } }),
+						echo({ mid: 'e4', text: 'x' }, { recipient: {} }),
+						echo({ text: 'sem mid' }),
+					]),
+				),
+			).toEqual([]);
+		});
 	});
 
 	it.each([

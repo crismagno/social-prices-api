@@ -4,7 +4,10 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { IMessengerMessageRecord } from './messenger-message.interface';
 import MessengerEnum from './messenger.enum';
-import { IMessengerAttachment } from './messenger.types';
+import {
+	IMessengerAttachment,
+	IMessengerLocalAttachment,
+} from './messenger.types';
 
 @Schema({
 	timestamps: { createdAt: true, updatedAt: false },
@@ -32,6 +35,9 @@ export class MessengerMessage implements Partial<IMessengerMessageRecord> {
 
 	@Prop({ type: [Object], default: [] })
 	attachments: IMessengerAttachment[];
+
+	@Prop({ type: Object })
+	localAttachment?: IMessengerLocalAttachment;
 
 	@Prop({ required: true, type: Date })
 	sentAt: Date;

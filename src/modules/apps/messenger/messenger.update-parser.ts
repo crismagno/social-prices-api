@@ -1,3 +1,4 @@
+import MessengerEnum from './messenger.enum';
 import {
 	IMessengerAttachment,
 	INormalizedMessengerMessage,
@@ -20,9 +21,10 @@ const readAttachments = (raw: unknown): IMessengerAttachment[] =>
 		}));
 
 /**
- * Reads what customers wrote to a Page. Only their messages count: echoes of
- * what the Page sent, deliveries, reads and postbacks are dropped. Never throws,
- * whatever the body looks like.
+ * Reads the messages of a conversation with a Page: what customers wrote, and the
+ * "echoes" of what the Page sent from outside this system (Messenger, Business
+ * Suite). Deliveries, reads and postbacks are dropped. Never throws, whatever
+ * the body looks like.
  */
 export const parseMessengerWebhook = (
 	body: unknown,
@@ -43,19 +45,29 @@ export const parseMessengerWebhook = (
 		for (const event of entry.messaging) {
 			const message = isObject(event) ? event.message : undefined;
 
+			if (!isObject(message) || typeof message.mid !== 'string') {
+				continue;
+			}
+
+			// The person of the conversation: who wrote, or who the Page wrote to.
+			const isEcho: boolean = message.is_echo === true;
+			const psid: unknown = isEcho ? event.recipient?.id : event.sender?.id;
+			const sender: unknown = event.sender?.id;
+
 			if (
-				!isObject(message) ||
-				message.is_echo ||
-				typeof message.mid !== 'string' ||
-				typeof event.sender?.id !== 'string' ||
-				event.sender.id === pageId
+				typeof psid !== 'string' ||
+				psid === pageId ||
+				(isEcho ? sender !== pageId : sender === pageId)
 			) {
 				continue;
 			}
 
 			messages.push({
 				pageId,
-				psid: event.sender.id,
+				psid,
+				direction: isEcho
+					? MessengerEnum.Direction.OUT
+					: MessengerEnum.Direction.IN,
 				mid: message.mid,
 				text: typeof message.text === 'string' ? message.text : null,
 				attachments: readAttachments(message.attachments),

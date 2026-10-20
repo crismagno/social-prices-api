@@ -98,6 +98,7 @@ const build = (
 		list: jest.fn().mockResolvedValue([]),
 		findByChatId: jest.fn().mockResolvedValue(opts.chat ?? null),
 	};
+	const realtime: any = { notifyInboxUpdated: jest.fn() };
 	const customers: any = {
 		findByTelegramUserId: jest.fn().mockResolvedValue(null),
 		findNames: jest.fn().mockResolvedValue([]),
@@ -118,6 +119,7 @@ const build = (
 	};
 
 	return {
+		realtime,
 		bot,
 		connections,
 		messages,
@@ -133,6 +135,7 @@ const build = (
 			customers,
 			featureLimits,
 			users,
+			realtime,
 		),
 	};
 };
@@ -1324,6 +1327,87 @@ describe('TelegramService', () => {
 			await service.unlinkCustomer('u1', 555);
 
 			expect(customers.unlinkTelegramSource).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('real time: the open pages of the account hear about every change', () => {
+		const chat = { chatId: 555, telegramUserId: 555 };
+
+		it('a message that arrived', async () => {
+			const { creds, connection } = connectionWithSecret();
+			const { service, realtime } = build({ connection });
+
+			await service.handleWebhook(creds.key, creds.secret, textUpdate());
+
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalledWith(
+				'u1',
+				AppsEnum.App.TELEGRAM,
+				'555',
+			);
+		});
+
+		it('says nothing for a message it already had, or ignored', async () => {
+			const { creds, connection } = connectionWithSecret();
+			const duplicate = build({ connection });
+			duplicate.messages.saveIncoming.mockResolvedValue(false);
+
+			await duplicate.service.handleWebhook(
+				creds.key,
+				creds.secret,
+				textUpdate(),
+			);
+			expect(duplicate.realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+
+			const ignored = build({ connection, enabledApps: [] });
+			await ignored.service.handleWebhook(
+				creds.key,
+				creds.secret,
+				textUpdate(),
+			);
+			expect(ignored.realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+		});
+
+		it('a conversation that was read, a reply that was sent and a message that was deleted', async () => {
+			const read = build({ chat });
+			await read.service.markRead('u1', 555);
+			expect(read.realtime.notifyInboxUpdated).toHaveBeenCalledWith(
+				'u1',
+				AppsEnum.App.TELEGRAM,
+				'555',
+			);
+
+			const sent = build({ connection: { token: 'ENC' }, chat });
+			sent.bot.sendMessage = jest
+				.fn()
+				.mockResolvedValue({ messageId: 42, sentAt: new Date('2030-01-02') });
+			await sent.service.sendMessage(CTX, 555, 'claro!');
+			expect(sent.realtime.notifyInboxUpdated).toHaveBeenCalledTimes(1);
+
+			const deleted = build({ connection: { token: 'ENC' }, chat });
+			deleted.messages.findOwned.mockResolvedValue({
+				_id: 'm1',
+				chatId: 555,
+				messageId: 42,
+			});
+			deleted.bot.deleteMessage = jest.fn().mockResolvedValue(undefined);
+			await deleted.service.deleteMessage('u1', 555, 'm1');
+			expect(deleted.realtime.notifyInboxUpdated).toHaveBeenCalledTimes(1);
+		});
+
+		it('tells nothing when the send was refused', async () => {
+			const { service, bot, realtime } = build({
+				connection: { token: 'ENC' },
+				chat,
+			});
+			bot.sendMessage = jest
+				.fn()
+				.mockRejectedValue(
+					new TelegramApiError(403, 'Forbidden: bot was blocked'),
+				);
+
+			await service.sendMessage(CTX, 555, 'oi').catch(() => undefined);
+
+			expect(realtime.notifyInboxUpdated).not.toHaveBeenCalled();
 		});
 	});
 });

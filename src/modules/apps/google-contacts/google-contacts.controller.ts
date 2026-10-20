@@ -25,6 +25,11 @@ import { IAppContext } from '../interfaces/apps.types';
 import { IGoogleContactsConnection } from './google-contacts-connection.interface';
 import { GoogleContactsConnectionsService } from './google-contacts-connections.service';
 import ImportGoogleContactsDto from './google-contacts-import.dto';
+import {
+	FindGoogleContactCustomerDto,
+	LinkGoogleContactDto,
+} from './google-contacts-link.dto';
+import { GoogleContactsLinkService } from './google-contacts-link.service';
 import { GoogleContactsService } from './google-contacts.service';
 import {
 	IGoogleContactsConnectionView,
@@ -48,6 +53,7 @@ export class GoogleContactsController {
 	constructor(
 		private readonly _googleContactsService: GoogleContactsService,
 		private readonly _connectionsService: GoogleContactsConnectionsService,
+		private readonly _linkService: GoogleContactsLinkService,
 	) {}
 
 	/** The details Google Contacts' own page shows: account and last import. */
@@ -118,6 +124,37 @@ export class GoogleContactsController {
 		return await this._googleContactsService.importSelected(
 			toContext(authPayload),
 			dto.externalIds,
+		);
+	}
+
+	// By hand: the user picks the customer a contact belongs to.
+	@Post('link')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	@UsePipes(new ValidationPipe({ transform: true }))
+	public async linkContact(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() dto: LinkGoogleContactDto,
+	): Promise<{ customerId: string; customerName: string | null }> {
+		return await this._linkService.linkContact(
+			authPayload._id,
+			dto.externalId,
+			dto.customerId,
+		);
+	}
+
+	// Reading only: which customer holds this contact.
+	@Post('find-customer')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard)
+	@UsePipes(new ValidationPipe({ transform: true }))
+	public async findCustomer(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() dto: FindGoogleContactCustomerDto,
+	): Promise<{ customerId: string | null }> {
+		return await this._linkService.findCustomerOf(
+			authPayload._id,
+			dto.externalId,
 		);
 	}
 

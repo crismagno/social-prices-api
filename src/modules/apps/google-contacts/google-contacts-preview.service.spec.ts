@@ -70,6 +70,29 @@ describe('GoogleContactsPreviewService', () => {
 		});
 	});
 
+	it('says which customer a contact is linked to, or matches by e-mail, so the grid can open it', async () => {
+		const { service } = build([page([person(1), person(2), person(3)])], {
+			customers: [
+				{
+					_id: 'k1',
+					email: 'other@example.com',
+					externalSources: [
+						{ appId: AppsEnum.App.GOOGLE_CONTACTS, externalId: 'people/c1' },
+					],
+				},
+				{ _id: 'k2', email: 'p2@example.com', externalSources: [] },
+			],
+		});
+
+		const result = await service.preview('u1');
+
+		expect(result.contacts.map((c) => [c.externalId, c.customerId])).toEqual([
+			['people/c1', 'k1'],
+			['people/c2', 'k2'],
+			['people/c3', null],
+		]);
+	});
+
 	it('matches the e-mail ignoring case and sends lowercase keys to the lookup', async () => {
 		const { service, customers } = build([page([person(1)])]);
 

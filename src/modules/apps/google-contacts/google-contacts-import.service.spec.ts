@@ -198,7 +198,29 @@ describe('GoogleContactsImportService', () => {
 
 		const stored = connections.saveImportResult.mock.calls[0][1];
 		expect(stored).not.toHaveProperty('savedExternalIds');
+		expect(stored).not.toHaveProperty('savedLinks');
 		expect(stored).toMatchObject({ created: 1, linked: 1, skipped: 1 });
+	});
+
+	it('tells which customer each saved contact ended up on, so the grid can open it', async () => {
+		const { service } = build({
+			people: [person(1), person(2)],
+			existing: [{ _id: 'k2', email: 'p2@example.com', externalSources: [] }],
+		});
+
+		const result = await service.importSelected('u1', [
+			'people/c1',
+			'people/c2',
+		]);
+
+		expect(
+			[...result.savedLinks].sort((a, b) =>
+				a.externalId.localeCompare(b.externalId),
+			),
+		).toEqual([
+			{ externalId: 'people/c1', customerId: 'new' },
+			{ externalId: 'people/c2', customerId: 'k2' },
+		]);
 	});
 
 	it('does not list a contact whose save failed', async () => {
@@ -208,6 +230,7 @@ describe('GoogleContactsImportService', () => {
 		const result = await service.importSelected('u1', ['people/c1']);
 
 		expect(result.savedExternalIds).toEqual([]);
+		expect(result.savedLinks).toEqual([]);
 	});
 
 	it('after linking, a second selected contact with that e-mail is skipped', async () => {

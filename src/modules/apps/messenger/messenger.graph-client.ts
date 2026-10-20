@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { IMetaPage, IMetaProfile, MetaApiError } from './messenger.types';
+import {
+	IMessengerUploadFile,
+	IMetaPage,
+	IMetaProfile,
+	MetaApiError,
+} from './messenger.types';
 
 const DEFAULT_GRAPH_VERSION: string = 'v23.0';
 
@@ -9,13 +14,35 @@ const DEFAULT_GRAPH_VERSION: string = 'v23.0';
 const CDN_HOSTS: string[] = ['fbcdn.net', 'fbsbx.com', 'cdninstagram.com'];
 const MAX_ATTACHMENT_BYTES: number = 25 * 1024 * 1024;
 
+// What Messenger plays as audio. Anything else is delivered as a file.
+const AUDIO_TYPES: string[] = [
+	'audio/wav',
+	'audio/x-wav',
+	'audio/wave',
+	'audio/mpeg',
+	'audio/mp4',
+	'audio/x-m4a',
+	'audio/aac',
+];
+const IMAGE_TYPES: string[] = [
+	'image/jpeg',
+	'image/png',
+	'image/gif',
+	'image/webp',
+];
+
 // What the app asks the user to allow, and what the page webhook is subscribed to.
 export const LOGIN_SCOPES: string[] = [
 	'pages_show_list',
 	'pages_messaging',
 	'pages_manage_metadata',
 ];
-const WEBHOOK_FIELDS: string[] = ['messages', 'messaging_postbacks'];
+// message_echoes: what the Page sent from Messenger or Business Suite shows up here too.
+const WEBHOOK_FIELDS: string[] = [
+	'messages',
+	'messaging_postbacks',
+	'message_echoes',
+];
 
 // Read on every call: the version moves on its own schedule at Meta.
 const version = (): string =>
@@ -123,6 +150,35 @@ export class MessengerGraphClient {
 		return { mid: answer.message_id, sentAt: new Date() };
 	}
 
+	/** Sends a file to a person who wrote in the last 24 hours, as the kind that suits its type. */
+	public async sendAttachment(
+		pageToken: string,
+		psid: string,
+		file: IMessengerUploadFile,
+	): Promise<{ mid: string; sentAt: Date; type: string }> {
+		const type: string = this._attachmentTypeOf(file.mimeType);
+
+		const form: FormData = new FormData();
+		form.append('recipient', JSON.stringify({ id: psid }));
+		form.append('messaging_type', 'RESPONSE');
+		form.append(
+			'message',
+			JSON.stringify({ attachment: { type, payload: { is_reusable: false } } }),
+		);
+		form.append(
+			'filedata',
+			new Blob([file.buffer], { type: file.mimeType }),
+			file.fileName,
+		);
+
+		const answer: any = await this._call('POST', '/me/messages', {
+			token: pageToken,
+			multipart: form,
+		});
+
+		return { mid: answer.message_id, sentAt: new Date(), type };
+	}
+
 	public async getProfile(
 		pageToken: string,
 		psid: string,
@@ -138,6 +194,37 @@ export class MessengerGraphClient {
 				[answer.first_name, answer.last_name].filter(Boolean).join(' ') || null,
 			profilePic: answer.profile_pic ?? null,
 		};
+	}
+
+	/**
+	 * The name of a person from the Page's conversation with them. Facebook refuses
+	 * the profile of some people (error 100, "missing permissions") yet still names
+	 * them here.
+	 */
+	public async getParticipantName(
+		pageToken: string,
+		pageId: string,
+		psid: string,
+	): Promise<string | null> {
+		const answer: any = await this._call(
+			'GET',
+			`/${pageId}/conversations?user_id=${encodeURIComponent(
+				psid,
+			)}&fields=participants&limit=1`,
+			{ token: pageToken },
+		);
+
+		for (const conversation of answer.data ?? []) {
+			const person = (conversation.participants?.data ?? []).find(
+				(participant: any) => String(participant.id) === psid,
+			);
+
+			if (person?.name) {
+				return person.name;
+			}
+		}
+
+		return null;
 	}
 
 	/** The bytes of a file a customer sent. Only Facebook's CDN, only https. */
@@ -197,6 +284,18 @@ export class MessengerGraphClient {
 
 	//#region Private Methods
 
+	private _attachmentTypeOf(mimeType: string): string {
+		if (IMAGE_TYPES.includes(mimeType)) {
+			return 'image';
+		}
+
+		if (mimeType === 'video/mp4') {
+			return 'video';
+		}
+
+		return AUDIO_TYPES.includes(mimeType) ? 'audio' : 'file';
+	}
+
 	private _isCdnUrl(url: string): boolean {
 		let parsed: URL;
 
@@ -222,6 +321,7 @@ export class MessengerGraphClient {
 			token?: string;
 			form?: Record<string, string>;
 			json?: Record<string, unknown>;
+			multipart?: FormData;
 		} = {},
 	): Promise<any> {
 		let response: Response;
@@ -238,7 +338,10 @@ export class MessengerGraphClient {
 						: {}),
 					...(options.json ? { 'Content-Type': 'application/json' } : {}),
 				},
-				body: options.form
+				// A form sets its own content type, boundary included.
+				body: options.multipart
+					? options.multipart
+					: options.form
 					? new URLSearchParams(options.form)
 					: options.json
 					? JSON.stringify(options.json)

@@ -5,6 +5,7 @@ import {
 	IAppStatusProvider,
 } from '../core/status/app-status.types';
 import AppsEnum from '../interfaces/apps.enum';
+import { MessengerChatsService } from './messenger-chats.service';
 import { MessengerConnectionsService } from './messenger-connections.service';
 
 /** How the apps catalog asks Messenger whether the user has a Page connected. */
@@ -14,9 +15,18 @@ export class MessengerStatusProvider implements IAppStatusProvider {
 
 	constructor(
 		private readonly _connectionsService: MessengerConnectionsService,
+		private readonly _chatsService: MessengerChatsService,
 	) {}
 
 	public async getStatus(ownerUserId: string): Promise<IAppConnectionStatus> {
-		return await this._connectionsService.getStatus(ownerUserId);
+		const status: IAppConnectionStatus =
+			await this._connectionsService.getStatus(ownerUserId);
+
+		return status.connected
+			? {
+					...status,
+					unreadCount: await this._chatsService.countUnread(ownerUserId),
+			  }
+			: status;
 	}
 }

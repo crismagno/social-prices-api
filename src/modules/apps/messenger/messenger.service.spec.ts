@@ -68,6 +68,7 @@ const build = (
 			{} as any,
 			{} as any,
 			{} as any,
+			{ notifyInboxUpdated: jest.fn() } as any,
 		),
 	};
 };

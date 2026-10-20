@@ -5,6 +5,8 @@ export interface IAppConnectionStatus {
 	connected: boolean;
 	status: AppsEnum.ConnectionStatus | null;
 	accountLabel: string | null;
+	/** Only for an app with an inbox: messages waiting to be read. */
+	unreadCount?: number;
 }
 
 /**

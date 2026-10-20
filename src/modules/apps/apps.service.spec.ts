@@ -44,6 +44,7 @@ describe('AppsService.getCatalog', () => {
 			connected: true,
 			status: AppsEnum.ConnectionStatus.CONNECTED,
 			accountLabel: 'me@example.com',
+			unreadCount: 0,
 		});
 
 		// enabled by the manager, but no integration of its own yet
@@ -54,11 +55,52 @@ describe('AppsService.getCatalog', () => {
 			connected: false,
 			status: null,
 			accountLabel: null,
+			unreadCount: 0,
 		});
 
 		expect(catalog.find((i) => i.id === AppsEnum.App.INSTAGRAM).enabled).toBe(
 			false,
 		);
+	});
+
+	it('carries how many messages are unread for an app that has an inbox', async () => {
+		const service = build({
+			enabledApps: [AppsEnum.App.GOOGLE_CONTACTS],
+			providers: [
+				googleProvider({
+					connected: true,
+					status: AppsEnum.ConnectionStatus.CONNECTED,
+					accountLabel: 'Loja',
+					unreadCount: 7,
+				}),
+			],
+		});
+
+		const google = (await service.getCatalog('u1')).find(
+			(i) => i.id === AppsEnum.App.GOOGLE_CONTACTS,
+		);
+
+		expect(google.unreadCount).toBe(7);
+	});
+
+	it('reports no unread messages for an app the manager did not enable', async () => {
+		const service = build({
+			enabledApps: [],
+			providers: [
+				googleProvider({
+					connected: true,
+					status: AppsEnum.ConnectionStatus.CONNECTED,
+					accountLabel: 'Loja',
+					unreadCount: 7,
+				}),
+			],
+		});
+
+		const google = (await service.getCatalog('u1')).find(
+			(i) => i.id === AppsEnum.App.GOOGLE_CONTACTS,
+		);
+
+		expect(google).toMatchObject({ enabled: false, unreadCount: 0 });
 	});
 
 	it('only apps that bring a status provider are integrated', async () => {

@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -45,11 +45,61 @@ export class MessengerChatsService {
 		return result.upsertedCount > 0;
 	}
 
+	/**
+	 * The Page wrote to a person from outside this system. It is a message sent, so
+	 * nothing is unread and the answer window is not touched; a conversation that
+	 * starts this way has no window open. True when this made the conversation.
+	 */
+	public async registerEcho(
+		ownerUserId: string,
+		message: INormalizedMessengerMessage,
+	): Promise<boolean> {
+		const preview = {
+			lastMessageAt: message.sentAt,
+			lastMessageText: this._preview(message.text),
+			lastAttachmentType: message.attachments[0]?.type ?? null,
+			lastMessageDirection: MessengerEnum.Direction.OUT,
+		};
+
+		const created = await this._chatModel.updateOne(
+			{ ownerUserId, psid: message.psid },
+			{
+				$setOnInsert: {
+					pageId: message.pageId,
+					customerId: null,
+					name: null,
+					profilePic: null,
+					unreadCount: 0,
+					lastIncomingAt: new Date(0),
+					...preview,
+				},
+			},
+			{ upsert: true },
+		);
+
+		if (created.upsertedCount > 0) {
+			return true;
+		}
+
+		// An echo that arrives late must not overwrite a newer last message.
+		await this._chatModel.updateOne(
+			{
+				ownerUserId,
+				psid: message.psid,
+				lastMessageAt: { $lte: message.sentAt },
+			},
+			{ $set: preview },
+		);
+
+		return false;
+	}
+
 	public async registerOutgoing(
 		ownerUserId: string,
 		psid: string,
-		text: string,
+		text: string | null,
 		at: Date,
+		attachmentType: string | null = null,
 	): Promise<void> {
 		await this._chatModel.updateOne(
 			{ ownerUserId, psid },
@@ -57,7 +107,7 @@ export class MessengerChatsService {
 				$set: {
 					lastMessageAt: at,
 					lastMessageText: this._preview(text),
-					lastAttachmentType: null,
+					lastAttachmentType: attachmentType,
 					lastMessageDirection: MessengerEnum.Direction.OUT,
 				},
 			},
@@ -73,6 +123,16 @@ export class MessengerChatsService {
 			{ ownerUserId, psid },
 			{ $set: { name: profile.name, profilePic: profile.profilePic } },
 		);
+	}
+
+	/** Messages waiting to be read, over every conversation of the owner. */
+	public async countUnread(ownerUserId: string): Promise<number> {
+		const [result] = await this._chatModel.aggregate([
+			{ $match: { ownerUserId: new mongoose.Types.ObjectId(ownerUserId) } },
+			{ $group: { _id: null, total: { $sum: '$unreadCount' } } },
+		]);
+
+		return result?.total ?? 0;
 	}
 
 	public async markRead(ownerUserId: string, psid: string): Promise<void> {

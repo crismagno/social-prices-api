@@ -21,6 +21,7 @@ const build = () => {
 	const model: any = {
 		updateOne: jest.fn().mockResolvedValue({ upsertedCount: 0 }),
 		find: jest.fn().mockReturnValue(chain),
+		aggregate: jest.fn().mockResolvedValue([{ total: 5 }]),
 		findOne: jest.fn(),
 	};
 
@@ -109,6 +110,83 @@ describe('MessengerChatsService', () => {
 		expect(update).not.toHaveProperty('$inc');
 	});
 
+	describe('registerEcho', () => {
+		const echo: any = {
+			pageId: 'PAGE1',
+			psid: 'PSID1',
+			direction: MessengerEnum.Direction.OUT,
+			mid: 'e1',
+			text: 'pelo Business Suite',
+			attachments: [],
+			sentAt: new Date('2030-01-03T10:00:00Z'),
+		};
+
+		it('creates the conversation if the Page wrote first: no unread, and no answer window', async () => {
+			const { service, model } = build();
+			model.updateOne.mockResolvedValue({ upsertedCount: 1 });
+
+			await expect(service.registerEcho(OWNER, echo)).resolves.toBe(true);
+
+			const [filter, update, options] = model.updateOne.mock.calls[0];
+
+			expect(filter).toEqual({ ownerUserId: OWNER, psid: 'PSID1' });
+			expect(update.$setOnInsert).toMatchObject({
+				pageId: 'PAGE1',
+				customerId: null,
+				name: null,
+				profilePic: null,
+				unreadCount: 0,
+				lastIncomingAt: new Date(0),
+				lastMessageAt: echo.sentAt,
+				lastMessageText: 'pelo Business Suite',
+				lastMessageDirection: MessengerEnum.Direction.OUT,
+			});
+			expect(update).not.toHaveProperty('$inc');
+			expect(options).toEqual({ upsert: true });
+		});
+
+		it('says false for a conversation that already existed, and then only moves the preview forward', async () => {
+			const { service, model } = build();
+			model.updateOne.mockResolvedValue({ upsertedCount: 0 });
+
+			await expect(service.registerEcho(OWNER, echo)).resolves.toBe(false);
+
+			const [filter, update] = model.updateOne.mock.calls[1];
+
+			// An old echo arriving late must not overwrite a newer last message.
+			expect(filter).toEqual({
+				ownerUserId: OWNER,
+				psid: 'PSID1',
+				lastMessageAt: { $lte: echo.sentAt },
+			});
+			expect(update.$set).toEqual({
+				lastMessageAt: echo.sentAt,
+				lastMessageText: 'pelo Business Suite',
+				lastAttachmentType: null,
+				lastMessageDirection: MessengerEnum.Direction.OUT,
+			});
+			expect(update).not.toHaveProperty('$inc');
+			expect(JSON.stringify(update)).not.toContain('lastIncomingAt');
+		});
+	});
+
+	it('registerOutgoing previews a file by its kind when there is no text', async () => {
+		const { service, model } = build();
+
+		await service.registerOutgoing(
+			OWNER,
+			'PSID1',
+			null,
+			new Date('2030-01-02'),
+			'audio',
+		);
+
+		expect(model.updateOne.mock.calls[0][1].$set).toMatchObject({
+			lastMessageText: null,
+			lastAttachmentType: 'audio',
+		});
+	});
+
 	it('setProfile keeps the name and picture Facebook gave', async () => {
 		const { service, model } = build();
 
@@ -121,6 +199,25 @@ describe('MessengerChatsService', () => {
 			{ ownerUserId: OWNER, psid: 'PSID1' },
 			{ $set: { name: 'Ana', profilePic: 'https://x/p.jpg' } },
 		);
+	});
+
+	describe('countUnread', () => {
+		it('adds up the unread messages of every conversation of that owner', async () => {
+			const { service, model } = build();
+
+			await expect(service.countUnread(OWNER)).resolves.toBe(5);
+
+			const [pipeline] = model.aggregate.mock.calls[0];
+			expect(String(pipeline[0].$match.ownerUserId)).toBe(OWNER);
+			expect(pipeline[1].$group.total).toEqual({ $sum: '$unreadCount' });
+		});
+
+		it('is zero when there is no conversation', async () => {
+			const { service, model } = build();
+			model.aggregate.mockResolvedValue([]);
+
+			await expect(service.countUnread(OWNER)).resolves.toBe(0);
+		});
 	});
 
 	it('markRead clears the unread count', async () => {

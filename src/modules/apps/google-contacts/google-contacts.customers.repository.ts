@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -75,6 +75,37 @@ export class GoogleContactsCustomersRepository {
 		);
 
 		return result.modifiedCount > 0;
+	}
+
+	/** A customer of this owner, or null: a malformed or foreign id never reaches the database as a cast error. */
+	public async findOwned(
+		ownerUserId: string,
+		customerId: string,
+	): Promise<{ _id: string; name: string | null } | null> {
+		if (!mongoose.isValidObjectId(customerId)) {
+			return null;
+		}
+
+		return await this._customerModel
+			.findOne({ _id: customerId, ownerUserId }, { name: 1 })
+			.lean<{ _id: string; name: string | null }>();
+	}
+
+	/** The customer that holds this provider contact, if any. */
+	public async findByExternalId(
+		ownerUserId: string,
+		appId: AppsEnum.App,
+		externalId: string,
+	): Promise<{ _id: string; name: string | null } | null> {
+		return await this._customerModel
+			.findOne(
+				{
+					ownerUserId,
+					externalSources: { $elemMatch: { appId, externalId } },
+				},
+				{ name: 1 },
+			)
+			.lean<{ _id: string; name: string | null }>();
 	}
 
 	public async create(

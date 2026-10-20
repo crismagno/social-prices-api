@@ -6,6 +6,7 @@ import { FeatureLimitsModule } from '../../feature-limits/feature-limits.module'
 import { AppsCoreModule } from '../core/apps-core.module';
 import { GoogleContactsConnectionsService } from './google-contacts-connections.service';
 import { GoogleContactsImportService } from './google-contacts-import.service';
+import { GoogleContactsLinkService } from './google-contacts-link.service';
 import { GoogleContactsPreviewService } from './google-contacts-preview.service';
 import { GoogleAccessTokenProvider } from './google-contacts.access-token';
 import { GooglePeopleClient } from './google-contacts.client';
@@ -38,6 +39,7 @@ import { GoogleContactsStatusProvider } from './google-contacts.status.provider'
 		GoogleAccessTokenProvider,
 		GoogleContactsPreviewService,
 		GoogleContactsImportService,
+		GoogleContactsLinkService,
 		GoogleContactsCustomersRepository,
 		GoogleContactsStatusProvider,
 	],

@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -13,10 +14,13 @@ import {
 	RawBodyRequest,
 	Req,
 	Res,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 
 import { Public } from '../../../shared/decorators/custom.decorator';
@@ -30,6 +34,7 @@ import { IAppContext } from '../interfaces/apps.types';
 import { mediaResponseHeaders } from '../telegram/telegram.media-response';
 import {
 	LinkMessengerCustomerDto,
+	MAX_MESSENGER_UPLOAD_BYTES,
 	MessengerChatMessagesQueryDto,
 	SendMessengerMessageDto,
 } from './messenger-chat.dto';
@@ -157,6 +162,37 @@ export class MessengerController {
 			toContext(authPayload),
 			psid,
 			dto.text,
+		);
+	}
+
+	// A file or a recording. Facebook takes up to 25 MB; the text, when there is
+	// one, goes as a message of its own (a file carries no caption).
+	@Post('chats/:psid/media')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			limits: { fileSize: MAX_MESSENGER_UPLOAD_BYTES },
+		}),
+	)
+	public async sendAttachment(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('psid') psid: string,
+		@UploadedFile() file: Express.Multer.File,
+	): Promise<IMessengerMessageRecord> {
+		if (!file?.buffer?.length) {
+			throw new BadRequestException('A file is required.');
+		}
+
+		return await this._messengerService.sendAttachment(
+			toContext(authPayload),
+			psid,
+			{
+				buffer: file.buffer,
+				// Multer reads the name as latin1; the browser sent UTF-8.
+				fileName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+				mimeType: file.mimetype,
+			},
 		);
 	}
 

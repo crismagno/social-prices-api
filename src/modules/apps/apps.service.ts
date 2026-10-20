@@ -55,6 +55,10 @@ export class AppsService {
 					enabled: enabledApps.includes(appId),
 					integrated: !!provider,
 					...connection,
+					// A locked app is not in use, so it has nothing waiting to be read.
+					unreadCount: enabledApps.includes(appId)
+						? connection.unreadCount ?? 0
+						: 0,
 				};
 			}),
 		);

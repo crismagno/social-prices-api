@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -89,6 +89,16 @@ export class TelegramChatsService {
 				},
 			},
 		);
+	}
+
+	/** Messages waiting to be read, over every conversation of the owner. */
+	public async countUnread(ownerUserId: string): Promise<number> {
+		const [result] = await this._chatModel.aggregate([
+			{ $match: { ownerUserId: new mongoose.Types.ObjectId(ownerUserId) } },
+			{ $group: { _id: null, total: { $sum: '$unreadCount' } } },
+		]);
+
+		return result?.total ?? 0;
 	}
 
 	public async markRead(ownerUserId: string, chatId: number): Promise<void> {

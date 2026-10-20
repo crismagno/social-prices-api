@@ -64,9 +64,10 @@ export class GoogleContactsImportService {
 		};
 
 		const savedExternalIds: string[] = [];
+		const savedLinks: { externalId: string; customerId: string }[] = [];
 
 		if (!ids.length) {
-			return { ...summary, savedExternalIds };
+			return { ...summary, savedExternalIds, savedLinks };
 		}
 
 		const { connection, accessToken } =
@@ -125,6 +126,10 @@ export class GoogleContactsImportService {
 					) {
 						summary.linked++;
 						savedExternalIds.push(contact.externalId);
+						savedLinks.push({
+							externalId: contact.externalId,
+							customerId: match.customerId,
+						});
 						index.register(match.customerId, contact);
 					} else {
 						summary.skipped++;
@@ -145,6 +150,10 @@ export class GoogleContactsImportService {
 
 					summary.created++;
 					savedExternalIds.push(contact.externalId);
+					savedLinks.push({
+						externalId: contact.externalId,
+						customerId: String(created._id),
+					});
 					index.register(created._id, contact);
 				}
 			} catch (error) {
@@ -166,7 +175,7 @@ export class GoogleContactsImportService {
 
 		await this._connectionsService.saveImportResult(connection._id, summary);
 
-		return { ...summary, savedExternalIds };
+		return { ...summary, savedExternalIds, savedLinks };
 	}
 
 	//#endregion

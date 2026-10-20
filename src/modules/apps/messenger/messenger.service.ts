@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { FeatureLimitsService } from '../../feature-limits/feature-limits.service';
 import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
 import { UsersService } from '../../users/users.service';
+import { AppsRealtimeGateway } from '../core/realtime/apps-realtime.gateway';
 import AppsEnum from '../interfaces/apps.enum';
 import { IAppContext } from '../interfaces/apps.types';
 import { IMessengerChat } from './messenger-chat.interface';
@@ -35,6 +36,7 @@ import {
 import MessengerEnum from './messenger.enum';
 import { parseMessengerWebhook } from './messenger.update-parser';
 import {
+	IMessengerUploadFile,
 	IMetaPage,
 	IMetaProfile,
 	INormalizedMessengerMessage,
@@ -93,6 +95,7 @@ export class MessengerService {
 		private readonly _messagesService: MessengerMessagesService,
 		private readonly _customersRepository: MessengerCustomersRepository,
 		private readonly _featureLimitsService: FeatureLimitsService,
+		private readonly _realtime: AppsRealtimeGateway,
 	) {}
 
 	//#endregion
@@ -277,6 +280,8 @@ export class MessengerService {
 		await this._getChatOrFail(ownerUserId, psid);
 
 		await this._chatsService.markRead(ownerUserId, psid);
+
+		this._notify(ownerUserId, psid);
 	}
 
 	/**
@@ -289,43 +294,9 @@ export class MessengerService {
 		psid: string,
 		text: string,
 	): Promise<IMessengerMessageRecord> {
-		const connection: IMessengerConnection | null =
-			await this._connectionsService.findWithToken(ctx.ownerUserId);
-
-		if (!connection) {
-			throw new MessengerNotConnectedException();
-		}
-
-		const chat: IMessengerChat = await this._getChatOrFail(
-			ctx.ownerUserId,
-			psid,
+		const sent = await this._deliver(ctx, psid, (token: string) =>
+			this._graphClient.sendText(token, psid, text),
 		);
-
-		if (!this._isWindowOpen(chat)) {
-			throw new MessengerReplyWindowClosedException();
-		}
-
-		let sent: { mid: string; sentAt: Date };
-
-		try {
-			sent = await this._graphClient.sendText(
-				this._connectionsService.readToken(connection),
-				psid,
-				text,
-			);
-		} catch (error) {
-			if (error instanceof MetaApiError) {
-				if (error.code === META_CODE_OUTSIDE_WINDOW) {
-					throw new MessengerReplyWindowClosedException();
-				}
-
-				if (error.code === META_CODE_PERSON_UNAVAILABLE) {
-					throw new MessengerChatUnavailableException(error.description);
-				}
-			}
-
-			throw error;
-		}
 
 		const record: IMessengerMessageRecord =
 			await this._messagesService.saveOutgoing(ctx.ownerUserId, {
@@ -342,6 +313,49 @@ export class MessengerService {
 			text,
 			sent.sentAt,
 		);
+
+		this._notify(ctx.ownerUserId, psid);
+
+		return record;
+	}
+
+	/**
+	 * Same as sendMessage, with a file (a photo, a recording...). Facebook gives the
+	 * file an address only in the echo that follows, so until then the message
+	 * keeps what is known of it.
+	 */
+	public async sendAttachment(
+		ctx: IAppContext,
+		psid: string,
+		file: IMessengerUploadFile,
+	): Promise<IMessengerMessageRecord> {
+		const sent = await this._deliver(ctx, psid, (token: string) =>
+			this._graphClient.sendAttachment(token, psid, file),
+		);
+
+		const record: IMessengerMessageRecord =
+			await this._messagesService.saveOutgoing(ctx.ownerUserId, {
+				psid,
+				mid: sent.mid,
+				text: null,
+				localAttachment: {
+					type: sent.type,
+					fileName: file.fileName,
+					size: file.buffer.length,
+				},
+				sentAt: sent.sentAt,
+				sentByEmployeeId: ctx.employeeId,
+			});
+
+		await this._chatsService.registerOutgoing(
+			ctx.ownerUserId,
+			psid,
+			null,
+			sent.sentAt,
+			sent.type,
+		);
+
+		this._notify(ctx.ownerUserId, psid);
 
 		return record;
 	}
@@ -466,6 +480,49 @@ export class MessengerService {
 
 	//#region Private Methods
 
+	/**
+	 * Runs one send through the Page of this user, for a conversation that is
+	 * theirs and whose 24 hour window is open. Facebook is asked first: if it
+	 * refuses, nothing is recorded as sent.
+	 */
+	private async _deliver<T>(
+		ctx: IAppContext,
+		psid: string,
+		send: (pageToken: string) => Promise<T>,
+	): Promise<T> {
+		const connection: IMessengerConnection | null =
+			await this._connectionsService.findWithToken(ctx.ownerUserId);
+
+		if (!connection) {
+			throw new MessengerNotConnectedException();
+		}
+
+		const chat: IMessengerChat = await this._getChatOrFail(
+			ctx.ownerUserId,
+			psid,
+		);
+
+		if (!this._isWindowOpen(chat)) {
+			throw new MessengerReplyWindowClosedException();
+		}
+
+		try {
+			return await send(this._connectionsService.readToken(connection));
+		} catch (error) {
+			if (error instanceof MetaApiError) {
+				if (error.code === META_CODE_OUTSIDE_WINDOW) {
+					throw new MessengerReplyWindowClosedException();
+				}
+
+				if (error.code === META_CODE_PERSON_UNAVAILABLE) {
+					throw new MessengerChatUnavailableException(error.description);
+				}
+			}
+
+			throw error;
+		}
+	}
+
 	private async _handleMessage(
 		message: INormalizedMessengerMessage,
 	): Promise<void> {
@@ -484,6 +541,12 @@ export class MessengerService {
 			return;
 		}
 
+		if (message.direction === MessengerEnum.Direction.OUT) {
+			await this._handleEcho(ownerUserId, connection, message);
+
+			return;
+		}
+
 		if (!(await this._messagesService.saveIncoming(ownerUserId, message))) {
 			return;
 		}
@@ -493,11 +556,51 @@ export class MessengerService {
 			message,
 		);
 
-		if (isFirstMessage) {
+		if (isFirstMessage || (await this._hasNoName(ownerUserId, message.psid))) {
 			await this._learnPerson(ownerUserId, connection, message.psid);
 		}
 
 		await this._connectionsService.touchLastUpdate(connection._id, new Date());
+
+		this._notify(ownerUserId, message.psid);
+	}
+
+	/**
+	 * What the Page sent from Messenger or Business Suite. A message sent from here
+	 * is echoed too, and is already stored: nothing more to do for it.
+	 */
+	private async _handleEcho(
+		ownerUserId: string,
+		connection: IMessengerConnection,
+		message: INormalizedMessengerMessage,
+	): Promise<void> {
+		if (!(await this._messagesService.saveEcho(ownerUserId, message))) {
+			return;
+		}
+
+		if (await this._chatsService.registerEcho(ownerUserId, message)) {
+			await this._learnPerson(ownerUserId, connection, message.psid);
+		}
+
+		this._notify(ownerUserId, message.psid);
+	}
+
+	/** Tells the open pages of this account that its inbox changed. Never throws. */
+	private _notify(ownerUserId: string, psid: string): void {
+		this._realtime.notifyInboxUpdated(ownerUserId, this.appId, psid);
+	}
+
+	/** A conversation that came in without a name tries again on the next message. */
+	private async _hasNoName(
+		ownerUserId: string,
+		psid: string,
+	): Promise<boolean> {
+		const chat: IMessengerChat | null = await this._chatsService.findByPsid(
+			ownerUserId,
+			psid,
+		);
+
+		return !!chat && !chat.name;
 	}
 
 	/** The name and picture, and the customer this person already is, if any. */
@@ -506,15 +609,33 @@ export class MessengerService {
 		connection: IMessengerConnection,
 		psid: string,
 	): Promise<void> {
-		try {
-			const profile: IMetaProfile = await this._graphClient.getProfile(
-				this._connectionsService.readToken(connection),
-				psid,
-			);
+		const pageToken: string = this._connectionsService.readToken(connection);
 
-			await this._chatsService.setProfile(ownerUserId, psid, profile);
+		let profile: IMetaProfile = { name: null, profilePic: null };
+
+		try {
+			profile = await this._graphClient.getProfile(pageToken, psid);
 		} catch {
-			// the message is kept even when Facebook gives no profile
+			// Facebook refuses the profile of some people; the conversation still names them
+		}
+
+		if (!profile.name) {
+			try {
+				profile = {
+					...profile,
+					name: await this._graphClient.getParticipantName(
+						pageToken,
+						connection.pageId,
+						psid,
+					),
+				};
+			} catch {
+				// the message is kept even when no name can be found
+			}
+		}
+
+		if (profile.name || profile.profilePic) {
+			await this._chatsService.setProfile(ownerUserId, psid, profile);
 		}
 
 		const customer: ICustomerRef | null =

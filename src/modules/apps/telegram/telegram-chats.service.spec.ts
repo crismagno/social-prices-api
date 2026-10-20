@@ -27,6 +27,7 @@ const build = () => {
 		updateOne: jest.fn().mockResolvedValue({ upsertedCount: 0 }),
 		findOne: jest.fn().mockResolvedValue({ chatId: 555 }),
 		find: jest.fn().mockReturnValue(chain),
+		aggregate: jest.fn().mockResolvedValue([{ total: 5 }]),
 	};
 
 	return { model, chain, service: new TelegramChatsService(model) };
@@ -150,6 +151,25 @@ describe('TelegramChatsService', () => {
 				},
 			},
 		);
+	});
+
+	describe('countUnread', () => {
+		it('adds up the unread messages of every conversation of that owner', async () => {
+			const { service, model } = build();
+
+			await expect(service.countUnread(OWNER)).resolves.toBe(5);
+
+			const [pipeline] = model.aggregate.mock.calls[0];
+			expect(String(pipeline[0].$match.ownerUserId)).toBe(OWNER);
+			expect(pipeline[1].$group.total).toEqual({ $sum: '$unreadCount' });
+		});
+
+		it('is zero when there is no conversation', async () => {
+			const { service, model } = build();
+			model.aggregate.mockResolvedValue([]);
+
+			await expect(service.countUnread(OWNER)).resolves.toBe(0);
+		});
 	});
 
 	it('markRead clears the unread count', async () => {

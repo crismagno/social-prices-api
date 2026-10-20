@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
 export const GOOGLE_CONTACTS_NOT_CONNECTED_CODE: string =
 	'GOOGLE_CONTACTS_NOT_CONNECTED';
@@ -35,6 +35,41 @@ export class GoogleContactsAccessDeniedException extends ConflictException {
 				reason ? ` (${reason})` : ''
 			}. Check that the People API is enabled in the Google Cloud project and that every permission was granted when connecting.`,
 			reason,
+		});
+	}
+}
+
+export const GOOGLE_CONTACTS_CUSTOMER_NOT_FOUND_CODE: string =
+	'GOOGLE_CONTACTS_CUSTOMER_NOT_FOUND';
+export const GOOGLE_CONTACTS_CUSTOMER_ALREADY_LINKED_CODE: string =
+	'GOOGLE_CONTACTS_CUSTOMER_ALREADY_LINKED';
+export const GOOGLE_CONTACTS_CONTACT_ALREADY_LINKED_CODE: string =
+	'GOOGLE_CONTACTS_CONTACT_ALREADY_LINKED';
+
+export class GoogleContactsCustomerNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: GOOGLE_CONTACTS_CUSTOMER_NOT_FOUND_CODE,
+			message: 'This customer does not exist.',
+		});
+	}
+}
+
+/** A customer holds one Google contact. */
+export class GoogleContactsCustomerAlreadyLinkedException extends ConflictException {
+	constructor() {
+		super({
+			code: GOOGLE_CONTACTS_CUSTOMER_ALREADY_LINKED_CODE,
+			message: 'This customer is already linked to another Google contact.',
+		});
+	}
+}
+
+export class GoogleContactsContactAlreadyLinkedException extends ConflictException {
+	constructor() {
+		super({
+			code: GOOGLE_CONTACTS_CONTACT_ALREADY_LINKED_CODE,
+			message: 'This Google contact is already linked to another customer.',
 		});
 	}
 }
