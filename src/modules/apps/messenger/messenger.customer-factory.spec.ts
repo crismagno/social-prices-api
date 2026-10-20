@@ -1,10 +1,9 @@
-import AppsEnum from '../interfaces/apps.enum';
 import { buildCustomerFromMessengerChat } from './messenger.customer-factory';
 
 describe('buildCustomerFromMessengerChat', () => {
 	const chat: any = { psid: 'PSID1', name: 'Ana Souza' };
 
-	it('makes a customer of the person, with Messenger as where they came from', () => {
+	it('makes a customer of the person; the tie to them lives on the chat', () => {
 		const customer: any = buildCustomerFromMessengerChat(
 			'owner1',
 			chat,
@@ -17,7 +16,7 @@ describe('buildCustomerFromMessengerChat', () => {
 			uniqName: 'ana1',
 			email: null,
 			phoneNumbers: [],
-			externalSources: [{ appId: AppsEnum.App.FACEBOOK, externalId: 'PSID1' }],
+			externalSources: [],
 		});
 	});
 

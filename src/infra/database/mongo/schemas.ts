@@ -1,5 +1,7 @@
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { InboxConversationSchema } from '../../../modules/inbox/inbox-conversation.schema';
+import { InboxMessageSchema } from '../../../modules/inbox/inbox-message.schema';
 import { InstagramChatSchema } from '../../../modules/apps/instagram/instagram-chat.schema';
 import { InstagramConnectionSchema } from '../../../modules/apps/instagram/instagram-connection.schema';
 import { InstagramMessageSchema } from '../../../modules/apps/instagram/instagram-message.schema';
@@ -49,6 +51,8 @@ export const schemasName = {
 	manager: 'Manager',
 	productItem: 'ProductItem',
 	googleContactsConnection: 'GoogleContactsConnection',
+	inboxConversation: 'InboxConversation',
+	inboxMessage: 'InboxMessage',
 	instagramConnection: 'InstagramConnection',
 	instagramMessage: 'InstagramMessage',
 	instagramChat: 'InstagramChat',
@@ -124,6 +128,12 @@ export const schemasModule = {
 			name: schemasName.googleContactsConnection,
 			schema: GoogleContactsConnectionSchema,
 		},
+	]),
+	inboxConversation: MongooseModule.forFeature([
+		{ name: schemasName.inboxConversation, schema: InboxConversationSchema },
+	]),
+	inboxMessage: MongooseModule.forFeature([
+		{ name: schemasName.inboxMessage, schema: InboxMessageSchema },
 	]),
 	instagramConnection: MongooseModule.forFeature([
 		{

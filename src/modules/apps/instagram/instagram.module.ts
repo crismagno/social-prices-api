@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AesGcmCipher } from '../../../infra/aes-gcm-cipher/aes-gcm-cipher';
 import { schemasModule } from '../../../infra/database/mongo/schemas';
+import { InboxModule } from '../../inbox/inbox.module';
 import { FeatureLimitsModule } from '../../feature-limits/feature-limits.module';
 import { AppsCoreModule } from '../core/apps-core.module';
 import { InstagramChatsService } from './instagram-chats.service';
@@ -11,6 +12,7 @@ import { InstagramController } from './instagram.controller';
 import { InstagramCustomersRepository } from './instagram.customers.repository';
 import { InstagramGraphClient } from './instagram.graph-client';
 import { InstagramOAuthState } from './instagram.oauth-state';
+import { InstagramInboxAdapter } from './instagram.inbox-adapter';
 import { InstagramService } from './instagram.service';
 import { InstagramStatusProvider } from './instagram.status.provider';
 
@@ -23,15 +25,15 @@ import { InstagramStatusProvider } from './instagram.status.provider';
 	imports: [
 		AppsCoreModule,
 		schemasModule.instagramConnection,
-		schemasModule.instagramMessage,
-		schemasModule.instagramChat,
 		schemasModule.customer,
 		FeatureLimitsModule,
+		InboxModule,
 	],
 	controllers: [InstagramController],
 	providers: [
 		AesGcmCipher,
 		InstagramService,
+		InstagramInboxAdapter,
 		InstagramGraphClient,
 		InstagramOAuthState,
 		InstagramConnectionsService,

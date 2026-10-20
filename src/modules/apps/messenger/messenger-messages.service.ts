@@ -1,20 +1,19 @@
-import { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import { InboxMessagesService } from '../../inbox/inbox-messages.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+	IInboxMessage,
+} from '../../inbox/interfaces/inbox.types';
 import { IMessengerMessageRecord } from './messenger-message.interface';
-import { MessengerMessage } from './messenger-message.schema';
-import MessengerEnum from './messenger.enum';
+import { inboxInputOf, toMessengerMessage } from './messenger.inbox-mapper';
 import {
 	IMessengerLocalAttachment,
 	INormalizedMessengerMessage,
 } from './messenger.types';
-
-const DEFAULT_LIMIT: number = 50;
-const MAX_LIMIT: number = 100;
-const DUPLICATE_KEY_CODE: number = 11000;
 
 export interface IOutgoingMessengerMessage {
 	psid: string;
@@ -25,11 +24,20 @@ export interface IOutgoingMessengerMessage {
 	sentByEmployeeId: string | null;
 }
 
+const keyOf = (psid: string): IConversationKey => ({
+	channel: InboxEnum.Channel.MESSENGER,
+	contactKey: psid,
+});
+
+/**
+ * The messages of the Messenger chats. They live in the central inbox, shared
+ * with the other channels; this keeps the shape the Messenger app has always had.
+ */
 @Injectable()
 export class MessengerMessagesService {
 	constructor(
-		@InjectModel(schemasName.messengerMessage)
-		private readonly _messageModel: Model<MessengerMessage>,
+		private readonly _conversations: InboxConversationsService,
+		private readonly _messages: InboxMessagesService,
 	) {}
 
 	/**
@@ -41,45 +49,12 @@ export class MessengerMessagesService {
 		ownerUserId: string,
 		message: INormalizedMessengerMessage,
 	): Promise<boolean> {
-		try {
-			await this._messageModel.create({
-				ownerUserId,
-				direction: MessengerEnum.Direction.IN,
-				psid: message.psid,
-				mid: message.mid,
-				text: message.text,
-				attachments: message.attachments,
-				sentAt: message.sentAt,
-			});
+		const conversation = await this._ensure(ownerUserId, message);
 
-			return true;
-		} catch (error) {
-			if ((error as { code?: number })?.code === DUPLICATE_KEY_CODE) {
-				return false;
-			}
-
-			throw error;
-		}
-	}
-
-	/**
-	 * A file sent from here is stored before its echo, with no address. The echo is
-	 * the first to bring it, so it completes the message that is already there.
-	 */
-	private async _fillAttachments(
-		ownerUserId: string,
-		message: INormalizedMessengerMessage,
-	): Promise<void> {
-		if (!message.attachments.length) {
-			return;
-		}
-
-		await this._messageModel.updateOne(
-			{ ownerUserId, mid: message.mid, attachments: { $size: 0 } },
-			{
-				$set: { attachments: message.attachments },
-				$unset: { localAttachment: '' },
-			},
+		return await this._messages.saveIncoming(
+			ownerUserId,
+			conversation,
+			inboxInputOf({ ...message, isIncoming: true }),
 		);
 	}
 
@@ -91,25 +66,19 @@ export class MessengerMessagesService {
 		ownerUserId: string,
 		message: IOutgoingMessengerMessage,
 	): Promise<IMessengerMessageRecord> {
-		const saved = await this._messageModel.findOneAndUpdate(
-			{ ownerUserId, mid: message.mid },
-			{
-				$setOnInsert: {
-					direction: MessengerEnum.Direction.OUT,
-					psid: message.psid,
-					text: message.text,
-					attachments: [],
-					...(message.localAttachment
-						? { localAttachment: message.localAttachment }
-						: {}),
-					sentAt: message.sentAt,
-				},
-				$set: { sentByEmployeeId: message.sentByEmployeeId },
-			},
-			{ upsert: true, new: true, setDefaultsOnInsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.psid),
 		);
 
-		return saved as unknown as IMessengerMessageRecord;
+		return toMessengerMessage(
+			await this._messages.saveOutgoing(
+				ownerUserId,
+				conversation,
+				inboxInputOf({ ...message, attachments: [] }),
+			),
+			message.psid,
+		);
 	}
 
 	/**
@@ -121,27 +90,13 @@ export class MessengerMessagesService {
 		ownerUserId: string,
 		message: INormalizedMessengerMessage,
 	): Promise<boolean> {
-		try {
-			await this._messageModel.create({
-				ownerUserId,
-				direction: MessengerEnum.Direction.OUT,
-				psid: message.psid,
-				mid: message.mid,
-				text: message.text,
-				attachments: message.attachments,
-				sentAt: message.sentAt,
-			});
+		const conversation = await this._ensure(ownerUserId, message);
 
-			return true;
-		} catch (error) {
-			if ((error as { code?: number })?.code === DUPLICATE_KEY_CODE) {
-				await this._fillAttachments(ownerUserId, message);
-
-				return false;
-			}
-
-			throw error;
-		}
+		return await this._messages.saveEcho(
+			ownerUserId,
+			conversation,
+			inboxInputOf(message),
+		);
 	}
 
 	/** One conversation, newest first. `before` is the id of the oldest one already loaded. */
@@ -150,19 +105,22 @@ export class MessengerMessagesService {
 		psid: string,
 		options: { limit?: number; before?: string } = {},
 	): Promise<IMessengerMessageRecord[]> {
-		const wanted: number = Number.isFinite(options.limit)
-			? Math.min(MAX_LIMIT, Math.max(1, Math.floor(options.limit)))
-			: DEFAULT_LIMIT;
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
 
-		return await this._messageModel
-			.find({
+		if (!conversation) {
+			return [];
+		}
+
+		return (
+			await this._messages.listByConversation(
 				ownerUserId,
-				psid,
-				...(options.before ? { _id: { $lt: options.before } } : {}),
-			})
-			.sort({ _id: -1 })
-			.limit(wanted)
-			.lean<IMessengerMessageRecord[]>();
+				conversation._id,
+				options,
+			)
+		).map((message: IInboxMessage) => toMessengerMessage(message, psid));
 	}
 
 	public async findOwned(
@@ -170,8 +128,39 @@ export class MessengerMessagesService {
 		psid: string,
 		id: string,
 	): Promise<IMessengerMessageRecord | null> {
-		return await this._messageModel
-			.findOne({ _id: id, ownerUserId, psid })
-			.lean<IMessengerMessageRecord>();
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
+
+		if (!conversation) {
+			return null;
+		}
+
+		const message: IInboxMessage | null = await this._messages.findOwned(
+			ownerUserId,
+			conversation._id,
+			id,
+		);
+
+		return message ? toMessengerMessage(message, psid) : null;
+	}
+
+	private async _ensure(
+		ownerUserId: string,
+		message: INormalizedMessengerMessage,
+	): Promise<IInboxConversation> {
+		return (
+			await this._conversations.ensure(ownerUserId, keyOf(message.psid), {
+				accountKey: message.pageId,
+			})
+		).conversation;
+	}
+
+	private async _find(
+		ownerUserId: string,
+		psid: string,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(psid));
 	}
 }

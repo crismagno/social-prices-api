@@ -145,14 +145,11 @@ const build = (
 		findOwned: jest.fn().mockResolvedValue(null),
 	};
 	const customers: any = {
-		findByIgsid: jest.fn().mockResolvedValue(null),
 		findNames: jest.fn().mockResolvedValue([]),
 		findOwned: jest.fn().mockResolvedValue({ _id: 'cu1', name: 'Ana Cliente' }),
 		createFromChat: jest
 			.fn()
 			.mockResolvedValue({ _id: 'cu9', name: 'Ana Souza' }),
-		linkInstagramSource: jest.fn().mockResolvedValue(true),
-		unlinkInstagramSource: jest.fn().mockResolvedValue(undefined),
 	};
 	const featureLimits: any = {
 		assertCanCreate: jest.fn().mockResolvedValue(undefined),
@@ -497,25 +494,6 @@ describe('InstagramService', () => {
 			expect(named.graph.getProfile).not.toHaveBeenCalled();
 		});
 
-		it('links a person who already is a customer, on their first message only', async () => {
-			const first = build();
-			first.chats.registerIncoming.mockResolvedValue(true);
-			first.customers.findByIgsid.mockResolvedValue({
-				_id: 'cu1',
-				name: 'Ana',
-			});
-			await first.service.handleWebhook(webhookBody());
-			expect(first.chats.setCustomer).toHaveBeenCalledWith(
-				'u1',
-				'IGSID1',
-				'cu1',
-			);
-
-			const later = build({ chat: freshChat() });
-			await later.service.handleWebhook(webhookBody());
-			expect(later.customers.findByIgsid).not.toHaveBeenCalled();
-		});
-
 		it('lets a storage failure through, so Instagram delivers again', async () => {
 			const { service, messages } = build();
 			messages.saveIncoming.mockRejectedValue(new Error('db down'));
@@ -786,15 +764,10 @@ describe('InstagramService', () => {
 
 	describe('customer link', () => {
 		it("linkCustomer ties the person to one of the user's customers", async () => {
-			const { service, customers, chats } = build({ chat: freshChat() });
+			const { service, chats } = build({ chat: freshChat() });
 
 			const view = await service.linkCustomer('u1', 'IGSID1', 'cu1');
 
-			expect(customers.linkInstagramSource).toHaveBeenCalledWith(
-				'u1',
-				'cu1',
-				'IGSID1',
-			);
 			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 'IGSID1', 'cu1');
 			expect(view).toMatchObject({
 				customerId: 'cu1',
@@ -808,13 +781,6 @@ describe('InstagramService', () => {
 			await expect(
 				foreign.service.linkCustomer('u1', 'IGSID1', 'x'),
 			).rejects.toBeInstanceOf(InstagramCustomerNotFoundException);
-
-			const taken = build({ chat: freshChat() });
-			taken.customers.linkInstagramSource.mockResolvedValue(false);
-			await expect(
-				taken.service.linkCustomer('u1', 'IGSID1', 'cu1'),
-			).rejects.toBeInstanceOf(InstagramCustomerAlreadyLinkedException);
-			expect(taken.chats.setCustomer).not.toHaveBeenCalled();
 
 			const linked = build({ chat: freshChat({ customerId: 'cu0' }) });
 			await expect(
@@ -838,26 +804,13 @@ describe('InstagramService', () => {
 			expect(view.customerId).toBe('cu9');
 		});
 
-		it('createCustomerFromChat reuses the customer that person already is, spending no limit', async () => {
-			const { service, featureLimits, customers } = build({
-				chat: freshChat(),
-			});
-			customers.findByIgsid.mockResolvedValue({ _id: 'cu5', name: 'Ana' });
-
-			await service.createCustomerFromChat('u1', 'IGSID1');
-
-			expect(featureLimits.assertCanCreate).not.toHaveBeenCalled();
-			expect(customers.createFromChat).not.toHaveBeenCalled();
-		});
-
 		it('unlinkCustomer cuts the link and keeps the customer', async () => {
-			const { service, customers, chats } = build({
+			const { service, chats } = build({
 				chat: freshChat({ customerId: 'cu1' }),
 			});
 
 			const view = await service.unlinkCustomer('u1', 'IGSID1');
 
-			expect(customers.unlinkInstagramSource).toHaveBeenCalledWith('u1', 'cu1');
 			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 'IGSID1', null);
 			expect(view.customerId).toBeNull();
 		});

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AesGcmCipher } from '../../../infra/aes-gcm-cipher/aes-gcm-cipher';
 import { schemasModule } from '../../../infra/database/mongo/schemas';
+import { InboxModule } from '../../inbox/inbox.module';
 import { FeatureLimitsModule } from '../../feature-limits/feature-limits.module';
 import { AppsCoreModule } from '../core/apps-core.module';
 import { TelegramChatsService } from './telegram-chats.service';
@@ -10,6 +11,7 @@ import { TelegramMessagesService } from './telegram-messages.service';
 import { TelegramBotClient } from './telegram.bot-client';
 import { TelegramController } from './telegram.controller';
 import { TelegramCustomersRepository } from './telegram.customers.repository';
+import { TelegramInboxAdapter } from './telegram.inbox-adapter';
 import { TelegramService } from './telegram.service';
 import { TelegramStatusProvider } from './telegram.status.provider';
 
@@ -22,15 +24,15 @@ import { TelegramStatusProvider } from './telegram.status.provider';
 	imports: [
 		AppsCoreModule,
 		schemasModule.telegramConnection,
-		schemasModule.telegramMessage,
-		schemasModule.telegramChat,
 		schemasModule.customer,
 		FeatureLimitsModule,
+		InboxModule,
 	],
 	controllers: [TelegramController],
 	providers: [
 		AesGcmCipher,
 		TelegramService,
+		TelegramInboxAdapter,
 		TelegramBotClient,
 		TelegramConnectionsService,
 		TelegramMessagesService,

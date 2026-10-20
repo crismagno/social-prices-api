@@ -11,7 +11,6 @@ import {
 	TelegramMessageNotDeletableException,
 	TelegramMessageNotFoundException,
 	TelegramChatUnavailableException,
-	TelegramCustomerAlreadyLinkedException,
 	TelegramCustomerNotFoundException,
 	TelegramInvalidTokenException,
 	TelegramNotConnectedException,
@@ -100,14 +99,11 @@ const build = (
 	};
 	const realtime: any = { notifyInboxUpdated: jest.fn() };
 	const customers: any = {
-		findByTelegramUserId: jest.fn().mockResolvedValue(null),
 		findNames: jest.fn().mockResolvedValue([]),
 		findOwned: jest.fn().mockResolvedValue({ _id: 'cu1', name: 'Ana Cliente' }),
 		createFromChat: jest
 			.fn()
 			.mockResolvedValue({ _id: 'cu9', name: 'Ana Souza' }),
-		linkTelegramSource: jest.fn().mockResolvedValue(true),
-		unlinkTelegramSource: jest.fn().mockResolvedValue(undefined),
 	};
 	const featureLimits: any = {
 		assertCanCreate: jest.fn().mockResolvedValue(undefined),
@@ -687,30 +683,6 @@ describe('TelegramService', () => {
 
 			expect(chats.registerIncoming).not.toHaveBeenCalled();
 		});
-
-		it('recognises a returning customer on the first message: links the chat to who they already are', async () => {
-			const { creds, connection } = connectionWithSecret();
-			const { service, chats, customers } = build({ connection });
-			chats.registerIncoming.mockResolvedValue(true);
-			customers.findByTelegramUserId.mockResolvedValue({
-				_id: 'cu1',
-				name: 'Ana',
-			});
-
-			await service.handleWebhook(creds.key, creds.secret, textUpdate());
-
-			expect(customers.findByTelegramUserId).toHaveBeenCalledWith('u1', 555);
-			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 555, 'cu1');
-		});
-
-		it('does not look for a customer when the person already had a conversation', async () => {
-			const { creds, connection } = connectionWithSecret();
-			const { service, customers } = build({ connection });
-
-			await service.handleWebhook(creds.key, creds.secret, textUpdate());
-
-			expect(customers.findByTelegramUserId).not.toHaveBeenCalled();
-		});
 	});
 
 	describe('sendMedia', () => {
@@ -1168,17 +1140,12 @@ describe('TelegramService', () => {
 			customerId: null,
 		};
 
-		it('links an existing customer: records the Telegram person on the customer and on the chat', async () => {
+		it('links an existing customer: the tie lives on the chat only', async () => {
 			const { service, customers, chats } = build({ chat });
 
 			const view = await service.linkCustomer('u1', 555, 'cu1');
 
 			expect(customers.findOwned).toHaveBeenCalledWith('u1', 'cu1');
-			expect(customers.linkTelegramSource).toHaveBeenCalledWith(
-				'u1',
-				'cu1',
-				777,
-			);
 			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 555, 'cu1');
 			expect(view).toMatchObject({
 				chatId: 555,
@@ -1198,33 +1165,14 @@ describe('TelegramService', () => {
 		});
 
 		it('refuses a conversation that already has a customer', async () => {
-			const { service, customers } = build({
+			const { service, chats } = build({
 				chat: { ...chat, customerId: 'cu7' },
 			});
 
 			await expect(
 				service.linkCustomer('u1', 555, 'cu1'),
 			).rejects.toBeInstanceOf(TelegramChatAlreadyLinkedException);
-			expect(customers.linkTelegramSource).not.toHaveBeenCalled();
-		});
-
-		it('refuses a customer that already has another Telegram contact', async () => {
-			const { service, customers, chats } = build({ chat });
-			customers.linkTelegramSource.mockResolvedValue(false);
-
-			await expect(
-				service.linkCustomer('u1', 555, 'cu1'),
-			).rejects.toBeInstanceOf(TelegramCustomerAlreadyLinkedException);
 			expect(chats.setCustomer).not.toHaveBeenCalled();
-		});
-
-		it('refuses when that Telegram person already belongs to a different customer (duplicate key)', async () => {
-			const { service, customers } = build({ chat });
-			customers.linkTelegramSource.mockRejectedValue({ code: 11000 });
-
-			await expect(
-				service.linkCustomer('u1', 555, 'cu1'),
-			).rejects.toBeInstanceOf(TelegramCustomerAlreadyLinkedException);
 		});
 
 		it('refuses an unknown conversation', async () => {
@@ -1276,24 +1224,6 @@ describe('TelegramService', () => {
 			expect(chats.setCustomer).not.toHaveBeenCalled();
 		});
 
-		it('adopts the customer that already is this Telegram person instead of making a second one', async () => {
-			const { service, customers, chats, featureLimits } = build({ chat });
-			customers.findByTelegramUserId.mockResolvedValue({
-				_id: 'cu3',
-				name: 'Ana Antiga',
-			});
-
-			const view = await service.createCustomerFromChat('u1', 555);
-
-			expect(customers.createFromChat).not.toHaveBeenCalled();
-			expect(featureLimits.assertCanCreate).not.toHaveBeenCalled();
-			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 555, 'cu3');
-			expect(view).toMatchObject({
-				customerId: 'cu3',
-				customerName: 'Ana Antiga',
-			});
-		});
-
 		it('refuses a conversation that already has a customer', async () => {
 			const { service, customers } = build({
 				chat: { ...chat, customerId: 'cu7' },
@@ -1307,26 +1237,25 @@ describe('TelegramService', () => {
 	});
 
 	describe('unlinkCustomer', () => {
-		it('removes the Telegram person from the customer and clears the chat, keeping the customer', async () => {
-			const { service, customers, chats } = build({
+		it('clears the tie on the chat, keeping the customer', async () => {
+			const { service, chats } = build({
 				chat: { chatId: 555, telegramUserId: 777, customerId: 'cu1' },
 			});
 
 			const view = await service.unlinkCustomer('u1', 555);
 
-			expect(customers.unlinkTelegramSource).toHaveBeenCalledWith('u1', 'cu1');
 			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 555, null);
 			expect(view).toMatchObject({ customerId: null, customerName: null });
 		});
 
 		it('is harmless for a conversation with no customer', async () => {
-			const { service, customers } = build({
+			const { service, chats } = build({
 				chat: { chatId: 555, telegramUserId: 777, customerId: null },
 			});
 
 			await service.unlinkCustomer('u1', 555);
 
-			expect(customers.unlinkTelegramSource).not.toHaveBeenCalled();
+			expect(chats.setCustomer).not.toHaveBeenCalled();
 		});
 	});
 

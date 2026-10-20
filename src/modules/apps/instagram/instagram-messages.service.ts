@@ -1,17 +1,16 @@
-import { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import { InboxMessagesService } from '../../inbox/inbox-messages.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+	IInboxMessage,
+} from '../../inbox/interfaces/inbox.types';
 import { IInstagramMessageRecord } from './instagram-message.interface';
-import { InstagramMessage } from './instagram-message.schema';
-import InstagramEnum from './instagram.enum';
+import { inboxInputOf, toInstagramMessage } from './instagram.inbox-mapper';
 import { INormalizedInstagramMessage } from './instagram.types';
-
-const DEFAULT_LIMIT: number = 50;
-const MAX_LIMIT: number = 100;
-const DUPLICATE_KEY_CODE: number = 11000;
 
 export interface IOutgoingInstagramMessage {
 	igsid: string;
@@ -21,11 +20,20 @@ export interface IOutgoingInstagramMessage {
 	sentByEmployeeId: string | null;
 }
 
+const keyOf = (igsid: string): IConversationKey => ({
+	channel: InboxEnum.Channel.INSTAGRAM,
+	contactKey: igsid,
+});
+
+/**
+ * The messages of the Instagram chats. They live in the central inbox, shared
+ * with the other channels; this keeps the shape the Instagram app has always had.
+ */
 @Injectable()
 export class InstagramMessagesService {
 	constructor(
-		@InjectModel(schemasName.instagramMessage)
-		private readonly _messageModel: Model<InstagramMessage>,
+		private readonly _conversations: InboxConversationsService,
+		private readonly _messages: InboxMessagesService,
 	) {}
 
 	/**
@@ -37,7 +45,11 @@ export class InstagramMessagesService {
 		ownerUserId: string,
 		message: INormalizedInstagramMessage,
 	): Promise<boolean> {
-		return await this._create(ownerUserId, InstagramEnum.Direction.IN, message);
+		return await this._messages.saveIncoming(
+			ownerUserId,
+			await this._ensure(ownerUserId, message),
+			inboxInputOf({ ...message, isIncoming: true }),
+		);
 	}
 
 	/**
@@ -48,22 +60,19 @@ export class InstagramMessagesService {
 		ownerUserId: string,
 		message: IOutgoingInstagramMessage,
 	): Promise<IInstagramMessageRecord> {
-		const saved = await this._messageModel.findOneAndUpdate(
-			{ ownerUserId, mid: message.mid },
-			{
-				$setOnInsert: {
-					direction: InstagramEnum.Direction.OUT,
-					igsid: message.igsid,
-					text: message.text,
-					attachments: [],
-					sentAt: message.sentAt,
-				},
-				$set: { sentByEmployeeId: message.sentByEmployeeId },
-			},
-			{ upsert: true, new: true, setDefaultsOnInsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.igsid),
 		);
 
-		return saved as unknown as IInstagramMessageRecord;
+		return toInstagramMessage(
+			await this._messages.saveOutgoing(
+				ownerUserId,
+				conversation,
+				inboxInputOf({ ...message, attachments: [], isUnsupported: false }),
+			),
+			message.igsid,
+		);
 	}
 
 	/**
@@ -75,10 +84,10 @@ export class InstagramMessagesService {
 		ownerUserId: string,
 		message: INormalizedInstagramMessage,
 	): Promise<boolean> {
-		return await this._create(
+		return await this._messages.saveEcho(
 			ownerUserId,
-			InstagramEnum.Direction.OUT,
-			message,
+			await this._ensure(ownerUserId, message),
+			inboxInputOf(message),
 		);
 	}
 
@@ -88,19 +97,22 @@ export class InstagramMessagesService {
 		igsid: string,
 		options: { limit?: number; before?: string } = {},
 	): Promise<IInstagramMessageRecord[]> {
-		const wanted: number = Number.isFinite(options.limit)
-			? Math.min(MAX_LIMIT, Math.max(1, Math.floor(options.limit)))
-			: DEFAULT_LIMIT;
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
+		);
 
-		return await this._messageModel
-			.find({
+		if (!conversation) {
+			return [];
+		}
+
+		return (
+			await this._messages.listByConversation(
 				ownerUserId,
-				igsid,
-				...(options.before ? { _id: { $lt: options.before } } : {}),
-			})
-			.sort({ _id: -1 })
-			.limit(wanted)
-			.lean<IInstagramMessageRecord[]>();
+				conversation._id,
+				options,
+			)
+		).map((message: IInboxMessage) => toInstagramMessage(message, igsid));
 	}
 
 	public async findOwned(
@@ -108,35 +120,39 @@ export class InstagramMessagesService {
 		igsid: string,
 		id: string,
 	): Promise<IInstagramMessageRecord | null> {
-		return await this._messageModel
-			.findOne({ _id: id, ownerUserId, igsid })
-			.lean<IInstagramMessageRecord>();
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
+		);
+
+		if (!conversation) {
+			return null;
+		}
+
+		const message: IInboxMessage | null = await this._messages.findOwned(
+			ownerUserId,
+			conversation._id,
+			id,
+		);
+
+		return message ? toInstagramMessage(message, igsid) : null;
 	}
 
-	private async _create(
+	private async _ensure(
 		ownerUserId: string,
-		direction: InstagramEnum.Direction,
 		message: INormalizedInstagramMessage,
-	): Promise<boolean> {
-		try {
-			await this._messageModel.create({
-				ownerUserId,
-				direction,
-				igsid: message.igsid,
-				mid: message.mid,
-				text: message.text,
-				attachments: message.attachments,
-				isUnsupported: message.isUnsupported,
-				sentAt: message.sentAt,
-			});
+	): Promise<IInboxConversation> {
+		return (
+			await this._conversations.ensure(ownerUserId, keyOf(message.igsid), {
+				accountKey: message.accountId,
+			})
+		).conversation;
+	}
 
-			return true;
-		} catch (error) {
-			if ((error as { code?: number })?.code === DUPLICATE_KEY_CODE) {
-				return false;
-			}
-
-			throw error;
-		}
+	private async _find(
+		ownerUserId: string,
+		igsid: string,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(igsid));
 	}
 }

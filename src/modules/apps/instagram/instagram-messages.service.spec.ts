@@ -1,181 +1,177 @@
-import InstagramEnum from './instagram.enum';
 import { InstagramMessagesService } from './instagram-messages.service';
 
 const OWNER = '507f1f77bcf86cd799439011';
+const CONV = { _id: 'c1' };
+const KEY = { channel: 'INSTAGRAM', contactKey: 'IGSID1' };
 
-const incoming: any = {
+const incoming = (over: any = {}): any => ({
 	accountId: 'ACCOUNT1',
 	igsid: 'IGSID1',
-	direction: InstagramEnum.Direction.IN,
+	direction: 'IN',
 	mid: 'm1',
 	text: 'oi',
 	attachments: [{ type: 'image', url: 'https://cdn.fbsbx.com/a.jpg' }],
 	isUnsupported: false,
 	sentAt: new Date('2030-01-01'),
+	raw: { message: { mid: 'm1' } },
+	...over,
+});
+
+const stored = (over: any = {}): any => ({
+	_id: 'x1',
+	direction: 'OUT',
+	channelMessageId: 'm9',
+	kind: 'TEXT',
+	text: 'claro',
+	attachments: [],
+	sentAt: new Date('2030-01-02'),
+	sentByEmployeeId: 'e1',
+	channelData: { attachmentTypes: [] },
+	...over,
+});
+
+const build = (found: any = CONV) => {
+	const conversations: any = {
+		ensure: jest.fn().mockResolvedValue({ conversation: CONV, created: false }),
+		findByKey: jest.fn().mockResolvedValue(found),
+	};
+	const messages: any = {
+		saveIncoming: jest.fn().mockResolvedValue(true),
+		saveEcho: jest.fn().mockResolvedValue(true),
+		saveOutgoing: jest.fn().mockResolvedValue(stored()),
+		findOwned: jest.fn().mockResolvedValue(stored()),
+		listByConversation: jest.fn().mockResolvedValue([stored()]),
+	};
+
+	return {
+		conversations,
+		messages,
+		service: new InstagramMessagesService(conversations, messages),
+	};
 };
 
-const build = () => {
-	const chain: any = {
-		sort: jest.fn().mockReturnThis(),
-		limit: jest.fn().mockReturnThis(),
-		lean: jest.fn().mockResolvedValue([{ _id: 'm1' }]),
-	};
-	const model: any = {
-		create: jest.fn().mockResolvedValue({ _id: 'm1' }),
-		findOneAndUpdate: jest.fn().mockResolvedValue({ _id: 'out1' }),
-		find: jest.fn().mockReturnValue(chain),
-		findOne: jest.fn(),
-	};
+describe('InstagramMessagesService (over the central inbox)', () => {
+	it('saveIncoming stores the message in the common shape, raw event included', async () => {
+		const { service, conversations, messages } = build();
 
-	return { model, chain, service: new InstagramMessagesService(model) };
-};
+		await expect(service.saveIncoming(OWNER, incoming())).resolves.toBe(true);
 
-describe('InstagramMessagesService', () => {
-	describe('saveIncoming', () => {
-		it('stores a customer message as IN, without the account id it only used to find the owner', async () => {
-			const { service, model } = build();
-
-			await expect(service.saveIncoming(OWNER, incoming)).resolves.toBe(true);
-
-			expect(model.create).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				direction: InstagramEnum.Direction.IN,
-				igsid: 'IGSID1',
-				mid: 'm1',
+		expect(conversations.ensure).toHaveBeenCalledWith(OWNER, KEY, {
+			accountKey: 'ACCOUNT1',
+		});
+		expect(messages.saveIncoming).toHaveBeenCalledWith(
+			OWNER,
+			CONV,
+			expect.objectContaining({
+				channelMessageId: 'm1',
+				kind: 'IMAGE',
 				text: 'oi',
-				attachments: incoming.attachments,
-				isUnsupported: false,
-				sentAt: incoming.sentAt,
-			});
-		});
-
-		it('says false for a message that was already stored (a repeated delivery)', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue({ code: 11000 });
-
-			await expect(service.saveIncoming(OWNER, incoming)).resolves.toBe(false);
-		});
-
-		it('lets any other failure through, so Instagram delivers again', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue(new Error('db down'));
-
-			await expect(service.saveIncoming(OWNER, incoming)).rejects.toThrow(
-				'db down',
-			);
-		});
+				sender: { id: 'IGSID1', name: null, username: null },
+				attachments: [
+					expect.objectContaining({
+						kind: 'IMAGE',
+						source: { type: 'URL', url: 'https://cdn.fbsbx.com/a.jpg' },
+					}),
+				],
+				channelData: { attachmentTypes: ['image'] },
+				raw: { message: { mid: 'm1' } },
+			}),
+		);
 	});
 
-	describe('saveOutgoing', () => {
-		it('stores a reply sent from here, as OUT, with who sent it', async () => {
-			const { service, model } = build();
-			const sentAt = new Date('2030-01-02');
+	it('saveIncoming says false for a message it already had', async () => {
+		const { service, messages } = build();
+		messages.saveIncoming.mockResolvedValue(false);
 
-			await service.saveOutgoing(OWNER, {
-				igsid: 'IGSID1',
-				mid: 'm9',
-				text: 'claro!',
-				sentAt,
-				sentByEmployeeId: 'e1',
-			});
-
-			const [filter, update, options] = model.findOneAndUpdate.mock.calls[0];
-
-			expect(filter).toEqual({ ownerUserId: OWNER, mid: 'm9' });
-			expect(update.$setOnInsert).toEqual({
-				direction: InstagramEnum.Direction.OUT,
-				igsid: 'IGSID1',
-				text: 'claro!',
-				attachments: [],
-				sentAt,
-			});
-			// If Instagram's echo of this very message got here first, only who sent it is added.
-			expect(update.$set).toEqual({ sentByEmployeeId: 'e1' });
-			expect(options).toMatchObject({ upsert: true, new: true });
-		});
+		await expect(service.saveIncoming(OWNER, incoming())).resolves.toBe(false);
 	});
 
-	describe('saveEcho', () => {
-		const echo: any = {
-			...incoming,
-			direction: InstagramEnum.Direction.OUT,
-			mid: 'e1',
-			text: 'pelo app do Instagram',
-			attachments: [],
-		};
+	it('saveEcho stores what the Page sent from outside, with no sender', async () => {
+		const { service, messages } = build();
 
-		it('stores a message the account sent outside this system, as OUT, with no employee', async () => {
-			const { service, model } = build();
+		await expect(
+			service.saveEcho(OWNER, incoming({ direction: 'OUT' })),
+		).resolves.toBe(true);
 
-			await expect(service.saveEcho(OWNER, echo)).resolves.toBe(true);
-
-			expect(model.create).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				direction: InstagramEnum.Direction.OUT,
-				igsid: 'IGSID1',
-				mid: 'e1',
-				text: 'pelo app do Instagram',
-				attachments: [],
-				isUnsupported: false,
-				sentAt: incoming.sentAt,
-			});
-		});
-
-		it('says false when this message is already stored, such as the echo of one sent from here', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue({ code: 11000 });
-
-			await expect(service.saveEcho(OWNER, echo)).resolves.toBe(false);
-		});
-
-		it('lets any other failure through, so Instagram delivers again', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue(new Error('db down'));
-
-			await expect(service.saveEcho(OWNER, echo)).rejects.toThrow('db down');
-		});
+		expect(messages.saveEcho.mock.calls[0][2].sender).toBeNull();
 	});
 
-	describe('listByChat', () => {
-		it('returns one conversation, newest first, for that owner only', async () => {
-			const { service, model, chain } = build();
+	it('saveOutgoing stores a reply sent from here and gives it back in the Instagram shape', async () => {
+		const { service, messages } = build();
 
-			await service.listByChat(OWNER, 'IGSID1', { limit: 20, before: 'abc' });
-
-			expect(model.find).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				igsid: 'IGSID1',
-				_id: { $lt: 'abc' },
-			});
-			expect(chain.sort).toHaveBeenCalledWith({ _id: -1 });
-			expect(chain.limit).toHaveBeenCalledWith(20);
-		});
-
-		it.each([
-			[undefined, 50],
-			[0, 1],
-			[1000, 100],
-		])('limit %p becomes %p', async (limit, expected) => {
-			const { service, chain } = build();
-
-			await service.listByChat(OWNER, 'IGSID1', { limit });
-
-			expect(chain.limit).toHaveBeenCalledWith(expected);
-		});
-	});
-
-	it('findOwned finds one message of that owner chat', async () => {
-		const { service, model } = build();
-		model.findOne.mockReturnValue({
-			lean: jest.fn().mockResolvedValue({ _id: 'm1' }),
-		});
-
-		await service.findOwned(OWNER, 'IGSID1', 'm1');
-
-		expect(model.findOne).toHaveBeenCalledWith({
-			_id: 'm1',
-			ownerUserId: OWNER,
+		const record = await service.saveOutgoing(OWNER, {
 			igsid: 'IGSID1',
+			mid: 'm9',
+			text: 'claro',
+			sentAt: new Date('2030-01-02'),
+			sentByEmployeeId: 'e1',
 		});
+
+		expect(messages.saveOutgoing).toHaveBeenCalledWith(
+			OWNER,
+			CONV,
+			expect.objectContaining({
+				channelMessageId: 'm9',
+				text: 'claro',
+				sentByEmployeeId: 'e1',
+			}),
+		);
+		expect(record).toMatchObject({
+			mid: 'm9',
+			igsid: 'IGSID1',
+			text: 'claro',
+			sentByEmployeeId: 'e1',
+		});
+	});
+
+	it('keeps a message Instagram could not carry as unsupported', async () => {
+		const { service, messages } = build();
+
+		await service.saveIncoming(
+			OWNER,
+			incoming({ text: null, attachments: [], isUnsupported: true }),
+		);
+
+		expect(messages.saveIncoming.mock.calls[0][2]).toMatchObject({
+			kind: 'UNSUPPORTED',
+			isUnsupported: true,
+		});
+	});
+
+	it('listByChat and findOwned answer in the Instagram shape, with the file kinds Instagram used', async () => {
+		const { service, messages } = build();
+		messages.listByConversation.mockResolvedValue([
+			stored({
+				kind: 'IMAGE',
+				attachments: [
+					{ kind: 'IMAGE', source: { type: 'URL', url: 'https://x/a.jpg' } },
+					{ kind: 'AUDIO', source: { type: 'URL', url: 'https://x/b.mp4' } },
+				],
+				channelData: { attachmentTypes: ['image', 'audio'] },
+			}),
+		]);
+
+		const [record] = await service.listByChat(OWNER, 'IGSID1', { limit: 5 });
+
+		expect(messages.listByConversation).toHaveBeenCalledWith(OWNER, 'c1', {
+			limit: 5,
+		});
+		expect(record.attachments).toEqual([
+			{ type: 'image', url: 'https://x/a.jpg' },
+			{ type: 'audio', url: 'https://x/b.mp4' },
+		]);
+		await expect(
+			service.findOwned(OWNER, 'IGSID1', 'x1'),
+		).resolves.toMatchObject({
+			mid: 'm9',
+		});
+	});
+
+	it('answers empty for a person who has no conversation', async () => {
+		const { service, messages } = build(null);
+
+		await expect(service.listByChat(OWNER, 'X')).resolves.toEqual([]);
+		await expect(service.findOwned(OWNER, 'X', 'x1')).resolves.toBeNull();
+		expect(messages.listByConversation).not.toHaveBeenCalled();
 	});
 });

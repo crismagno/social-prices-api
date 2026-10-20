@@ -1,5 +1,4 @@
 import { ICustomer } from '../../customers/interfaces/customer.interface';
-import AppsEnum from '../interfaces/apps.enum';
 import { ITelegramChat } from './telegram-chat.interface';
 
 type ChatPerson = Pick<
@@ -39,12 +38,7 @@ export const buildCustomerFromTelegramChat = (
 		userId: null,
 		uniqName,
 		uploadFilename: null,
-		externalSources: [
-			{
-				appId: AppsEnum.App.TELEGRAM,
-				externalId: String(chat.telegramUserId),
-			},
-		],
+		externalSources: [],
 		createdAt: now,
 		updatedAt: now,
 	};

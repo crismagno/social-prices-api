@@ -27,6 +27,7 @@ describe('parseTelegramUpdate', () => {
 		);
 
 		expect(parsed).toEqual({
+			raw: privateMessage({ text: 'oi, tudo bem?' }),
 			updateId: 100,
 			messageId: 7,
 			chatId: 555,

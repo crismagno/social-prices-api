@@ -7,7 +7,6 @@ import { schemasName } from '../../../infra/database/mongo/schemas';
 import { createUsernameByName } from '../../../shared/utils/global/global';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { Customer } from '../../customers/interfaces/customer.schema';
-import AppsEnum from '../interfaces/apps.enum';
 import { ITelegramChat } from './telegram-chat.interface';
 import { buildCustomerFromTelegramChat } from './telegram.customer-factory';
 
@@ -18,7 +17,7 @@ export interface ICustomerRef {
 	name: string | null;
 }
 
-/** How Telegram reads and writes customers: only through the Telegram source it keeps on them. */
+/** How Telegram reads customers and makes new ones; the link itself lives on the chat. */
 @Injectable()
 export class TelegramCustomersRepository {
 	//#region Constructor
@@ -31,26 +30,6 @@ export class TelegramCustomersRepository {
 	//#endregion
 
 	//#region Public Methods
-
-	public async findByTelegramUserId(
-		ownerUserId: string,
-		telegramUserId: number,
-	): Promise<ICustomerRef | null> {
-		return await this._customerModel
-			.findOne(
-				{
-					ownerUserId,
-					externalSources: {
-						$elemMatch: {
-							appId: AppsEnum.App.TELEGRAM,
-							externalId: String(telegramUserId),
-						},
-					},
-				},
-				{ name: 1 },
-			)
-			.lean<ICustomerRef>();
-	}
 
 	public async findNames(
 		ownerUserId: string,
@@ -95,48 +74,6 @@ export class TelegramCustomersRepository {
 		});
 
 		return { _id: created._id, name: created.name };
-	}
-
-	/**
-	 * Records the Telegram person on an existing customer and touches nothing else.
-	 * A customer holds one Telegram contact, so false means it already has one.
-	 */
-	public async linkTelegramSource(
-		ownerUserId: string,
-		customerId: string,
-		telegramUserId: number,
-	): Promise<boolean> {
-		const result = await this._customerModel.updateOne(
-			{
-				_id: customerId,
-				ownerUserId,
-				'externalSources.appId': { $ne: AppsEnum.App.TELEGRAM },
-			},
-			{
-				$push: {
-					externalSources: {
-						appId: AppsEnum.App.TELEGRAM,
-						externalId: String(telegramUserId),
-					},
-				},
-				$set: { updatedAt: new Date() },
-			},
-		);
-
-		return result.modifiedCount > 0;
-	}
-
-	public async unlinkTelegramSource(
-		ownerUserId: string,
-		customerId: string,
-	): Promise<void> {
-		await this._customerModel.updateOne(
-			{ _id: customerId, ownerUserId },
-			{
-				$pull: { externalSources: { appId: AppsEnum.App.TELEGRAM } },
-				$set: { updatedAt: new Date() },
-			},
-		);
 	}
 
 	//#endregion

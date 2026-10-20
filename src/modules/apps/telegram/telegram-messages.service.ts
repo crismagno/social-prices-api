@@ -1,17 +1,21 @@
-import { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import { InboxMessagesService } from '../../inbox/inbox-messages.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+	IInboxMessage,
+} from '../../inbox/interfaces/inbox.types';
 import { ITelegramMessageRecord } from './telegram-message.interface';
-import { TelegramMessage } from './telegram-message.schema';
 import TelegramEnum from './telegram.enum';
+import {
+	contactOf,
+	inboxInputOf,
+	toTelegramMessage,
+} from './telegram.inbox-mapper';
 import { INormalizedTelegramMessage, ITelegramMedia } from './telegram.types';
-
-const DEFAULT_LIMIT: number = 50;
-const MAX_LIMIT: number = 100;
-const DUPLICATE_KEY_CODE: number = 11000;
 
 export interface IOutgoingTelegramMessage {
 	chatId: number;
@@ -23,11 +27,20 @@ export interface IOutgoingTelegramMessage {
 	sentByEmployeeId: string | null;
 }
 
+const keyOf = (chatId: number): IConversationKey => ({
+	channel: InboxEnum.Channel.TELEGRAM,
+	contactKey: String(chatId),
+});
+
+/**
+ * The messages of the Telegram chats. They live in the central inbox, shared with
+ * the other channels; this keeps the shape the Telegram app has always had.
+ */
 @Injectable()
 export class TelegramMessagesService {
 	constructor(
-		@InjectModel(schemasName.telegramMessage)
-		private readonly _messageModel: Model<TelegramMessage>,
+		private readonly _conversations: InboxConversationsService,
+		private readonly _messages: InboxMessagesService,
 	) {}
 
 	/**
@@ -39,40 +52,36 @@ export class TelegramMessagesService {
 		ownerUserId: string,
 		message: INormalizedTelegramMessage,
 	): Promise<boolean> {
-		try {
-			await this._messageModel.create({
-				ownerUserId,
-				direction: TelegramEnum.Direction.IN,
-				...message,
-			});
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.chatId),
+			{ contact: contactOf(message) },
+		);
 
-			return true;
-		} catch (error) {
-			if ((error as { code?: number })?.code === DUPLICATE_KEY_CODE) {
-				return false;
-			}
-
-			throw error;
-		}
+		return await this._messages.saveIncoming(
+			ownerUserId,
+			conversation,
+			inboxInputOf(message),
+		);
 	}
 
 	public async saveOutgoing(
 		ownerUserId: string,
 		message: IOutgoingTelegramMessage,
 	): Promise<ITelegramMessageRecord> {
-		const saved = await this._messageModel.create({
+		const { conversation } = await this._conversations.ensure(
 			ownerUserId,
-			direction: TelegramEnum.Direction.OUT,
-			chatId: message.chatId,
-			messageId: message.messageId,
-			contentType: message.contentType ?? TelegramEnum.ContentType.TEXT,
-			text: message.text,
-			...(message.media ? { media: message.media } : {}),
-			sentAt: message.sentAt,
-			sentByEmployeeId: message.sentByEmployeeId,
-		});
+			keyOf(message.chatId),
+		);
 
-		return saved as unknown as ITelegramMessageRecord;
+		return toTelegramMessage(
+			await this._messages.saveOutgoing(
+				ownerUserId,
+				conversation,
+				inboxInputOf(message as any),
+			),
+			message.chatId,
+		);
 	}
 
 	public async findOwned(
@@ -80,9 +89,22 @@ export class TelegramMessagesService {
 		chatId: number,
 		id: string,
 	): Promise<ITelegramMessageRecord | null> {
-		return await this._messageModel
-			.findOne({ _id: id, ownerUserId, chatId })
-			.lean<ITelegramMessageRecord>();
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		if (!conversation) {
+			return null;
+		}
+
+		const message: IInboxMessage | null = await this._messages.findOwned(
+			ownerUserId,
+			conversation._id,
+			id,
+		);
+
+		return message ? toTelegramMessage(message, chatId) : null;
 	}
 
 	public async deleteOwned(
@@ -90,7 +112,14 @@ export class TelegramMessagesService {
 		chatId: number,
 		id: string,
 	): Promise<void> {
-		await this._messageModel.deleteOne({ _id: id, ownerUserId, chatId });
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		if (conversation) {
+			await this._messages.deleteOwned(ownerUserId, conversation._id, id);
+		}
 	}
 
 	/** The newest message a conversation still has, if any. */
@@ -98,10 +127,21 @@ export class TelegramMessagesService {
 		ownerUserId: string,
 		chatId: number,
 	): Promise<ITelegramMessageRecord | null> {
-		return await this._messageModel
-			.findOne({ ownerUserId, chatId })
-			.sort({ sentAt: -1, _id: -1 })
-			.lean<ITelegramMessageRecord>();
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		if (!conversation) {
+			return null;
+		}
+
+		const message: IInboxMessage | null = await this._messages.findLatest(
+			ownerUserId,
+			conversation._id,
+		);
+
+		return message ? toTelegramMessage(message, chatId) : null;
 	}
 
 	/** One message of this owner's chat, as long as it has a file to give. */
@@ -110,14 +150,13 @@ export class TelegramMessagesService {
 		chatId: number,
 		id: string,
 	): Promise<ITelegramMessageRecord | null> {
-		return await this._messageModel
-			.findOne({
-				_id: id,
-				ownerUserId,
-				chatId,
-				'media.fileId': { $exists: true },
-			})
-			.lean<ITelegramMessageRecord>();
+		const record: ITelegramMessageRecord | null = await this.findOwned(
+			ownerUserId,
+			chatId,
+			id,
+		);
+
+		return record?.media ? record : null;
 	}
 
 	/** One conversation, newest first. `before` is the id of the oldest one already loaded. */
@@ -126,18 +165,28 @@ export class TelegramMessagesService {
 		chatId: number,
 		options: { limit?: number; before?: string } = {},
 	): Promise<ITelegramMessageRecord[]> {
-		const wanted: number = Number.isFinite(options.limit)
-			? Math.min(MAX_LIMIT, Math.max(1, Math.floor(options.limit)))
-			: DEFAULT_LIMIT;
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
 
-		return await this._messageModel
-			.find({
+		if (!conversation) {
+			return [];
+		}
+
+		return (
+			await this._messages.listByConversation(
 				ownerUserId,
-				chatId,
-				...(options.before ? { _id: { $lt: options.before } } : {}),
-			})
-			.sort({ _id: -1 })
-			.limit(wanted)
-			.lean<ITelegramMessageRecord[]>();
+				conversation._id,
+				options,
+			)
+		).map((message: IInboxMessage) => toTelegramMessage(message, chatId));
+	}
+
+	private async _find(
+		ownerUserId: string,
+		chatId: number,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(chatId));
 	}
 }

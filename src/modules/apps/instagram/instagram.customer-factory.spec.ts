@@ -1,10 +1,9 @@
-import AppsEnum from '../interfaces/apps.enum';
 import { buildCustomerFromInstagramChat } from './instagram.customer-factory';
 
 describe('buildCustomerFromInstagramChat', () => {
 	const chat: any = { igsid: 'IGSID1', name: 'Ana Souza', username: 'ana_s' };
 
-	it('makes a customer of the person, with Instagram as where they came from', () => {
+	it('makes a customer of the person, the tie to them lives on the chat', () => {
 		const customer: any = buildCustomerFromInstagramChat(
 			'owner1',
 			chat,
@@ -18,9 +17,7 @@ describe('buildCustomerFromInstagramChat', () => {
 			uniqName: 'ana1',
 			email: null,
 			phoneNumbers: [],
-			externalSources: [
-				{ appId: AppsEnum.App.INSTAGRAM, externalId: 'IGSID1' },
-			],
+			externalSources: [],
 		});
 	});
 

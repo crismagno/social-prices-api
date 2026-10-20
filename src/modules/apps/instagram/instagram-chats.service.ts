@@ -1,106 +1,93 @@
-import mongoose, { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+} from '../../inbox/interfaces/inbox.types';
 import { IInstagramChat } from './instagram-chat.interface';
-import { InstagramChat } from './instagram-chat.schema';
 import InstagramEnum from './instagram.enum';
+import {
+	attachmentTypeOf,
+	contactOf,
+	previewOf,
+	toInstagramChat,
+} from './instagram.inbox-mapper';
 import {
 	IInstagramProfile,
 	INormalizedInstagramMessage,
 } from './instagram.types';
 
-const PREVIEW_LENGTH: number = 120;
-const MAX_CHATS: number = 200;
+const keyOf = (igsid: string): IConversationKey => ({
+	channel: InboxEnum.Channel.INSTAGRAM,
+	contactKey: igsid,
+});
 
-/** The inbox: one row per person who wrote to the account. */
+/**
+ * The Instagram inbox: one row per person who wrote to the account. The
+ * conversations live in the central inbox, shared with the other channels; this
+ * keeps the shape the Instagram app has always had.
+ */
 @Injectable()
 export class InstagramChatsService {
-	constructor(
-		@InjectModel(schemasName.instagramChat)
-		private readonly _chatModel: Model<InstagramChat>,
-	) {}
+	constructor(private readonly _conversations: InboxConversationsService) {}
 
 	/** True when this is the first time that person writes. */
 	public async registerIncoming(
 		ownerUserId: string,
 		message: INormalizedInstagramMessage,
 	): Promise<boolean> {
-		const result = await this._chatModel.updateOne(
-			{ ownerUserId, igsid: message.igsid },
-			{
-				$set: {
-					accountId: message.accountId,
-					lastMessageAt: message.sentAt,
-					lastMessageText: this._preview(message.text),
-					lastAttachmentType: this._attachmentTypeOf(message),
-					lastMessageDirection: InstagramEnum.Direction.IN,
-					lastIncomingAt: message.sentAt,
-				},
-				$inc: { unreadCount: 1 },
-				$setOnInsert: {
-					customerId: null,
-					name: null,
-					username: null,
-					profilePic: null,
-				},
-			},
-			{ upsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.igsid),
+			{ accountKey: message.accountId },
 		);
 
-		return result.upsertedCount > 0;
+		return await this._conversations.applyIncoming(
+			ownerUserId,
+			conversation._id,
+			{
+				accountKey: message.accountId,
+				preview: previewOf(
+					message.text,
+					attachmentTypeOf(message),
+					InstagramEnum.Direction.IN,
+					message.sentAt,
+				),
+			},
+		);
 	}
 
 	/**
-	 * The account wrote to a person from outside this system (the Instagram app). It is a message sent, so
-	 * nothing is unread and the answer window is not touched; a conversation that
-	 * starts this way has no window open. True when this made the conversation.
+	 * The account wrote to a person from outside this system (the Instagram app).
+	 * It is a message sent, so nothing is unread and the answer window is not
+	 * touched; a conversation that starts this way has no window open. True when
+	 * this made the conversation.
 	 */
 	public async registerEcho(
 		ownerUserId: string,
 		message: INormalizedInstagramMessage,
 	): Promise<boolean> {
-		const preview = {
-			lastMessageAt: message.sentAt,
-			lastMessageText: this._preview(message.text),
-			lastAttachmentType: this._attachmentTypeOf(message),
-			lastMessageDirection: InstagramEnum.Direction.OUT,
-		};
-
-		const created = await this._chatModel.updateOne(
-			{ ownerUserId, igsid: message.igsid },
-			{
-				$setOnInsert: {
-					accountId: message.accountId,
-					customerId: null,
-					name: null,
-					username: null,
-					profilePic: null,
-					unreadCount: 0,
-					lastIncomingAt: new Date(0),
-					...preview,
-				},
-			},
-			{ upsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.igsid),
+			{ accountKey: message.accountId },
 		);
 
-		if (created.upsertedCount > 0) {
-			return true;
-		}
-
-		// An echo that arrives late must not overwrite a newer last message.
-		await this._chatModel.updateOne(
-			{
-				ownerUserId,
-				igsid: message.igsid,
-				lastMessageAt: { $lte: message.sentAt },
-			},
-			{ $set: preview },
+		await this._conversations.applyEcho(
+			ownerUserId,
+			conversation._id,
+			previewOf(
+				message.text,
+				attachmentTypeOf(message),
+				InstagramEnum.Direction.OUT,
+				message.sentAt,
+			),
 		);
 
-		return false;
+		// The message may already be stored, so "new" means it had no last message.
+		return !conversation.lastMessageAt;
 	}
 
 	public async registerOutgoing(
@@ -109,17 +96,18 @@ export class InstagramChatsService {
 		text: string,
 		at: Date,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, igsid },
-			{
-				$set: {
-					lastMessageAt: at,
-					lastMessageText: this._preview(text),
-					lastAttachmentType: null,
-					lastMessageDirection: InstagramEnum.Direction.OUT,
-				},
-			},
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
 		);
+
+		if (conversation) {
+			await this._conversations.applyOutgoing(
+				ownerUserId,
+				conversation._id,
+				previewOf(text, null, InstagramEnum.Direction.OUT, at),
+			);
+		}
 	}
 
 	public async setProfile(
@@ -127,33 +115,37 @@ export class InstagramChatsService {
 		igsid: string,
 		profile: IInstagramProfile,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, igsid },
-			{
-				$set: {
-					name: profile.name,
-					username: profile.username,
-					profilePic: profile.profilePic,
-				},
-			},
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
 		);
+
+		if (conversation) {
+			await this._conversations.setContact(
+				ownerUserId,
+				conversation._id,
+				contactOf(profile),
+			);
+		}
 	}
 
 	/** Messages waiting to be read, over every conversation of the owner. */
 	public async countUnread(ownerUserId: string): Promise<number> {
-		const [result] = await this._chatModel.aggregate([
-			{ $match: { ownerUserId: new mongoose.Types.ObjectId(ownerUserId) } },
-			{ $group: { _id: null, total: { $sum: '$unreadCount' } } },
-		]);
-
-		return result?.total ?? 0;
+		return await this._conversations.countUnread(
+			ownerUserId,
+			InboxEnum.Channel.INSTAGRAM,
+		);
 	}
 
 	public async markRead(ownerUserId: string, igsid: string): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, igsid },
-			{ $set: { unreadCount: 0 } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
 		);
+
+		if (conversation) {
+			await this._conversations.markRead(ownerUserId, conversation._id);
+		}
 	}
 
 	public async setCustomer(
@@ -161,38 +153,45 @@ export class InstagramChatsService {
 		igsid: string,
 		customerId: string | null,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, igsid },
-			{ $set: { customerId } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
 		);
+
+		if (conversation) {
+			await this._conversations.setCustomer(
+				ownerUserId,
+				conversation._id,
+				customerId,
+			);
+		}
 	}
 
 	public async list(ownerUserId: string): Promise<IInstagramChat[]> {
-		return await this._chatModel
-			.find({ ownerUserId })
-			.sort({ lastMessageAt: -1 })
-			.limit(MAX_CHATS)
-			.lean<IInstagramChat[]>();
+		return (
+			await this._conversations.listByChannel(
+				ownerUserId,
+				InboxEnum.Channel.INSTAGRAM,
+			)
+		).map(toInstagramChat);
 	}
 
 	public async findByIgsid(
 		ownerUserId: string,
 		igsid: string,
 	): Promise<IInstagramChat | null> {
-		return await this._chatModel.findOne({ ownerUserId, igsid });
-	}
-
-	private _preview(text: string | null): string | null {
-		return text === null ? null : text.slice(0, PREVIEW_LENGTH);
-	}
-
-	/** What the last message was, when it has no text to show: a file, or something unsupported. */
-	private _attachmentTypeOf(
-		message: INormalizedInstagramMessage,
-	): string | null {
-		return (
-			message.attachments[0]?.type ??
-			(message.isUnsupported ? 'unsupported' : null)
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
 		);
+
+		return conversation ? toInstagramChat(conversation) : null;
+	}
+
+	private async _find(
+		ownerUserId: string,
+		igsid: string,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(igsid));
 	}
 }

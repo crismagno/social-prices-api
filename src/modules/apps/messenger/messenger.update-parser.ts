@@ -74,6 +74,7 @@ export const parseMessengerWebhook = (
 				sentAt: new Date(
 					typeof event.timestamp === 'number' ? event.timestamp : Date.now(),
 				),
+				raw: event,
 			});
 		}
 	}

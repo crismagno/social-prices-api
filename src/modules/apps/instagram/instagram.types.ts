@@ -51,6 +51,8 @@ export interface INormalizedInstagramMessage {
 	/** Instagram could not carry this kind of message (a like, a share...). */
 	isUnsupported: boolean;
 	sentAt: Date;
+	/** The event exactly as Instagram delivered it. */
+	raw?: unknown;
 }
 
 export interface IInstagramProfile {

@@ -51,6 +51,8 @@ export interface INormalizedTelegramMessage {
 	text: string | null;
 	media?: ITelegramMedia;
 	sentAt: Date;
+	/** The update exactly as Telegram delivered it. */
+	raw?: unknown;
 }
 
 /** What Telegram answers after a message or a file was sent. */

@@ -1,5 +1,4 @@
 import { ICustomer } from '../../customers/interfaces/customer.interface';
-import AppsEnum from '../interfaces/apps.enum';
 import { IInstagramChat } from './instagram-chat.interface';
 
 type ChatPerson = Pick<IInstagramChat, 'igsid' | 'name' | 'username'>;
@@ -34,9 +33,7 @@ export const buildCustomerFromInstagramChat = (
 		userId: null,
 		uniqName,
 		uploadFilename: null,
-		externalSources: [
-			{ appId: AppsEnum.App.INSTAGRAM, externalId: chat.igsid },
-		],
+		externalSources: [],
 		createdAt: now,
 		updatedAt: now,
 	};

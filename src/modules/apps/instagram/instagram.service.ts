@@ -44,7 +44,7 @@ import {
 } from './instagram.types';
 
 // Instagram only allows answering a person for 24 hours after their last message.
-const REPLY_WINDOW_MS: number = 24 * 60 * 60 * 1000;
+export const REPLY_WINDOW_MS: number = 24 * 60 * 60 * 1000;
 
 // The token lasts 60 days. Once less than half is left it is renewed, which is
 // always more than the day Instagram asks a token to be old before renewing it.
@@ -390,16 +390,6 @@ export class InstagramService {
 			throw new InstagramCustomerNotFoundException();
 		}
 
-		if (
-			!(await this._customersRepository.linkInstagramSource(
-				ownerUserId,
-				customerId,
-				igsid,
-			))
-		) {
-			throw new InstagramCustomerAlreadyLinkedException();
-		}
-
 		await this._chatsService.setCustomer(ownerUserId, igsid, customerId);
 
 		return this._toChatView(
@@ -408,11 +398,7 @@ export class InstagramService {
 		);
 	}
 
-	/**
-	 * Makes a customer out of the person. If that person already is a customer
-	 * (after an unlink, or from before) that one is used, so there is never a
-	 * second customer for the same person and no plan limit is spent.
-	 */
+	/** Makes a customer out of the person and ties the chat to it. */
 	public async createCustomerFromChat(
 		ownerUserId: string,
 		igsid: string,
@@ -423,20 +409,13 @@ export class InstagramService {
 			throw new InstagramCustomerAlreadyLinkedException();
 		}
 
-		let customer: ICustomerRef | null =
-			await this._customersRepository.findByIgsid(ownerUserId, igsid);
+		await this._featureLimitsService.assertCanCreate(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.CUSTOMERS,
+		);
 
-		if (!customer) {
-			await this._featureLimitsService.assertCanCreate(
-				ownerUserId,
-				FeatureLimitsEnum.Feature.CUSTOMERS,
-			);
-
-			customer = await this._customersRepository.createFromChat(
-				ownerUserId,
-				chat,
-			);
-		}
+		const customer: ICustomerRef =
+			await this._customersRepository.createFromChat(ownerUserId, chat);
 
 		await this._chatsService.setCustomer(
 			ownerUserId,
@@ -450,19 +429,12 @@ export class InstagramService {
 		);
 	}
 
-	/** Cuts the link; the customer stays, only without the Instagram contact. */
+	/** Cuts the link; the customer stays, the history stays with the chat. */
 	public async unlinkCustomer(
 		ownerUserId: string,
 		igsid: string,
 	): Promise<IInstagramChatView> {
 		const chat: IInstagramChat = await this._getChatOrFail(ownerUserId, igsid);
-
-		if (chat.customerId) {
-			await this._customersRepository.unlinkInstagramSource(
-				ownerUserId,
-				String(chat.customerId),
-			);
-		}
 
 		await this._chatsService.setCustomer(ownerUserId, igsid, null);
 
@@ -637,7 +609,7 @@ export class InstagramService {
 		return !!chat && !chat.name && !chat.username;
 	}
 
-	/** The name, username and picture, and the customer this person already is, if any. */
+	/** The name, username and picture of the person. */
 	private async _learnPerson(
 		ownerUserId: string,
 		connection: IInstagramConnection,
@@ -656,17 +628,6 @@ export class InstagramService {
 			} catch {
 				// the message is kept even when Instagram gives no profile
 			}
-		}
-
-		const customer: ICustomerRef | null =
-			await this._customersRepository.findByIgsid(ownerUserId, igsid);
-
-		if (customer) {
-			await this._chatsService.setCustomer(
-				ownerUserId,
-				igsid,
-				String(customer._id),
-			);
 		}
 	}
 

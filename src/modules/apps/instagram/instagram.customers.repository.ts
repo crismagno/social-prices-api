@@ -7,7 +7,6 @@ import { schemasName } from '../../../infra/database/mongo/schemas';
 import { createUsernameByName } from '../../../shared/utils/global/global';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { Customer } from '../../customers/interfaces/customer.schema';
-import AppsEnum from '../interfaces/apps.enum';
 import { IInstagramChat } from './instagram-chat.interface';
 import { buildCustomerFromInstagramChat } from './instagram.customer-factory';
 
@@ -31,26 +30,6 @@ export class InstagramCustomersRepository {
 	//#endregion
 
 	//#region Public Methods
-
-	public async findByIgsid(
-		ownerUserId: string,
-		igsid: string,
-	): Promise<ICustomerRef | null> {
-		return await this._customerModel
-			.findOne(
-				{
-					ownerUserId,
-					externalSources: {
-						$elemMatch: {
-							appId: AppsEnum.App.INSTAGRAM,
-							externalId: igsid,
-						},
-					},
-				},
-				{ name: 1 },
-			)
-			.lean<ICustomerRef>();
-	}
 
 	public async findNames(
 		ownerUserId: string,
@@ -95,48 +74,6 @@ export class InstagramCustomersRepository {
 		});
 
 		return { _id: created._id, name: created.name };
-	}
-
-	/**
-	 * Records the Instagram person on an existing customer and touches nothing else.
-	 * A customer holds one Instagram contact, so false means it already has one.
-	 */
-	public async linkInstagramSource(
-		ownerUserId: string,
-		customerId: string,
-		igsid: string,
-	): Promise<boolean> {
-		const result = await this._customerModel.updateOne(
-			{
-				_id: customerId,
-				ownerUserId,
-				'externalSources.appId': { $ne: AppsEnum.App.INSTAGRAM },
-			},
-			{
-				$push: {
-					externalSources: {
-						appId: AppsEnum.App.INSTAGRAM,
-						externalId: igsid,
-					},
-				},
-				$set: { updatedAt: new Date() },
-			},
-		);
-
-		return result.modifiedCount > 0;
-	}
-
-	public async unlinkInstagramSource(
-		ownerUserId: string,
-		customerId: string,
-	): Promise<void> {
-		await this._customerModel.updateOne(
-			{ _id: customerId, ownerUserId },
-			{
-				$pull: { externalSources: { appId: AppsEnum.App.INSTAGRAM } },
-				$set: { updatedAt: new Date() },
-			},
-		);
 	}
 
 	//#endregion

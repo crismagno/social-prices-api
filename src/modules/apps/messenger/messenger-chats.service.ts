@@ -1,48 +1,58 @@
-import mongoose, { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+} from '../../inbox/interfaces/inbox.types';
 import { IMessengerChat } from './messenger-chat.interface';
-import { MessengerChat } from './messenger-chat.schema';
 import MessengerEnum from './messenger.enum';
+import {
+	contactOf,
+	previewOf,
+	toMessengerChat,
+} from './messenger.inbox-mapper';
 import { IMetaProfile, INormalizedMessengerMessage } from './messenger.types';
 
-const PREVIEW_LENGTH: number = 120;
-const MAX_CHATS: number = 200;
+const keyOf = (psid: string): IConversationKey => ({
+	channel: InboxEnum.Channel.MESSENGER,
+	contactKey: psid,
+});
 
-/** The inbox: one row per person who wrote to the Page. */
+/**
+ * The Messenger inbox: one row per person who wrote to the Page. The
+ * conversations live in the central inbox, shared with the other channels; this
+ * keeps the shape the Messenger app has always had.
+ */
 @Injectable()
 export class MessengerChatsService {
-	constructor(
-		@InjectModel(schemasName.messengerChat)
-		private readonly _chatModel: Model<MessengerChat>,
-	) {}
+	constructor(private readonly _conversations: InboxConversationsService) {}
 
 	/** True when this is the first time that person writes. */
 	public async registerIncoming(
 		ownerUserId: string,
 		message: INormalizedMessengerMessage,
 	): Promise<boolean> {
-		const result = await this._chatModel.updateOne(
-			{ ownerUserId, psid: message.psid },
-			{
-				$set: {
-					pageId: message.pageId,
-					lastMessageAt: message.sentAt,
-					lastMessageText: this._preview(message.text),
-					lastAttachmentType: message.attachments[0]?.type ?? null,
-					lastMessageDirection: MessengerEnum.Direction.IN,
-					lastIncomingAt: message.sentAt,
-				},
-				$inc: { unreadCount: 1 },
-				$setOnInsert: { customerId: null, name: null, profilePic: null },
-			},
-			{ upsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.psid),
+			{ accountKey: message.pageId },
 		);
 
-		return result.upsertedCount > 0;
+		return await this._conversations.applyIncoming(
+			ownerUserId,
+			conversation._id,
+			{
+				accountKey: message.pageId,
+				preview: previewOf(
+					message.text,
+					message.attachments[0]?.type ?? null,
+					MessengerEnum.Direction.IN,
+					message.sentAt,
+				),
+			},
+		);
 	}
 
 	/**
@@ -54,44 +64,25 @@ export class MessengerChatsService {
 		ownerUserId: string,
 		message: INormalizedMessengerMessage,
 	): Promise<boolean> {
-		const preview = {
-			lastMessageAt: message.sentAt,
-			lastMessageText: this._preview(message.text),
-			lastAttachmentType: message.attachments[0]?.type ?? null,
-			lastMessageDirection: MessengerEnum.Direction.OUT,
-		};
-
-		const created = await this._chatModel.updateOne(
-			{ ownerUserId, psid: message.psid },
-			{
-				$setOnInsert: {
-					pageId: message.pageId,
-					customerId: null,
-					name: null,
-					profilePic: null,
-					unreadCount: 0,
-					lastIncomingAt: new Date(0),
-					...preview,
-				},
-			},
-			{ upsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.psid),
+			{ accountKey: message.pageId },
 		);
 
-		if (created.upsertedCount > 0) {
-			return true;
-		}
-
-		// An echo that arrives late must not overwrite a newer last message.
-		await this._chatModel.updateOne(
-			{
-				ownerUserId,
-				psid: message.psid,
-				lastMessageAt: { $lte: message.sentAt },
-			},
-			{ $set: preview },
+		await this._conversations.applyEcho(
+			ownerUserId,
+			conversation._id,
+			previewOf(
+				message.text,
+				message.attachments[0]?.type ?? null,
+				MessengerEnum.Direction.OUT,
+				message.sentAt,
+			),
 		);
 
-		return false;
+		// The message may already be stored, so "new" means it had no last message.
+		return !conversation.lastMessageAt;
 	}
 
 	public async registerOutgoing(
@@ -101,17 +92,18 @@ export class MessengerChatsService {
 		at: Date,
 		attachmentType: string | null = null,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, psid },
-			{
-				$set: {
-					lastMessageAt: at,
-					lastMessageText: this._preview(text),
-					lastAttachmentType: attachmentType,
-					lastMessageDirection: MessengerEnum.Direction.OUT,
-				},
-			},
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
 		);
+
+		if (conversation) {
+			await this._conversations.applyOutgoing(
+				ownerUserId,
+				conversation._id,
+				previewOf(text, attachmentType, MessengerEnum.Direction.OUT, at),
+			);
+		}
 	}
 
 	public async setProfile(
@@ -119,27 +111,37 @@ export class MessengerChatsService {
 		psid: string,
 		profile: IMetaProfile,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, psid },
-			{ $set: { name: profile.name, profilePic: profile.profilePic } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
 		);
+
+		if (conversation) {
+			await this._conversations.setContact(
+				ownerUserId,
+				conversation._id,
+				contactOf(profile),
+			);
+		}
 	}
 
 	/** Messages waiting to be read, over every conversation of the owner. */
 	public async countUnread(ownerUserId: string): Promise<number> {
-		const [result] = await this._chatModel.aggregate([
-			{ $match: { ownerUserId: new mongoose.Types.ObjectId(ownerUserId) } },
-			{ $group: { _id: null, total: { $sum: '$unreadCount' } } },
-		]);
-
-		return result?.total ?? 0;
+		return await this._conversations.countUnread(
+			ownerUserId,
+			InboxEnum.Channel.MESSENGER,
+		);
 	}
 
 	public async markRead(ownerUserId: string, psid: string): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, psid },
-			{ $set: { unreadCount: 0 } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
 		);
+
+		if (conversation) {
+			await this._conversations.markRead(ownerUserId, conversation._id);
+		}
 	}
 
 	public async setCustomer(
@@ -147,28 +149,45 @@ export class MessengerChatsService {
 		psid: string,
 		customerId: string | null,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, psid },
-			{ $set: { customerId } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
 		);
+
+		if (conversation) {
+			await this._conversations.setCustomer(
+				ownerUserId,
+				conversation._id,
+				customerId,
+			);
+		}
 	}
 
 	public async list(ownerUserId: string): Promise<IMessengerChat[]> {
-		return await this._chatModel
-			.find({ ownerUserId })
-			.sort({ lastMessageAt: -1 })
-			.limit(MAX_CHATS)
-			.lean<IMessengerChat[]>();
+		return (
+			await this._conversations.listByChannel(
+				ownerUserId,
+				InboxEnum.Channel.MESSENGER,
+			)
+		).map(toMessengerChat);
 	}
 
 	public async findByPsid(
 		ownerUserId: string,
 		psid: string,
 	): Promise<IMessengerChat | null> {
-		return await this._chatModel.findOne({ ownerUserId, psid });
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
+
+		return conversation ? toMessengerChat(conversation) : null;
 	}
 
-	private _preview(text: string | null): string | null {
-		return text === null ? null : text.slice(0, PREVIEW_LENGTH);
+	private async _find(
+		ownerUserId: string,
+		psid: string,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(psid));
 	}
 }

@@ -148,5 +148,6 @@ export const parseTelegramUpdate = (
 		text: typeof text === 'string' ? text : null,
 		...(media ? { media } : {}),
 		sentAt: new Date(message.date * 1000),
+		raw: update,
 	};
 };

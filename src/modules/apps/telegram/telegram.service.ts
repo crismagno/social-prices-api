@@ -23,7 +23,6 @@ import {
 	TelegramChatAlreadyLinkedException,
 	TelegramChatNotFoundException,
 	TelegramChatUnavailableException,
-	TelegramCustomerAlreadyLinkedException,
 	TelegramCustomerNotFoundException,
 	TelegramInvalidTokenException,
 	TelegramMediaNotFoundException,
@@ -70,7 +69,6 @@ const WEBHOOK_PATH: string = '/api/v1/apps/telegram/webhook';
 const INVALID_TOKEN_STATUSES: number[] = [401, 404];
 // Telegram says 403 when the person blocked the bot and 400 when the chat is gone.
 const UNDELIVERABLE_STATUSES: number[] = [400, 403];
-const DUPLICATE_KEY_CODE: number = 11000;
 
 @Injectable()
 export class TelegramService {
@@ -268,14 +266,7 @@ export class TelegramService {
 			return 'DUPLICATE';
 		}
 
-		const isFirstMessage: boolean = await this._chatsService.registerIncoming(
-			ownerUserId,
-			message,
-		);
-
-		if (isFirstMessage) {
-			await this._linkReturningCustomer(ownerUserId, message);
-		}
+		await this._chatsService.registerIncoming(ownerUserId, message);
 
 		await this._connectionsService.touchLastUpdate(connection._id, new Date());
 
@@ -486,26 +477,6 @@ export class TelegramService {
 			throw new TelegramCustomerNotFoundException();
 		}
 
-		let linked: boolean;
-
-		try {
-			linked = await this._customersRepository.linkTelegramSource(
-				ownerUserId,
-				customerId,
-				chat.telegramUserId,
-			);
-		} catch (error) {
-			if ((error as { code?: number })?.code === DUPLICATE_KEY_CODE) {
-				throw new TelegramCustomerAlreadyLinkedException();
-			}
-
-			throw error;
-		}
-
-		if (!linked) {
-			throw new TelegramCustomerAlreadyLinkedException();
-		}
-
 		await this._chatsService.setCustomer(ownerUserId, chatId, customerId);
 
 		return this._toChatView(
@@ -514,11 +485,7 @@ export class TelegramService {
 		);
 	}
 
-	/**
-	 * Makes a customer out of the person. If that Telegram person already is a
-	 * customer (after an unlink, or from before) that one is used, so there is never
-	 * a second customer for the same person and no plan limit is spent.
-	 */
+	/** Makes a customer out of the person and ties the chat to it. */
 	public async createCustomerFromChat(
 		ownerUserId: string,
 		chatId: number,
@@ -529,23 +496,13 @@ export class TelegramService {
 			throw new TelegramChatAlreadyLinkedException();
 		}
 
-		let customer: ICustomerRef | null =
-			await this._customersRepository.findByTelegramUserId(
-				ownerUserId,
-				chat.telegramUserId,
-			);
+		await this._featureLimitsService.assertCanCreate(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.CUSTOMERS,
+		);
 
-		if (!customer) {
-			await this._featureLimitsService.assertCanCreate(
-				ownerUserId,
-				FeatureLimitsEnum.Feature.CUSTOMERS,
-			);
-
-			customer = await this._customersRepository.createFromChat(
-				ownerUserId,
-				chat,
-			);
-		}
+		const customer: ICustomerRef =
+			await this._customersRepository.createFromChat(ownerUserId, chat);
 
 		await this._chatsService.setCustomer(
 			ownerUserId,
@@ -559,7 +516,7 @@ export class TelegramService {
 		);
 	}
 
-	/** Cuts the link; the customer stays, only without the Telegram contact. */
+	/** Cuts the link; the customer stays, the history stays with the chat. */
 	public async unlinkCustomer(
 		ownerUserId: string,
 		chatId: number,
@@ -567,11 +524,6 @@ export class TelegramService {
 		const chat: ITelegramChat = await this._getChatOrFail(ownerUserId, chatId);
 
 		if (chat.customerId) {
-			await this._customersRepository.unlinkTelegramSource(
-				ownerUserId,
-				String(chat.customerId),
-			);
-
 			await this._chatsService.setCustomer(ownerUserId, chatId, null);
 		}
 
@@ -756,26 +708,6 @@ export class TelegramService {
 		}
 
 		return chat;
-	}
-
-	/** A person who wrote before and was linked to a customer is recognised on their first message here. */
-	private async _linkReturningCustomer(
-		ownerUserId: string,
-		message: INormalizedTelegramMessage,
-	): Promise<void> {
-		const customer: ICustomerRef | null =
-			await this._customersRepository.findByTelegramUserId(
-				ownerUserId,
-				message.fromUserId,
-			);
-
-		if (customer) {
-			await this._chatsService.setCustomer(
-				ownerUserId,
-				message.chatId,
-				String(customer._id),
-			);
-		}
 	}
 
 	private _toChatView(

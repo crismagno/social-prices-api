@@ -1,55 +1,55 @@
-import mongoose, { Model } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-import { schemasName } from '../../../infra/database/mongo/schemas';
+import { InboxConversationsService } from '../../inbox/inbox-conversations.service';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
+import {
+	IConversationKey,
+	IInboxConversation,
+} from '../../inbox/interfaces/inbox.types';
 import { ITelegramChat } from './telegram-chat.interface';
-import { TelegramChat } from './telegram-chat.schema';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import TelegramEnum from './telegram.enum';
+import { contactOf, previewOf, toTelegramChat } from './telegram.inbox-mapper';
 import { INormalizedTelegramMessage } from './telegram.types';
 
-const PREVIEW_LENGTH: number = 200;
-const MAX_CHATS: number = 200;
+const keyOf = (chatId: number): IConversationKey => ({
+	channel: InboxEnum.Channel.TELEGRAM,
+	contactKey: String(chatId),
+});
 
 /**
- * The inbox: one entry per person, kept up to date as messages come and go so
- * listing it never has to read the messages themselves.
+ * The Telegram inbox: one entry per person. The conversations live in the
+ * central inbox, shared with the other channels; this keeps the shape the
+ * Telegram app has always had.
  */
 @Injectable()
 export class TelegramChatsService {
-	constructor(
-		@InjectModel(schemasName.telegramChat)
-		private readonly _chatModel: Model<TelegramChat>,
-	) {}
+	constructor(private readonly _conversations: InboxConversationsService) {}
 
 	/** True when this is the first time that person writes. */
 	public async registerIncoming(
 		ownerUserId: string,
 		message: INormalizedTelegramMessage,
 	): Promise<boolean> {
-		const result = await this._chatModel.updateOne(
-			{ ownerUserId, chatId: message.chatId },
-			{
-				$set: {
-					telegramUserId: message.fromUserId,
-					firstName: message.fromFirstName,
-					lastName: message.fromLastName,
-					username: message.fromUsername,
-					languageCode: message.fromLanguageCode,
-					lastMessageAt: message.sentAt,
-					lastMessageText: this._preview(message.text, message.contentType),
-					lastMessageDirection: TelegramEnum.Direction.IN,
-					lastContentType: message.contentType,
-				},
-				$inc: { unreadCount: 1 },
-				$setOnInsert: { customerId: null },
-			},
-			{ upsert: true },
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			keyOf(message.chatId),
+			{ contact: contactOf(message) },
 		);
 
-		return result.upsertedCount > 0;
+		return await this._conversations.applyIncoming(
+			ownerUserId,
+			conversation._id,
+			{
+				preview: previewOf(
+					message.text,
+					message.contentType,
+					TelegramEnum.Direction.IN,
+					message.sentAt,
+				),
+				contact: contactOf(message),
+			},
+		);
 	}
 
 	/** After a message was deleted: the inbox shows what is now the newest one. */
@@ -58,17 +58,23 @@ export class TelegramChatsService {
 		chatId: number,
 		latest: ITelegramMessageRecord,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, chatId },
-			{
-				$set: {
-					lastMessageAt: latest.sentAt,
-					lastMessageText: this._preview(latest.text, latest.contentType),
-					lastMessageDirection: latest.direction,
-					lastContentType: latest.contentType,
-				},
-			},
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
 		);
+
+		if (conversation) {
+			await this._conversations.setPreview(
+				ownerUserId,
+				conversation._id,
+				previewOf(
+					latest.text,
+					latest.contentType,
+					latest.direction,
+					latest.sentAt,
+				),
+			);
+		}
 	}
 
 	public async registerOutgoing(
@@ -78,34 +84,37 @@ export class TelegramChatsService {
 		at: Date,
 		contentType: TelegramEnum.ContentType = TelegramEnum.ContentType.TEXT,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, chatId },
-			{
-				$set: {
-					lastMessageAt: at,
-					lastMessageText: this._preview(text, contentType),
-					lastMessageDirection: TelegramEnum.Direction.OUT,
-					lastContentType: contentType,
-				},
-			},
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
 		);
+
+		if (conversation) {
+			await this._conversations.applyOutgoing(
+				ownerUserId,
+				conversation._id,
+				previewOf(text, contentType, TelegramEnum.Direction.OUT, at),
+			);
+		}
 	}
 
 	/** Messages waiting to be read, over every conversation of the owner. */
 	public async countUnread(ownerUserId: string): Promise<number> {
-		const [result] = await this._chatModel.aggregate([
-			{ $match: { ownerUserId: new mongoose.Types.ObjectId(ownerUserId) } },
-			{ $group: { _id: null, total: { $sum: '$unreadCount' } } },
-		]);
-
-		return result?.total ?? 0;
+		return await this._conversations.countUnread(
+			ownerUserId,
+			InboxEnum.Channel.TELEGRAM,
+		);
 	}
 
 	public async markRead(ownerUserId: string, chatId: number): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, chatId },
-			{ $set: { unreadCount: 0 } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
 		);
+
+		if (conversation) {
+			await this._conversations.markRead(ownerUserId, conversation._id);
+		}
 	}
 
 	public async setCustomer(
@@ -113,31 +122,45 @@ export class TelegramChatsService {
 		chatId: number,
 		customerId: string | null,
 	): Promise<void> {
-		await this._chatModel.updateOne(
-			{ ownerUserId, chatId },
-			{ $set: { customerId } },
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
 		);
+
+		if (conversation) {
+			await this._conversations.setCustomer(
+				ownerUserId,
+				conversation._id,
+				customerId,
+			);
+		}
 	}
 
 	public async list(ownerUserId: string): Promise<ITelegramChat[]> {
-		return await this._chatModel
-			.find({ ownerUserId })
-			.sort({ lastMessageAt: -1 })
-			.limit(MAX_CHATS)
-			.lean<ITelegramChat[]>();
+		return (
+			await this._conversations.listByChannel(
+				ownerUserId,
+				InboxEnum.Channel.TELEGRAM,
+			)
+		).map(toTelegramChat);
 	}
 
 	public async findByChatId(
 		ownerUserId: string,
 		chatId: number,
 	): Promise<ITelegramChat | null> {
-		return await this._chatModel.findOne({ ownerUserId, chatId });
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		return conversation ? toTelegramChat(conversation) : null;
 	}
 
-	private _preview(
-		text: string | null,
-		contentType: TelegramEnum.ContentType,
-	): string {
-		return (text ?? `[${contentType}]`).slice(0, PREVIEW_LENGTH);
+	private async _find(
+		ownerUserId: string,
+		chatId: number,
+	): Promise<IInboxConversation | null> {
+		return await this._conversations.findByKey(ownerUserId, keyOf(chatId));
 	}
 }

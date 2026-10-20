@@ -44,7 +44,7 @@ import {
 } from './messenger.types';
 
 // Facebook only allows answering a person for 24 hours after their last message.
-const REPLY_WINDOW_MS: number = 24 * 60 * 60 * 1000;
+export const REPLY_WINDOW_MS: number = 24 * 60 * 60 * 1000;
 
 // Meta error codes that say why a message could not be delivered.
 const META_CODE_OUTSIDE_WINDOW: number = 10;
@@ -378,16 +378,6 @@ export class MessengerService {
 			throw new MessengerCustomerNotFoundException();
 		}
 
-		if (
-			!(await this._customersRepository.linkMessengerSource(
-				ownerUserId,
-				customerId,
-				psid,
-			))
-		) {
-			throw new MessengerCustomerAlreadyLinkedException();
-		}
-
 		await this._chatsService.setCustomer(ownerUserId, psid, customerId);
 
 		return this._toChatView(
@@ -396,11 +386,7 @@ export class MessengerService {
 		);
 	}
 
-	/**
-	 * Makes a customer out of the person. If that person already is a customer
-	 * (after an unlink, or from before) that one is used, so there is never a
-	 * second customer for the same person and no plan limit is spent.
-	 */
+	/** Makes a customer out of the person and ties the chat to it. */
 	public async createCustomerFromChat(
 		ownerUserId: string,
 		psid: string,
@@ -411,20 +397,13 @@ export class MessengerService {
 			throw new MessengerCustomerAlreadyLinkedException();
 		}
 
-		let customer: ICustomerRef | null =
-			await this._customersRepository.findByPsid(ownerUserId, psid);
+		await this._featureLimitsService.assertCanCreate(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.CUSTOMERS,
+		);
 
-		if (!customer) {
-			await this._featureLimitsService.assertCanCreate(
-				ownerUserId,
-				FeatureLimitsEnum.Feature.CUSTOMERS,
-			);
-
-			customer = await this._customersRepository.createFromChat(
-				ownerUserId,
-				chat,
-			);
-		}
+		const customer: ICustomerRef =
+			await this._customersRepository.createFromChat(ownerUserId, chat);
 
 		await this._chatsService.setCustomer(
 			ownerUserId,
@@ -438,19 +417,12 @@ export class MessengerService {
 		);
 	}
 
-	/** Cuts the link; the customer stays, only without the Messenger contact. */
+	/** Cuts the link; the customer stays, the history stays with the chat. */
 	public async unlinkCustomer(
 		ownerUserId: string,
 		psid: string,
 	): Promise<IMessengerChatView> {
 		const chat: IMessengerChat = await this._getChatOrFail(ownerUserId, psid);
-
-		if (chat.customerId) {
-			await this._customersRepository.unlinkMessengerSource(
-				ownerUserId,
-				String(chat.customerId),
-			);
-		}
 
 		await this._chatsService.setCustomer(ownerUserId, psid, null);
 
@@ -603,7 +575,7 @@ export class MessengerService {
 		return !!chat && !chat.name;
 	}
 
-	/** The name and picture, and the customer this person already is, if any. */
+	/** The name and picture of the person. */
 	private async _learnPerson(
 		ownerUserId: string,
 		connection: IMessengerConnection,
@@ -636,17 +608,6 @@ export class MessengerService {
 
 		if (profile.name || profile.profilePic) {
 			await this._chatsService.setProfile(ownerUserId, psid, profile);
-		}
-
-		const customer: ICustomerRef | null =
-			await this._customersRepository.findByPsid(ownerUserId, psid);
-
-		if (customer) {
-			await this._chatsService.setCustomer(
-				ownerUserId,
-				psid,
-				String(customer._id),
-			);
 		}
 	}
 

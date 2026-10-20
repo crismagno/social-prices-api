@@ -38,6 +38,8 @@ export interface INormalizedMessengerMessage {
 	text: string | null;
 	attachments: IMessengerAttachment[];
 	sentAt: Date;
+	/** The event exactly as Facebook delivered it. */
+	raw?: unknown;
 }
 
 export interface IMessengerUploadFile {

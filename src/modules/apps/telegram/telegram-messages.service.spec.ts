@@ -1,7 +1,13 @@
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
 import TelegramEnum from './telegram.enum';
 import { TelegramMessagesService } from './telegram-messages.service';
 
 const OWNER = '507f1f77bcf86cd799439011';
+const CONV = {
+	_id: 'c1',
+	channel: InboxEnum.Channel.TELEGRAM,
+	contactKey: '555',
+};
 
 const incoming: any = {
 	updateId: 100,
@@ -15,217 +21,173 @@ const incoming: any = {
 	contentType: TelegramEnum.ContentType.TEXT,
 	text: 'oi',
 	sentAt: new Date('2030-01-01'),
+	raw: { update_id: 100 },
 };
 
-const build = () => {
-	const chain: any = {
-		sort: jest.fn().mockReturnThis(),
-		limit: jest.fn().mockReturnThis(),
-		lean: jest.fn().mockResolvedValue([{ _id: 'm1' }]),
+const stored = (over: any = {}): any => ({
+	_id: 'm1',
+	direction: 'OUT',
+	channelMessageId: '42',
+	kind: 'TEXT',
+	text: 'claro!',
+	attachments: [],
+	sentAt: new Date('2030-01-02'),
+	sentByEmployeeId: 'e1',
+	channelData: { contentType: 'TEXT' },
+	...over,
+});
+
+const build = (found: any = CONV) => {
+	const conversations: any = {
+		ensure: jest.fn().mockResolvedValue({ conversation: CONV, created: false }),
+		findByKey: jest.fn().mockResolvedValue(found),
 	};
-	const model: any = {
-		create: jest.fn().mockResolvedValue({ _id: 'm1' }),
-		find: jest.fn().mockReturnValue(chain),
+	const messages: any = {
+		saveIncoming: jest.fn().mockResolvedValue(true),
+		saveOutgoing: jest.fn().mockResolvedValue(stored()),
+		findOwned: jest.fn().mockResolvedValue(stored()),
+		findLatest: jest.fn().mockResolvedValue(stored()),
+		deleteOwned: jest.fn().mockResolvedValue(undefined),
+		listByConversation: jest.fn().mockResolvedValue([stored()]),
 	};
 
-	return { model, chain, service: new TelegramMessagesService(model) };
+	return {
+		conversations,
+		messages,
+		service: new TelegramMessagesService(conversations, messages),
+	};
 };
 
-describe('TelegramMessagesService', () => {
+describe('TelegramMessagesService (over the central inbox)', () => {
 	describe('saveIncoming', () => {
-		it('stores the customer message for the owner, as IN, and says it was saved', async () => {
-			const { service, model } = build();
+		it('makes sure the conversation exists and stores the message in the common shape, raw event included', async () => {
+			const { service, conversations, messages } = build();
 
 			await expect(service.saveIncoming(OWNER, incoming)).resolves.toBe(true);
 
-			expect(model.create).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				direction: TelegramEnum.Direction.IN,
-				...incoming,
-			});
-		});
-
-		it('treats a repeated delivery as already saved, not as an error', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue({ code: 11000 });
-
-			await expect(service.saveIncoming(OWNER, incoming)).resolves.toBe(false);
-		});
-
-		it('lets any other failure through, so Telegram retries', async () => {
-			const { service, model } = build();
-			model.create.mockRejectedValue(new Error('db down'));
-
-			await expect(service.saveIncoming(OWNER, incoming)).rejects.toThrow(
-				'db down',
+			expect(conversations.ensure).toHaveBeenCalledWith(
+				OWNER,
+				{ channel: 'TELEGRAM', contactKey: '555' },
+				{ contact: expect.objectContaining({ username: 'ana_s' }) },
 			);
-		});
-	});
-
-	describe('saveOutgoing', () => {
-		it('stores what was sent from this system, as OUT, with who sent it', async () => {
-			const { service, model } = build();
-			const sentAt = new Date('2030-01-02');
-
-			await service.saveOutgoing(OWNER, {
-				chatId: 555,
-				messageId: 9,
-				text: 'claro!',
-				sentAt,
-				sentByEmployeeId: 'e1',
-			});
-
-			expect(model.create).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				direction: TelegramEnum.Direction.OUT,
-				chatId: 555,
-				messageId: 9,
-				contentType: TelegramEnum.ContentType.TEXT,
-				text: 'claro!',
-				sentAt,
-				sentByEmployeeId: 'e1',
-			});
-		});
-	});
-
-	describe('saveOutgoing with a file', () => {
-		it('stores the kind of message and the file Telegram kept', async () => {
-			const { service, model } = build();
-			const media: any = { fileId: 'FID', fileName: 'a.pdf' };
-
-			await service.saveOutgoing(OWNER, {
-				chatId: 555,
-				messageId: 10,
-				text: 'segue',
-				contentType: TelegramEnum.ContentType.DOCUMENT,
-				media,
-				sentAt: new Date('2030-01-02'),
-				sentByEmployeeId: null,
-			});
-
-			expect(model.create).toHaveBeenCalledWith(
+			expect(messages.saveIncoming).toHaveBeenCalledWith(
+				OWNER,
+				CONV,
 				expect.objectContaining({
-					contentType: TelegramEnum.ContentType.DOCUMENT,
-					text: 'segue',
-					media,
+					channelMessageId: '7',
+					kind: 'TEXT',
+					text: 'oi',
+					raw: { update_id: 100 },
 				}),
 			);
 		});
-	});
 
-	describe('findOwned', () => {
-		it("finds one message of that owner's chat", async () => {
-			const { service, model } = build();
-			model.findOne = jest.fn().mockReturnValue({
-				lean: jest.fn().mockResolvedValue({ _id: 'm1' }),
-			});
+		it('says false for a message it already had', async () => {
+			const { service, messages } = build();
+			messages.saveIncoming.mockResolvedValue(false);
 
-			await expect(service.findOwned(OWNER, 555, 'm1')).resolves.toEqual({
-				_id: 'm1',
-			});
-			expect(model.findOne).toHaveBeenCalledWith({
-				_id: 'm1',
-				ownerUserId: OWNER,
-				chatId: 555,
-			});
+			await expect(service.saveIncoming(OWNER, incoming)).resolves.toBe(false);
 		});
 	});
 
-	describe('deleteOwned', () => {
-		it("removes that one message, only if it is the owner's", async () => {
-			const { service, model } = build();
-			model.deleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
+	it('saveOutgoing stores a reply and gives it back in the Telegram shape', async () => {
+		const { service, messages } = build();
+
+		const result = await service.saveOutgoing(OWNER, {
+			chatId: 555,
+			messageId: 42,
+			text: 'claro!',
+			sentAt: new Date('2030-01-02'),
+			sentByEmployeeId: 'e1',
+		});
+
+		expect(messages.saveOutgoing).toHaveBeenCalledWith(
+			OWNER,
+			CONV,
+			expect.objectContaining({
+				channelMessageId: '42',
+				text: 'claro!',
+				sentByEmployeeId: 'e1',
+			}),
+		);
+		expect(result).toMatchObject({
+			_id: 'm1',
+			chatId: 555,
+			messageId: 42,
+			contentType: 'TEXT',
+			text: 'claro!',
+			sentByEmployeeId: 'e1',
+		});
+	});
+
+	describe('one message', () => {
+		it('findOwned, findLatest and listByChat answer in the Telegram shape', async () => {
+			const { service, messages } = build();
+
+			await expect(service.findOwned(OWNER, 555, 'm1')).resolves.toMatchObject({
+				messageId: 42,
+				chatId: 555,
+			});
+			await expect(service.findLatest(OWNER, 555)).resolves.toMatchObject({
+				messageId: 42,
+			});
+			await expect(
+				service.listByChat(OWNER, 555, { limit: 10, before: 'x' }),
+			).resolves.toHaveLength(1);
+
+			expect(messages.findOwned).toHaveBeenCalledWith(OWNER, 'c1', 'm1');
+			expect(messages.listByConversation).toHaveBeenCalledWith(OWNER, 'c1', {
+				limit: 10,
+				before: 'x',
+			});
+		});
+
+		it('deleteOwned removes it from that conversation', async () => {
+			const { service, messages } = build();
 
 			await service.deleteOwned(OWNER, 555, 'm1');
 
-			expect(model.deleteOne).toHaveBeenCalledWith({
-				_id: 'm1',
-				ownerUserId: OWNER,
-				chatId: 555,
-			});
+			expect(messages.deleteOwned).toHaveBeenCalledWith(OWNER, 'c1', 'm1');
 		});
-	});
 
-	describe('findLatest', () => {
-		it('returns the newest message left in a conversation', async () => {
-			const { service, model, chain } = build();
-			chain.lean.mockResolvedValue({ _id: 'm9' });
-			model.findOne = jest.fn().mockReturnValue(chain);
-
-			await expect(service.findLatest(OWNER, 555)).resolves.toEqual({
-				_id: 'm9',
-			});
-			expect(model.findOne).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				chatId: 555,
-			});
-			expect(chain.sort).toHaveBeenCalledWith({ sentAt: -1, _id: -1 });
-		});
-	});
-
-	describe('findWithMedia', () => {
-		it("finds one message of that owner's chat, and only when it has a file", async () => {
-			const { service, model } = build();
-			model.findOne = jest.fn().mockReturnValue({
-				lean: jest.fn().mockResolvedValue({ _id: 'm1' }),
-			});
-
-			await expect(service.findWithMedia(OWNER, 555, 'm1')).resolves.toEqual({
-				_id: 'm1',
-			});
-			expect(model.findOne).toHaveBeenCalledWith({
-				_id: 'm1',
-				ownerUserId: OWNER,
-				chatId: 555,
-				'media.fileId': { $exists: true },
-			});
-		});
-	});
-
-	describe('listByChat', () => {
-		it('returns one conversation, newest first, for that owner only', async () => {
-			const { service, model, chain } = build();
+		it('findWithMedia only gives a message that has a Telegram file', async () => {
+			const withFile = build();
+			withFile.messages.findOwned.mockResolvedValue(
+				stored({
+					kind: 'FILE',
+					attachments: [
+						{
+							kind: 'FILE',
+							mimeType: 'application/pdf',
+							fileName: 'a.pdf',
+							size: 1,
+							width: null,
+							height: null,
+							duration: null,
+							source: { type: 'TELEGRAM_FILE', fileId: 'FID' },
+						},
+					],
+				}),
+			);
+			await expect(
+				withFile.service.findWithMedia(OWNER, 555, 'm1'),
+			).resolves.toMatchObject({ media: { fileId: 'FID' } });
 
 			await expect(
-				service.listByChat(OWNER, 555, { limit: 20 }),
-			).resolves.toEqual([{ _id: 'm1' }]);
-
-			expect(model.find).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				chatId: 555,
-			});
-			expect(chain.sort).toHaveBeenCalledWith({ _id: -1 });
-			expect(chain.limit).toHaveBeenCalledWith(20);
+				build().service.findWithMedia(OWNER, 555, 'm1'),
+			).resolves.toBeNull();
 		});
+	});
 
-		it('continues from a cursor: only messages older than it', async () => {
-			const { service, model } = build();
+	it('answers empty for a chat that does not exist', async () => {
+		const { service, messages } = build(null);
 
-			await service.listByChat(OWNER, 555, {
-				before: '507f1f77bcf86cd799439099',
-			});
+		await expect(service.findOwned(OWNER, 9, 'm1')).resolves.toBeNull();
+		await expect(service.findLatest(OWNER, 9)).resolves.toBeNull();
+		await expect(service.listByChat(OWNER, 9)).resolves.toEqual([]);
+		await service.deleteOwned(OWNER, 9, 'm1');
 
-			expect(model.find).toHaveBeenCalledWith({
-				ownerUserId: OWNER,
-				chatId: 555,
-				_id: { $lt: '507f1f77bcf86cd799439099' },
-			});
-		});
-
-		it.each([
-			[undefined, 50],
-			[0, 1],
-			[-5, 1],
-			[7, 7],
-			[500, 100],
-			[Number.NaN, 50],
-			[2.9, 2],
-		])('clamps a limit of %p to %p', async (asked, used) => {
-			const { service, chain } = build();
-
-			await service.listByChat(OWNER, 555, { limit: asked as any });
-
-			expect(chain.limit).toHaveBeenCalledWith(used);
-		});
+		expect(messages.findOwned).not.toHaveBeenCalled();
+		expect(messages.deleteOwned).not.toHaveBeenCalled();
 	});
 });

@@ -7,7 +7,6 @@ import { schemasName } from '../../../infra/database/mongo/schemas';
 import { createUsernameByName } from '../../../shared/utils/global/global';
 import { ICustomer } from '../../customers/interfaces/customer.interface';
 import { Customer } from '../../customers/interfaces/customer.schema';
-import AppsEnum from '../interfaces/apps.enum';
 import { IMessengerChat } from './messenger-chat.interface';
 import { buildCustomerFromMessengerChat } from './messenger.customer-factory';
 
@@ -31,26 +30,6 @@ export class MessengerCustomersRepository {
 	//#endregion
 
 	//#region Public Methods
-
-	public async findByPsid(
-		ownerUserId: string,
-		psid: string,
-	): Promise<ICustomerRef | null> {
-		return await this._customerModel
-			.findOne(
-				{
-					ownerUserId,
-					externalSources: {
-						$elemMatch: {
-							appId: AppsEnum.App.FACEBOOK,
-							externalId: psid,
-						},
-					},
-				},
-				{ name: 1 },
-			)
-			.lean<ICustomerRef>();
-	}
 
 	public async findNames(
 		ownerUserId: string,
@@ -95,48 +74,6 @@ export class MessengerCustomersRepository {
 		});
 
 		return { _id: created._id, name: created.name };
-	}
-
-	/**
-	 * Records the Messenger person on an existing customer and touches nothing else.
-	 * A customer holds one Messenger contact, so false means it already has one.
-	 */
-	public async linkMessengerSource(
-		ownerUserId: string,
-		customerId: string,
-		psid: string,
-	): Promise<boolean> {
-		const result = await this._customerModel.updateOne(
-			{
-				_id: customerId,
-				ownerUserId,
-				'externalSources.appId': { $ne: AppsEnum.App.FACEBOOK },
-			},
-			{
-				$push: {
-					externalSources: {
-						appId: AppsEnum.App.FACEBOOK,
-						externalId: psid,
-					},
-				},
-				$set: { updatedAt: new Date() },
-			},
-		);
-
-		return result.modifiedCount > 0;
-	}
-
-	public async unlinkMessengerSource(
-		ownerUserId: string,
-		customerId: string,
-	): Promise<void> {
-		await this._customerModel.updateOne(
-			{ _id: customerId, ownerUserId },
-			{
-				$pull: { externalSources: { appId: AppsEnum.App.FACEBOOK } },
-				$set: { updatedAt: new Date() },
-			},
-		);
 	}
 
 	//#endregion

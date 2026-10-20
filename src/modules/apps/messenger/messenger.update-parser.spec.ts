@@ -29,6 +29,7 @@ describe('parseMessengerWebhook', () => {
 				text: 'oi, tudo bem?',
 				attachments: [],
 				sentAt: new Date(1_760_000_000_000),
+				raw: event({ mid: 'm1', text: 'oi, tudo bem?' }),
 			},
 		]);
 	});
@@ -126,6 +127,7 @@ describe('parseMessengerWebhook', () => {
 					text: 'enviada pelo Business Suite',
 					attachments: [],
 					sentAt: new Date(1_760_000_000_000),
+					raw: echo({ mid: 'e1', text: 'enviada pelo Business Suite' }),
 				},
 			]);
 		});

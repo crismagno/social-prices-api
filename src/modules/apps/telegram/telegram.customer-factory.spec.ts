@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 
 import { CustomerSchema } from '../../customers/interfaces/customer.schema';
-import AppsEnum from '../interfaces/apps.enum';
 import { buildCustomerFromTelegramChat } from './telegram.customer-factory';
 
 // The real Customer schema, without a database: validateSync is what caught a
@@ -51,7 +50,7 @@ describe('buildCustomerFromTelegramChat', () => {
 		);
 	});
 
-	it('links the customer to the Telegram person and keeps the @username in about', () => {
+	it('keeps the @username in about; the tie to the person lives on the chat', () => {
 		const built = buildCustomerFromTelegramChat(OWNER, chat(), 'ana-souza');
 
 		expect(built).toMatchObject({
@@ -59,7 +58,7 @@ describe('buildCustomerFromTelegramChat', () => {
 			uniqName: 'ana-souza',
 			email: null,
 			about: '@ana_s',
-			externalSources: [{ appId: AppsEnum.App.TELEGRAM, externalId: '777' }],
+			externalSources: [],
 		});
 	});
 });

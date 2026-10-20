@@ -1,5 +1,4 @@
 import { ICustomer } from '../../customers/interfaces/customer.interface';
-import AppsEnum from '../interfaces/apps.enum';
 import { IMessengerChat } from './messenger-chat.interface';
 
 type ChatPerson = Pick<IMessengerChat, 'psid' | 'name'>;
@@ -32,7 +31,7 @@ export const buildCustomerFromMessengerChat = (
 		userId: null,
 		uniqName,
 		uploadFilename: null,
-		externalSources: [{ appId: AppsEnum.App.FACEBOOK, externalId: chat.psid }],
+		externalSources: [],
 		createdAt: now,
 		updatedAt: now,
 	};
