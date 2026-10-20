@@ -2,15 +2,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { InboxConversationSchema } from '../../../modules/inbox/inbox-conversation.schema';
 import { InboxMessageSchema } from '../../../modules/inbox/inbox-message.schema';
-import { InstagramChatSchema } from '../../../modules/apps/instagram/instagram-chat.schema';
 import { InstagramConnectionSchema } from '../../../modules/apps/instagram/instagram-connection.schema';
-import { InstagramMessageSchema } from '../../../modules/apps/instagram/instagram-message.schema';
-import { MessengerChatSchema } from '../../../modules/apps/messenger/messenger-chat.schema';
 import { MessengerConnectionSchema } from '../../../modules/apps/messenger/messenger-connection.schema';
-import { MessengerMessageSchema } from '../../../modules/apps/messenger/messenger-message.schema';
-import { TelegramChatSchema } from '../../../modules/apps/telegram/telegram-chat.schema';
 import { TelegramConnectionSchema } from '../../../modules/apps/telegram/telegram-connection.schema';
-import { TelegramMessageSchema } from '../../../modules/apps/telegram/telegram-message.schema';
 import { GoogleContactsConnectionSchema } from '../../../modules/apps/google-contacts/google-contacts-connection.schema';
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
 import { CodeSchema } from '../../../modules/codes/interfaces/code.schema';
@@ -54,14 +48,8 @@ export const schemasName = {
 	inboxConversation: 'InboxConversation',
 	inboxMessage: 'InboxMessage',
 	instagramConnection: 'InstagramConnection',
-	instagramMessage: 'InstagramMessage',
-	instagramChat: 'InstagramChat',
 	messengerConnection: 'MessengerConnection',
-	messengerMessage: 'MessengerMessage',
-	messengerChat: 'MessengerChat',
 	telegramConnection: 'TelegramConnection',
-	telegramMessage: 'TelegramMessage',
-	telegramChat: 'TelegramChat',
 };
 
 export const schemasModule = {
@@ -141,31 +129,13 @@ export const schemasModule = {
 			schema: InstagramConnectionSchema,
 		},
 	]),
-	instagramMessage: MongooseModule.forFeature([
-		{ name: schemasName.instagramMessage, schema: InstagramMessageSchema },
-	]),
-	instagramChat: MongooseModule.forFeature([
-		{ name: schemasName.instagramChat, schema: InstagramChatSchema },
-	]),
 	messengerConnection: MongooseModule.forFeature([
 		{
 			name: schemasName.messengerConnection,
 			schema: MessengerConnectionSchema,
 		},
 	]),
-	messengerMessage: MongooseModule.forFeature([
-		{ name: schemasName.messengerMessage, schema: MessengerMessageSchema },
-	]),
-	messengerChat: MongooseModule.forFeature([
-		{ name: schemasName.messengerChat, schema: MessengerChatSchema },
-	]),
 	telegramConnection: MongooseModule.forFeature([
 		{ name: schemasName.telegramConnection, schema: TelegramConnectionSchema },
-	]),
-	telegramMessage: MongooseModule.forFeature([
-		{ name: schemasName.telegramMessage, schema: TelegramMessageSchema },
-	]),
-	telegramChat: MongooseModule.forFeature([
-		{ name: schemasName.telegramChat, schema: TelegramChatSchema },
 	]),
 };

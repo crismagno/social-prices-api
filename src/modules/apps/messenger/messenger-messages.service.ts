@@ -99,6 +99,44 @@ export class MessengerMessagesService {
 		);
 	}
 
+	/** Removes it from the inbox; true when it was there. */
+	public async deleteOwned(
+		ownerUserId: string,
+		psid: string,
+		id: string,
+	): Promise<boolean> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
+
+		return conversation
+			? await this._messages.softDeleteOwned(ownerUserId, conversation._id, id)
+			: false;
+	}
+
+	/** The newest message a conversation still has, if any. */
+	public async findLatest(
+		ownerUserId: string,
+		psid: string,
+	): Promise<IMessengerMessageRecord | null> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
+
+		if (!conversation) {
+			return null;
+		}
+
+		const message: IInboxMessage | null = await this._messages.findLatest(
+			ownerUserId,
+			conversation._id,
+		);
+
+		return message ? toMessengerMessage(message, psid) : null;
+	}
+
 	/** One conversation, newest first. `before` is the id of the oldest one already loaded. */
 	public async listByChat(
 		ownerUserId: string,

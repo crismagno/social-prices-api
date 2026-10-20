@@ -11,6 +11,8 @@ export interface IInboxChannelCapabilities {
 	text: boolean;
 	media: boolean;
 	voice: boolean;
+	/** Whether a message can be removed from the inbox through this channel. */
+	deleteMessage: boolean;
 	/** How long after the person's last message an answer is still allowed; null when no limit. */
 	answerWindowMs: number | null;
 }
@@ -36,6 +38,17 @@ export interface IInboxChannelAdapter {
 		conversation: IInboxConversation,
 		text: string,
 	): Promise<IInboxMessage>;
+
+	/**
+	 * Removes a message. Each channel decides what that means: Telegram deletes it
+	 * for the customer too, the others only take it out of the inbox. Present when
+	 * `capabilities.deleteMessage` is true.
+	 */
+	deleteMessage?(
+		ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void>;
 
 	/** The bytes of one file of a message, fetched from the channel when asked for. */
 	fetchAttachment(

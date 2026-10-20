@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	HttpCode,
 	Param,
@@ -8,6 +9,7 @@ import {
 	Post,
 	Query,
 	Res,
+	UseGuards,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
@@ -15,6 +17,7 @@ import { Response } from 'express';
 
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
+import { AppEmployeeLevelGuard } from '../apps/core/guards/app-employee-level.guard';
 import { mediaResponseHeaders } from '../apps/telegram/telegram.media-response';
 import { InboxCentralService } from './inbox-central.service';
 import {
@@ -81,6 +84,15 @@ export class InboxController {
 		);
 	}
 
+	@Post('conversations/:conversationId/customer/create')
+	@HttpCode(200)
+	public async createCustomer(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('conversationId') conversationId: string,
+	): Promise<IInboxChatView> {
+		return await this._central.createCustomer(authPayload._id, conversationId);
+	}
+
 	@Post('conversations/:conversationId/messages')
 	@UsePipes(validation)
 	public async reply(
@@ -104,6 +116,18 @@ export class InboxController {
 		@Param('customerId') customerId: string,
 	): Promise<IInboxConversationView[]> {
 		return await this._central.summary(authPayload._id, customerId);
+	}
+
+	// Removing a message changes the owner's data (and, in Telegram, the customer's
+	// chat), so an employee needs ADMIN or MASTER, like the apps' own pages.
+	@Delete('messages/:messageId')
+	@HttpCode(204)
+	@UseGuards(AppEmployeeLevelGuard)
+	public async deleteMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('messageId') messageId: string,
+	): Promise<void> {
+		await this._central.deleteMessage(authPayload._id, messageId);
 	}
 
 	@Get('messages/:messageId/attachments/:index')

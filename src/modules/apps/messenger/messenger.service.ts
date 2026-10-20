@@ -18,6 +18,7 @@ import {
 } from './messenger.customers.repository';
 import {
 	MessengerAttachmentNotFoundException,
+	MessengerMessageNotFoundException,
 	MessengerChatNotFoundException,
 	MessengerChatUnavailableException,
 	MessengerCustomerAlreadyLinkedException,
@@ -280,6 +281,38 @@ export class MessengerService {
 		await this._getChatOrFail(ownerUserId, psid);
 
 		await this._chatsService.markRead(ownerUserId, psid);
+
+		this._notify(ownerUserId, psid);
+	}
+
+	/**
+	 * Takes a message out of the inbox. Facebook has no way to delete a message,
+	 * so it stays in Messenger for the customer; here it is gone, and the inbox
+	 * shows the message that is now the newest.
+	 */
+	public async deleteMessage(
+		ownerUserId: string,
+		psid: string,
+		messageRecordId: string,
+	): Promise<void> {
+		await this._getChatOrFail(ownerUserId, psid);
+
+		if (
+			!(await this._messagesService.deleteOwned(
+				ownerUserId,
+				psid,
+				messageRecordId,
+			))
+		) {
+			throw new MessengerMessageNotFoundException();
+		}
+
+		const latest: IMessengerMessageRecord | null =
+			await this._messagesService.findLatest(ownerUserId, psid);
+
+		if (latest) {
+			await this._chatsService.setLastMessage(ownerUserId, psid, latest);
+		}
 
 		this._notify(ownerUserId, psid);
 	}

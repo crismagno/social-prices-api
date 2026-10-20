@@ -196,6 +196,23 @@ export class MessengerController {
 		);
 	}
 
+	// Removes it from the inbox only (Facebook cannot delete a message), so, like
+	// the other changes to the owner's data, it needs ADMIN or MASTER.
+	@Delete('chats/:psid/messages/:messageId')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	public async deleteMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('psid') psid: string,
+		@Param('messageId') messageId: string,
+	): Promise<void> {
+		await this._messengerService.deleteMessage(
+			authPayload._id,
+			psid,
+			messageId,
+		);
+	}
+
 	@Post('chats/:psid/read')
 	@HttpCode(204)
 	@UseGuards(AppEnabledGuard)

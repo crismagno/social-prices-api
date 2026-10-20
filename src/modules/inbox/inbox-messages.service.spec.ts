@@ -122,6 +122,11 @@ describe('InboxMessagesService', () => {
 				receivedAt: expect.any(Date),
 			});
 			expect(update.$set).toEqual({ sentByEmployeeId: 'e1' });
+			// Mongo refuses an update that touches one path under two operators
+			// (ConflictingUpdateOperators), which made every reply fail with a 500.
+			expect(Object.keys(update.$setOnInsert)).not.toContain(
+				'sentByEmployeeId',
+			);
 			expect(options).toMatchObject({ upsert: true, new: true });
 		});
 	});
@@ -291,6 +296,32 @@ describe('InboxMessagesService', () => {
 				conversationId: CONV._id,
 				deletedAt: null,
 			});
+		});
+
+		it('softDeleteOwned hides the message but keeps it, so a redelivery cannot bring it back', async () => {
+			const { service, model } = build();
+			model.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+			await expect(service.softDeleteOwned(OWNER, CONV._id, MSG)).resolves.toBe(
+				true,
+			);
+			expect(model.updateOne).toHaveBeenCalledWith(
+				{
+					_id: MSG,
+					ownerUserId: OWNER,
+					conversationId: CONV._id,
+					deletedAt: null,
+				},
+				{ $set: { deletedAt: expect.any(Date) } },
+			);
+
+			model.updateOne.mockResolvedValue({ modifiedCount: 0 });
+			await expect(service.softDeleteOwned(OWNER, CONV._id, MSG)).resolves.toBe(
+				false,
+			);
+			await expect(
+				service.softDeleteOwned(OWNER, CONV._id, 'not-an-id'),
+			).resolves.toBe(false);
 		});
 
 		it('findById finds a message of this owner in any of their conversations', async () => {

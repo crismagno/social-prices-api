@@ -7,6 +7,7 @@ import {
 	IInboxConversation,
 } from '../../inbox/interfaces/inbox.types';
 import { IInstagramChat } from './instagram-chat.interface';
+import { IInstagramMessageRecord } from './instagram-message.interface';
 import InstagramEnum from './instagram.enum';
 import {
 	attachmentTypeOf,
@@ -88,6 +89,34 @@ export class InstagramChatsService {
 
 		// The message may already be stored, so "new" means it had no last message.
 		return !conversation.lastMessageAt;
+	}
+
+	/** After a message was removed: the inbox shows what is now the newest one. */
+	public async setLastMessage(
+		ownerUserId: string,
+		igsid: string,
+		latest: IInstagramMessageRecord,
+	): Promise<void> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			igsid,
+		);
+
+		if (conversation) {
+			await this._conversations.setPreview(
+				ownerUserId,
+				conversation._id,
+				previewOf(
+					latest.text,
+					attachmentTypeOf({
+						attachments: latest.attachments,
+						isUnsupported: latest.isUnsupported ?? false,
+					}),
+					latest.direction,
+					latest.sentAt,
+				),
+			);
+		}
 	}
 
 	public async registerOutgoing(

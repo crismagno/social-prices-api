@@ -149,6 +149,23 @@ export class InstagramController {
 		);
 	}
 
+	// Removes it from the inbox only (Instagram cannot delete a message), so, like
+	// the other changes to the owner's data, it needs ADMIN or MASTER.
+	@Delete('chats/:igsid/messages/:messageId')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	public async deleteMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('igsid') igsid: string,
+		@Param('messageId') messageId: string,
+	): Promise<void> {
+		await this._instagramService.deleteMessage(
+			authPayload._id,
+			igsid,
+			messageId,
+		);
+	}
+
 	@Post('chats/:igsid/read')
 	@HttpCode(204)
 	@UseGuards(AppEnabledGuard)

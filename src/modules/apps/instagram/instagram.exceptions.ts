@@ -43,6 +43,8 @@ export const INSTAGRAM_CUSTOMER_NOT_FOUND_CODE: string =
 	'INSTAGRAM_CUSTOMER_NOT_FOUND';
 export const INSTAGRAM_CUSTOMER_ALREADY_LINKED_CODE: string =
 	'INSTAGRAM_CUSTOMER_ALREADY_LINKED';
+export const INSTAGRAM_MESSAGE_NOT_FOUND_CODE: string =
+	'INSTAGRAM_MESSAGE_NOT_FOUND';
 export const INSTAGRAM_ATTACHMENT_NOT_FOUND_CODE: string =
 	'INSTAGRAM_ATTACHMENT_NOT_FOUND';
 
@@ -113,6 +115,15 @@ export class InstagramConnectionExpiredException extends ConflictException {
 		super({
 			code: INSTAGRAM_CONNECTION_EXPIRED_CODE,
 			message: 'The Instagram connection expired. Connect again.',
+		});
+	}
+}
+
+export class InstagramMessageNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: INSTAGRAM_MESSAGE_NOT_FOUND_CODE,
+			message: 'This message does not exist.',
 		});
 	}
 }

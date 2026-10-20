@@ -7,6 +7,7 @@ import {
 	IInboxConversation,
 } from '../../inbox/interfaces/inbox.types';
 import { IMessengerChat } from './messenger-chat.interface';
+import { IMessengerMessageRecord } from './messenger-message.interface';
 import MessengerEnum from './messenger.enum';
 import {
 	contactOf,
@@ -83,6 +84,31 @@ export class MessengerChatsService {
 
 		// The message may already be stored, so "new" means it had no last message.
 		return !conversation.lastMessageAt;
+	}
+
+	/** After a message was removed: the inbox shows what is now the newest one. */
+	public async setLastMessage(
+		ownerUserId: string,
+		psid: string,
+		latest: IMessengerMessageRecord,
+	): Promise<void> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			psid,
+		);
+
+		if (conversation) {
+			await this._conversations.setPreview(
+				ownerUserId,
+				conversation._id,
+				previewOf(
+					latest.text,
+					latest.attachments[0]?.type ?? latest.localAttachment?.type ?? null,
+					latest.direction,
+					latest.sentAt,
+				),
+			);
+		}
 	}
 
 	public async registerOutgoing(

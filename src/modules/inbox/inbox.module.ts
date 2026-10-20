@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { AppsCoreModule } from '../apps/core/apps-core.module';
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { InboxCentralService } from './inbox-central.service';
 import { InboxController } from './inbox.controller';
 import { InboxChannelRegistry } from './inbox-channel.registry';
@@ -16,6 +17,7 @@ import { InboxMessagesService } from './inbox-messages.service';
 @Module({
 	imports: [
 		AppsCoreModule,
+		FeatureLimitsModule,
 		schemasModule.inboxConversation,
 		schemasModule.inboxMessage,
 		schemasModule.customer,

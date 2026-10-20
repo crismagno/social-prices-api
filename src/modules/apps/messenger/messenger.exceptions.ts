@@ -1,5 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
+export const MESSENGER_MESSAGE_NOT_FOUND_CODE: string =
+	'MESSENGER_MESSAGE_NOT_FOUND';
 export const MESSENGER_NOT_CONNECTED_CODE: string = 'MESSENGER_NOT_CONNECTED';
 export const MESSENGER_PAGE_ALREADY_CONNECTED_CODE: string =
 	'MESSENGER_PAGE_ALREADY_CONNECTED';
@@ -112,6 +114,15 @@ export class MessengerAttachmentNotFoundException extends NotFoundException {
 		super({
 			code: MESSENGER_ATTACHMENT_NOT_FOUND_CODE,
 			message: 'This message has no such file.',
+		});
+	}
+}
+
+export class MessengerMessageNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: MESSENGER_MESSAGE_NOT_FOUND_CODE,
+			message: 'This message does not exist.',
 		});
 	}
 }

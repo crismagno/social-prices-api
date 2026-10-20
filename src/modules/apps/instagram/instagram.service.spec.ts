@@ -3,6 +3,7 @@ import AppsEnum from '../interfaces/apps.enum';
 import {
 	InstagramAttachmentNotFoundException,
 	InstagramChatNotFoundException,
+	InstagramMessageNotFoundException,
 	InstagramChatUnavailableException,
 	InstagramConnectionExpiredException,
 	InstagramCustomerAlreadyLinkedException,
@@ -133,6 +134,7 @@ const build = (
 		registerOutgoing: jest.fn().mockResolvedValue(undefined),
 		setProfile: jest.fn().mockResolvedValue(undefined),
 		markRead: jest.fn().mockResolvedValue(undefined),
+		setLastMessage: jest.fn().mockResolvedValue(undefined),
 		setCustomer: jest.fn().mockResolvedValue(undefined),
 		list: jest.fn().mockResolvedValue([]),
 		findByIgsid: jest.fn().mockResolvedValue(opts.chat ?? null),
@@ -143,6 +145,8 @@ const build = (
 		saveOutgoing: jest.fn().mockResolvedValue({ _id: 'out1' }),
 		listByChat: jest.fn().mockResolvedValue([{ _id: 'm1' }]),
 		findOwned: jest.fn().mockResolvedValue(null),
+		deleteOwned: jest.fn().mockResolvedValue(true),
+		findLatest: jest.fn().mockResolvedValue(null),
 	};
 	const customers: any = {
 		findNames: jest.fn().mockResolvedValue([]),
@@ -813,6 +817,44 @@ describe('InstagramService', () => {
 
 			expect(chats.setCustomer).toHaveBeenCalledWith('u1', 'IGSID1', null);
 			expect(view.customerId).toBeNull();
+		});
+	});
+
+	describe('deleteMessage', () => {
+		it('removes the message from the inbox, shows the newest one that is left and tells the open pages', async () => {
+			const { service, messages, chats, realtime } = build({
+				chat: freshChat(),
+			});
+			const latest = { _id: 'm0', text: 'antes' };
+			messages.findLatest.mockResolvedValue(latest);
+
+			await service.deleteMessage('u1', 'IGSID1', 'm1');
+
+			expect(messages.deleteOwned).toHaveBeenCalledWith('u1', 'IGSID1', 'm1');
+			expect(chats.setLastMessage).toHaveBeenCalledWith('u1', 'IGSID1', latest);
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalled();
+		});
+
+		it("refuses a message that is not there, and a conversation that is not this user's", async () => {
+			const gone = build({ chat: freshChat() });
+			gone.messages.deleteOwned.mockResolvedValue(false);
+			await expect(
+				gone.service.deleteMessage('u1', 'IGSID1', 'm1'),
+			).rejects.toBeInstanceOf(InstagramMessageNotFoundException);
+			expect(gone.chats.setLastMessage).not.toHaveBeenCalled();
+
+			const none = build({ chat: null });
+			await expect(
+				none.service.deleteMessage('u1', 'x', 'm1'),
+			).rejects.toBeInstanceOf(InstagramChatNotFoundException);
+		});
+
+		it('leaves the preview alone when no message is left', async () => {
+			const { service, chats } = build({ chat: freshChat() });
+
+			await service.deleteMessage('u1', 'IGSID1', 'm1');
+
+			expect(chats.setLastMessage).not.toHaveBeenCalled();
 		});
 	});
 

@@ -38,6 +38,7 @@ const build = (found: any = conversation(), ensured: any = conversation()) => {
 		applyEcho: jest.fn().mockResolvedValue(undefined),
 		applyOutgoing: jest.fn().mockResolvedValue(undefined),
 		setContact: jest.fn().mockResolvedValue(undefined),
+		setPreview: jest.fn().mockResolvedValue(undefined),
 		markRead: jest.fn().mockResolvedValue(undefined),
 		setCustomer: jest.fn().mockResolvedValue(undefined),
 		countUnread: jest.fn().mockResolvedValue(4),
@@ -149,6 +150,30 @@ describe('MessengerChatsService (over the central inbox)', () => {
 			direction: 'OUT',
 			at,
 		});
+	});
+
+	it('setLastMessage points the inbox at the message that is now the newest', async () => {
+		const { service, conversations } = build();
+		const sentAt = new Date('2030-01-03');
+
+		await service.setLastMessage(OWNER, 'PSID1', {
+			text: null,
+			attachments: [{ type: 'image', url: 'https://x/a.jpg' }],
+			direction: 'IN',
+			sentAt,
+		} as any);
+
+		expect(conversations.setPreview).toHaveBeenCalledWith(OWNER, 'c1', {
+			text: null,
+			kind: 'IMAGE',
+			channelKind: 'image',
+			direction: 'IN',
+			at: sentAt,
+		});
+
+		const none = build(null);
+		await none.service.setLastMessage(OWNER, 'X', {} as any);
+		expect(none.conversations.setPreview).not.toHaveBeenCalled();
 	});
 
 	it('setProfile keeps the name and picture Facebook gave', async () => {

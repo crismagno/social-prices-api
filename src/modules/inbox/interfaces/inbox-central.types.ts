@@ -61,6 +61,8 @@ export interface IInboxMessageView {
 	isUnsupported: boolean;
 	sentAt: Date;
 	sentByEmployeeId: string | null;
+	/** Whether the message's channel lets it be removed. */
+	canDelete: boolean;
 }
 
 /** Which conversations a call is about: all of a customer's, or just one. */

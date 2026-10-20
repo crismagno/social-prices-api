@@ -17,6 +17,7 @@ import {
 	InstagramAccountAlreadyConnectedException,
 	InstagramAccountSubscribeFailedException,
 	InstagramAttachmentNotFoundException,
+	InstagramMessageNotFoundException,
 	InstagramChatNotFoundException,
 	InstagramChatUnavailableException,
 	InstagramConnectionExpiredException,
@@ -290,6 +291,38 @@ export class InstagramService {
 		await this._getChatOrFail(ownerUserId, igsid);
 
 		return await this._messagesService.listByChat(ownerUserId, igsid, options);
+	}
+
+	/**
+	 * Takes a message out of the inbox. Instagram has no way to delete a message,
+	 * so it stays there for the customer; here it is gone, and the inbox shows the
+	 * message that is now the newest.
+	 */
+	public async deleteMessage(
+		ownerUserId: string,
+		igsid: string,
+		messageRecordId: string,
+	): Promise<void> {
+		await this._getChatOrFail(ownerUserId, igsid);
+
+		if (
+			!(await this._messagesService.deleteOwned(
+				ownerUserId,
+				igsid,
+				messageRecordId,
+			))
+		) {
+			throw new InstagramMessageNotFoundException();
+		}
+
+		const latest: IInstagramMessageRecord | null =
+			await this._messagesService.findLatest(ownerUserId, igsid);
+
+		if (latest) {
+			await this._chatsService.setLastMessage(ownerUserId, igsid, latest);
+		}
+
+		this._notify(ownerUserId, igsid);
 	}
 
 	public async markRead(ownerUserId: string, igsid: string): Promise<void> {

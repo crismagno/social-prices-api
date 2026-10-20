@@ -39,6 +39,8 @@ const build = (found: any = CONV) => {
 		saveIncoming: jest.fn().mockResolvedValue(true),
 		saveEcho: jest.fn().mockResolvedValue(true),
 		saveOutgoing: jest.fn().mockResolvedValue(stored()),
+		softDeleteOwned: jest.fn().mockResolvedValue(true),
+		findLatest: jest.fn().mockResolvedValue(stored()),
 		findOwned: jest.fn().mockResolvedValue(stored()),
 		listByConversation: jest.fn().mockResolvedValue([stored()]),
 	};
@@ -167,10 +169,35 @@ describe('InstagramMessagesService (over the central inbox)', () => {
 		});
 	});
 
+	it('deleteOwned takes the message out of that conversation, saying whether it was there', async () => {
+		const { service, messages } = build();
+
+		await expect(service.deleteOwned(OWNER, 'IGSID1', 'x1')).resolves.toBe(
+			true,
+		);
+		expect(messages.softDeleteOwned).toHaveBeenCalledWith(OWNER, 'c1', 'x1');
+
+		messages.softDeleteOwned.mockResolvedValue(false);
+		await expect(service.deleteOwned(OWNER, 'IGSID1', 'x1')).resolves.toBe(
+			false,
+		);
+	});
+
+	it('findLatest gives the newest message that is left, in the Instagram shape', async () => {
+		const { service } = build();
+
+		await expect(service.findLatest(OWNER, 'IGSID1')).resolves.toMatchObject({
+			mid: 'm9',
+			igsid: 'IGSID1',
+		});
+	});
+
 	it('answers empty for a person who has no conversation', async () => {
 		const { service, messages } = build(null);
 
 		await expect(service.listByChat(OWNER, 'X')).resolves.toEqual([]);
+		await expect(service.deleteOwned(OWNER, 'X', 'x1')).resolves.toBe(false);
+		await expect(service.findLatest(OWNER, 'X')).resolves.toBeNull();
 		await expect(service.findOwned(OWNER, 'X', 'x1')).resolves.toBeNull();
 		expect(messages.listByConversation).not.toHaveBeenCalled();
 	});

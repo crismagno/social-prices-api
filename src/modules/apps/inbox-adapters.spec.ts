@@ -28,13 +28,12 @@ describe('channel adapters of the central inbox', () => {
 	describe('Telegram', () => {
 		const service: any = {
 			sendMessage: jest.fn().mockResolvedValue({ _id: 'out1' }),
-			getMedia: jest
-				.fn()
-				.mockResolvedValue({
-					buffer: Buffer.alloc(1),
-					mimeType: 'image/png',
-					fileName: 'a.png',
-				}),
+			deleteMessage: jest.fn().mockResolvedValue(undefined),
+			getMedia: jest.fn().mockResolvedValue({
+				buffer: Buffer.alloc(1),
+				mimeType: 'image/png',
+				fileName: 'a.png',
+			}),
 		};
 		const adapter = new TelegramInboxAdapter(registry, service, messages);
 		const conversation: any = { contactKey: '555' };
@@ -49,6 +48,13 @@ describe('channel adapters of the central inbox', () => {
 			});
 			expect(service.sendMessage).toHaveBeenCalledWith(ctx, 555, 'oi');
 			expect(messages.findById).toHaveBeenCalledWith(OWNER, 'out1');
+		});
+
+		it('deletes the message in the bot chat', async () => {
+			await adapter.deleteMessage(OWNER, conversation, { _id: 'm1' } as any);
+
+			expect(service.deleteMessage).toHaveBeenCalledWith(OWNER, 555, 'm1');
+			expect(adapter.capabilities.deleteMessage).toBe(true);
 		});
 
 		it('fetches the file of a message', async () => {
@@ -70,12 +76,11 @@ describe('channel adapters of the central inbox', () => {
 	])('%s', (_name, Adapter: any) => {
 		const service: any = {
 			sendMessage: jest.fn().mockResolvedValue({ _id: 'out1' }),
-			getAttachment: jest
-				.fn()
-				.mockResolvedValue({
-					buffer: Buffer.alloc(1),
-					contentType: 'image/jpeg',
-				}),
+			deleteMessage: jest.fn().mockResolvedValue(undefined),
+			getAttachment: jest.fn().mockResolvedValue({
+				buffer: Buffer.alloc(1),
+				contentType: 'image/jpeg',
+			}),
 		};
 		const adapter = new Adapter(registry, service, messages);
 
@@ -99,6 +104,15 @@ describe('channel adapters of the central inbox', () => {
 				adapter.sendText(ctx, { contactKey: 'X1' }, 'oi'),
 			).resolves.toEqual({ _id: 'out1' });
 			expect(service.sendMessage).toHaveBeenCalledWith(ctx, 'X1', 'oi');
+		});
+
+		it('removes a message from the inbox only', async () => {
+			expect(adapter.capabilities.deleteMessage).toBe(true);
+
+			if (adapter.deleteMessage) {
+				await adapter.deleteMessage(OWNER, { contactKey: 'X1' }, { _id: 'm1' });
+				expect(service.deleteMessage).toHaveBeenCalledWith(OWNER, 'X1', 'm1');
+			}
 		});
 
 		it('fetches a file by its index', async () => {

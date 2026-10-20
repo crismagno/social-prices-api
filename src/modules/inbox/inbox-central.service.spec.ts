@@ -28,6 +28,7 @@ const conv = (over: any = {}): any => ({
 const build = (conversations: any[] = [], customers: any[] = []) => {
 	const customerModel: any = {
 		exists: jest.fn().mockResolvedValue({ _id: 'x' }),
+		create: jest.fn().mockResolvedValue({ _id: CU1 }),
 		find: jest
 			.fn()
 			.mockReturnValue({ lean: jest.fn().mockResolvedValue(customers) }),
@@ -44,6 +45,8 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 		findById: jest.fn(),
 	};
 	const adapter: any = {
+		capabilities: { deleteMessage: true },
+		deleteMessage: jest.fn().mockResolvedValue(undefined),
 		canReply: jest.fn().mockReturnValue({ allowed: true, windowEndsAt: null }),
 		sendText: jest.fn().mockResolvedValue({
 			_id: 'out1',
@@ -71,8 +74,12 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 		}),
 	};
 	const realtime: any = { notifyInboxUpdated: jest.fn() };
+	const featureLimits: any = {
+		assertCanCreate: jest.fn().mockResolvedValue(undefined),
+	};
 
 	return {
+		featureLimits,
 		usersService,
 		realtime,
 		customerModel,
@@ -87,6 +94,7 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 			registry,
 			usersService,
 			realtime,
+			featureLimits,
 		),
 	};
 };
@@ -365,6 +373,107 @@ describe('InboxCentralService', () => {
 			await expect(
 				none.service.assignCustomer(OWNER, 'zz', null),
 			).rejects.toBeInstanceOf(NotFoundException);
+		});
+	});
+
+	describe('createCustomer', () => {
+		it('makes a customer from the person, within the plan limit, and ties the conversation to it', async () => {
+			const { service, customerModel, featureLimits, convService } = build([
+				conv({ _id: 'c1' }),
+			]);
+			// free uniqName first, then the new customer is found when tying
+			customerModel.exists.mockResolvedValueOnce(null);
+
+			await service.createCustomer(OWNER, 'c1');
+
+			expect(featureLimits.assertCanCreate).toHaveBeenCalledWith(
+				OWNER,
+				'customers',
+			);
+			expect(customerModel.create).toHaveBeenCalledWith(
+				expect.objectContaining({
+					name: 'Ana T',
+					about: '@ana',
+					ownerUserId: OWNER,
+					email: null,
+					externalSources: [],
+				}),
+			);
+			expect(convService.setCustomer).toHaveBeenCalledWith(OWNER, 'c1', CU1);
+		});
+
+		it('makes nothing at the limit, and refuses a conversation that already has a customer', async () => {
+			const limit = build([conv()]);
+			limit.featureLimits.assertCanCreate.mockRejectedValue(new Error('limit'));
+			await expect(limit.service.createCustomer(OWNER, 'c1')).rejects.toThrow(
+				'limit',
+			);
+			expect(limit.customerModel.create).not.toHaveBeenCalled();
+
+			const tied = build([conv({ customerId: CU1 })]);
+			await expect(
+				tied.service.createCustomer(OWNER, 'c1'),
+			).rejects.toBeInstanceOf(ConflictException);
+			expect(tied.customerModel.create).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('deleteMessage', () => {
+		const message = { _id: 'm1', conversationId: 'c1', channel: 'TELEGRAM' };
+
+		it("asks the message's channel to remove it", async () => {
+			const { service, messages, adapter } = build([conv()]);
+			messages.findById.mockResolvedValue(message);
+
+			await service.deleteMessage(OWNER, 'm1');
+
+			expect(adapter.deleteMessage).toHaveBeenCalledWith(
+				OWNER,
+				conv(),
+				message,
+			);
+		});
+
+		it('refuses a channel that cannot remove messages, and a message that is not there', async () => {
+			const noDelete = build([conv()]);
+			noDelete.messages.findById.mockResolvedValue(message);
+			noDelete.adapter.capabilities.deleteMessage = false;
+			await expect(
+				noDelete.service.deleteMessage(OWNER, 'm1'),
+			).rejects.toBeInstanceOf(ConflictException);
+			expect(noDelete.adapter.deleteMessage).not.toHaveBeenCalled();
+
+			const none = build([conv()]);
+			none.messages.findById.mockResolvedValue(null);
+			await expect(
+				none.service.deleteMessage(OWNER, 'm1'),
+			).rejects.toBeInstanceOf(NotFoundException);
+		});
+
+		it('refuses a channel whose app is not enabled', async () => {
+			const { service, messages, usersService } = build([conv()]);
+			messages.findById.mockResolvedValue(message);
+			usersService.findOneById.mockResolvedValue({ enabledApps: [] });
+
+			await expect(service.deleteMessage(OWNER, 'm1')).rejects.toBeInstanceOf(
+				AppNotEnabledException,
+			);
+		});
+
+		it('tells each message of the timeline whether its channel allows removing it', async () => {
+			const { service, messages, adapter } = build([conv({ customerId: CU1 })]);
+			messages.listTimeline.mockResolvedValue([
+				{ ...message, attachments: [] },
+			]);
+
+			expect(
+				(await service.listMessages(OWNER, { customerId: CU1 }))[0].canDelete,
+			).toBe(true);
+
+			adapter.capabilities.deleteMessage = false;
+			expect(
+				(await service.listMessages(OWNER, { customerId: CU1 }))[0].canDelete,
+			).toBe(false);
 		});
 	});
 

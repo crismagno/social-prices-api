@@ -24,6 +24,7 @@ export class MessengerInboxAdapter
 		text: true,
 		media: true,
 		voice: false,
+		deleteMessage: true,
 		answerWindowMs: REPLY_WINDOW_MS,
 	};
 
@@ -61,6 +62,18 @@ export class MessengerInboxAdapter
 		);
 
 		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	public async deleteMessage(
+		ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void> {
+		await this._service.deleteMessage(
+			ownerUserId,
+			conversation.contactKey,
+			String(message._id),
+		);
 	}
 
 	public async fetchAttachment(

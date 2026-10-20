@@ -59,6 +59,18 @@ export class InboxMessagesService {
 		conversation: IInboxConversationRef,
 		input: IInboxMessageInput,
 	): Promise<IInboxMessage> {
+		// Who sent it goes in `$set` (a message echoed first only gains it), so it
+		// must stay out of `$setOnInsert`: Mongo refuses one path in both.
+		const onInsert: Record<string, unknown> = this._document(
+			ownerUserId,
+			conversation,
+			InboxEnum.Direction.OUT,
+			false,
+			input,
+		);
+
+		delete onInsert.sentByEmployeeId;
+
 		const saved = await this._messageModel.findOneAndUpdate(
 			{
 				ownerUserId,
@@ -67,13 +79,7 @@ export class InboxMessagesService {
 				direction: InboxEnum.Direction.OUT,
 			},
 			{
-				$setOnInsert: this._document(
-					ownerUserId,
-					conversation,
-					InboxEnum.Direction.OUT,
-					false,
-					input,
-				),
+				$setOnInsert: onInsert,
 				$set: { sentByEmployeeId: input.sentByEmployeeId ?? null },
 			},
 			{ upsert: true, new: true, setDefaultsOnInsert: true },
@@ -130,6 +136,28 @@ export class InboxMessagesService {
 			ownerUserId,
 			conversationId,
 		});
+	}
+
+	/**
+	 * Takes a message out of the inbox without forgetting it: the channel may
+	 * deliver it again, and the same id must not bring it back. True when it was
+	 * there to remove.
+	 */
+	public async softDeleteOwned(
+		ownerUserId: string,
+		conversationId: string,
+		id: string,
+	): Promise<boolean> {
+		if (!mongoose.isValidObjectId(id)) {
+			return false;
+		}
+
+		const result = await this._messageModel.updateOne(
+			{ _id: id, ownerUserId, conversationId, deletedAt: null },
+			{ $set: { deletedAt: new Date() } },
+		);
+
+		return result.modifiedCount > 0;
 	}
 
 	//#endregion

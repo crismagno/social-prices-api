@@ -25,6 +25,7 @@ export class TelegramInboxAdapter
 		text: true,
 		media: true,
 		voice: true,
+		deleteMessage: true,
 		answerWindowMs: null,
 	};
 
@@ -56,6 +57,18 @@ export class TelegramInboxAdapter
 			);
 
 		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	public async deleteMessage(
+		ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void> {
+		await this._telegramService.deleteMessage(
+			ownerUserId,
+			Number(conversation.contactKey),
+			String(message._id),
+		);
 	}
 
 	public async fetchAttachment(

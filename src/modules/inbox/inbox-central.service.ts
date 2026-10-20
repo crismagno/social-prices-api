@@ -13,6 +13,9 @@ import { AppNotEnabledException } from '../apps/apps.exceptions';
 import { AppsRealtimeGateway } from '../apps/core/realtime/apps-realtime.gateway';
 import AppsEnum from '../apps/interfaces/apps.enum';
 import { Customer } from '../customers/interfaces/customer.schema';
+import { createUsernameByName } from '../../shared/utils/global/global';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import {
@@ -36,6 +39,7 @@ import {
 	IInboxMessage,
 } from './interfaces/inbox.types';
 
+export const MESSAGE_NOT_DELETABLE_CODE: string = 'MESSAGE_NOT_DELETABLE';
 export const REPLY_WINDOW_CLOSED_CODE: string = 'REPLY_WINDOW_CLOSED';
 const MAX_REPLY_LENGTH: number = 1000;
 
@@ -63,6 +67,7 @@ export class InboxCentralService {
 		private readonly _registry: InboxChannelRegistry,
 		private readonly _usersService: UsersService,
 		private readonly _realtime: AppsRealtimeGateway,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {}
 
 	/**
@@ -197,6 +202,65 @@ export class InboxCentralService {
 	}
 
 	/**
+	 * Makes a customer out of the person of a loose conversation and ties it to
+	 * it, within the plan's customers limit. Channels give no e-mail or phone, so
+	 * the customer starts with the name (and @username) the channel shows.
+	 */
+	public async createCustomer(
+		ownerUserId: string,
+		conversationId: string,
+	): Promise<IInboxChatView> {
+		const conversation: IInboxConversation = await this._ownedConversation(
+			ownerUserId,
+			conversationId,
+		);
+
+		if (conversation.customerId) {
+			throw new ConflictException('This conversation already has a customer.');
+		}
+
+		await this._featureLimitsService.assertCanCreate(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.CUSTOMERS,
+		);
+
+		const username: string | null = conversation.contact?.username ?? null;
+		const name: string =
+			conversation.contact?.name ||
+			(username
+				? `@${username}`
+				: `${conversation.channel} ${conversation.contactKey}`);
+		const now: Date = new Date();
+
+		const created = await this._customerModel.create({
+			avatar: null,
+			name,
+			email: null,
+			birthDate: null,
+			addresses: [],
+			about: username ? `@${username}` : null,
+			idNumber: null,
+			cpf: null,
+			cnpj: null,
+			phoneNumbers: [],
+			tagsIds: [],
+			ownerUserId,
+			userId: null,
+			uniqName: await this._freeUniqName(ownerUserId, name),
+			uploadFilename: null,
+			externalSources: [],
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		return await this.assignCustomer(
+			ownerUserId,
+			String(conversation._id),
+			String(created._id),
+		);
+	}
+
+	/**
 	 * Answers through one conversation's channel, which applies its own rules (a
 	 * closed answer window is refused before asking the channel).
 	 */
@@ -230,6 +294,44 @@ export class InboxCentralService {
 		}
 
 		return this._toMessageView(await adapter.sendText(ctx, conversation, body));
+	}
+
+	/**
+	 * Removes a message through its channel: Telegram deletes it for the customer
+	 * too, the others only take it out of the inbox.
+	 */
+	public async deleteMessage(
+		ownerUserId: string,
+		messageId: string,
+	): Promise<void> {
+		const message: IInboxMessage | null = await this._messages.findById(
+			ownerUserId,
+			messageId,
+		);
+
+		const conversation: IInboxConversation | null = message
+			? await this._ownedConversation(
+					ownerUserId,
+					String(message.conversationId),
+			  )
+			: null;
+
+		if (!message || !conversation) {
+			throw new NotFoundException('Message not found.');
+		}
+
+		const adapter: IInboxChannelAdapter = this._registry.get(
+			conversation.channel,
+		);
+
+		if (!adapter.capabilities.deleteMessage || !adapter.deleteMessage) {
+			throw new ConflictException({
+				code: MESSAGE_NOT_DELETABLE_CODE,
+				message: 'This channel does not let messages be removed.',
+			});
+		}
+
+		await adapter.deleteMessage(ownerUserId, conversation, message);
 	}
 
 	/** One file of a message, fetched from its channel when asked for. */
@@ -311,6 +413,30 @@ export class InboxCentralService {
 		if (!(await this._enabledChannels(ownerUserId)).has(channel)) {
 			throw new AppNotEnabledException(APP_BY_CHANNEL[channel]);
 		}
+	}
+
+	/** uniqName is not unique in the schema, so avoid collisions here. */
+	private async _freeUniqName(
+		ownerUserId: string,
+		name: string,
+	): Promise<string> {
+		const base: string = createUsernameByName(name);
+		let candidate: string = base;
+
+		for (let attempt = 0; attempt < 5; attempt++) {
+			if (
+				!(await this._customerModel.exists({
+					ownerUserId,
+					uniqName: candidate,
+				}))
+			) {
+				return candidate;
+			}
+
+			candidate = `${base}${Math.floor(1000 + Math.random() * 9000)}`;
+		}
+
+		return candidate;
 	}
 
 	private async _ownedConversation(
@@ -467,7 +593,16 @@ export class InboxCentralService {
 			isUnsupported: message.isUnsupported,
 			sentAt: message.sentAt,
 			sentByEmployeeId: message.sentByEmployeeId,
+			canDelete: this._canDelete(message.channel),
 		};
+	}
+
+	private _canDelete(channel: InboxEnum.Channel): boolean {
+		try {
+			return this._registry.get(channel).capabilities.deleteMessage;
+		} catch {
+			return false;
+		}
 	}
 
 	//#endregion
