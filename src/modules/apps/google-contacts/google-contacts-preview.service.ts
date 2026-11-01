@@ -88,6 +88,7 @@ export class GoogleContactsPreviewService {
 					email: contact.email,
 					phone: contact.phoneNumbers[0]?.number ?? null,
 					customerId: match?.customerId ?? null,
+					customerName: match?.customerName ?? null,
 					status: !match
 						? GoogleContactsEnum.ContactStatus.NEW
 						: match.linked

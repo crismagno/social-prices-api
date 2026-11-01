@@ -3,6 +3,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
 	IInboxChannelAdapter,
 	IInboxChannelCapabilities,
+	IInboxUploadFile,
 	IInboxReplyContext,
 } from '../../inbox/inbox-channel.adapter';
 import { InboxChannelRegistry } from '../../inbox/inbox-channel.registry';
@@ -12,6 +13,7 @@ import {
 	IInboxConversation,
 	IInboxMessage,
 } from '../../inbox/interfaces/inbox.types';
+import { MAX_TELEGRAM_UPLOAD_BYTES } from './telegram-chat.dto';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import { TelegramService } from './telegram.service';
 
@@ -25,6 +27,7 @@ export class TelegramInboxAdapter
 		text: true,
 		media: true,
 		voice: true,
+		maxUploadBytes: MAX_TELEGRAM_UPLOAD_BYTES,
 		deleteMessage: true,
 		answerWindowMs: null,
 	};
@@ -55,6 +58,33 @@ export class TelegramInboxAdapter
 				Number(conversation.contactKey),
 				text,
 			);
+
+		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	public async sendTyping(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void> {
+		await this._telegramService.sendTyping(
+			ctx,
+			Number(conversation.contactKey),
+		);
+	}
+
+	public async sendMedia(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IInboxMessage> {
+		const sent: ITelegramMessageRecord = await this._telegramService.sendMedia(
+			ctx,
+			Number(conversation.contactKey),
+			file,
+			options.caption,
+			options.asVoice,
+		);
 
 		return await this._messages.findById(ctx.ownerUserId, sent._id);
 	}

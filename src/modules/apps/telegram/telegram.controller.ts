@@ -227,6 +227,17 @@ export class TelegramController {
 		res.send(media.buffer);
 	}
 
+	// "typing…" for the customer while the user writes; never fails the page.
+	@Post('chats/:chatId/typing')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard)
+	public async sendTyping(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('chatId', ParseIntPipe) chatId: number,
+	): Promise<void> {
+		await this._telegramService.sendTyping(toContext(authPayload), chatId);
+	}
+
 	@Post('chats/:chatId/read')
 	@HttpCode(204)
 	@UseGuards(AppEnabledGuard)

@@ -27,6 +27,7 @@ import { GoogleContactsConnectionsService } from './google-contacts-connections.
 import ImportGoogleContactsDto from './google-contacts-import.dto';
 import {
 	FindGoogleContactCustomerDto,
+	FindGoogleContactCustomersDto,
 	LinkGoogleContactDto,
 } from './google-contacts-link.dto';
 import { GoogleContactsLinkService } from './google-contacts-link.service';
@@ -140,6 +141,39 @@ export class GoogleContactsController {
 			authPayload._id,
 			dto.externalId,
 			dto.customerId,
+		);
+	}
+
+	// By hand: moves a contact from the customer it is on to the one the user picked.
+	@Post('relink')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	@UsePipes(new ValidationPipe({ transform: true }))
+	public async relinkContact(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() dto: LinkGoogleContactDto,
+	): Promise<{ customerId: string; customerName: string | null }> {
+		return await this._linkService.relinkContact(
+			authPayload._id,
+			dto.externalId,
+			dto.customerId,
+		);
+	}
+
+	// Reading only: the customer (and its name) of each of these contacts.
+	@Post('find-customers')
+	@HttpCode(200)
+	@UseGuards(AppEnabledGuard)
+	@UsePipes(new ValidationPipe({ transform: true }))
+	public async findCustomers(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() dto: FindGoogleContactCustomersDto,
+	): Promise<
+		{ externalId: string; customerId: string; customerName: string | null }[]
+	> {
+		return await this._linkService.findCustomersOf(
+			authPayload._id,
+			dto.externalIds,
 		);
 	}
 

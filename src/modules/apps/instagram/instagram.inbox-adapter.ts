@@ -24,6 +24,7 @@ export class InstagramInboxAdapter
 		text: true,
 		media: false,
 		voice: false,
+		maxUploadBytes: null,
 		deleteMessage: true,
 		answerWindowMs: REPLY_WINDOW_MS,
 	};
@@ -62,6 +63,13 @@ export class InstagramInboxAdapter
 		);
 
 		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	public async sendTyping(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void> {
+		await this._service.sendTyping(ctx, conversation.contactKey);
 	}
 
 	public async deleteMessage(

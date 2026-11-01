@@ -6,11 +6,20 @@ export interface IInboxReplyContext {
 	employeeId: string | null;
 }
 
+/** A file to send, as it came from the browser. */
+export interface IInboxUploadFile {
+	buffer: Buffer;
+	fileName: string;
+	mimeType: string;
+}
+
 /** What a channel can do, so the central page offers only that. */
 export interface IInboxChannelCapabilities {
 	text: boolean;
 	media: boolean;
 	voice: boolean;
+	/** Largest file the channel takes, in bytes; null when it takes none. */
+	maxUploadBytes: number | null;
 	/** Whether a message can be removed from the inbox through this channel. */
 	deleteMessage: boolean;
 	/** How long after the person's last message an answer is still allowed; null when no limit. */
@@ -37,6 +46,27 @@ export interface IInboxChannelAdapter {
 		ctx: IInboxReplyContext,
 		conversation: IInboxConversation,
 		text: string,
+	): Promise<IInboxMessage>;
+
+	/**
+	 * Lets the person see "typing…" while the user writes. Best effort and
+	 * silent: it never throws.
+	 */
+	sendTyping?(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void>;
+
+	/**
+	 * Sends a file (or a recording, with `asVoice`) and records it. The text, when
+	 * there is one, goes as its caption, or as a message of its own where the
+	 * channel has no captions. Present when `capabilities.media` is true.
+	 */
+	sendMedia?(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
 	): Promise<IInboxMessage>;
 
 	/**

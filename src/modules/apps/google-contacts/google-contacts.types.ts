@@ -83,6 +83,8 @@ export interface IGoogleContactRow {
 	status: GoogleContactsEnum.ContactStatus;
 	/** The customer it is linked to, or that it matches by e-mail; null when none. */
 	customerId: string | null;
+	/** That customer's name, so the grid can show who it is without asking again. */
+	customerName: string | null;
 }
 
 /** What listing answers: the contacts, and whether more exist than were listed. */
@@ -96,5 +98,9 @@ export interface IGoogleContactsImportResponse
 	extends IGoogleContactsImportResult {
 	savedExternalIds: string[];
 	/** The customer each saved contact ended up on. */
-	savedLinks: { externalId: string; customerId: string }[];
+	savedLinks: {
+		externalId: string;
+		customerId: string;
+		customerName: string | null;
+	}[];
 }

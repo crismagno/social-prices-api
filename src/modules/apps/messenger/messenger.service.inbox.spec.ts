@@ -43,6 +43,7 @@ const build = (
 		sendText: jest
 			.fn()
 			.mockResolvedValue({ mid: 'mid.9', sentAt: new Date('2030-01-02') }),
+		sendTyping: jest.fn().mockResolvedValue(undefined),
 		getParticipantName: jest.fn().mockResolvedValue(null),
 		getProfile: jest
 			.fn()
@@ -375,6 +376,37 @@ describe('MessengerService inbox', () => {
 			});
 			expect(views[1]).toMatchObject({ psid: 'PSID2', canReply: false });
 			expect(views[0].replyWindowEndsAt.getTime()).toBeGreaterThan(Date.now());
+		});
+	});
+
+	describe('sendTyping', () => {
+		const ctx = { ownerUserId: 'u1', employeeId: 'e1' };
+
+		it('shows "typing…" while the answer window is open', async () => {
+			const { service, graph } = build({ chat: freshChat() });
+
+			await service.sendTyping(ctx, 'PSID1');
+
+			expect(graph.sendTyping).toHaveBeenCalledWith(
+				expect.any(String),
+				'PSID1',
+			);
+		});
+
+		it('does nothing once the window closed, and never throws', async () => {
+			const closed = build({
+				chat: freshChat({
+					lastIncomingAt: new Date(Date.now() - 48 * 3600_000),
+				}),
+			});
+			await closed.service.sendTyping(ctx, 'PSID1');
+			expect(closed.graph.sendTyping).not.toHaveBeenCalled();
+
+			const failing = build({ chat: freshChat() });
+			failing.graph.sendTyping.mockRejectedValue(new Error('boom'));
+			await expect(
+				failing.service.sendTyping(ctx, 'PSID1'),
+			).resolves.toBeUndefined();
 		});
 	});
 

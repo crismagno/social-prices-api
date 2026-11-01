@@ -14,7 +14,9 @@ const build = (over: any = {}) => {
 			.fn()
 			.mockResolvedValue({ _id: 'cu1', name: 'Ana Cliente', ...over.owned }),
 		linkExternalSource: jest.fn().mockResolvedValue(true),
+		findExisting: jest.fn().mockResolvedValue(over.existing ?? []),
 		findByExternalId: jest.fn().mockResolvedValue(over.byExternalId ?? null),
+		unlinkExternalSource: jest.fn().mockResolvedValue(undefined),
 	};
 
 	return { customers, service: new GoogleContactsLinkService(customers) };
@@ -72,6 +74,125 @@ describe('GoogleContactsLinkService', () => {
 			await expect(
 				service.linkContact('u1', 'people/c1', 'cu1'),
 			).rejects.toThrow('db down');
+		});
+	});
+
+	describe('relinkContact', () => {
+		const current = { _id: 'old1', name: 'Ana Antiga' };
+
+		it('takes the link off the old customer and puts it on the new one', async () => {
+			const { service, customers } = build({ byExternalId: current });
+
+			await expect(
+				service.relinkContact('u1', 'people/c1', 'cu1'),
+			).resolves.toEqual({ customerId: 'cu1', customerName: 'Ana Cliente' });
+
+			expect(customers.unlinkExternalSource).toHaveBeenCalledWith(
+				'old1',
+				APP,
+				'people/c1',
+			);
+			expect(customers.linkExternalSource).toHaveBeenCalledWith(
+				'cu1',
+				APP,
+				'people/c1',
+			);
+		});
+
+		it('also ties a contact that had no customer yet', async () => {
+			const { service, customers } = build();
+
+			await service.relinkContact('u1', 'people/c1', 'cu1');
+
+			expect(customers.unlinkExternalSource).not.toHaveBeenCalled();
+			expect(customers.linkExternalSource).toHaveBeenCalledTimes(1);
+		});
+
+		it('does nothing when the contact is already on that customer', async () => {
+			const { service, customers } = build({
+				byExternalId: { _id: 'cu1', name: 'Ana Cliente' },
+			});
+
+			await expect(
+				service.relinkContact('u1', 'people/c1', 'cu1'),
+			).resolves.toEqual({ customerId: 'cu1', customerName: 'Ana Cliente' });
+
+			expect(customers.unlinkExternalSource).not.toHaveBeenCalled();
+			expect(customers.linkExternalSource).not.toHaveBeenCalled();
+		});
+
+		it("refuses a customer that is not this user's, changing nothing", async () => {
+			const { service, customers } = build({ byExternalId: current });
+			customers.findOwned.mockResolvedValue(null);
+
+			await expect(
+				service.relinkContact('u1', 'people/c1', 'other'),
+			).rejects.toBeInstanceOf(GoogleContactsCustomerNotFoundException);
+			expect(customers.unlinkExternalSource).not.toHaveBeenCalled();
+		});
+
+		it('puts the old link back when the new customer already has a Google contact', async () => {
+			const { service, customers } = build({ byExternalId: current });
+			customers.linkExternalSource.mockResolvedValueOnce(false);
+
+			await expect(
+				service.relinkContact('u1', 'people/c1', 'cu1'),
+			).rejects.toBeInstanceOf(GoogleContactsCustomerAlreadyLinkedException);
+
+			expect(customers.linkExternalSource).toHaveBeenLastCalledWith(
+				'old1',
+				APP,
+				'people/c1',
+			);
+		});
+
+		it('puts the old link back and says so when the database refuses the new one', async () => {
+			const { service, customers } = build({ byExternalId: current });
+			customers.linkExternalSource.mockRejectedValueOnce({ code: 11000 });
+
+			await expect(
+				service.relinkContact('u1', 'people/c1', 'cu1'),
+			).rejects.toBeInstanceOf(GoogleContactsContactAlreadyLinkedException);
+			expect(customers.linkExternalSource).toHaveBeenLastCalledWith(
+				'old1',
+				APP,
+				'people/c1',
+			);
+		});
+	});
+
+	describe('findCustomersOf', () => {
+		it('gives the customer and its name for each contact that has one, and nothing for the others', async () => {
+			const { service, customers } = build({
+				existing: [
+					{
+						_id: 'cu7',
+						name: 'Beto',
+						externalSources: [
+							{ appId: APP, externalId: 'people/c1' },
+							{ appId: 'TELEGRAM', externalId: '1' },
+						],
+					},
+					{
+						_id: 'cu8',
+						name: null,
+						// Matched by e-mail only, or holding another contact: not the ones asked for.
+						externalSources: [{ appId: APP, externalId: 'people/zzz' }],
+					},
+				],
+			});
+
+			await expect(
+				service.findCustomersOf('u1', ['people/c1', 'people/c2']),
+			).resolves.toEqual([
+				{ externalId: 'people/c1', customerId: 'cu7', customerName: 'Beto' },
+			]);
+			expect(customers.findExisting).toHaveBeenCalledWith(
+				'u1',
+				APP,
+				['people/c1', 'people/c2'],
+				[],
+			);
 		});
 	});
 

@@ -12,6 +12,8 @@ import { MessengerModule } from './messenger/messenger.module';
 import { MessengerStatusProvider } from './messenger/messenger.status.provider';
 import { TelegramModule } from './telegram/telegram.module';
 import { TelegramStatusProvider } from './telegram/telegram.status.provider';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { WhatsappStatusProvider } from './whatsapp/whatsapp.status.provider';
 import { IAppStatusProvider } from './core/status/app-status.types';
 
 @Module({
@@ -23,6 +25,7 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 		TelegramModule,
 		MessengerModule,
 		InstagramModule,
+		WhatsappModule,
 	],
 	controllers: [AppsController],
 	providers: [
@@ -34,12 +37,20 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 				telegram: TelegramStatusProvider,
 				messenger: MessengerStatusProvider,
 				instagram: InstagramStatusProvider,
-			): IAppStatusProvider[] => [google, telegram, messenger, instagram],
+				whatsapp: WhatsappStatusProvider,
+			): IAppStatusProvider[] => [
+				google,
+				telegram,
+				messenger,
+				instagram,
+				whatsapp,
+			],
 			inject: [
 				GoogleContactsStatusProvider,
 				TelegramStatusProvider,
 				MessengerStatusProvider,
 				InstagramStatusProvider,
+				WhatsappStatusProvider,
 			],
 		},
 	],

@@ -4,6 +4,7 @@ import { InboxConversationSchema } from '../../../modules/inbox/inbox-conversati
 import { InboxMessageSchema } from '../../../modules/inbox/inbox-message.schema';
 import { InstagramConnectionSchema } from '../../../modules/apps/instagram/instagram-connection.schema';
 import { MessengerConnectionSchema } from '../../../modules/apps/messenger/messenger-connection.schema';
+import { WhatsappConnectionSchema } from '../../../modules/apps/whatsapp/whatsapp-connection.schema';
 import { TelegramConnectionSchema } from '../../../modules/apps/telegram/telegram-connection.schema';
 import { GoogleContactsConnectionSchema } from '../../../modules/apps/google-contacts/google-contacts-connection.schema';
 import { CategorySchema } from '../../../modules/categories/interfaces/category.schema';
@@ -48,6 +49,7 @@ export const schemasName = {
 	inboxConversation: 'InboxConversation',
 	inboxMessage: 'InboxMessage',
 	instagramConnection: 'InstagramConnection',
+	whatsappConnection: 'WhatsappConnection',
 	messengerConnection: 'MessengerConnection',
 	telegramConnection: 'TelegramConnection',
 };
@@ -122,6 +124,12 @@ export const schemasModule = {
 	]),
 	inboxMessage: MongooseModule.forFeature([
 		{ name: schemasName.inboxMessage, schema: InboxMessageSchema },
+	]),
+	whatsappConnection: MongooseModule.forFeature([
+		{
+			name: schemasName.whatsappConnection,
+			schema: WhatsappConnectionSchema,
+		},
 	]),
 	instagramConnection: MongooseModule.forFeature([
 		{

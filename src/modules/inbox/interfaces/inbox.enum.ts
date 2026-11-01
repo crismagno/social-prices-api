@@ -4,6 +4,7 @@ namespace InboxEnum {
 		TELEGRAM = 'TELEGRAM',
 		MESSENGER = 'MESSENGER',
 		INSTAGRAM = 'INSTAGRAM',
+		WHATSAPP = 'WHATSAPP',
 	}
 
 	/** IN: the person wrote. OUT: someone answered, from here or from the channel's own app. */
@@ -31,6 +32,7 @@ namespace InboxEnum {
 	/** How a file of a message can be fetched again. */
 	export enum AttachmentSourceType {
 		TELEGRAM_FILE = 'TELEGRAM_FILE',
+		WHATSAPP_MEDIA = 'WHATSAPP_MEDIA',
 		URL = 'URL',
 	}
 }

@@ -72,6 +72,14 @@ export class TelegramBotClient {
 		return { messageId: sent.message_id, sentAt: new Date(sent.date * 1000) };
 	}
 
+	/** "typing…" in the chat; Telegram shows it for about five seconds. */
+	public async sendTyping(token: string, chatId: number): Promise<void> {
+		await this._call(token, 'sendChatAction', {
+			chat_id: chatId,
+			action: 'typing',
+		});
+	}
+
 	/** Sends a file, as the kind of message that suits its type. */
 	public async sendMedia(
 		token: string,

@@ -361,6 +361,40 @@ export class TelegramService {
 	}
 
 	/**
+	 * Lets the customer see "typing…" while the user writes. Best effort: a
+	 * missed signal is not worth an error on the page.
+	 */
+	public async sendTyping(ctx: IAppContext, chatId: number): Promise<void> {
+		try {
+			const connection: ITelegramConnection | null =
+				await this._connectionsService.findWithToken(ctx.ownerUserId);
+
+			if (
+				connection &&
+				(await this._chatsService.findByChatId(ctx.ownerUserId, chatId))
+			) {
+				await this._botClient.sendTyping(
+					this._connectionsService.readToken(connection),
+					chatId,
+				);
+			} else {
+				this._logger.warn(
+					`Typing not sent to chat ${chatId}: no connection or no such chat.`,
+				);
+			}
+		} catch (error) {
+			// Best effort, but a refusal is worth a line in the log (no token in it).
+			this._logger.warn(
+				`Typing not sent to chat ${chatId}: ${
+					error instanceof TelegramApiError
+						? `${error.status} ${error.description}`
+						: 'unexpected error'
+				}`,
+			);
+		}
+	}
+
+	/**
 	 * Removes a message for both sides. Telegram goes first: if it refuses (older
 	 * than 48 hours, say) the message stays here too. One it no longer has is
 	 * simply cleaned up here.

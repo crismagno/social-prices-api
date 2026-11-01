@@ -9,6 +9,7 @@ const customer = (
 	sources: any[] = [],
 ): any => ({
 	_id: id,
+	name: `Cliente ${id}`,
 	email,
 	externalSources: sources,
 });
@@ -22,7 +23,7 @@ describe('ExistingCustomersIndex', () => {
 
 		expect(
 			index.match({ externalId: 'people/1', email: 'other@x.com' }),
-		).toEqual({
+		).toMatchObject({
 			customerId: 'c1',
 			linked: true,
 		});
@@ -36,7 +37,7 @@ describe('ExistingCustomersIndex', () => {
 
 		expect(
 			index.match({ externalId: 'people/9', email: 'mixed@case.com' }),
-		).toEqual({
+		).toMatchObject({
 			customerId: 'c1',
 			linked: false,
 		});
@@ -48,7 +49,9 @@ describe('ExistingCustomersIndex', () => {
 			APP,
 		);
 
-		expect(index.match({ externalId: 'people/2', email: 'a@x.com' })).toEqual({
+		expect(
+			index.match({ externalId: 'people/2', email: 'a@x.com' }),
+		).toMatchObject({
 			customerId: 'c1',
 			linked: true,
 		});
@@ -64,7 +67,9 @@ describe('ExistingCustomersIndex', () => {
 			APP,
 		);
 
-		expect(index.match({ externalId: 'people/2', email: 'a@x.com' })).toEqual({
+		expect(
+			index.match({ externalId: 'people/2', email: 'a@x.com' }),
+		).toMatchObject({
 			customerId: 'c1',
 			linked: false,
 		});
@@ -88,7 +93,9 @@ describe('ExistingCustomersIndex', () => {
 			APP,
 		);
 
-		expect(index.match({ externalId: 'people/1', email: 'b@x.com' })).toEqual({
+		expect(
+			index.match({ externalId: 'people/1', email: 'b@x.com' }),
+		).toMatchObject({
 			customerId: 'c2',
 			linked: false,
 		});
@@ -99,15 +106,37 @@ describe('ExistingCustomersIndex', () => {
 
 		index.register('c9', { externalId: 'people/7', email: 'new@x.com' });
 
-		expect(index.match({ externalId: 'people/7', email: null })).toEqual({
+		expect(index.match({ externalId: 'people/7', email: null })).toMatchObject({
 			customerId: 'c9',
 			linked: true,
 		});
-		expect(index.match({ externalId: 'people/8', email: 'NEW@x.com' })).toEqual(
-			{
-				customerId: 'c9',
-				linked: true,
-			},
+		expect(
+			index.match({ externalId: 'people/8', email: 'NEW@x.com' }),
+		).toMatchObject({ customerId: 'c9', linked: true });
+	});
+
+	it('tells the name of the customer a contact matches, to show who it is', () => {
+		const index = new ExistingCustomersIndex(
+			[
+				customer('c1', 'a@x.com', [{ appId: APP, externalId: 'people/1' }]),
+				customer('c2', 'b@x.com'),
+			],
+			APP,
 		);
+
+		expect(index.match({ externalId: 'people/1', email: null })).toMatchObject({
+			customerName: 'Cliente c1',
+		});
+		expect(
+			index.match({ externalId: 'people/9', email: 'b@x.com' }),
+		).toMatchObject({
+			customerName: 'Cliente c2',
+		});
+
+		index.register('c3', { externalId: 'people/3', email: null }, 'Nova');
+		expect(index.match({ externalId: 'people/3', email: null })).toMatchObject({
+			customerId: 'c3',
+			customerName: 'Nova',
+		});
 	});
 });

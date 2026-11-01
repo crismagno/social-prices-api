@@ -286,6 +286,20 @@ export class MessengerService {
 	}
 
 	/**
+	 * Lets the customer see "typing…" while the user writes, as long as the answer
+	 * window is open. Best effort: a missed signal is not worth an error.
+	 */
+	public async sendTyping(ctx: IAppContext, psid: string): Promise<void> {
+		try {
+			await this._deliver(ctx, psid, (token: string) =>
+				this._graphClient.sendTyping(token, psid),
+			);
+		} catch {
+			// best effort
+		}
+	}
+
+	/**
 	 * Takes a message out of the inbox. Facebook has no way to delete a message,
 	 * so it stays in Messenger for the customer; here it is gone, and the inbox
 	 * shows the message that is now the newest.

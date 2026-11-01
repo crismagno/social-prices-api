@@ -14,6 +14,7 @@ export interface IInboxContact {
 /** Where to get a file again: Telegram by file id, the others by a temporary address. */
 export type IInboxAttachmentSource =
 	| { type: InboxEnum.AttachmentSourceType.TELEGRAM_FILE; fileId: string }
+	| { type: InboxEnum.AttachmentSourceType.WHATSAPP_MEDIA; mediaId: string }
 	| { type: InboxEnum.AttachmentSourceType.URL; url: string };
 
 export interface IInboxAttachment {

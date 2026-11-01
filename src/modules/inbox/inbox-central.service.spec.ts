@@ -45,7 +45,25 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 		findById: jest.fn(),
 	};
 	const adapter: any = {
-		capabilities: { deleteMessage: true },
+		sendTyping: jest.fn().mockResolvedValue(undefined),
+		capabilities: {
+			deleteMessage: true,
+			media: true,
+			voice: true,
+			maxUploadBytes: 10,
+		},
+		sendMedia: jest.fn().mockResolvedValue({
+			_id: 'med1',
+			conversationId: 'c1',
+			channel: 'TELEGRAM',
+			direction: 'OUT',
+			kind: 'FILE',
+			text: null,
+			attachments: [],
+			isUnsupported: false,
+			sentAt: new Date('2030-01-05'),
+			sentByEmployeeId: 'e1',
+		}),
 		deleteMessage: jest.fn().mockResolvedValue(undefined),
 		canReply: jest.fn().mockReturnValue({ allowed: true, windowEndsAt: null }),
 		sendText: jest.fn().mockResolvedValue({
@@ -337,6 +355,37 @@ describe('InboxCentralService', () => {
 		});
 	});
 
+	describe('an app page asks for its own channel only', () => {
+		it('lists only that channel, and reads, marks and lists messages only inside it', async () => {
+			const { service, convService, messages } = build([
+				conv({ _id: 'c1', customerId: CU1 }),
+				conv({
+					_id: 'c2',
+					customerId: CU1,
+					channel: 'INSTAGRAM',
+					unreadCount: 3,
+				}),
+			]);
+
+			const rows = await service.listChats(OWNER, 'INSTAGRAM' as any);
+			expect(rows).toHaveLength(1);
+			expect(rows[0].conversations.map((c) => c._id)).toEqual(['c2']);
+
+			await service.listMessages(OWNER, {
+				customerId: CU1,
+				channel: 'INSTAGRAM' as any,
+			});
+			expect(messages.listTimeline.mock.calls[0][1]).toEqual(['c2']);
+
+			await service.markRead(OWNER, {
+				customerId: CU1,
+				channel: 'TELEGRAM' as any,
+			});
+			expect(convService.markRead).toHaveBeenCalledTimes(1);
+			expect(convService.markRead).toHaveBeenCalledWith(OWNER, 'c1');
+		});
+	});
+
 	describe('assignCustomer', () => {
 		it('ties, moves or frees a conversation, whose history goes with it', async () => {
 			const { service, convService, realtime } = build([
@@ -521,6 +570,122 @@ describe('InboxCentralService', () => {
 			await expect(service.reply(ctx, 'c1', 'oi')).rejects.toBeInstanceOf(
 				AppNotEnabledException,
 			);
+		});
+	});
+
+	describe('typing', () => {
+		const ctx = { ownerUserId: OWNER, employeeId: 'e1' };
+
+		it('lets the person see "typing…" through the conversation\'s channel', async () => {
+			const { service, adapter } = build([conv()]);
+
+			await service.typing(ctx, 'c1');
+
+			expect(adapter.sendTyping).toHaveBeenCalledWith(ctx, conv());
+		});
+
+		it('does nothing when the answer window is closed or the channel has no such signal', async () => {
+			const closed = build([conv()]);
+			closed.adapter.canReply.mockReturnValue({
+				allowed: false,
+				windowEndsAt: new Date(0),
+			});
+			await closed.service.typing(ctx, 'c1');
+			expect(closed.adapter.sendTyping).not.toHaveBeenCalled();
+
+			const none = build([conv()]);
+			delete none.adapter.sendTyping;
+			await expect(none.service.typing(ctx, 'c1')).resolves.toBeUndefined();
+		});
+
+		it('refuses a channel whose app is not enabled', async () => {
+			const { service, usersService } = build([conv()]);
+			usersService.findOneById.mockResolvedValue({ enabledApps: [] });
+
+			await expect(service.typing(ctx, 'c1')).rejects.toBeInstanceOf(
+				AppNotEnabledException,
+			);
+		});
+	});
+
+	describe('sendMedia', () => {
+		const ctx = { ownerUserId: OWNER, employeeId: 'e1' };
+		const file = {
+			buffer: Buffer.alloc(4),
+			fileName: 'a.pdf',
+			mimeType: 'application/pdf',
+		};
+		const options = { caption: 'segue', asVoice: false };
+
+		it("sends the file through the conversation's channel and returns the message", async () => {
+			const { service, adapter } = build([conv()]);
+
+			const result = await service.sendMedia(ctx, 'c1', file, options);
+
+			expect(adapter.sendMedia).toHaveBeenCalledWith(
+				ctx,
+				conv(),
+				file,
+				options,
+			);
+			expect(result).toMatchObject({ _id: 'med1', direction: 'OUT' });
+		});
+
+		it('refuses where nothing is taken: a channel with no files, no recordings, a file too large, a closed window', async () => {
+			const noMedia = build([conv()]);
+			noMedia.adapter.capabilities.media = false;
+			await expect(
+				noMedia.service.sendMedia(ctx, 'c1', file, options),
+			).rejects.toBeInstanceOf(ConflictException);
+
+			const noVoice = build([conv()]);
+			noVoice.adapter.capabilities.voice = false;
+			await expect(
+				noVoice.service.sendMedia(ctx, 'c1', file, {
+					caption: null,
+					asVoice: true,
+				}),
+			).rejects.toBeInstanceOf(ConflictException);
+
+			const big = build([conv()]);
+			big.adapter.capabilities.maxUploadBytes = 3;
+			await expect(
+				big.service.sendMedia(ctx, 'c1', file, options),
+			).rejects.toBeInstanceOf(BadRequestException);
+
+			const closed = build([conv()]);
+			closed.adapter.canReply.mockReturnValue({
+				allowed: false,
+				windowEndsAt: new Date(0),
+			});
+			await expect(
+				closed.service.sendMedia(ctx, 'c1', file, options),
+			).rejects.toBeInstanceOf(ConflictException);
+
+			for (const refused of [noMedia, noVoice, big, closed]) {
+				expect(refused.adapter.sendMedia).not.toHaveBeenCalled();
+			}
+		});
+
+		it('refuses a channel whose app is not enabled', async () => {
+			const { service, usersService } = build([conv()]);
+			usersService.findOneById.mockResolvedValue({ enabledApps: [] });
+
+			await expect(
+				service.sendMedia(ctx, 'c1', file, options),
+			).rejects.toBeInstanceOf(AppNotEnabledException);
+		});
+
+		it('tells each conversation what its channel takes', async () => {
+			const { service } = build([conv({ customerId: CU1 })]);
+
+			const [row] = await service.listChats(OWNER);
+
+			expect(row.conversations[0]).toMatchObject({
+				canSendMedia: true,
+				canSendVoice: true,
+				maxUploadBytes: 10,
+			});
 		});
 	});
 

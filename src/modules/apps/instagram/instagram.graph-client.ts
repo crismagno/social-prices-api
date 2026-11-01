@@ -167,6 +167,19 @@ export class InstagramGraphClient {
 		return { mid: answer.message_id, sentAt: new Date() };
 	}
 
+	/** "typing…" in the conversation, until a message is sent or about 20 seconds pass. */
+	public async sendTyping(
+		token: string,
+		accountId: string,
+		igsid: string,
+	): Promise<void> {
+		await this._request(graphUrl(`/${accountId}/messages`), {
+			method: 'POST',
+			token,
+			json: { recipient: { id: igsid }, sender_action: 'typing_on' },
+		});
+	}
+
 	public async getProfile(
 		token: string,
 		igsid: string,

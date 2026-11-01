@@ -217,7 +217,7 @@ describe('GoogleContactsImportService', () => {
 			[...result.savedLinks].sort((a, b) =>
 				a.externalId.localeCompare(b.externalId),
 			),
-		).toEqual([
+		).toMatchObject([
 			{ externalId: 'people/c1', customerId: 'new' },
 			{ externalId: 'people/c2', customerId: 'k2' },
 		]);

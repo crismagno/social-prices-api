@@ -166,6 +166,17 @@ export class InstagramController {
 		);
 	}
 
+	// "typing…" for the customer while the user writes; never fails the page.
+	@Post('chats/:igsid/typing')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard)
+	public async sendTyping(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('igsid') igsid: string,
+	): Promise<void> {
+		await this._instagramService.sendTyping(toContext(authPayload), igsid);
+	}
+
 	@Post('chats/:igsid/read')
 	@HttpCode(204)
 	@UseGuards(AppEnabledGuard)

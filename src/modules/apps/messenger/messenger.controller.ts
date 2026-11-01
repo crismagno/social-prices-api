@@ -213,6 +213,17 @@ export class MessengerController {
 		);
 	}
 
+	// "typing…" for the customer while the user writes; never fails the page.
+	@Post('chats/:psid/typing')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard)
+	public async sendTyping(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('psid') psid: string,
+	): Promise<void> {
+		await this._messengerService.sendTyping(toContext(authPayload), psid);
+	}
+
 	@Post('chats/:psid/read')
 	@HttpCode(204)
 	@UseGuards(AppEnabledGuard)

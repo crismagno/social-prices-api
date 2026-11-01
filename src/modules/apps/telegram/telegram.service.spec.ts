@@ -53,6 +53,7 @@ const build = (
 		}),
 		setWebhook: jest.fn().mockResolvedValue(undefined),
 		deleteWebhook: jest.fn().mockResolvedValue(undefined),
+		sendTyping: jest.fn().mockResolvedValue(undefined),
 		getWebhookInfo: jest.fn().mockResolvedValue({
 			url: `${BASE}/api/v1/apps/telegram/webhook/KEY`,
 			pendingUpdateCount: 0,
@@ -939,6 +940,40 @@ describe('TelegramService', () => {
 			await expect(
 				build().service.getMedia('u1', 555, 'm1'),
 			).rejects.toBeInstanceOf(TelegramNotConnectedException);
+		});
+	});
+
+	describe('sendTyping', () => {
+		const ctx = { ownerUserId: 'u1', employeeId: 'e1' };
+
+		it('shows "typing…" in the chat of a person who wrote', async () => {
+			const { service, bot } = build({
+				connection: { token: 'ENC' },
+				chat: { chatId: 555, telegramUserId: 555 },
+			});
+
+			await service.sendTyping(ctx, 555);
+
+			expect(bot.sendTyping).toHaveBeenCalledWith(TOKEN, 555);
+		});
+
+		it('does nothing without a connection or a chat, and never throws', async () => {
+			const noConnection = build({ chat: { chatId: 555 } });
+			await noConnection.service.sendTyping(ctx, 555);
+			expect(noConnection.bot.sendTyping).not.toHaveBeenCalled();
+
+			const noChat = build({ connection: { token: 'ENC' } });
+			await noChat.service.sendTyping(ctx, 555);
+			expect(noChat.bot.sendTyping).not.toHaveBeenCalled();
+
+			const failing = build({
+				connection: { token: 'ENC' },
+				chat: { chatId: 555 },
+			});
+			failing.bot.sendTyping.mockRejectedValue(new Error('boom'));
+			await expect(
+				failing.service.sendTyping(ctx, 555),
+			).resolves.toBeUndefined();
 		});
 	});
 

@@ -28,6 +28,8 @@ describe('channel adapters of the central inbox', () => {
 	describe('Telegram', () => {
 		const service: any = {
 			sendMessage: jest.fn().mockResolvedValue({ _id: 'out1' }),
+			sendMedia: jest.fn().mockResolvedValue({ _id: 'out1' }),
+			sendTyping: jest.fn().mockResolvedValue(undefined),
 			deleteMessage: jest.fn().mockResolvedValue(undefined),
 			getMedia: jest.fn().mockResolvedValue({
 				buffer: Buffer.alloc(1),
@@ -48,6 +50,40 @@ describe('channel adapters of the central inbox', () => {
 			});
 			expect(service.sendMessage).toHaveBeenCalledWith(ctx, 555, 'oi');
 			expect(messages.findById).toHaveBeenCalledWith(OWNER, 'out1');
+		});
+
+		it('sends a file or a recording with its caption, within the bot size limit', async () => {
+			const file = {
+				buffer: Buffer.alloc(1),
+				fileName: 'a.mp3',
+				mimeType: 'audio/mpeg',
+			};
+
+			await expect(
+				adapter.sendMedia(ctx, conversation, file, {
+					caption: 'oi',
+					asVoice: true,
+				}),
+			).resolves.toEqual({ _id: 'out1' });
+
+			expect(service.sendMedia).toHaveBeenCalledWith(
+				ctx,
+				555,
+				file,
+				'oi',
+				true,
+			);
+			expect(adapter.capabilities).toMatchObject({
+				media: true,
+				voice: true,
+				maxUploadBytes: 20 * 1024 * 1024,
+			});
+		});
+
+		it('shows "typing…" in the bot chat', async () => {
+			await adapter.sendTyping(ctx, conversation);
+
+			expect(service.sendTyping).toHaveBeenCalledWith(ctx, 555);
 		});
 
 		it('deletes the message in the bot chat', async () => {
@@ -76,6 +112,7 @@ describe('channel adapters of the central inbox', () => {
 	])('%s', (_name, Adapter: any) => {
 		const service: any = {
 			sendMessage: jest.fn().mockResolvedValue({ _id: 'out1' }),
+			sendTyping: jest.fn().mockResolvedValue(undefined),
 			deleteMessage: jest.fn().mockResolvedValue(undefined),
 			getAttachment: jest.fn().mockResolvedValue({
 				buffer: Buffer.alloc(1),
@@ -106,6 +143,12 @@ describe('channel adapters of the central inbox', () => {
 			expect(service.sendMessage).toHaveBeenCalledWith(ctx, 'X1', 'oi');
 		});
 
+		it('shows "typing…" by the person id', async () => {
+			await adapter.sendTyping(ctx, { contactKey: 'X1' });
+
+			expect(service.sendTyping).toHaveBeenCalledWith(ctx, 'X1');
+		});
+
 		it('removes a message from the inbox only', async () => {
 			expect(adapter.capabilities.deleteMessage).toBe(true);
 
@@ -127,6 +170,60 @@ describe('channel adapters of the central inbox', () => {
 			expect(file).toEqual(
 				expect.objectContaining({ contentType: 'image/jpeg', fileName: null }),
 			);
+		});
+	});
+
+	describe('files and recordings', () => {
+		const file = {
+			buffer: Buffer.alloc(1),
+			fileName: 'a.wav',
+			mimeType: 'audio/wav',
+		};
+		const conversation: any = { contactKey: 'X1' };
+
+		it('Messenger sends the file, then the text as a message of its own (a file has no caption)', async () => {
+			const service: any = {
+				sendAttachment: jest.fn().mockResolvedValue({ _id: 'out1' }),
+				sendMessage: jest.fn().mockResolvedValue({ _id: 'out2' }),
+			};
+			const adapter = new MessengerInboxAdapter(registry, service, messages);
+
+			await expect(
+				adapter.sendMedia(ctx, conversation, file, {
+					caption: 'oi',
+					asVoice: true,
+				}),
+			).resolves.toEqual({ _id: 'out1' });
+
+			expect(service.sendAttachment).toHaveBeenCalledWith(ctx, 'X1', file);
+			expect(service.sendMessage).toHaveBeenCalledWith(ctx, 'X1', 'oi');
+			expect(adapter.capabilities).toMatchObject({
+				media: true,
+				voice: true,
+				maxUploadBytes: 25 * 1024 * 1024,
+			});
+
+			service.sendMessage.mockClear();
+			await adapter.sendMedia(ctx, conversation, file, {
+				caption: null,
+				asVoice: false,
+			});
+			expect(service.sendMessage).not.toHaveBeenCalled();
+		});
+
+		it('Instagram takes text only', () => {
+			const adapter: any = new InstagramInboxAdapter(
+				registry,
+				{} as any,
+				messages,
+			);
+
+			expect(adapter.capabilities).toMatchObject({
+				media: false,
+				voice: false,
+				maxUploadBytes: null,
+			});
+			expect(adapter.sendMedia).toBeUndefined();
 		});
 	});
 });

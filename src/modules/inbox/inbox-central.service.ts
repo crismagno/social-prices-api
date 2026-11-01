@@ -21,6 +21,7 @@ import { UsersService } from '../users/users.service';
 import {
 	IInboxChannelAdapter,
 	IInboxReplyContext,
+	IInboxUploadFile,
 } from './inbox-channel.adapter';
 import { InboxChannelRegistry } from './inbox-channel.registry';
 import { InboxConversationsService } from './inbox-conversations.service';
@@ -40,6 +41,8 @@ import {
 } from './interfaces/inbox.types';
 
 export const MESSAGE_NOT_DELETABLE_CODE: string = 'MESSAGE_NOT_DELETABLE';
+export const MEDIA_NOT_SUPPORTED_CODE: string = 'MEDIA_NOT_SUPPORTED';
+export const FILE_TOO_LARGE_CODE: string = 'FILE_TOO_LARGE';
 export const REPLY_WINDOW_CLOSED_CODE: string = 'REPLY_WINDOW_CLOSED';
 const MAX_REPLY_LENGTH: number = 1000;
 
@@ -48,6 +51,7 @@ const APP_BY_CHANNEL: Record<InboxEnum.Channel, AppsEnum.App> = {
 	[InboxEnum.Channel.TELEGRAM]: AppsEnum.App.TELEGRAM,
 	[InboxEnum.Channel.MESSENGER]: AppsEnum.App.FACEBOOK,
 	[InboxEnum.Channel.INSTAGRAM]: AppsEnum.App.INSTAGRAM,
+	[InboxEnum.Channel.WHATSAPP]: AppsEnum.App.WHATSAPP,
 };
 
 interface ICustomerCard {
@@ -74,14 +78,19 @@ export class InboxCentralService {
 	 * The list of the page: one row per customer (with all their conversations) and
 	 * one per person not tied to a customer yet, most recent first.
 	 */
-	public async listChats(ownerUserId: string): Promise<IInboxChatView[]> {
+	public async listChats(
+		ownerUserId: string,
+		channel?: InboxEnum.Channel,
+	): Promise<IInboxChatView[]> {
 		const enabled: Set<InboxEnum.Channel> =
 			await this._enabledChannels(ownerUserId);
 
 		const conversations: IInboxConversation[] = (
 			await this._conversations.listAll(ownerUserId)
-		).filter((conversation: IInboxConversation) =>
-			enabled.has(conversation.channel),
+		).filter(
+			(conversation: IInboxConversation) =>
+				enabled.has(conversation.channel) &&
+				(!channel || conversation.channel === channel),
 		);
 
 		const customers: Map<string, ICustomerCard> = await this._customersOf(
@@ -334,6 +343,84 @@ export class InboxCentralService {
 		await adapter.deleteMessage(ownerUserId, conversation, message);
 	}
 
+	/**
+	 * Lets the person see "typing…" through the channel of that conversation while
+	 * the user writes. Best effort: a channel without it, or a closed window, is
+	 * simply ignored.
+	 */
+	public async typing(
+		ctx: IInboxReplyContext,
+		conversationId: string,
+	): Promise<void> {
+		const conversation: IInboxConversation = await this._ownedConversation(
+			ctx.ownerUserId,
+			conversationId,
+		);
+
+		const adapter: IInboxChannelAdapter = this._registry.get(
+			conversation.channel,
+		);
+
+		if (adapter.sendTyping && adapter.canReply(conversation).allowed) {
+			await adapter.sendTyping(ctx, conversation);
+		}
+	}
+
+	/**
+	 * Sends a file, or a recording, through one conversation's channel. Where the
+	 * channel takes none, or the file is over its limit, nothing is sent.
+	 */
+	public async sendMedia(
+		ctx: IInboxReplyContext,
+		conversationId: string,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IInboxMessageView> {
+		const conversation: IInboxConversation = await this._ownedConversation(
+			ctx.ownerUserId,
+			conversationId,
+		);
+
+		const adapter: IInboxChannelAdapter = this._registry.get(
+			conversation.channel,
+		);
+
+		if (!adapter.capabilities.media || !adapter.sendMedia) {
+			throw new ConflictException({
+				code: MEDIA_NOT_SUPPORTED_CODE,
+				message: 'This channel does not take files.',
+			});
+		}
+
+		if (options.asVoice && !adapter.capabilities.voice) {
+			throw new ConflictException({
+				code: MEDIA_NOT_SUPPORTED_CODE,
+				message: 'This channel does not take voice messages.',
+			});
+		}
+
+		if (
+			adapter.capabilities.maxUploadBytes !== null &&
+			file.buffer.length > adapter.capabilities.maxUploadBytes
+		) {
+			throw new BadRequestException({
+				code: FILE_TOO_LARGE_CODE,
+				message: 'The file is larger than the channel takes.',
+			});
+		}
+
+		if (!adapter.canReply(conversation).allowed) {
+			throw new ConflictException({
+				code: REPLY_WINDOW_CLOSED_CODE,
+				message: 'The answer window of this conversation is closed.',
+			});
+		}
+
+		return this._toMessageView(
+			await adapter.sendMedia(ctx, conversation, file, options),
+		);
+	}
+
 	/** One file of a message, fetched from its channel when asked for. */
 	public async getAttachment(
 		ownerUserId: string,
@@ -386,8 +473,10 @@ export class InboxCentralService {
 			found = conversation ? [conversation] : [];
 		}
 
-		return found.filter((conversation: IInboxConversation) =>
-			enabled.has(conversation.channel),
+		return found.filter(
+			(conversation: IInboxConversation) =>
+				enabled.has(conversation.channel) &&
+				(!scope.channel || conversation.channel === scope.channel),
 		);
 	}
 
@@ -552,7 +641,24 @@ export class InboxCentralService {
 			lastMessageAt: conversation.lastMessageAt,
 			canReply: reply.allowed,
 			replyWindowEndsAt: reply.windowEndsAt,
+			...this._mediaOf(conversation),
 		};
+	}
+
+	private _mediaOf(conversation: IInboxConversation): {
+		canSendMedia: boolean;
+		canSendVoice: boolean;
+		maxUploadBytes: number | null;
+	} {
+		try {
+			const { media, voice, maxUploadBytes } = this._registry.get(
+				conversation.channel,
+			).capabilities;
+
+			return { canSendMedia: media, canSendVoice: voice, maxUploadBytes };
+		} catch {
+			return { canSendMedia: false, canSendVoice: false, maxUploadBytes: null };
+		}
 	}
 
 	private _canReply(conversation: IInboxConversation): {

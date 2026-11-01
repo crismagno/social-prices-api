@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -9,10 +10,13 @@ import {
 	Post,
 	Query,
 	Res,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
@@ -22,8 +26,10 @@ import { mediaResponseHeaders } from '../apps/telegram/telegram.media-response';
 import { InboxCentralService } from './inbox-central.service';
 import {
 	InboxAssignCustomerDto,
+	InboxChatsQueryDto,
 	InboxMessagesQueryDto,
 	InboxReplyDto,
+	InboxSendMediaDto,
 	InboxScopeQueryDto,
 } from './inbox.dto';
 import {
@@ -31,6 +37,9 @@ import {
 	IInboxConversationView,
 	IInboxMessageView,
 } from './interfaces/inbox-central.types';
+
+// The most any channel takes (Messenger's 25 MB); each channel checks its own limit.
+const MAX_UPLOAD_BYTES: number = 25 * 1024 * 1024;
 
 const validation = new ValidationPipe({ transform: true });
 
@@ -40,10 +49,12 @@ export class InboxController {
 	constructor(private readonly _central: InboxCentralService) {}
 
 	@Get('chats')
+	@UsePipes(validation)
 	public async listChats(
 		@AuthPayload() authPayload: IAuthPayload,
+		@Query() query: InboxChatsQueryDto,
 	): Promise<IInboxChatView[]> {
-		return await this._central.listChats(authPayload._id);
+		return await this._central.listChats(authPayload._id, query.channel);
 	}
 
 	@Get('messages')
@@ -54,7 +65,11 @@ export class InboxController {
 	): Promise<IInboxMessageView[]> {
 		return await this._central.listMessages(
 			authPayload._id,
-			{ customerId: query.customerId, conversationId: query.conversationId },
+			{
+				customerId: query.customerId,
+				conversationId: query.conversationId,
+				channel: query.channel,
+			},
 			{ limit: query.limit, before: query.before },
 		);
 	}
@@ -116,6 +131,56 @@ export class InboxController {
 		@Param('customerId') customerId: string,
 	): Promise<IInboxConversationView[]> {
 		return await this._central.summary(authPayload._id, customerId);
+	}
+
+	// "typing…" for the person while the user writes; never fails the page.
+	@Post('conversations/:conversationId/typing')
+	@HttpCode(204)
+	public async typing(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('conversationId') conversationId: string,
+	): Promise<void> {
+		await this._central.typing(
+			{
+				ownerUserId: authPayload._id,
+				employeeId: authPayload.employeeId ?? null,
+			},
+			conversationId,
+		);
+	}
+
+	// A file or a recording. The text, when there is one, is its caption (or a
+	// message of its own where the channel has no captions).
+	@Post('conversations/:conversationId/media')
+	@HttpCode(200)
+	@UsePipes(validation)
+	@UseInterceptors(
+		FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
+	)
+	public async sendMedia(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('conversationId') conversationId: string,
+		@UploadedFile() file: Express.Multer.File,
+		@Body() dto: InboxSendMediaDto,
+	): Promise<IInboxMessageView> {
+		if (!file?.buffer?.length) {
+			throw new BadRequestException('A file is required.');
+		}
+
+		return await this._central.sendMedia(
+			{
+				ownerUserId: authPayload._id,
+				employeeId: authPayload.employeeId ?? null,
+			},
+			conversationId,
+			{
+				buffer: file.buffer,
+				// Multer reads the name as latin1; the browser sent UTF-8.
+				fileName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+				mimeType: file.mimetype,
+			},
+			{ caption: dto.caption?.trim() || null, asVoice: dto.voice === true },
+		);
 	}
 
 	// Removing a message changes the owner's data (and, in Telegram, the customer's

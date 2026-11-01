@@ -294,6 +294,31 @@ export class InstagramService {
 	}
 
 	/**
+	 * Lets the customer see "typing…" while the user writes, as long as the answer
+	 * window is open. Best effort: a missed signal is not worth an error.
+	 */
+	public async sendTyping(ctx: IAppContext, igsid: string): Promise<void> {
+		try {
+			const connection: IInstagramConnection | null =
+				await this._connectionsService.findWithToken(ctx.ownerUserId);
+
+			const chat: IInstagramChat | null = connection
+				? await this._chatsService.findByIgsid(ctx.ownerUserId, igsid)
+				: null;
+
+			if (connection && chat && this._isWindowOpen(chat)) {
+				await this._graphClient.sendTyping(
+					await this._usableToken(connection),
+					connection.instagramUserId,
+					igsid,
+				);
+			}
+		} catch {
+			// best effort
+		}
+	}
+
+	/**
 	 * Takes a message out of the inbox. Instagram has no way to delete a message,
 	 * so it stays there for the customer; here it is gone, and the inbox shows the
 	 * message that is now the newest.

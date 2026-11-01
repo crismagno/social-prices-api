@@ -64,7 +64,11 @@ export class GoogleContactsImportService {
 		};
 
 		const savedExternalIds: string[] = [];
-		const savedLinks: { externalId: string; customerId: string }[] = [];
+		const savedLinks: {
+			externalId: string;
+			customerId: string;
+			customerName: string | null;
+		}[] = [];
 
 		if (!ids.length) {
 			return { ...summary, savedExternalIds, savedLinks };
@@ -129,8 +133,9 @@ export class GoogleContactsImportService {
 						savedLinks.push({
 							externalId: contact.externalId,
 							customerId: match.customerId,
+							customerName: match.customerName,
 						});
-						index.register(match.customerId, contact);
+						index.register(match.customerId, contact, match.customerName);
 					} else {
 						summary.skipped++;
 					}
@@ -153,8 +158,9 @@ export class GoogleContactsImportService {
 					savedLinks.push({
 						externalId: contact.externalId,
 						customerId: String(created._id),
+						customerName: created.name ?? null,
 					});
-					index.register(created._id, contact);
+					index.register(created._id, contact, created.name ?? null);
 				}
 			} catch (error) {
 				if (error instanceof FeatureLimitReachedException) {

@@ -50,7 +50,7 @@ export class GoogleContactsCustomersRepository {
 						{ email: { $in: emails } },
 					],
 				},
-				{ email: 1, externalSources: 1 },
+				{ email: 1, name: 1, externalSources: 1 },
 			)
 			.collation({ locale: 'en', strength: 2 })
 			.lean<IExistingCustomer[]>();
@@ -75,6 +75,21 @@ export class GoogleContactsCustomersRepository {
 		);
 
 		return result.modifiedCount > 0;
+	}
+
+	/** Takes one app's link off a customer, touching nothing else. */
+	public async unlinkExternalSource(
+		customerId: string,
+		appId: AppsEnum.App,
+		externalId: string,
+	): Promise<void> {
+		await this._customerModel.updateOne(
+			{ _id: customerId },
+			{
+				$pull: { externalSources: { appId, externalId } },
+				$set: { updatedAt: new Date() },
+			},
+		);
 	}
 
 	/** A customer of this owner, or null: a malformed or foreign id never reaches the database as a cast error. */

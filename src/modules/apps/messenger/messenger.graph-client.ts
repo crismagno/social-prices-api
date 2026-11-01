@@ -150,6 +150,14 @@ export class MessengerGraphClient {
 		return { mid: answer.message_id, sentAt: new Date() };
 	}
 
+	/** "typing…" in the conversation, until a message is sent or about 20 seconds pass. */
+	public async sendTyping(pageToken: string, psid: string): Promise<void> {
+		await this._call('POST', '/me/messages', {
+			token: pageToken,
+			json: { recipient: { id: psid }, sender_action: 'typing_on' },
+		});
+	}
+
 	/** Sends a file to a person who wrote in the last 24 hours, as the kind that suits its type. */
 	public async sendAttachment(
 		pageToken: string,

@@ -3,6 +3,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
 	IInboxChannelAdapter,
 	IInboxChannelCapabilities,
+	IInboxUploadFile,
 	IInboxReplyContext,
 } from '../../inbox/inbox-channel.adapter';
 import { InboxChannelRegistry } from '../../inbox/inbox-channel.registry';
@@ -12,6 +13,7 @@ import {
 	IInboxConversation,
 	IInboxMessage,
 } from '../../inbox/interfaces/inbox.types';
+import { MAX_MESSENGER_UPLOAD_BYTES } from './messenger-chat.dto';
 import { REPLY_WINDOW_MS, MessengerService } from './messenger.service';
 
 /** How the central inbox reaches the Messenger account: answers and files. */
@@ -23,7 +25,8 @@ export class MessengerInboxAdapter
 	public readonly capabilities: IInboxChannelCapabilities = {
 		text: true,
 		media: true,
-		voice: false,
+		voice: true,
+		maxUploadBytes: MAX_MESSENGER_UPLOAD_BYTES,
 		deleteMessage: true,
 		answerWindowMs: REPLY_WINDOW_MS,
 	};
@@ -62,6 +65,37 @@ export class MessengerInboxAdapter
 		);
 
 		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	/** A file carries no caption on Messenger, so the text goes as a message right after it. */
+	public async sendMedia(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IInboxMessage> {
+		const sent = await this._service.sendAttachment(
+			ctx,
+			conversation.contactKey,
+			file,
+		);
+
+		if (options.caption) {
+			await this._service.sendMessage(
+				ctx,
+				conversation.contactKey,
+				options.caption,
+			);
+		}
+
+		return await this._messages.findById(ctx.ownerUserId, sent._id);
+	}
+
+	public async sendTyping(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void> {
+		await this._service.sendTyping(ctx, conversation.contactKey);
 	}
 
 	public async deleteMessage(
