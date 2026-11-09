@@ -24,6 +24,7 @@ import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { AppEmployeeLevelGuard } from '../apps/core/guards/app-employee-level.guard';
 import { mediaResponseHeaders } from '../apps/telegram/telegram.media-response';
 import { InboxCentralService } from './inbox-central.service';
+import { MAX_UPLOAD_BYTES } from './inbox.constants';
 import {
 	InboxAssignCustomerDto,
 	InboxChatsQueryDto,
@@ -37,9 +38,6 @@ import {
 	IInboxConversationView,
 	IInboxMessageView,
 } from './interfaces/inbox-central.types';
-
-// The most any channel takes (Messenger's 25 MB); each channel checks its own limit.
-const MAX_UPLOAD_BYTES: number = 25 * 1024 * 1024;
 
 const validation = new ValidationPipe({ transform: true });
 

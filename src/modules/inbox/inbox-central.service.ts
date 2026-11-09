@@ -20,6 +20,7 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import {
 	IInboxChannelAdapter,
+	IInboxChannelCapabilities,
 	IInboxReplyContext,
 	IInboxUploadFile,
 } from './inbox-channel.adapter';
@@ -364,6 +365,36 @@ export class InboxCentralService {
 		if (adapter.sendTyping && adapter.canReply(conversation).allowed) {
 			await adapter.sendTyping(ctx, conversation);
 		}
+	}
+
+	/**
+	 * What a conversation takes right now, for callers that must check a whole
+	 * batch before sending any of it (quick messages).
+	 */
+	public async getSendTarget(
+		ownerUserId: string,
+		conversationId: string,
+	): Promise<{
+		conversation: IInboxConversation;
+		capabilities: IInboxChannelCapabilities;
+		canReply: boolean;
+		canSendMedia: boolean;
+	}> {
+		const conversation: IInboxConversation = await this._ownedConversation(
+			ownerUserId,
+			conversationId,
+		);
+
+		const adapter: IInboxChannelAdapter = this._registry.get(
+			conversation.channel,
+		);
+
+		return {
+			conversation,
+			capabilities: adapter.capabilities,
+			canReply: adapter.canReply(conversation).allowed,
+			canSendMedia: adapter.capabilities.media && !!adapter.sendMedia,
+		};
 	}
 
 	/**

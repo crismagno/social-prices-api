@@ -23,6 +23,7 @@ import { FilesUploadsModule } from './modules/files-uploads/files-uploads.module
 import { FilesModule } from './modules/files/files.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { NotesModule } from './modules/notes/notes.module';
+import { QuickMessagesModule } from './modules/quick-messages/quick-messages.module';
 import { ManagerAuthModule } from './modules/manager-auth/manager-auth.module';
 import { ManagerUsersModule } from './modules/manager-users/manager-users.module';
 import { ManagersModule } from './modules/managers/managers.module';
@@ -67,6 +68,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		FilesUploadsModule,
 		LogsModule,
 		NotesModule,
+		QuickMessagesModule,
 		ManagersModule,
 		ManagerAuthModule,
 		ManagerUsersModule,

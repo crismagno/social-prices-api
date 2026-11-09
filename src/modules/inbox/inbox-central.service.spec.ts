@@ -608,6 +608,43 @@ describe('InboxCentralService', () => {
 		});
 	});
 
+	describe('getSendTarget', () => {
+		it('says what the conversation takes now: window, files and their limit', async () => {
+			const open = build([conv()]);
+
+			await expect(
+				open.service.getSendTarget(OWNER, 'c1'),
+			).resolves.toMatchObject({
+				conversation: conv(),
+				canReply: true,
+				canSendMedia: true,
+				capabilities: { maxUploadBytes: 10 },
+			});
+
+			const closed = build([conv()]);
+			closed.adapter.canReply.mockReturnValue({
+				allowed: false,
+				windowEndsAt: null,
+			});
+			closed.adapter.capabilities.media = false;
+
+			await expect(
+				closed.service.getSendTarget(OWNER, 'c1'),
+			).resolves.toMatchObject({
+				canReply: false,
+				canSendMedia: false,
+			});
+		});
+
+		it('is 404 for a conversation that is not the owner', async () => {
+			const { service } = build([]);
+
+			await expect(service.getSendTarget(OWNER, 'c1')).rejects.toThrow(
+				'Conversation not found.',
+			);
+		});
+	});
+
 	describe('sendMedia', () => {
 		const ctx = { ownerUserId: OWNER, employeeId: 'e1' };
 		const file = {

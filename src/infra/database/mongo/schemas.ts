@@ -25,6 +25,7 @@ import { TagSchema } from '../../../modules/tags/interfaces/tags.schema';
 import { NoteSchema } from '../../../modules/notes/interfaces/note.schema';
 import { TransactionSchema } from '../../../modules/transactions/interfaces/transaction.schema';
 import UserSchema from '../../../modules/users/interfaces/user.schema';
+import { QuickMessageSchema } from '../../../modules/quick-messages/interfaces/quick-message.schema';
 
 export const schemasName = {
 	user: 'User',
@@ -52,6 +53,7 @@ export const schemasName = {
 	whatsappConnection: 'WhatsappConnection',
 	messengerConnection: 'MessengerConnection',
 	telegramConnection: 'TelegramConnection',
+	quickMessage: 'QuickMessage',
 };
 
 export const schemasModule = {
@@ -145,5 +147,8 @@ export const schemasModule = {
 	]),
 	telegramConnection: MongooseModule.forFeature([
 		{ name: schemasName.telegramConnection, schema: TelegramConnectionSchema },
+	]),
+	quickMessage: MongooseModule.forFeature([
+		{ name: schemasName.quickMessage, schema: QuickMessageSchema },
 	]),
 };

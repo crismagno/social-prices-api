@@ -30,6 +30,7 @@ import { InboxMessagesService } from './inbox-messages.service';
 		InboxChannelRegistry,
 	],
 	exports: [
+		InboxCentralService,
 		InboxConversationsService,
 		InboxMessagesService,
 		InboxChannelRegistry,
