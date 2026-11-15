@@ -6,6 +6,7 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
+import { AllowCustomer } from '../../shared/decorators/custom.decorator';
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { FeedbacksService } from './feedbacks.service';
@@ -15,6 +16,7 @@ import CreateFeedbackDto from './interfaces/dto/createFeedback.dto';
 export class FeedbacksController {
 	constructor(private readonly _feedbacksService: FeedbacksService) {}
 
+	@AllowCustomer()
 	@Post()
 	@UsePipes(ValidationPipe)
 	public async create(

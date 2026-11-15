@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ConflictException,
+	NotFoundException,
+} from '@nestjs/common';
 import { Types } from 'mongoose';
 
 import { CustomersService } from './customers.service';
@@ -25,13 +29,16 @@ const build = () => {
 	model.countDocuments = jest.fn().mockResolvedValue(0);
 	model.find = jest.fn().mockResolvedValue([]);
 	model.bulkWrite = jest.fn().mockResolvedValue({});
+	model.updateMany = jest.fn().mockResolvedValue({});
 
 	const users: any = {
-		findOneByIdOrFail: jest.fn().mockResolvedValue({ _id: 'u1' }),
+		findOneByIdOrFail: jest.fn().mockResolvedValue({ _id: 'u1', name: 'Loja' }),
+		findOneByEmail: jest.fn().mockResolvedValue(undefined),
 	};
 	const notifications: any = {
 		createdCustomer: jest.fn().mockResolvedValue(undefined),
 		updatedCustomer: jest.fn().mockResolvedValue(undefined),
+		sendCustomerInvite: jest.fn().mockResolvedValue(undefined),
 	};
 	const featureLimits: any = {
 		assertCanCreate: jest.fn().mockResolvedValue(undefined),
@@ -55,7 +62,7 @@ const build = () => {
 		stores,
 	);
 
-	return { service, model, stores, files, created };
+	return { service, model, stores, files, created, users, notifications };
 };
 
 const baseDto = (over: any = {}): any => ({
@@ -165,6 +172,85 @@ describe('CustomersService — stores', () => {
 				service.findByStoreTableState('u1', S1, {} as any),
 			).rejects.toBeInstanceOf(NotFoundException);
 			expect(model.countDocuments).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('customer accounts', () => {
+		it('links store customers with the same email to the new user', async () => {
+			const { service, model } = build();
+
+			await service.linkUserByEmail('u9', 'Ana@X.com');
+
+			const [filter, update] = model.updateMany.mock.calls[0];
+			expect(filter.userId).toBeNull();
+			expect(filter.email.test('ana@x.com')).toBe(true);
+			expect(filter.email.test('ana@x.com.br')).toBe(false);
+			expect(update).toEqual({ $set: { userId: 'u9' } });
+		});
+
+		it('invites a customer by email and records when', async () => {
+			const { service, model, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				email: 'ana@x.com',
+				name: 'Ana',
+				userId: null,
+			});
+
+			await service.invite('u1', C1);
+
+			expect(notifications.sendCustomerInvite).toHaveBeenCalledWith({
+				toEmail: 'ana@x.com',
+				customerName: 'Ana',
+				storeOwnerName: 'Loja',
+			});
+			const [id, update] = model.findByIdAndUpdate.mock.calls[0];
+			expect(id).toBe(C1);
+			expect(update.$set.invitedAt).toBeInstanceOf(Date);
+		});
+
+		it('refuses to invite a customer without email', async () => {
+			const { service, model, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				email: null,
+			});
+
+			await expect(service.invite('u1', C1)).rejects.toBeInstanceOf(
+				BadRequestException,
+			);
+			expect(notifications.sendCustomerInvite).not.toHaveBeenCalled();
+		});
+
+		it('refuses to invite an email that already has an account', async () => {
+			const { service, model, users, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				email: 'ana@x.com',
+			});
+			users.findOneByEmail.mockResolvedValue({ _id: 'someone' });
+
+			await expect(service.invite('u1', C1)).rejects.toBeInstanceOf(
+				ConflictException,
+			);
+			expect(notifications.sendCustomerInvite).not.toHaveBeenCalled();
+		});
+
+		it("refuses to invite another owner's customer", async () => {
+			const { service, model, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u2',
+				email: 'ana@x.com',
+			});
+
+			await expect(service.invite('u1', C1)).rejects.toBeInstanceOf(
+				NotFoundException,
+			);
+			expect(notifications.sendCustomerInvite).not.toHaveBeenCalled();
 		});
 	});
 });

@@ -630,6 +630,38 @@ export class NotificationsService {
 		};
 	}
 
+	/** A store invites one of its customers to follow their purchases on Social Prices. */
+	public async sendCustomerInvite(params: {
+		toEmail: string;
+		customerName: string | null;
+		storeOwnerName: string | null;
+	}): Promise<void> {
+		const signUpUrl: string = `${
+			process.env.SOCIAL_PRICES_URL
+		}login?signup=customer&email=${encodeURIComponent(params.toEmail)}`;
+
+		const emailResponse: string = await this._emailTransportService.sendEmail({
+			to: params.toEmail,
+			subject: 'Follow your purchases on Social Prices',
+			html: renderEmailHtml({
+				title: 'You are invited to Social Prices',
+				heroImageSrc: getHeroImageByCategory(EmailHeroCategory.GENERIC),
+				heroImageAlt: 'Social Prices',
+				bodyRelativePath:
+					TemplatesEnum.RelativePath.EMAIL_CUSTOMER_INVITE_BODY_HBS,
+				bodyData: {
+					customerName: params.customerName ?? '',
+					storeOwnerName: params.storeOwnerName ?? 'A store',
+					signUpUrl,
+				},
+			}),
+		});
+
+		if (!emailResponse) {
+			throw new BadRequestException('Error when attempt to send the invite');
+		}
+	}
+
 	public async activatedSale(sale: ISale, user: IUser): Promise<void> {
 		const userId: string = sale.createdByUserId.toString();
 

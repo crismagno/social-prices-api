@@ -111,6 +111,14 @@ export class CustomersController {
 		);
 	}
 
+	@Post('/:customerId/invite')
+	public async invite(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('customerId') customerId: string,
+	): Promise<ICustomer> {
+		return await this._customersService.invite(authPayload._id, customerId);
+	}
+
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
 	public async countByOwnerUserId(

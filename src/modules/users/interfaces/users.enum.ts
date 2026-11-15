@@ -13,7 +13,8 @@ namespace UsersEnum {
 
 	export enum Type {
 		COMPANY = 'COMPANY',
-		COMMON = 'COMMON',
+		/** Someone who buys from stores: sees only the sales made for them. */
+		CUSTOMER = 'CUSTOMER',
 	}
 }
 

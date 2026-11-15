@@ -8,7 +8,10 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
-import { Public } from '../../shared/decorators/custom.decorator';
+import {
+	AllowCustomer,
+	Public,
+} from '../../shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import { ISearchEmployee } from '../employees/interfaces/employees.types';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
@@ -45,12 +48,14 @@ export class AuthController {
 		return await this._authService.signUp(createUserDto);
 	}
 
+	@AllowCustomer()
 	@Get('/validateToken')
 	@UsePipes(ValidationPipe)
 	public async validateToken(): Promise<boolean> {
 		return true;
 	}
 
+	@AllowCustomer()
 	@Get('/validateSignInCode/:codeValue')
 	@UsePipes(ValidationPipe)
 	public async validateSignInCode(
@@ -84,6 +89,7 @@ export class AuthController {
 		);
 	}
 
+	@AllowCustomer()
 	@Get('/validateSignInEmployeeCode/:codeValue')
 	@UsePipes(ValidationPipe)
 	public async validateSignInEmployeeCode(
@@ -97,6 +103,7 @@ export class AuthController {
 		);
 	}
 
+	@AllowCustomer()
 	@Get('/getAuthUserEmployee')
 	@UsePipes(ValidationPipe)
 	public async getAuthUserEmployee(
@@ -108,6 +115,7 @@ export class AuthController {
 		);
 	}
 
+	@AllowCustomer()
 	@Get('/getAuthLoginByToken')
 	@UsePipes(ValidationPipe)
 	public async getAuthLoginByToken(

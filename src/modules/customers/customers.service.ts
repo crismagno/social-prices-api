@@ -15,6 +15,7 @@ import mongoose, {
 
 import {
 	BadRequestException,
+	ConflictException,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
@@ -336,6 +337,57 @@ export class CustomersService {
 				},
 			})) as any,
 		);
+	}
+
+	/** A new customer account takes over the store customers carrying its email. */
+	public async linkUserByEmail(userId: string, email: string): Promise<void> {
+		await this._customerModel.updateMany(
+			{
+				email: new RegExp(`^${escapeRegExp(email)}$`, 'i'),
+				userId: null,
+			},
+			{ $set: { userId } },
+		);
+	}
+
+	/** Emails one of the owner's customers a link to create a customer account. */
+	public async invite(
+		ownerUserId: string,
+		customerId: string,
+	): Promise<ICustomer> {
+		const customer: ICustomer = await this.findByIdOrFail(customerId);
+
+		if (String(customer.ownerUserId) !== ownerUserId) {
+			throw new NotFoundException('Customer not found!');
+		}
+
+		if (!customer.email) {
+			throw new BadRequestException('Customer has no email.');
+		}
+
+		if (await this._usersService.findOneByEmail(customer.email)) {
+			throw new ConflictException({
+				code: 'CUSTOMER_ALREADY_HAS_ACCOUNT',
+				message: 'This email already has an account.',
+			});
+		}
+
+		const owner: IUser =
+			await this._usersService.findOneByIdOrFail(ownerUserId);
+
+		await this._notificationsService.sendCustomerInvite({
+			toEmail: customer.email,
+			customerName: customer.name,
+			storeOwnerName: owner.name,
+		});
+
+		const invitedAt: Date = new Date();
+
+		await this._customerModel.findByIdAndUpdate(customer._id, {
+			$set: { invitedAt },
+		});
+
+		return { ...this._plain(customer), invitedAt } as ICustomer;
 	}
 
 	public async create(
@@ -819,6 +871,14 @@ export class CustomersService {
 	 * The stores sent from the form, deduplicated, after checking they all belong
 	 * to the owner. Undefined when none were sent, so an update keeps what it had.
 	 */
+	private _plain(customer: ICustomer): ICustomer {
+		const document: any = customer;
+
+		return typeof document?.toObject === 'function'
+			? document.toObject()
+			: customer;
+	}
+
 	private async _validateStoresOfOwner(
 		ownerUserId: string,
 		storesIds: string[] | string | undefined,

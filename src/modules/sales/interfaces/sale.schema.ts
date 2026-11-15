@@ -413,6 +413,8 @@ SaleSchema.index({ 'stores.customerId': 1, createdDate: -1 }); // sales by custo
 SaleSchema.index({ 'stores.products.productId': 1 }); // sales filtered by product
 SaleSchema.index({ 'stores.products.productItemId': 1 }); // sales filtered by product item
 SaleSchema.index({ numberManual: 1 }); // findByNumberManual
+SaleSchema.index({ 'buyer.userId': 1, createdAt: -1 }); // customer portal
+SaleSchema.index({ 'buyer.email': 1, createdAt: -1 }); // customer portal
 
 SaleSchema.virtual('stores.products.productItem', {
 	ref: 'ProductItem',

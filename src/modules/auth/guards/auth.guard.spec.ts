@@ -1,7 +1,8 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
 import {
 	ALLOWS_UNVALIDATED_SIGN_IN_KEY,
+	IS_ALLOW_CUSTOMER_KEY,
 	IS_MANAGER_ROUTE_KEY,
 	IS_PUBLIC_KEY,
 } from '../../../shared/decorators/custom.decorator';
@@ -149,5 +150,63 @@ describe('AuthGuard', () => {
 		await guard.canActivate(buildContext(request));
 
 		expect(request[AuthEnum.RequestProps.AUTH_PAYLOAD]).toBe(USER_PAYLOAD);
+	});
+
+	describe('customer accounts', () => {
+		const authorized = (): any => ({
+			headers: { authorization: 'Bearer token' },
+		});
+
+		it('refuses a customer token on a route not open to customers', async () => {
+			const { guard } = buildGuard(
+				{},
+				{ ...USER_PAYLOAD, userType: 'CUSTOMER' },
+			);
+
+			const error: any = await guard
+				.canActivate(buildContext(authorized()))
+				.catch((e) => e);
+
+			expect(error).toBeInstanceOf(ForbiddenException);
+			expect(error.getResponse().code).toBe('CUSTOMER_NOT_ALLOWED');
+		});
+
+		it('lets a customer token through a route open to customers', async () => {
+			const { guard } = buildGuard(
+				{ [IS_ALLOW_CUSTOMER_KEY]: true },
+				{ ...USER_PAYLOAD, userType: 'CUSTOMER' },
+			);
+
+			await expect(guard.canActivate(buildContext(authorized()))).resolves.toBe(
+				true,
+			);
+		});
+
+		it('treats a token without userType as a company', async () => {
+			const { guard } = buildGuard({}, USER_PAYLOAD);
+
+			await expect(guard.canActivate(buildContext(authorized()))).resolves.toBe(
+				true,
+			);
+		});
+
+		it('lets a company token through any user route', async () => {
+			const { guard } = buildGuard(
+				{},
+				{ ...USER_PAYLOAD, userType: 'COMPANY' },
+			);
+
+			await expect(guard.canActivate(buildContext(authorized()))).resolves.toBe(
+				true,
+			);
+		});
+
+		it('keeps public routes public for everyone', async () => {
+			const { guard } = buildGuard({ [IS_PUBLIC_KEY]: true }, undefined);
+
+			await expect(
+				guard.canActivate(buildContext({ headers: {} })),
+			).resolves.toBe(true);
+		});
 	});
 });

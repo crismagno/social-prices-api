@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import { Public } from '../../shared/decorators/custom.decorator';
+import {
+	AllowCustomer,
+	Public,
+} from '../../shared/decorators/custom.decorator';
 import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
@@ -46,6 +49,7 @@ export class UsersController {
 		await this._usersService.recoverPassword(recoverPasswordDto);
 	}
 
+	@AllowCustomer()
 	@Post('/updateUser')
 	@UsePipes(ValidationPipe)
 	public async updateUserDto(
@@ -55,6 +59,7 @@ export class UsersController {
 		return await this._usersService.updateUser(authPayload._id, updateUserDto);
 	}
 
+	@AllowCustomer()
 	@Post('/updateUserAddresses')
 	@UsePipes(ValidationPipe)
 	public async updateUserAddresses(
@@ -67,6 +72,7 @@ export class UsersController {
 		);
 	}
 
+	@AllowCustomer()
 	@Post('/updateUserPhoneNumbers')
 	@UsePipes(ValidationPipe)
 	public async updateUserPhoneNumbers(
@@ -79,6 +85,7 @@ export class UsersController {
 		);
 	}
 
+	@AllowCustomer()
 	@Post('/uploadAvatar')
 	@UseInterceptors(FileInterceptor('avatar'))
 	public async uploadAvatar(
@@ -89,6 +96,7 @@ export class UsersController {
 		return await this._usersService.updateAvatar(authPayload._id, file);
 	}
 
+	@AllowCustomer()
 	@Delete('/removeAvatar')
 	public async removeAvatar(
 		@AuthPayload() authPayload: IAuthPayload,
@@ -96,6 +104,7 @@ export class UsersController {
 		return await this._usersService.removeAvatar(authPayload._id);
 	}
 
+	@AllowCustomer()
 	@Get('/sendUpdateEmailCode/:email')
 	public async sendUpdateEmailCode(
 		@AuthPayload() authPayload: IAuthPayload,
@@ -104,6 +113,7 @@ export class UsersController {
 		await this._usersService.sendUpdateEmailCode(authPayload._id, email);
 	}
 
+	@AllowCustomer()
 	@Post('/updateEmail')
 	@UsePipes(ValidationPipe)
 	public async updateEmail(

@@ -1,5 +1,6 @@
 import { IEmployee } from '../../employees/interfaces/employee.interface';
 import { IUserEntity } from '../../users/interfaces/users.types';
+import UsersEnum from '../../users/interfaces/users.enum';
 import AuthEnum from './auth.enum';
 
 export interface IAuthPayload {
@@ -10,6 +11,10 @@ export interface IAuthPayload {
 	exp?: number;
 	employeeId?: string;
 	type?: AuthEnum.PayloadType.USER;
+	/** Missing on tokens issued before customer accounts: those are companies. */
+	userType?: UsersEnum.Type;
+	/** The account's main employee, i.e. the owner. Missing on older tokens. */
+	isOwner?: boolean;
 }
 
 /**
@@ -21,6 +26,7 @@ export interface IAuthPayload {
 export interface IDecodedTokenPayload {
 	type?: AuthEnum.PayloadType;
 	isSignInValidated?: boolean;
+	userType?: UsersEnum.Type;
 }
 
 export interface IAuthLogin {

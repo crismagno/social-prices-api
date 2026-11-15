@@ -12,6 +12,7 @@ namespace TemplatesEnum {
 		EMAIL_MANAGER_CREATED_BODY_HBS = 'email/manager-created.hbs',
 		EMAIL_SALE_COMPLETED_BODY_HBS = 'email/sale-completed.hbs',
 		EMAIL_SALE_SUMMARY_LINK_BODY_HBS = 'email/sale-summary-link.hbs',
+		EMAIL_CUSTOMER_INVITE_BODY_HBS = 'email/customer-invite.hbs',
 	}
 }
 

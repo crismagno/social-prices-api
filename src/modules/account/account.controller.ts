@@ -7,6 +7,7 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
+import { AllowCustomer } from '../../shared/decorators/custom.decorator';
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
@@ -28,6 +29,7 @@ export class AccountController {
 		return await this._featureLimitsService.getUsage(authPayload._id);
 	}
 
+	@AllowCustomer()
 	@Delete('/removeAccount')
 	@UsePipes(ValidationPipe)
 	public async removeAccount(

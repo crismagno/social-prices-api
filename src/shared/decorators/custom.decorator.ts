@@ -21,3 +21,11 @@ export const ManagerRoute = (): CustomDecorator<string> =>
 export const ALLOWS_UNVALIDATED_SIGN_IN_KEY: string = 'allowsUnvalidatedSignIn';
 export const AllowsUnvalidatedSignIn = (): CustomDecorator<string> =>
 	SetMetadata(ALLOWS_UNVALIDATED_SIGN_IN_KEY, true);
+
+/**
+ * Opens a route to CUSTOMER accounts. Every other protected route refuses them,
+ * so a new store route is closed to customers without anyone remembering to.
+ */
+export const IS_ALLOW_CUSTOMER_KEY: string = 'isAllowCustomer';
+export const AllowCustomer = (): CustomDecorator<string> =>
+	SetMetadata(IS_ALLOW_CUSTOMER_KEY, true);

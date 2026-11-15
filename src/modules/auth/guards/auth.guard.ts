@@ -3,6 +3,7 @@ import { Request } from 'express';
 import {
 	CanActivate,
 	ExecutionContext,
+	ForbiddenException,
 	Injectable,
 	UnauthorizedException,
 } from '@nestjs/common';
@@ -11,9 +12,11 @@ import { Reflector } from '@nestjs/core';
 import AuthorizationToken from '../../../infra/authorization/authorization-token';
 import {
 	ALLOWS_UNVALIDATED_SIGN_IN_KEY,
+	IS_ALLOW_CUSTOMER_KEY,
 	IS_MANAGER_ROUTE_KEY,
 	IS_PUBLIC_KEY,
 } from '../../../shared/decorators/custom.decorator';
+import UsersEnum from '../../users/interfaces/users.enum';
 import AuthEnum from '../interfaces/auth.enum';
 import { IDecodedTokenPayload } from '../interfaces/auth.types';
 
@@ -98,6 +101,19 @@ export class AuthGuard implements CanActivate {
 				error: AuthEnum.AuthErrors.UNAUTHORIZED,
 				type: AuthEnum.AuthTypes.SIGN_IN_NOT_VALIDATED,
 				message: AuthEnum.AuthErrors.UNAUTHORIZED,
+			});
+		}
+
+		const allowsCustomer: boolean =
+			!!this._reflector.getAllAndOverride<boolean>(IS_ALLOW_CUSTOMER_KEY, [
+				context.getHandler(),
+				context.getClass(),
+			]);
+
+		if (payload?.userType === UsersEnum.Type.CUSTOMER && !allowsCustomer) {
+			throw new ForbiddenException({
+				code: 'CUSTOMER_NOT_ALLOWED',
+				message: 'This account cannot access this resource.',
 			});
 		}
 

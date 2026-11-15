@@ -25,6 +25,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import CreateUserDto from '../users/interfaces/dto/createUser.dto';
 import UserEntity from '../users/interfaces/user.entity';
 import { IUser } from '../users/interfaces/user.interface';
+import { CustomersService } from '../customers/customers.service';
 import UsersEnum from '../users/interfaces/users.enum';
 import { UsersService } from '../users/users.service';
 import {
@@ -50,6 +51,7 @@ export class AuthService {
 		private readonly _authorizationToken: AuthorizationToken,
 		private readonly _employeesService: EmployeesService,
 		public readonly _codesService: CodesService,
+		private readonly _customersService: CustomersService,
 	) {
 		this._logger = new Logger(AuthService.name);
 	}
@@ -134,11 +136,15 @@ export class AuthService {
 				about: createUserDto.about,
 				createdAt: now,
 				updatedAt: now,
-				type: createUserDto.type,
+				type: createUserDto.type ?? UsersEnum.Type.COMPANY,
 				limits: { features: { ...FeatureLimitsEnum.DefaultLimits } },
 			});
 
 			await this._notificationsService.sendSignInCode(user);
+
+			if (user.type === UsersEnum.Type.CUSTOMER) {
+				await this._linkStoreCustomers(user);
+			}
 
 			await this._employeesService.create(
 				null,
@@ -280,6 +286,8 @@ export class AuthService {
 			uid: user.uid,
 			email: user.email,
 			employeeId: employee._id,
+			userType: user.type ?? UsersEnum.Type.COMPANY,
+			isOwner: !!employee.isMain,
 		};
 
 		const authToken: string =
@@ -321,6 +329,8 @@ export class AuthService {
 			uid: user.uid,
 			email: user.email,
 			employeeId: employee._id,
+			userType: user.type ?? UsersEnum.Type.COMPANY,
+			isOwner: !!employee.isMain,
 		};
 
 		const authToken: string =
@@ -334,4 +344,17 @@ export class AuthService {
 	}
 
 	// #endregion
+
+	/** Best effort: a failure here must not stop the account from being created. */
+	private async _linkStoreCustomers(user: IUser): Promise<void> {
+		try {
+			await this._customersService.linkUserByEmail(user._id, user.email);
+		} catch (error) {
+			this._logger.error(
+				`Could not link store customers to ${user._id}: ${
+					error?.message ?? error
+				}`,
+			);
+		}
+	}
 }

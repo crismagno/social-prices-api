@@ -11,6 +11,7 @@ import { JwtModuleRegister } from './infra/authorization/authorization-token.enu
 import { MongooseModuleForRoot } from './infra/database/mongo/mongo';
 import { AccountModule } from './modules/account/account.module';
 import { AppsModule } from './modules/apps/apps.module';
+import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthGuard } from './modules/auth/guards/auth.guard';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -74,6 +75,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		ManagerUsersModule,
 		ProductItemsModule,
 		AppsModule,
+		CustomerPortalModule,
 	],
 	controllers: [AppController, AppInitController],
 	providers: [

@@ -38,7 +38,7 @@ const validDto: any = {
 	email: 'new@test.com',
 	username: 'newname',
 	status: UsersEnum.Status.ACTIVE,
-	type: UsersEnum.Type.COMMON,
+	type: UsersEnum.Type.CUSTOMER,
 	// must be ignored:
 	password: 'hacked',
 	authProvider: 'GOOGLE',

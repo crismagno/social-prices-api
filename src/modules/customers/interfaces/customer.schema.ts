@@ -73,6 +73,9 @@ export class Customer implements ICustomer {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId], default: [] })
 	storesIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: Date, default: null })
+	invitedAt: Date | null;
+
 	@Prop({ type: String })
 	uniqName: string | null;
 

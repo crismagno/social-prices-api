@@ -8,6 +8,7 @@ import {
 	ValidationPipe,
 } from '@nestjs/common';
 
+import { AllowCustomer } from '../../shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
@@ -19,6 +20,7 @@ import UpdateToSeenDto from './interfaces/dto/updateToSeen.dto';
 import { INotification } from './interfaces/notification.interface';
 import { NotificationsService } from './notifications.service';
 
+@AllowCustomer()
 @Controller('api/v1/notifications')
 export class NotificationsController {
 	constructor(private _notificationsService: NotificationsService) {}
