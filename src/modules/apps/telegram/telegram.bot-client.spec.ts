@@ -178,6 +178,89 @@ describe('TelegramBotClient', () => {
 		});
 	});
 
+	describe('bot profile', () => {
+		it('reads name and both descriptions', async () => {
+			fetchMock
+				.mockResolvedValueOnce(ok({ name: 'Loja' }))
+				.mockResolvedValueOnce(ok({ description: 'Atendimento' }))
+				.mockResolvedValueOnce(ok({ short_description: '' }));
+
+			await expect(client.getProfile(TOKEN)).resolves.toEqual({
+				name: 'Loja',
+				description: 'Atendimento',
+				shortDescription: '',
+			});
+		});
+
+		it('sends only the fields given', async () => {
+			fetchMock.mockResolvedValue(ok(true));
+
+			await client.setProfile(TOKEN, { shortDescription: '' });
+
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url.endsWith('/setMyShortDescription')).toBe(true);
+			expect(JSON.parse(init.body)).toEqual({ short_description: '' });
+		});
+
+		it('surfaces a rate limit as a TelegramApiError', async () => {
+			fetchMock.mockResolvedValue(
+				fail(429, 'Too Many Requests: retry after 60'),
+			);
+
+			await expect(
+				client.setProfile(TOKEN, { name: 'Nova' }),
+			).rejects.toBeInstanceOf(TelegramApiError);
+		});
+	});
+
+	describe('bot photo', () => {
+		it('uploads the photo as a new file, referenced with attach://', async () => {
+			fetchMock.mockResolvedValue(ok(true));
+
+			await client.setProfilePhoto(TOKEN, Buffer.from([0xff, 0xd8, 0xff]));
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url.endsWith('/setMyProfilePhoto')).toBe(true);
+			const form: FormData = init.body;
+			expect(JSON.parse(form.get('photo') as string)).toEqual({
+				type: 'static',
+				photo: 'attach://profile_photo',
+			});
+			expect((form.get('profile_photo') as File).type).toBe('image/jpeg');
+		});
+
+		it('removes the photo', async () => {
+			fetchMock.mockResolvedValue(ok(true));
+
+			await client.removeProfilePhoto(TOKEN);
+
+			expect(fetchMock.mock.calls[0][0].endsWith('/removeMyProfilePhoto')).toBe(
+				true,
+			);
+		});
+
+		it('finds the biggest size of the current photo, or null', async () => {
+			fetchMock
+				.mockResolvedValueOnce(
+					ok({
+						total_count: 1,
+						photos: [[{ file_id: 'small' }, { file_id: 'big' }]],
+					}),
+				)
+				.mockResolvedValueOnce(ok({ total_count: 0, photos: [] }));
+
+			await expect(client.getProfilePhotoFileId(TOKEN, 42)).resolves.toBe(
+				'big',
+			);
+			expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+				user_id: 42,
+				limit: 1,
+			});
+			await expect(client.getProfilePhotoFileId(TOKEN, 42)).resolves.toBeNull();
+		});
+	});
+
 	describe('sendMedia', () => {
 		const file = (mimeType: string, size = 10, fileName = 'f.bin') => ({
 			buffer: Buffer.alloc(size),

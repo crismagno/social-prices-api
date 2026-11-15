@@ -1,6 +1,8 @@
 import {
 	BadRequestException,
 	ConflictException,
+	HttpException,
+	HttpStatus,
 	NotFoundException,
 } from '@nestjs/common';
 
@@ -151,6 +153,57 @@ export class TelegramCustomerAlreadyLinkedException extends ConflictException {
 			code: TELEGRAM_CUSTOMER_ALREADY_LINKED_CODE,
 			message:
 				'This customer is already linked to a Telegram contact, or this Telegram contact already belongs to another customer.',
+		});
+	}
+}
+
+export const TELEGRAM_BOT_PROFILE_REJECTED_CODE: string =
+	'TELEGRAM_BOT_PROFILE_REJECTED';
+export const TELEGRAM_RATE_LIMITED_CODE: string = 'TELEGRAM_RATE_LIMITED';
+
+export class TelegramBotProfileRejectedException extends BadRequestException {
+	constructor(reason: string) {
+		super({
+			code: TELEGRAM_BOT_PROFILE_REJECTED_CODE,
+			message: `Telegram did not accept the bot profile: ${reason}`,
+			reason,
+		});
+	}
+}
+
+/** Telegram limits how often a bot's profile changes; the name most of all. */
+export class TelegramRateLimitedException extends HttpException {
+	constructor(retryAfter: number | null) {
+		super(
+			{
+				code: TELEGRAM_RATE_LIMITED_CODE,
+				message: 'Telegram asked to wait before changing the bot again.',
+				retryAfter,
+			},
+			HttpStatus.TOO_MANY_REQUESTS,
+		);
+	}
+}
+
+export const TELEGRAM_BOT_PHOTO_INVALID_CODE: string =
+	'TELEGRAM_BOT_PHOTO_INVALID';
+export const TELEGRAM_BOT_PHOTO_NOT_FOUND_CODE: string =
+	'TELEGRAM_BOT_PHOTO_NOT_FOUND';
+
+export class TelegramBotPhotoInvalidException extends BadRequestException {
+	constructor() {
+		super({
+			code: TELEGRAM_BOT_PHOTO_INVALID_CODE,
+			message: 'The bot photo must be a JPEG image.',
+		});
+	}
+}
+
+export class TelegramBotPhotoNotFoundException extends NotFoundException {
+	constructor() {
+		super({
+			code: TELEGRAM_BOT_PHOTO_NOT_FOUND_CODE,
+			message: 'The bot has no profile photo.',
 		});
 	}
 }

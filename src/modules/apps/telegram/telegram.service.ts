@@ -20,6 +20,9 @@ import {
 } from './telegram.customers.repository';
 import {
 	TelegramBotAlreadyConnectedException,
+	TelegramBotPhotoInvalidException,
+	TelegramBotPhotoNotFoundException,
+	TelegramBotProfileRejectedException,
 	TelegramChatAlreadyLinkedException,
 	TelegramChatNotFoundException,
 	TelegramChatUnavailableException,
@@ -29,6 +32,7 @@ import {
 	TelegramMessageNotDeletableException,
 	TelegramMessageNotFoundException,
 	TelegramNotConnectedException,
+	TelegramRateLimitedException,
 	TelegramWebhookRejectedException,
 	TelegramWebhookUrlMissingException,
 } from './telegram.exceptions';
@@ -36,6 +40,7 @@ import { parseTelegramUpdate } from './telegram.update-parser';
 import {
 	INormalizedTelegramMessage,
 	ITelegramBotInfo,
+	ITelegramBotProfile,
 	ITelegramChatView,
 	ITelegramConnectionView,
 	ITelegramSentMessage,
@@ -69,6 +74,13 @@ const WEBHOOK_PATH: string = '/api/v1/apps/telegram/webhook';
 const INVALID_TOKEN_STATUSES: number[] = [401, 404];
 // Telegram says 403 when the person blocked the bot and 400 when the chat is gone.
 const UNDELIVERABLE_STATUSES: number[] = [400, 403];
+// Every JPEG starts with these bytes; the declared type is not trusted.
+const JPEG_SIGNATURE: Buffer = Buffer.from([0xff, 0xd8, 0xff]);
+const PROFILE_FIELDS: (keyof ITelegramBotProfile)[] = [
+	'name',
+	'description',
+	'shortDescription',
+];
 
 @Injectable()
 export class TelegramService {
@@ -197,6 +209,122 @@ export class TelegramService {
 		return this._toView(
 			await this._connectionsService.findByOwner(ownerUserId),
 		);
+	}
+
+	/** The bot's name and descriptions, read live from Telegram. */
+	public async getBotProfile(
+		ownerUserId: string,
+	): Promise<ITelegramBotProfile> {
+		const connection: ITelegramConnection =
+			await this._getConnectionOrFail(ownerUserId);
+
+		return await this._botClient.getProfile(
+			this._connectionsService.readToken(connection),
+		);
+	}
+
+	/**
+	 * Changes the bot's public profile. Only fields that differ from what Telegram
+	 * has are sent, since Telegram rate-limits these calls. The name goes first and
+	 * is kept on the connection as soon as it is accepted, so a later refusal does
+	 * not leave the app showing the old one.
+	 */
+	public async updateBotProfile(
+		ownerUserId: string,
+		input: Partial<ITelegramBotProfile>,
+	): Promise<ITelegramBotProfile> {
+		const connection: ITelegramConnection =
+			await this._getConnectionOrFail(ownerUserId);
+		const token: string = this._connectionsService.readToken(connection);
+
+		const current: ITelegramBotProfile =
+			await this._botClient.getProfile(token);
+
+		const changes: Partial<ITelegramBotProfile> = {};
+
+		for (const field of PROFILE_FIELDS) {
+			const value: string | undefined = input[field]?.trim();
+
+			if (value !== undefined && value !== current[field]) {
+				changes[field] = value;
+			}
+		}
+
+		try {
+			if (changes.name !== undefined) {
+				await this._botClient.setProfile(token, { name: changes.name });
+				await this._connectionsService.updateBotName(
+					connection._id,
+					changes.name,
+				);
+			}
+
+			const rest: Partial<ITelegramBotProfile> = { ...changes };
+			delete rest.name;
+
+			if (Object.keys(rest).length) {
+				await this._botClient.setProfile(token, rest);
+			}
+		} catch (error) {
+			throw this._toProfileError(error);
+		}
+
+		return { ...current, ...changes };
+	}
+
+	/** The bot's current photo, fetched through here so the token never reaches the browser. */
+	public async getBotPhoto(
+		ownerUserId: string,
+	): Promise<{ buffer: Buffer; mimeType: string }> {
+		const connection: ITelegramConnection =
+			await this._getConnectionOrFail(ownerUserId);
+		const token: string = this._connectionsService.readToken(connection);
+
+		const fileId: string | null = await this._botClient.getProfilePhotoFileId(
+			token,
+			connection.botId,
+		);
+
+		if (!fileId) {
+			throw new TelegramBotPhotoNotFoundException();
+		}
+
+		const file = await this._botClient.downloadFile(token, fileId);
+
+		// Telegram stores profile photos as JPEG.
+		return { buffer: file.buffer, mimeType: 'image/jpeg' };
+	}
+
+	/** Replaces the bot's photo. The browser already cropped and converted it to JPEG. */
+	public async setBotPhoto(ownerUserId: string, jpeg: Buffer): Promise<void> {
+		if (!jpeg?.subarray(0, JPEG_SIGNATURE.length).equals(JPEG_SIGNATURE)) {
+			throw new TelegramBotPhotoInvalidException();
+		}
+
+		const connection: ITelegramConnection =
+			await this._getConnectionOrFail(ownerUserId);
+
+		try {
+			await this._botClient.setProfilePhoto(
+				this._connectionsService.readToken(connection),
+				jpeg,
+			);
+		} catch (error) {
+			throw this._toProfileError(error);
+		}
+	}
+
+	public async removeBotPhoto(ownerUserId: string): Promise<void> {
+		const connection: ITelegramConnection =
+			await this._getConnectionOrFail(ownerUserId);
+
+		try {
+			await this._botClient.removeProfilePhoto(
+				this._connectionsService.readToken(connection),
+			);
+		} catch (error) {
+			throw this._toProfileError(error);
+		}
 	}
 
 	/** What Telegram says about delivering to this system; the first thing to look at when messages stop. */
@@ -762,6 +890,36 @@ export class TelegramService {
 			lastContentType: chat.lastContentType,
 			unreadCount: chat.unreadCount ?? 0,
 		};
+	}
+
+	private async _getConnectionOrFail(
+		ownerUserId: string,
+	): Promise<ITelegramConnection> {
+		const connection: ITelegramConnection | null =
+			await this._connectionsService.findWithToken(ownerUserId);
+
+		if (!connection) {
+			throw new TelegramNotConnectedException();
+		}
+
+		return connection;
+	}
+
+	private _toProfileError(error: unknown): unknown {
+		if (!(error instanceof TelegramApiError)) {
+			return error;
+		}
+
+		if (error.status === 429) {
+			const seconds: RegExpMatchArray | null =
+				error.description.match(/retry after (\d+)/i);
+
+			return new TelegramRateLimitedException(
+				seconds ? Number(seconds[1]) : null,
+			);
+		}
+
+		return new TelegramBotProfileRejectedException(error.description);
 	}
 
 	private _toView(

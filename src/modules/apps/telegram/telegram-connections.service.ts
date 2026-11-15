@@ -110,6 +110,17 @@ export class TelegramConnectionsService {
 		);
 	}
 
+	/** The name shown in the app follows what was last set on Telegram. */
+	public async updateBotName(
+		connectionId: string,
+		botName: string,
+	): Promise<void> {
+		await this._connectionModel.updateOne(
+			{ _id: connectionId },
+			{ $set: { botName } },
+		);
+	}
+
 	public async saveWebhookInfo(
 		connectionId: string,
 		info: ITelegramWebhookInfo,

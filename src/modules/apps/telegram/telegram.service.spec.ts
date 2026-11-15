@@ -11,6 +11,10 @@ import {
 	TelegramMessageNotDeletableException,
 	TelegramMessageNotFoundException,
 	TelegramChatUnavailableException,
+	TelegramBotProfileRejectedException,
+	TelegramRateLimitedException,
+	TelegramBotPhotoInvalidException,
+	TelegramBotPhotoNotFoundException,
 	TelegramCustomerNotFoundException,
 	TelegramInvalidTokenException,
 	TelegramNotConnectedException,
@@ -54,6 +58,18 @@ const build = (
 		setWebhook: jest.fn().mockResolvedValue(undefined),
 		deleteWebhook: jest.fn().mockResolvedValue(undefined),
 		sendTyping: jest.fn().mockResolvedValue(undefined),
+		getProfile: jest.fn().mockResolvedValue({
+			name: 'Loja',
+			description: 'Atendimento da loja',
+			shortDescription: 'Loja oficial',
+		}),
+		setProfile: jest.fn().mockResolvedValue(undefined),
+		setProfilePhoto: jest.fn().mockResolvedValue(undefined),
+		removeProfilePhoto: jest.fn().mockResolvedValue(undefined),
+		getProfilePhotoFileId: jest.fn().mockResolvedValue('PHOTO_FILE'),
+		downloadFile: jest
+			.fn()
+			.mockResolvedValue({ buffer: Buffer.from('jpg'), filePath: 'p.jpg' }),
 		getWebhookInfo: jest.fn().mockResolvedValue({
 			url: `${BASE}/api/v1/apps/telegram/webhook/KEY`,
 			pendingUpdateCount: 0,
@@ -77,6 +93,7 @@ const build = (
 		}),
 		touchLastUpdate: jest.fn().mockResolvedValue(undefined),
 		updateWebhook: jest.fn().mockResolvedValue(undefined),
+		updateBotName: jest.fn().mockResolvedValue(undefined),
 		saveWebhookInfo: jest.fn().mockResolvedValue(undefined),
 		deleteByOwner: jest.fn().mockResolvedValue(undefined),
 	};
@@ -427,6 +444,195 @@ describe('TelegramService', () => {
 		it('refuses when no bot is connected', async () => {
 			await expect(build().service.refreshWebhook('u1')).rejects.toBeInstanceOf(
 				TelegramNotConnectedException,
+			);
+		});
+	});
+
+	describe('bot profile', () => {
+		it('reads the profile with the stored token', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await expect(service.getBotProfile('u1')).resolves.toEqual({
+				name: 'Loja',
+				description: 'Atendimento da loja',
+				shortDescription: 'Loja oficial',
+			});
+			expect(bot.getProfile).toHaveBeenCalledWith(TOKEN);
+		});
+
+		it('refuses to read or update without a connected bot', async () => {
+			const { service, bot } = build();
+
+			await expect(service.getBotProfile('u1')).rejects.toBeInstanceOf(
+				TelegramNotConnectedException,
+			);
+			await expect(
+				service.updateBotProfile('u1', { name: 'Nova' }),
+			).rejects.toBeInstanceOf(TelegramNotConnectedException);
+			expect(bot.setProfile).not.toHaveBeenCalled();
+		});
+
+		it('sends only the fields that changed, trimmed', async () => {
+			const { service, bot, connections } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			const profile = await service.updateBotProfile('u1', {
+				name: 'Loja',
+				description: '  Novo texto  ',
+				shortDescription: 'Loja oficial',
+			});
+
+			expect(bot.setProfile).toHaveBeenCalledTimes(1);
+			expect(bot.setProfile).toHaveBeenCalledWith(TOKEN, {
+				description: 'Novo texto',
+			});
+			expect(connections.updateBotName).not.toHaveBeenCalled();
+			expect(profile.description).toBe('Novo texto');
+		});
+
+		it('keeps the new name on the connection once Telegram accepts it', async () => {
+			const { service, bot, connections } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await service.updateBotProfile('u1', { name: 'Loja Nova' });
+
+			expect(bot.setProfile).toHaveBeenCalledWith(TOKEN, { name: 'Loja Nova' });
+			expect(connections.updateBotName).toHaveBeenCalledWith('c1', 'Loja Nova');
+		});
+
+		it('does not call Telegram when nothing changed', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await service.updateBotProfile('u1', {
+				shortDescription: 'Loja oficial',
+			});
+
+			expect(bot.setProfile).not.toHaveBeenCalled();
+		});
+
+		it('still keeps the name when a later field is refused', async () => {
+			const { service, bot, connections } = build({
+				connection: connectionWithSecret().connection,
+			});
+			bot.setProfile
+				.mockResolvedValueOnce(undefined)
+				.mockRejectedValueOnce(
+					new TelegramApiError(400, 'Bad Request: description is too long'),
+				);
+
+			await expect(
+				service.updateBotProfile('u1', {
+					name: 'Loja Nova',
+					description: 'x',
+				}),
+			).rejects.toBeInstanceOf(TelegramBotProfileRejectedException);
+			expect(connections.updateBotName).toHaveBeenCalledWith('c1', 'Loja Nova');
+		});
+
+		it('says how long to wait when Telegram rate-limits the change', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+			bot.setProfile.mockRejectedValue(
+				new TelegramApiError(429, 'Too Many Requests: retry after 3600'),
+			);
+
+			const error: any = await service
+				.updateBotProfile('u1', { name: 'Loja Nova' })
+				.catch((e) => e);
+
+			expect(error).toBeInstanceOf(TelegramRateLimitedException);
+			expect(error.getResponse().retryAfter).toBe(3600);
+		});
+	});
+
+	describe('bot photo', () => {
+		const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+		const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a]);
+
+		it('sends a JPEG to Telegram with the stored token', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await service.setBotPhoto('u1', JPEG);
+
+			expect(bot.setProfilePhoto).toHaveBeenCalledWith(TOKEN, JPEG);
+		});
+
+		it('refuses anything that is not really a JPEG, whatever it claims', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await expect(service.setBotPhoto('u1', PNG)).rejects.toBeInstanceOf(
+				TelegramBotPhotoInvalidException,
+			);
+			expect(bot.setProfilePhoto).not.toHaveBeenCalled();
+		});
+
+		it('refuses without a connected bot', async () => {
+			const { service } = build();
+
+			await expect(service.setBotPhoto('u1', JPEG)).rejects.toBeInstanceOf(
+				TelegramNotConnectedException,
+			);
+			await expect(service.removeBotPhoto('u1')).rejects.toBeInstanceOf(
+				TelegramNotConnectedException,
+			);
+		});
+
+		it('turns a Telegram rate limit into a 429 with the wait', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+			bot.setProfilePhoto.mockRejectedValue(
+				new TelegramApiError(429, 'Too Many Requests: retry after 120'),
+			);
+
+			const error: any = await service.setBotPhoto('u1', JPEG).catch((e) => e);
+
+			expect(error).toBeInstanceOf(TelegramRateLimitedException);
+			expect(error.getResponse().retryAfter).toBe(120);
+		});
+
+		it('removes the photo', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			await service.removeBotPhoto('u1');
+
+			expect(bot.removeProfilePhoto).toHaveBeenCalledWith(TOKEN);
+		});
+
+		it('hands back the current photo, looked up by the bot id', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+
+			const photo = await service.getBotPhoto('u1');
+
+			expect(bot.getProfilePhotoFileId).toHaveBeenCalledWith(TOKEN, 123456789);
+			expect(bot.downloadFile).toHaveBeenCalledWith(TOKEN, 'PHOTO_FILE');
+			expect(photo.mimeType).toBe('image/jpeg');
+			expect(photo.buffer.toString()).toBe('jpg');
+		});
+
+		it('says there is no photo when the bot has none', async () => {
+			const { service, bot } = build({
+				connection: connectionWithSecret().connection,
+			});
+			bot.getProfilePhotoFileId.mockResolvedValue(null);
+
+			await expect(service.getBotPhoto('u1')).rejects.toBeInstanceOf(
+				TelegramBotPhotoNotFoundException,
 			);
 		});
 	});

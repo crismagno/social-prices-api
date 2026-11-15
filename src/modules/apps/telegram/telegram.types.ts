@@ -80,6 +80,13 @@ export interface ITelegramBotInfo {
 	firstName: string;
 }
 
+/** The bot's public profile, as edited from here. Photo and username stay with @BotFather. */
+export interface ITelegramBotProfile {
+	name: string;
+	description: string;
+	shortDescription: string;
+}
+
 export interface ITelegramWebhookInfo {
 	url: string;
 	pendingUpdateCount: number;

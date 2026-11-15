@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import {
 	ITelegramBotInfo,
+	ITelegramBotProfile,
 	ITelegramDownloadedFile,
 	ITelegramSentMessage,
 	ITelegramUploadFile,
@@ -150,6 +151,85 @@ export class TelegramBotClient {
 			buffer: Buffer.from(await response.arrayBuffer()),
 			filePath: info.file_path,
 		};
+	}
+
+	/** What people see about the bot, in the default language (no language_code). */
+	public async getProfile(token: string): Promise<ITelegramBotProfile> {
+		const [name, description, shortDescription]: any[] = await Promise.all([
+			this._call(token, 'getMyName'),
+			this._call(token, 'getMyDescription'),
+			this._call(token, 'getMyShortDescription'),
+		]);
+
+		return {
+			name: name?.name ?? '',
+			description: description?.description ?? '',
+			shortDescription: shortDescription?.short_description ?? '',
+		};
+	}
+
+	/**
+	 * Changes only the fields given. An empty description or short description
+	 * removes it. Telegram rate-limits these hard (setMyName most), so callers
+	 * should send only what actually changed.
+	 */
+	public async setProfile(
+		token: string,
+		profile: Partial<ITelegramBotProfile>,
+	): Promise<void> {
+		if (profile.name !== undefined) {
+			await this._call(token, 'setMyName', { name: profile.name });
+		}
+
+		if (profile.description !== undefined) {
+			await this._call(token, 'setMyDescription', {
+				description: profile.description,
+			});
+		}
+
+		if (profile.shortDescription !== undefined) {
+			await this._call(token, 'setMyShortDescription', {
+				short_description: profile.shortDescription,
+			});
+		}
+	}
+
+	/**
+	 * A static JPEG. Telegram does not let a profile photo be reused, so it is
+	 * always uploaded as a new file and referenced from the JSON with attach://.
+	 */
+	public async setProfilePhoto(token: string, jpeg: Buffer): Promise<void> {
+		const form: FormData = new FormData();
+		form.append(
+			'photo',
+			JSON.stringify({ type: 'static', photo: 'attach://profile_photo' }),
+		);
+		form.append(
+			'profile_photo',
+			new Blob([jpeg], { type: 'image/jpeg' }),
+			'profile.jpg',
+		);
+
+		await this._call(token, 'setMyProfilePhoto', form);
+	}
+
+	public async removeProfilePhoto(token: string): Promise<void> {
+		await this._call(token, 'removeMyProfilePhoto');
+	}
+
+	/** The file of someone's current photo, biggest size, or null when there is none. */
+	public async getProfilePhotoFileId(
+		token: string,
+		userId: number,
+	): Promise<string | null> {
+		const result: any = await this._call(token, 'getUserProfilePhotos', {
+			user_id: userId,
+			limit: 1,
+		});
+
+		const sizes: any[] = result?.photos?.[0] ?? [];
+
+		return sizes.length ? sizes[sizes.length - 1].file_id : null;
 	}
 
 	public async deleteWebhook(token: string): Promise<void> {

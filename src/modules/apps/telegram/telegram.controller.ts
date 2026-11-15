@@ -8,7 +8,9 @@ import {
 	HttpCode,
 	Param,
 	ParseIntPipe,
+	Patch,
 	Post,
+	Put,
 	Query,
 	Res,
 	UploadedFile,
@@ -29,7 +31,10 @@ import { AppEnabledGuard } from '../core/guards/app-enabled.guard';
 import { RequiresApp } from '../core/guards/requires-app.decorator';
 import AppsEnum from '../interfaces/apps.enum';
 import { IAppContext } from '../interfaces/apps.types';
-import ConnectTelegramBotDto from './telegram-connect.dto';
+import ConnectTelegramBotDto, {
+	MAX_TELEGRAM_BOT_PHOTO_BYTES,
+	UpdateTelegramBotProfileDto,
+} from './telegram-connect.dto';
 import {
 	ChatMessagesQueryDto,
 	LinkTelegramCustomerDto,
@@ -41,6 +46,7 @@ import { mediaResponseHeaders } from './telegram.media-response';
 import { ITelegramMessageRecord } from './telegram-message.interface';
 import { ITelegramWebhookStatus, TelegramService } from './telegram.service';
 import {
+	ITelegramBotProfile,
 	ITelegramChatView,
 	ITelegramConnectionView,
 	ITelegramUpdate,
@@ -103,6 +109,66 @@ export class TelegramController {
 		@AuthPayload() authPayload: IAuthPayload,
 	): Promise<ITelegramWebhookStatus> {
 		return await this._telegramService.refreshWebhook(authPayload._id);
+	}
+
+	@Get('bot-profile')
+	@UseGuards(AppEnabledGuard)
+	public async getBotProfile(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<ITelegramBotProfile> {
+		return await this._telegramService.getBotProfile(authPayload._id);
+	}
+
+	@Patch('bot-profile')
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	@UsePipes(validation)
+	public async updateBotProfile(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() dto: UpdateTelegramBotProfileDto,
+	): Promise<ITelegramBotProfile> {
+		return await this._telegramService.updateBotProfile(authPayload._id, dto);
+	}
+
+	@Get('bot-profile/photo')
+	@UseGuards(AppEnabledGuard)
+	public async getBotPhoto(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Res() res: Response,
+	): Promise<void> {
+		const photo = await this._telegramService.getBotPhoto(authPayload._id);
+
+		res.set(mediaResponseHeaders(photo.mimeType, 'bot.jpg'));
+		// A new photo must show right after it is saved.
+		res.set('Cache-Control', 'private, no-cache');
+		res.send(photo.buffer);
+	}
+
+	@Put('bot-profile/photo')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			limits: { fileSize: MAX_TELEGRAM_BOT_PHOTO_BYTES },
+		}),
+	)
+	public async setBotPhoto(
+		@AuthPayload() authPayload: IAuthPayload,
+		@UploadedFile() file: Express.Multer.File,
+	): Promise<void> {
+		if (!file?.buffer?.length) {
+			throw new BadRequestException('A file is required.');
+		}
+
+		await this._telegramService.setBotPhoto(authPayload._id, file.buffer);
+	}
+
+	@Delete('bot-profile/photo')
+	@HttpCode(204)
+	@UseGuards(AppEnabledGuard, AppEmployeeLevelGuard)
+	public async removeBotPhoto(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<void> {
+		await this._telegramService.removeBotPhoto(authPayload._id);
 	}
 
 	@Delete('connection')
