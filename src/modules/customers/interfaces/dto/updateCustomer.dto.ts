@@ -48,4 +48,7 @@ export default class UpdateCustomerDto {
 	phoneNumbers: any[];
 
 	tagsIds: string[];
+
+	/** May arrive as a JSON string from multipart, like tagsIds. Left out: unchanged on update. */
+	storesIds?: string[] | string;
 }

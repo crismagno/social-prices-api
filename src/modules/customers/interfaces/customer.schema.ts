@@ -70,6 +70,9 @@ export class Customer implements ICustomer {
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 
+	@Prop({ type: [mongoose.Schema.Types.ObjectId], default: [] })
+	storesIds: mongoose.Schema.Types.ObjectId[];
+
 	@Prop({ type: String })
 	uniqName: string | null;
 
@@ -91,6 +94,7 @@ export const CustomerSchema = SchemaFactory.createForClass(Customer);
 CustomerSchema.index({ ownerUserId: 1, createdAt: 1 }); // table list + default sort
 CustomerSchema.index({ ownerUserId: 1, uniqName: 1 }); // uniqName lookups
 CustomerSchema.index({ ownerUserId: 1, email: 1 }); // duplicate checks by email
+CustomerSchema.index({ ownerUserId: 1, storesIds: 1 }); // customers of a store
 
 // one customer per external contact; partial so the (many) customers without any source are not indexed
 CustomerSchema.index(

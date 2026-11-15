@@ -6,6 +6,7 @@ import { FilesUploadsModule } from '../files-uploads/files-uploads.module';
 import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SocketsModule } from '../sockets/sockets.module';
+import { StoresModule } from '../stores/stores.module';
 import { TagsModule } from '../tags/tags.module';
 import { UsersModule } from '../users/users.module';
 import { CustomersValidationService } from './customers-validation.service';
@@ -22,6 +23,7 @@ import { CustomersService } from './customers.service';
 		SocketsModule,
 		FilesModule,
 		FilesUploadsModule,
+		StoresModule,
 	],
 	controllers: [CustomersController],
 	providers: [CustomersService, CustomersValidationService],

@@ -14,6 +14,7 @@ import mongoose, {
 } from 'mongoose';
 
 import {
+	BadRequestException,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
@@ -65,6 +66,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
 import TagsEnum from '../tags/interfaces/tags.enum';
 import { ITag } from '../tags/interfaces/tags.interface';
+import { StoresService } from '../stores/stores.service';
 import { TagsService } from '../tags/tags.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
@@ -73,6 +75,7 @@ import { ICustomer } from './interfaces/customer.interface';
 import { Customer } from './interfaces/customer.schema';
 import {
 	ICustomerFileUploadTemplateRow,
+	ICustomerStoreLink,
 	IFiltersDownloadCustomers,
 	IFindByOwnerUserIdAndPropertiesParams,
 } from './interfaces/customers.type';
@@ -100,6 +103,7 @@ export class CustomersService {
 		private readonly _socketsGateway: SocketsGateway,
 		private readonly _filesUploadsService: FilesUploadsService,
 		private readonly _featureLimitsService: FeatureLimitsService,
+		private readonly _storesService: StoresService,
 	) {
 		this._logger = new Logger(CustomersService.name);
 	}
@@ -211,10 +215,15 @@ export class CustomersService {
 	public async findByOwnerUserTableState(
 		ownerUserId: string,
 		tableState: ITableStateRequest<ICustomer>,
+		storeId?: string,
 	): Promise<ITableStateResponse<ICustomer[]>> {
 		const filter: FilterQuery<ICustomer> = {
 			ownerUserId,
 		};
+
+		if (storeId) {
+			filter.storesIds = storeId;
+		}
 
 		if (tableState.search) {
 			const search = new RegExp(tableState.search, 'ig');
@@ -250,7 +259,8 @@ export class CustomersService {
 		}
 
 		for (const field of ['name', 'uniqName', 'email'] as const) {
-			const text: string | undefined = tableState?.filters?.[field]?.[0]?.trim();
+			const text: string | undefined =
+				tableState?.filters?.[field]?.[0]?.trim();
 
 			if (text) {
 				filter[field] = new RegExp(escapeRegExp(text), 'i');
@@ -272,6 +282,62 @@ export class CustomersService {
 		return response;
 	}
 
+	/** The customers of one of the owner's stores, with the usual search, sort and pages. */
+	public async findByStoreTableState(
+		ownerUserId: string,
+		storeId: string,
+		tableState: ITableStateRequest<ICustomer>,
+	): Promise<ITableStateResponse<ICustomer[]>> {
+		const store = await this._storesService.findByIdOrFail(storeId);
+
+		if (String(store.userId) !== ownerUserId) {
+			throw new NotFoundException('Store not found!');
+		}
+
+		return await this.findByOwnerUserTableState(
+			ownerUserId,
+			tableState ?? ({} as ITableStateRequest<ICustomer>),
+			storeId,
+		);
+	}
+
+	/**
+	 * Adds stores to customers, never removing any. One write per customer, so a
+	 * whole upload of sales costs one round trip.
+	 */
+	public async addStoresToCustomers(
+		links: ICustomerStoreLink[],
+	): Promise<void> {
+		const storesByCustomer: Map<string, Set<string>> = new Map();
+
+		for (const { customerId, storeId } of links) {
+			if (!storesByCustomer.has(customerId)) {
+				storesByCustomer.set(customerId, new Set());
+			}
+
+			storesByCustomer.get(customerId).add(storeId);
+		}
+
+		if (!storesByCustomer.size) {
+			return;
+		}
+
+		await this._customerModel.bulkWrite(
+			[...storesByCustomer].map(([customerId, storeIds]) => ({
+				updateOne: {
+					filter: { _id: new Types.ObjectId(customerId) },
+					update: {
+						$addToSet: {
+							storesIds: {
+								$each: [...storeIds].map((id) => new Types.ObjectId(id)),
+							},
+						},
+					},
+				},
+			})) as any,
+		);
+	}
+
 	public async create(
 		file: Express.Multer.File | null,
 		createCustomerDto: CreateCustomerDto,
@@ -285,6 +351,12 @@ export class CustomersService {
 		const user: IUser = await this._usersService.findOneByIdOrFail(ownerUserId);
 
 		await this.validateUniqName(ownerUserId, createCustomerDto.uniqName);
+
+		const storesIds: string[] =
+			(await this._validateStoresOfOwner(
+				ownerUserId,
+				createCustomerDto.storesIds,
+			)) ?? [];
 
 		let responseFile: ManagedUpload.SendData | null = null;
 
@@ -321,6 +393,7 @@ export class CustomersService {
 			cnpj: createCustomerDto.cnpj || null,
 			phoneNumbers: createCustomerDto.phoneNumbers,
 			tagsIds: createCustomerDto.tagsIds,
+			storesIds,
 			ownerUserId,
 			createdAt: now,
 			updatedAt: now,
@@ -355,6 +428,12 @@ export class CustomersService {
 			updateCustomerDto.customerId,
 		);
 
+		// Before any upload, so a refused store leaves nothing behind.
+		const storesIds: string[] | undefined = await this._validateStoresOfOwner(
+			userId,
+			updateCustomerDto.storesIds,
+		);
+
 		if (typeof updateCustomerDto.addresses === 'string') {
 			updateCustomerDto.addresses = JSON.parse(updateCustomerDto.addresses);
 		}
@@ -383,6 +462,7 @@ export class CustomersService {
 			cnpj: updateCustomerDto.cnpj || null,
 			phoneNumbers: updateCustomerDto.phoneNumbers,
 			tagsIds: updateCustomerDto.tagsIds,
+			...(storesIds ? { storesIds } : {}),
 			updatedAt: now,
 			uniqName: updateCustomerDto.uniqName
 				? removeSpaces(updateCustomerDto.uniqName)
@@ -735,6 +815,37 @@ export class CustomersService {
 
 	// #region Private Methods
 
+	/**
+	 * The stores sent from the form, deduplicated, after checking they all belong
+	 * to the owner. Undefined when none were sent, so an update keeps what it had.
+	 */
+	private async _validateStoresOfOwner(
+		ownerUserId: string,
+		storesIds: string[] | string | undefined,
+	): Promise<string[] | undefined> {
+		if (storesIds === undefined || storesIds === null) {
+			return undefined;
+		}
+
+		const ids: unknown =
+			typeof storesIds === 'string' ? JSON.parse(storesIds) : storesIds;
+
+		if (!Array.isArray(ids)) {
+			throw new BadRequestException('storesIds must be a list.');
+		}
+
+		const unique: string[] = [...new Set(ids.map(String))];
+
+		const ownerStoreIds: string[] =
+			await this._storesService.findStoreIdsByUserId(ownerUserId);
+
+		if (unique.some((id: string) => !ownerStoreIds.includes(id))) {
+			throw new BadRequestException('Store not found!');
+		}
+
+		return unique;
+	}
+
 	private async _getCustomerFileUploadTemplateRowsByFilename(
 		filename: string,
 	): Promise<ICustomerFileUploadTemplateRow[]> {
@@ -1001,6 +1112,7 @@ export class CustomersService {
 						about: customerFileUploadTemplateRow.about,
 						phoneNumbers,
 						tagsIds: tagsIds as any[],
+						storesIds: [],
 						ownerUserId: ownerUserId as any,
 						createdAt: now,
 						updatedAt: now,

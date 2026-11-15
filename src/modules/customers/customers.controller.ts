@@ -97,6 +97,20 @@ export class CustomersController {
 		);
 	}
 
+	@Post('/storeTableState/:storeId')
+	@UsePipes(ValidationPipe)
+	public async findByStoreTableState(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('storeId') storeId: string,
+		@Body() tableState: ITableStateRequest<ICustomer>,
+	): Promise<ITableStateResponse<ICustomer[]>> {
+		return await this._customersService.findByStoreTableState(
+			authPayload._id,
+			storeId,
+			tableState,
+		);
+	}
+
 	@Get('/ownerUser/count')
 	@UsePipes(ValidationPipe)
 	public async countByOwnerUserId(

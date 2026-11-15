@@ -113,6 +113,7 @@ import {
 	ISaleStore,
 	ISaleStoreProduct,
 } from './interfaces/sale.interface';
+import { customerStoreLinksOf } from './sale-customer-store-links';
 import { Sale } from './interfaces/sale.schema';
 import SalesEnum from './interfaces/sales.enum';
 import {
@@ -662,6 +663,8 @@ export class SalesService {
 
 			const newSale = await saleModel.save();
 
+			await this._linkCustomersToStores([newSale]);
+
 			await this._subtractProductsQuantityBySaleStores(saleStores);
 
 			const userIdByStores: string = stores[0].userId.toString();
@@ -786,6 +789,8 @@ export class SalesService {
 				},
 				{ new: true },
 			);
+
+			await this._linkCustomersToStores([updatedSale]);
 
 			await this._updateProductsQuantityByUpdateManualSale(
 				updateSaleDto.stores,
@@ -1268,6 +1273,8 @@ export class SalesService {
 				},
 			);
 
+			await this._linkCustomersToStores([sale]);
+
 			const userIdOwnerStore: IUser =
 				await this._usersService.findOneByIdOrFail(userId);
 
@@ -1355,6 +1362,24 @@ export class SalesService {
 	// #endregion
 
 	// #region Private Methods
+
+	/**
+	 * Every customer of a sale now belongs to the store they bought in. Only ever
+	 * adds. A failure here is logged and swallowed: it must never fail the sale.
+	 */
+	private async _linkCustomersToStores(
+		sales: Pick<ISale, 'stores'>[],
+	): Promise<void> {
+		try {
+			await this._customersService.addStoresToCustomers(
+				customerStoreLinksOf(sales),
+			);
+		} catch (error) {
+			this._logger.error(
+				`Could not link customers to stores: ${error?.message ?? error}`,
+			);
+		}
+	}
 
 	private async _processSaleStoresDtoToSaleStores(
 		createSaleDto: CreateSaleDto,
@@ -3027,6 +3052,7 @@ export class SalesService {
 						about: saleFileUploadTemplateRow.about,
 						phoneNumbers,
 						tagsIds: [],
+						storesIds: [],
 						ownerUserId: ownerUserId as any,
 						createdAt: now,
 						updatedAt: now,
@@ -3319,6 +3345,9 @@ export class SalesService {
 		 */
 		let totalProcessed: number = 0;
 
+		// Linked once after the loop: one write per customer instead of one per row.
+		const savedSales: Pick<ISale, 'stores'>[] = [];
+
 		for await (const saleToCreateByUpload of salesToCreateByUpload) {
 			const fileUploadTemplateErrorRow: IFileUploadTemplateErrorRow<ISaleFileUploadTemplateRow> =
 				{
@@ -3367,6 +3396,8 @@ export class SalesService {
 					await this._saleModel.create(saleToCreateByUpload.sale);
 				}
 
+				savedSales.push(saleToCreateByUpload.sale);
+
 				totalProcessed += 1;
 			} catch (error) {
 				fileUploadTemplateErrorRow.reasons.push({
@@ -3377,6 +3408,8 @@ export class SalesService {
 				fileUploadTemplateErrorRows.push(fileUploadTemplateErrorRow);
 			}
 		}
+
+		await this._linkCustomersToStores(savedSales);
 
 		return {
 			totalError: fileUploadTemplateErrorRows.length,

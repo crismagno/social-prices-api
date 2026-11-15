@@ -28,6 +28,8 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	cnpj: string | null;
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
+	/** Stores this customer belongs to: set by hand and added by every sale in a store. */
+	storesIds: mongoose.Schema.Types.ObjectId[];
 	uniqName: string | null;
 	uploadFilename: string | null;
 	/** Apps this customer came from or was linked to; one entry per app. */

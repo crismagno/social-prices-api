@@ -37,3 +37,9 @@ export interface IFiltersDownloadCustomers {
 	sortField: string;
 	sortOrder: TTableStateSortOrder;
 }
+
+/** One customer belonging to one store. */
+export interface ICustomerStoreLink {
+	customerId: string;
+	storeId: string;
+}
