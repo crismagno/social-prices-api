@@ -34,6 +34,7 @@ const build = () => {
 	const users: any = {
 		findOneByIdOrFail: jest.fn().mockResolvedValue({ _id: 'u1', name: 'Loja' }),
 		findOneByEmail: jest.fn().mockResolvedValue(undefined),
+		findOneById: jest.fn().mockResolvedValue(undefined),
 	};
 	const notifications: any = {
 		createdCustomer: jest.fn().mockResolvedValue(undefined),
@@ -220,6 +221,41 @@ describe('CustomersService — stores', () => {
 
 			await expect(service.invite('u1', C1)).rejects.toBeInstanceOf(
 				BadRequestException,
+			);
+			expect(notifications.sendCustomerInvite).not.toHaveBeenCalled();
+		});
+
+		it('drops a link to a removed account and invites again', async () => {
+			const { service, model, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				email: 'ana@x.com',
+				name: 'Ana',
+				userId: 'gone',
+			});
+
+			const invited = await service.invite('u1', C1);
+
+			expect(model.findByIdAndUpdate.mock.calls[0][1]).toEqual({
+				$set: { userId: null },
+			});
+			expect(notifications.sendCustomerInvite).toHaveBeenCalled();
+			expect(invited.userId).toBeNull();
+		});
+
+		it('refuses to invite a customer whose linked account exists', async () => {
+			const { service, model, users, notifications } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				email: 'other@x.com',
+				userId: 'u9',
+			});
+			users.findOneById.mockResolvedValue({ _id: 'u9' });
+
+			await expect(service.invite('u1', C1)).rejects.toBeInstanceOf(
+				ConflictException,
 			);
 			expect(notifications.sendCustomerInvite).not.toHaveBeenCalled();
 		});

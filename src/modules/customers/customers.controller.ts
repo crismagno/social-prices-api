@@ -132,7 +132,7 @@ export class CustomersController {
 	public async findById(
 		@Param('customerId', ValidationParamsPipe) customerId: string,
 	): Promise<ICustomer | null> {
-		return await this._customersService.findById(customerId);
+		return await this._customersService.findByIdWithAccount(customerId);
 	}
 
 	@Post('/uploadCustomers')

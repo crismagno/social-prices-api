@@ -117,6 +117,25 @@ export class CustomersService {
 		return this._customerModel.findById(customerId);
 	}
 
+	/**
+	 * The customer plus whether its linked account still exists: a user removed
+	 * from the database leaves a stale userId behind.
+	 */
+	public async findByIdWithAccount(
+		customerId: string,
+	): Promise<ICustomer | null> {
+		const customer: ICustomer | null = await this.findById(customerId);
+
+		if (!customer) {
+			return null;
+		}
+
+		return {
+			...this._plain(customer),
+			hasAccount: await this._hasAccount(customer),
+		} as ICustomer;
+	}
+
 	public async countByOwnerUserId(ownerUserId: string): Promise<number> {
 		return this._customerModel.countDocuments({ ownerUserId });
 	}
@@ -365,7 +384,19 @@ export class CustomersService {
 			throw new BadRequestException('Customer has no email.');
 		}
 
-		if (await this._usersService.findOneByEmail(customer.email)) {
+		const hasAccount: boolean = await this._hasAccount(customer);
+
+		if (customer.userId && !hasAccount) {
+			// The linked account no longer exists: drop the stale link.
+			await this._customerModel.findByIdAndUpdate(customer._id, {
+				$set: { userId: null },
+			});
+		}
+
+		if (
+			hasAccount ||
+			(await this._usersService.findOneByEmail(customer.email))
+		) {
 			throw new ConflictException({
 				code: 'CUSTOMER_ALREADY_HAS_ACCOUNT',
 				message: 'This email already has an account.',
@@ -387,7 +418,12 @@ export class CustomersService {
 			$set: { invitedAt },
 		});
 
-		return { ...this._plain(customer), invitedAt } as ICustomer;
+		return {
+			...this._plain(customer),
+			userId: null,
+			hasAccount: false,
+			invitedAt,
+		} as ICustomer;
 	}
 
 	public async create(
@@ -871,6 +907,14 @@ export class CustomersService {
 	 * The stores sent from the form, deduplicated, after checking they all belong
 	 * to the owner. Undefined when none were sent, so an update keeps what it had.
 	 */
+	private async _hasAccount(customer: ICustomer): Promise<boolean> {
+		if (!customer.userId) {
+			return false;
+		}
+
+		return !!(await this._usersService.findOneById(String(customer.userId)));
+	}
+
 	private _plain(customer: ICustomer): ICustomer {
 		const document: any = customer;
 

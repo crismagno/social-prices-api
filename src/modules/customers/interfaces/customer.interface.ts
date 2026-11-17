@@ -32,6 +32,8 @@ export interface ICustomer extends ICreatedAtEntity, IUpdatedAtEntity {
 	storesIds: mongoose.Schema.Types.ObjectId[];
 	/** When a store last invited this customer to create an account. */
 	invitedAt?: Date | null;
+	/** Response only: the linked user account still exists. */
+	hasAccount?: boolean;
 	uniqName: string | null;
 	uploadFilename: string | null;
 	/** Apps this customer came from or was linked to; one entry per app. */
