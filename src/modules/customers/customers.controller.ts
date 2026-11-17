@@ -18,6 +18,7 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import { parseFilePipeBuilder } from '../../shared/pipes/parse-file-builder-pipe';
+import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
 import {
 	ITableStateRequest,
@@ -117,6 +118,19 @@ export class CustomersController {
 		@Param('customerId') customerId: string,
 	): Promise<ICustomer> {
 		return await this._customersService.invite(authPayload._id, customerId);
+	}
+
+	@Post('/:customerId/addresses')
+	public async addAddress(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('customerId', ValidationParamsPipe) customerId: string,
+		@Body() createAddressDto: CreateAddressDto,
+	): Promise<ICustomer> {
+		return await this._customersService.addAddress(
+			authPayload._id,
+			customerId,
+			createAddressDto,
+		);
 	}
 
 	@Get('/ownerUser/count')

@@ -1,6 +1,7 @@
 import { ManagedUpload } from 'aws-sdk/clients/s3';
 import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
+import { randomUUID } from 'crypto';
 import * as ExcelJS from 'exceljs';
 import { escapeRegExp, find, includes, some } from 'lodash';
 import mongoose, {
@@ -26,6 +27,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import AddressEnum from '../../shared/common/address/address.enum';
 import { IAddress } from '../../shared/common/address/address.interface';
+import { CreateAddressDto } from '../../shared/common/address/CreateAddress.dto';
 import PersonEnum from '../../shared/common/person/person.enum';
 import PhoneNumberEnum from '../../shared/common/phone/phone-number.enum';
 import { IPhoneNumber } from '../../shared/common/phone/phone-number.interface';
@@ -880,6 +882,62 @@ export class CustomersService {
 		}
 
 		return await this._customerModel.create(customer);
+	}
+
+	/**
+	 * Saves on one of the owner's customers an address typed outside the
+	 * customer form (the fast sale). An address already saved is not repeated.
+	 */
+	public async addAddress(
+		ownerUserId: string,
+		customerId: string,
+		createAddressDto: CreateAddressDto,
+	): Promise<ICustomer> {
+		const customer: ICustomer = await this.findByIdOrFail(customerId);
+
+		if (String(customer.ownerUserId) !== ownerUserId) {
+			throw new NotFoundException('Customer not found!');
+		}
+
+		if (
+			!createAddressDto?.address1?.trim() ||
+			!createAddressDto?.city?.trim()
+		) {
+			throw new BadRequestException('Address and city are required.');
+		}
+
+		const address: IAddress = {
+			address1: createAddressDto.address1.trim(),
+			address2: createAddressDto.address2?.trim() || null,
+			city: createAddressDto.city.trim(),
+			country: createAddressDto.country,
+			description: createAddressDto.description ?? null,
+			district: createAddressDto.district?.trim() ?? '',
+			isValid: true,
+			state: createAddressDto.state ?? null,
+			types: createAddressDto.types?.length
+				? createAddressDto.types
+				: [AddressEnum.Type.SHIPPING],
+			uid: createAddressDto.uid || randomUUID(),
+			zip: createAddressDto.zip?.trim() ?? '',
+		};
+
+		const normalize = (value: string | null | undefined): string =>
+			(value ?? '').trim().toLowerCase();
+
+		const isAlreadySaved: boolean = (customer.addresses ?? []).some(
+			(saved: IAddress) =>
+				normalize(saved.address1) === normalize(address.address1) &&
+				normalize(saved.address2) === normalize(address.address2) &&
+				normalize(saved.city) === normalize(address.city) &&
+				normalize(saved.zip) === normalize(address.zip),
+		);
+
+		if (isAlreadySaved) {
+			return this._plain(customer);
+		}
+
+		return await this.inertAddressToCustomer(customerId, address);
 	}
 
 	public async inertAddressToCustomer(

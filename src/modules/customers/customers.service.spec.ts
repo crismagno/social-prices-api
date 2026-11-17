@@ -211,6 +211,62 @@ describe('CustomersService — stores', () => {
 			expect(update.$set.invitedAt).toBeInstanceOf(Date);
 		});
 
+		it('adds a typed address to the customer', async () => {
+			const { service, model } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				addresses: [],
+			});
+			model.findOneAndUpdate = jest.fn().mockResolvedValue({ _id: C1 });
+
+			await service.addAddress('u1', C1, {
+				address1: ' Rua A, 10 ',
+				city: 'Recife',
+				zip: '',
+				district: '',
+			} as any);
+
+			const [, update] = model.findOneAndUpdate.mock.calls[0];
+			expect(update.$push.addresses).toMatchObject({
+				address1: 'Rua A, 10',
+				city: 'Recife',
+				isValid: true,
+				types: ['SHIPPING'],
+			});
+			expect(update.$push.addresses.uid).toBeTruthy();
+		});
+
+		it('does not repeat an address the customer already has', async () => {
+			const { service, model } = build();
+			model.findById.mockResolvedValue({
+				_id: C1,
+				ownerUserId: 'u1',
+				addresses: [
+					{ address1: 'Rua A, 10', address2: null, city: 'recife', zip: '' },
+				],
+			});
+			model.findOneAndUpdate = jest.fn();
+
+			await service.addAddress('u1', C1, {
+				address1: 'rua a, 10',
+				city: 'Recife',
+			} as any);
+
+			expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+		});
+
+		it("refuses to add an address to another owner's customer", async () => {
+			const { service, model } = build();
+			model.findById.mockResolvedValue({ _id: C1, ownerUserId: 'other' });
+			model.findOneAndUpdate = jest.fn();
+
+			await expect(
+				service.addAddress('u1', C1, { address1: 'X', city: 'Y' } as any),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+		});
+
 		it('refuses to invite a customer without email', async () => {
 			const { service, model, notifications } = build();
 			model.findById.mockResolvedValue({
