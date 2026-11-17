@@ -43,9 +43,4 @@ export default class CreateUserDto {
 	@IsOptional()
 	@IsString()
 	about: string | null;
-
-	/** Left out by older clients: the account is a company. */
-	@IsOptional()
-	@IsEnum(UsersEnum.Type)
-	type?: UsersEnum.Type;
 }

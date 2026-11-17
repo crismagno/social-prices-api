@@ -136,15 +136,14 @@ export class AuthService {
 				about: createUserDto.about,
 				createdAt: now,
 				updatedAt: now,
-				type: createUserDto.type ?? UsersEnum.Type.COMPANY,
+				// Every sign-up is a customer; only a manager can promote to COMPANY.
+				type: UsersEnum.Type.CUSTOMER,
 				limits: { features: { ...FeatureLimitsEnum.DefaultLimits } },
 			});
 
 			await this._notificationsService.sendSignInCode(user);
 
-			if (user.type === UsersEnum.Type.CUSTOMER) {
-				await this._linkStoreCustomers(user);
-			}
+			await this._linkStoreCustomers(user);
 
 			await this._employeesService.create(
 				null,
