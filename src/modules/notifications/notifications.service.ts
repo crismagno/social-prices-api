@@ -563,7 +563,8 @@ export class NotificationsService {
 		user: IUser,
 		employee: IEmployee,
 	): Promise<void> {
-		if (sale.isSendCustomerNotifications) {
+		// No email on the buyer: nothing to send to.
+		if (sale.isSendCustomerNotifications && sale.buyer?.email) {
 			await this._emailTransportService.sendEmail({
 				to: sale.buyer.email,
 				subject: `Sale Completed`,

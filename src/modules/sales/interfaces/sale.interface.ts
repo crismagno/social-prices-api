@@ -127,7 +127,8 @@ export interface ISaleHeaderShipping {
 
 export interface ISaleBuyer {
 	userId: mongoose.Schema.Types.ObjectId | null;
-	email: string;
+	/** A customer may have no email: the sale is still recorded. */
+	email: string | null;
 	name: string;
 	birthDate: Date | null;
 	gender: PersonEnum.Gender | null;

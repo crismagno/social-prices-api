@@ -257,8 +257,8 @@ export class SaleBuyer implements ISaleBuyer {
 	@Prop({ type: mongoose.Schema.Types.ObjectId })
 	userId: mongoose.Schema.Types.ObjectId | null;
 
-	@Prop({ type: String, required: true })
-	email: string;
+	@Prop({ type: String, default: null })
+	email: string | null;
 
 	@Prop({ type: String, required: true })
 	name: string;

@@ -99,6 +99,7 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import CompleteMultipleSalesManualDto from './interfaces/dto/completeMultipleSalesManual.dto';
 import CreateSaleDto, {
+	SaleBuyerDto,
 	SaleStoreDto,
 	SaleStoreProductDto,
 } from './interfaces/dto/createSale.dto';
@@ -567,6 +568,8 @@ export class SalesService {
 
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
 		try {
+			this._normalizeBuyerEmail(createSaleDto.buyer);
+
 			if (!createSaleDto.createdByUserId) {
 				throw new BadRequestException('User which created sale is required!');
 			}
@@ -695,6 +698,8 @@ export class SalesService {
 
 	public async updateManual(updateSaleDto: UpdateSaleDto): Promise<ISale> {
 		try {
+			this._normalizeBuyerEmail(updateSaleDto.buyer);
+
 			if (!updateSaleDto.updatedByUserId) {
 				throw new BadRequestException('User which updated sale is required!');
 			}
@@ -1363,6 +1368,13 @@ export class SalesService {
 
 	// #region Private Methods
 
+	/** The buyer's email is optional: a blank one is stored as null. */
+	private _normalizeBuyerEmail(buyer: SaleBuyerDto | null | undefined): void {
+		if (buyer) {
+			buyer.email = buyer.email?.trim() || null;
+		}
+	}
+
 	/**
 	 * Every customer of a sale now belongs to the store they bought in. Only ever
 	 * adds. A failure here is logged and swallowed: it must never fail the sale.
@@ -1401,7 +1413,7 @@ export class SalesService {
 			createSaleDto.buyer?.userId;
 
 		const userByEmail: IUser | undefined =
-			createSaleDto.buyer && !createSaleDtoBuyerUserId
+			createSaleDto.buyer?.email && !createSaleDtoBuyerUserId
 				? await this._usersService.findOneByEmail(createSaleDto.buyer.email)
 				: undefined;
 

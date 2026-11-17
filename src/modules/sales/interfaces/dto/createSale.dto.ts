@@ -175,8 +175,8 @@ export class SaleBuyerDto {
 	userId: string | null;
 
 	@IsString()
-	@IsNotEmpty()
-	email: string;
+	@IsOptional()
+	email: string | null;
 
 	@IsString()
 	@IsNotEmpty()
