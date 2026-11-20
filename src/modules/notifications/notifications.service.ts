@@ -88,6 +88,14 @@ export class NotificationsService {
 			};
 		}
 
+		const createdAtFilter = this._buildCreatedAtFilter(
+			tableState.filters?.rangeDate,
+		);
+
+		if (createdAtFilter) {
+			filter.createdAt = createdAtFilter;
+		}
+
 		const response: ITableStateResponse<INotification[]> = {
 			data: [],
 			total: 0,
@@ -691,6 +699,45 @@ export class NotificationsService {
 			type: NotificationsEnum.Type.WARNING,
 			userId,
 		});
+	}
+
+	//#endregion
+
+	//#region Private Methods
+
+	/**
+	 * Builds the `createdAt` range from the table-state `rangeDate` filter.
+	 * Missing or invalid bounds are ignored, so a partial range still filters.
+	 */
+	private _buildCreatedAtFilter(rangeDate?: {
+		startDate?: string | Date;
+		endDate?: string | Date;
+	}): { $gte?: Date; $lte?: Date } | null {
+		if (!rangeDate) {
+			return null;
+		}
+
+		const toValidDate = (value?: string | Date): Date | null => {
+			if (!value) {
+				return null;
+			}
+
+			const date: Date = new Date(value);
+
+			return isNaN(date.getTime()) ? null : date;
+		};
+
+		const startDate: Date | null = toValidDate(rangeDate.startDate);
+		const endDate: Date | null = toValidDate(rangeDate.endDate);
+
+		if (!startDate && !endDate) {
+			return null;
+		}
+
+		return {
+			...(startDate && { $gte: startDate }),
+			...(endDate && { $lte: endDate }),
+		};
 	}
 
 	//#endregion
