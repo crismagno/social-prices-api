@@ -97,6 +97,25 @@ export class AppsRealtimeGateway {
 		}
 	}
 
+	/**
+	 * Tells one account (the store's user, or the customer's) that a store chat
+	 * changed. Never throws, like the inbox push.
+	 */
+	public notifyStoreChatUpdated(
+		userId: string,
+		payload: { storeId: string; conversationId: string },
+	): void {
+		try {
+			this.server
+				.to(appsRoomOf(userId))
+				.emit(AppsRealtimeEvents.STORE_CHAT_UPDATED, payload);
+		} catch (error) {
+			this._logger.warn(
+				`Could not push the store chat update: ${String(error)}`,
+			);
+		}
+	}
+
 	private _leaveAppsRooms(client: Socket): void {
 		for (const room of Array.from(client.rooms ?? [])) {
 			if (room.startsWith(APPS_ROOM_PREFIX)) {

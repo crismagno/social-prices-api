@@ -46,4 +46,8 @@ export default class UpdateStoreDto {
 	@IsString()
 	@IsOptional()
 	type: StoresEnum.Type | null;
+
+	/** A boolean, or its text when the form is multipart. */
+	@IsOptional()
+	isVisibleInSearch?: boolean | string;
 }

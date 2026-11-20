@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { schemasModule } from '../../infra/database/mongo/schemas';
 import { AppsCoreModule } from '../apps/core/apps-core.module';
 import { EmployeesModule } from '../employees/employees.module';
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { FilesModule } from '../files/files.module';
 import { InboxModule } from '../inbox/inbox.module';
 import { UsersModule } from '../users/users.module';
@@ -17,6 +18,7 @@ import { QuickMessagesService } from './quick-messages.service';
 		schemasModule.customer,
 		AppsCoreModule,
 		EmployeesModule,
+		FeatureLimitsModule,
 		FilesModule,
 		InboxModule,
 		UsersModule,

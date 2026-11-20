@@ -1,4 +1,5 @@
 import FeatureLimitsEnum from './interfaces/feature-limits.enum';
+import { FeatureDisabledException } from './feature-disabled.exception';
 import { FeatureLimitReachedException } from './feature-limit-reached.exception';
 import { FeatureLimitsService } from './feature-limits.service';
 
@@ -30,6 +31,7 @@ const buildService = (
 		models[FeatureLimitsEnum.Feature.STORES],
 		models[FeatureLimitsEnum.Feature.CATEGORIES],
 		models[FeatureLimitsEnum.Feature.TAGS],
+		models[FeatureLimitsEnum.Feature.QUICK_MESSAGES],
 		usersService,
 	);
 
@@ -165,8 +167,8 @@ describe('FeatureLimitsService', () => {
 
 			const usage = await service.getUsage(USER_ID);
 
-			expect(usage.products).toEqual({ limit: 500, used: 12 });
-			expect(usage.tags).toEqual({ limit: null, used: 4 });
+			expect(usage.products).toEqual({ limit: 500, used: 12, enabled: true });
+			expect(usage.tags).toEqual({ limit: null, used: 4, enabled: true });
 		});
 	});
 
@@ -203,7 +205,7 @@ describe('FeatureLimitsService', () => {
 
 			const usage = await service.getUsage(USER_ID);
 
-			expect(usage.customers).toEqual({ limit: 10, used: 8 });
+			expect(usage.customers).toEqual({ limit: 10, used: 8, enabled: true });
 		});
 
 		it('blocks a new customer once the real count reaches the limit', async () => {
@@ -214,6 +216,60 @@ describe('FeatureLimitsService', () => {
 			await expect(
 				service.assertCanCreate(USER_ID, FeatureLimitsEnum.Feature.CUSTOMERS),
 			).rejects.toBeInstanceOf(FeatureLimitReachedException);
+		});
+	});
+
+	describe('feature switch', () => {
+		const QUICK_MESSAGES = FeatureLimitsEnum.Feature.QUICK_MESSAGES;
+
+		it('treats a feature that was never set as active', async () => {
+			const { service } = buildService(userWithLimits({}));
+
+			await expect(service.isEnabled(USER_ID, QUICK_MESSAGES)).resolves.toBe(
+				true,
+			);
+			await expect(
+				service.assertEnabled(USER_ID, QUICK_MESSAGES),
+			).resolves.toBeUndefined();
+		});
+
+		it('rejects a feature the manager switched off', async () => {
+			const { service } = buildService({
+				_id: USER_ID,
+				limits: { features: {}, enabled: { 'quick-messages': false } },
+			});
+
+			await expect(service.isEnabled(USER_ID, QUICK_MESSAGES)).resolves.toBe(
+				false,
+			);
+			await expect(
+				service.assertEnabled(USER_ID, QUICK_MESSAGES),
+			).rejects.toBeInstanceOf(FeatureDisabledException);
+		});
+
+		it('reports the switch and counts quick messages by owner in the usage', async () => {
+			const { service, models } = buildService(
+				{
+					_id: USER_ID,
+					limits: {
+						features: { 'quick-messages': 5 },
+						enabled: { 'quick-messages': false },
+					},
+				},
+				{ 'quick-messages': 3 },
+			);
+
+			const usage = await service.getUsage(USER_ID);
+
+			expect(usage['quick-messages']).toEqual({
+				limit: 5,
+				used: 3,
+				enabled: false,
+			});
+			expect(usage.products.enabled).toBe(true);
+			expect(
+				models[QUICK_MESSAGES].countDocuments.mock.calls[0][0].ownerUserId,
+			).toBe(USER_ID);
 		});
 	});
 });

@@ -58,6 +58,9 @@ export class Store implements IStore {
 	})
 	type: StoresEnum.Type | null;
 
+	@Prop({ type: Boolean, default: true })
+	isVisibleInSearch: boolean;
+
 	@Prop({ type: [mongoose.Schema.Types.ObjectId] })
 	categoriesIds: mongoose.Schema.Types.ObjectId[];
 

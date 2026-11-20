@@ -757,3 +757,55 @@ describe('InboxCentralService', () => {
 		});
 	});
 });
+
+describe('InboxCentralService: a channel that belongs to no app (STORE)', () => {
+	const store = (over: any = {}): any =>
+		conv({
+			_id: 's1',
+			channel: 'STORE',
+			contactKey: 'u9:st1',
+			accountKey: 'st1',
+			...over,
+		});
+
+	it.each([[[]], [undefined]])(
+		'lists it for a user whose enabled apps are %p, and hides the app channels',
+		async (enabledApps) => {
+			const { service, usersService } = build([
+				store(),
+				conv({ _id: 'w1', channel: 'WHATSAPP' }),
+			]);
+
+			usersService.findOneById.mockResolvedValue({ enabledApps });
+
+			const rows = await service.listChats(OWNER);
+
+			expect(rows).toHaveLength(1);
+			expect(rows[0].channels).toEqual(['STORE']);
+		},
+	);
+
+	it('answers through it with no app enabled', async () => {
+		const { service, usersService, adapter } = build([store()]);
+
+		usersService.findOneById.mockResolvedValue({ enabledApps: [] });
+
+		await service.reply({ ownerUserId: OWNER, employeeId: null }, 's1', 'oi');
+
+		expect(adapter.sendText).toHaveBeenCalled();
+	});
+
+	it('tells the store chat, not an app, when its customer changes', async () => {
+		const { service, realtime } = build([store()]);
+
+		realtime.notifyStoreChatUpdated = jest.fn();
+
+		await service.assignCustomer(OWNER, 's1', CU1);
+
+		expect(realtime.notifyStoreChatUpdated).toHaveBeenCalledWith(OWNER, {
+			storeId: 'st1',
+			conversationId: 's1',
+		});
+		expect(realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+	});
+});

@@ -231,6 +231,8 @@ export class StoresService {
 			updatedAt: now,
 			cnpj: createStoreDto.cnpj,
 			type: createStoreDto.type,
+			isVisibleInSearch:
+				this._parseBoolean(createStoreDto.isVisibleInSearch) ?? true,
 		});
 
 		const newStore: IStore = await store.save();
@@ -304,6 +306,14 @@ export class StoresService {
 			type: updateStoreDto.type,
 		};
 
+		const isVisibleInSearch: boolean | undefined = this._parseBoolean(
+			updateStoreDto.isVisibleInSearch,
+		);
+
+		if (isVisibleInSearch !== undefined) {
+			$set.isVisibleInSearch = isVisibleInSearch;
+		}
+
 		let responseFile: ManagedUpload.SendData | null = null;
 
 		if (file) {
@@ -341,6 +351,23 @@ export class StoresService {
 				},
 			},
 		);
+	}
+
+	// #endregion
+
+	// #region Private Methods
+
+	/** A boolean as it comes from a multipart form; undefined when it was not sent. */
+	private _parseBoolean(value: unknown): boolean | undefined {
+		if (value === true || value === 'true') {
+			return true;
+		}
+
+		if (value === false || value === 'false') {
+			return false;
+		}
+
+		return undefined;
 	}
 
 	// #endregion

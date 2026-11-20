@@ -205,9 +205,29 @@ export class UsersService {
 			}
 		}
 
+		const $set: Record<string, unknown> = {
+			'limits.features': features,
+			updatedAt: new Date(),
+		};
+
+		// A request without `enabled` leaves the switches as they are.
+		if (dto.enabled) {
+			const enabled: Record<string, boolean> = {};
+
+			for (const feature of FeatureLimitsEnum.ToggleableFeatures) {
+				const value: unknown = dto.enabled[feature];
+
+				if (typeof value === 'boolean') {
+					enabled[feature] = value;
+				}
+			}
+
+			$set['limits.enabled'] = enabled;
+		}
+
 		const userUpdated: IUser = await this._userModel.findOneAndUpdate(
 			new Types.ObjectId(userId),
-			{ $set: { 'limits.features': features, updatedAt: new Date() } },
+			{ $set },
 			{ new: true },
 		);
 

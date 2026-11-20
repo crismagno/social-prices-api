@@ -60,6 +60,12 @@ export class InboxConversation {
 
 	@Prop({ type: Number, default: 0 })
 	unreadCount: number;
+
+	@Prop({ type: mongoose.Schema.Types.ObjectId, default: null })
+	contactUserId: mongoose.Schema.Types.ObjectId | null;
+
+	@Prop({ type: Number, default: 0 })
+	contactUnreadCount: number;
 }
 
 export const InboxConversationSchema =
@@ -77,3 +83,4 @@ InboxConversationSchema.index({
 	channel: 1,
 	lastMessageAt: -1,
 }); // one channel's inbox
+InboxConversationSchema.index({ contactUserId: 1, lastMessageAt: -1 }); // what an account has, from its side

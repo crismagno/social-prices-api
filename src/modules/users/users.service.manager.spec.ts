@@ -108,4 +108,27 @@ describe('UsersService manager updates', () => {
 			'product-items': 20,
 		});
 	});
+
+	it('saves the feature switches only when the request brings them', async () => {
+		const { service, userModel } = buildService();
+		userModel.findOneAndUpdate.mockResolvedValue(buildUser());
+
+		await service.updateUserLimits(TARGET_ID, {
+			features: { 'quick-messages': 5 },
+			enabled: { 'quick-messages': false, products: false },
+		} as any);
+
+		await service.updateUserLimits(TARGET_ID, {
+			features: { products: 10 },
+		} as any);
+
+		const withSwitch: any = userModel.findOneAndUpdate.mock.calls[0][1];
+		const withoutSwitch: any = userModel.findOneAndUpdate.mock.calls[1][1];
+
+		expect(withSwitch.$set['limits.features']).toEqual({ 'quick-messages': 5 });
+		expect(withSwitch.$set['limits.enabled']).toEqual({
+			'quick-messages': false,
+		});
+		expect('limits.enabled' in withoutSwitch.$set).toBe(false);
+	});
 });

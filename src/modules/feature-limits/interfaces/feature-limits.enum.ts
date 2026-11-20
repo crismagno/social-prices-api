@@ -7,6 +7,7 @@ namespace FeatureLimitsEnum {
 		STORES = 'stores',
 		CATEGORIES = 'categories',
 		TAGS = 'tags',
+		QUICK_MESSAGES = 'quick-messages',
 	}
 
 	export const DefaultLimits: Record<Feature, number> = {
@@ -17,7 +18,12 @@ namespace FeatureLimitsEnum {
 		[Feature.STORES]: 1,
 		[Feature.CATEGORIES]: 100,
 		[Feature.TAGS]: 100,
+		[Feature.QUICK_MESSAGES]: 50,
 	};
+
+	// The features a manager can switch off for an account. One that was never
+	// set is active.
+	export const ToggleableFeatures: Feature[] = [Feature.QUICK_MESSAGES];
 }
 
 export default FeatureLimitsEnum;

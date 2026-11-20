@@ -19,6 +19,8 @@ import {
 import { EmployeesService } from '../employees/employees.service';
 import { IEmployee } from '../employees/interfaces/employee.interface';
 import EmployeesEnum from '../employees/interfaces/employees.enum';
+import { FeatureLimitsService } from '../feature-limits/feature-limits.service';
+import FeatureLimitsEnum from '../feature-limits/interfaces/feature-limits.enum';
 import { FilesService } from '../files/files-service';
 import {
 	QuickMessageBlockInputDto,
@@ -77,6 +79,7 @@ export class QuickMessagesService {
 		private readonly _quickMessageModel: Model<QuickMessage>,
 		private readonly _filesService: FilesService,
 		private readonly _employeesService: EmployeesService,
+		private readonly _featureLimitsService: FeatureLimitsService,
 	) {}
 
 	//#endregion
@@ -87,6 +90,8 @@ export class QuickMessagesService {
 		ownerUserId: string,
 		tableState: ITableStateRequest<IQuickMessage>,
 	): Promise<ITableStateResponse<IQuickMessage[]>> {
+		await this._assertEnabled(ownerUserId);
+
 		const filter: FilterQuery<QuickMessage> = { ownerUserId };
 
 		const search: string = tableState?.search?.trim();
@@ -132,6 +137,13 @@ export class QuickMessagesService {
 		dto: QuickMessageUpsertDto,
 		files: Express.Multer.File[],
 	): Promise<IQuickMessage> {
+		await this._assertEnabled(actor.ownerUserId);
+
+		await this._featureLimitsService.assertCanCreate(
+			actor.ownerUserId,
+			FeatureLimitsEnum.Feature.QUICK_MESSAGES,
+		);
+
 		const prepared = await this._prepare(actor, dto, files, null);
 
 		const blocks: IQuickMessageBlock[] = await this._storeFiles(
@@ -254,6 +266,12 @@ export class QuickMessagesService {
 			return;
 		}
 
+		// A restored message counts against the limit again.
+		await this._featureLimitsService.assertCanCreate(
+			actor.ownerUserId,
+			FeatureLimitsEnum.Feature.QUICK_MESSAGES,
+		);
+
 		await this._assertNameFree(actor.ownerUserId, message.name, id);
 
 		await this._quickMessageModel.updateOne(
@@ -266,6 +284,17 @@ export class QuickMessagesService {
 	public async listAvailable(
 		actor: IQuickMessageActor,
 	): Promise<IQuickMessageAvailable[]> {
+		// The chat asks for this list on every screen, so an account without the
+		// feature gets an empty one instead of an error.
+		const isEnabled: boolean = await this._featureLimitsService.isEnabled(
+			actor.ownerUserId,
+			FeatureLimitsEnum.Feature.QUICK_MESSAGES,
+		);
+
+		if (!isEnabled) {
+			return [];
+		}
+
 		const filter: FilterQuery<QuickMessage> = {
 			ownerUserId: actor.ownerUserId,
 			...NOT_DELETED,
@@ -334,11 +363,20 @@ export class QuickMessagesService {
 
 	//#region Private methods
 
+	private async _assertEnabled(ownerUserId: string): Promise<void> {
+		await this._featureLimitsService.assertEnabled(
+			ownerUserId,
+			FeatureLimitsEnum.Feature.QUICK_MESSAGES,
+		);
+	}
+
 	private async _findOwned(
 		ownerUserId: string,
 		id: string,
 		includeDeleted: boolean,
 	): Promise<IQuickMessage> {
+		await this._assertEnabled(ownerUserId);
+
 		if (!Types.ObjectId.isValid(id)) {
 			throw new NotFoundException('Quick message not found.');
 		}

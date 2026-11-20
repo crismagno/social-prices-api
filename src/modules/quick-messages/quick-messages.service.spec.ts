@@ -88,16 +88,80 @@ const build = () => {
 		findByIds: jest.fn().mockResolvedValue([]),
 	};
 
+	const featureLimits: any = {
+		isEnabled: jest.fn().mockResolvedValue(true),
+		assertEnabled: jest.fn().mockResolvedValue(undefined),
+		assertCanCreate: jest.fn().mockResolvedValue(undefined),
+	};
+
 	return {
 		model,
 		files,
 		employees,
+		featureLimits,
 		lean,
-		service: new QuickMessagesService(model, files, employees),
+		service: new QuickMessagesService(model, files, employees, featureLimits),
 	};
 };
 
 describe('QuickMessagesService', () => {
+	describe('feature switch and limit', () => {
+		const disabled = new ForbiddenException({ code: 'FEATURE_DISABLED' });
+
+		it('does not create when the feature is switched off', async () => {
+			const { service, model, featureLimits } = build();
+			featureLimits.assertEnabled.mockRejectedValue(disabled);
+
+			await expect(service.create(owner, dto(), [])).rejects.toBe(disabled);
+			expect(featureLimits.assertEnabled).toHaveBeenCalledWith(
+				OWNER,
+				'quick-messages',
+			);
+			expect(model.create).not.toHaveBeenCalled();
+		});
+
+		it('does not create past the limit', async () => {
+			const { service, model, featureLimits } = build();
+			const reached = new ForbiddenException({ code: 'FEATURE_LIMIT_REACHED' });
+			featureLimits.assertCanCreate.mockRejectedValue(reached);
+
+			await expect(service.create(owner, dto(), [])).rejects.toBe(reached);
+			expect(featureLimits.assertCanCreate).toHaveBeenCalledWith(
+				OWNER,
+				'quick-messages',
+			);
+			expect(model.create).not.toHaveBeenCalled();
+		});
+
+		it('checks the limit again when a deleted message is restored', async () => {
+			const { service, model, featureLimits, lean } = build();
+			model.findOne.mockReturnValueOnce(
+				lean(stored({ softDelete: { isDeleted: true } })),
+			);
+			const reached = new ForbiddenException({ code: 'FEATURE_LIMIT_REACHED' });
+			featureLimits.assertCanCreate.mockRejectedValue(reached);
+
+			await expect(service.activateManual(owner, MSG)).rejects.toBe(reached);
+			expect(model.updateOne).not.toHaveBeenCalled();
+		});
+
+		it('refuses to read a message when the feature is switched off', async () => {
+			const { service, model, featureLimits } = build();
+			featureLimits.assertEnabled.mockRejectedValue(disabled);
+
+			await expect(service.findOneOwned(OWNER, MSG)).rejects.toBe(disabled);
+			expect(model.findOne).not.toHaveBeenCalled();
+		});
+
+		it('lists nothing for the chat when the feature is switched off', async () => {
+			const { service, model, featureLimits } = build();
+			featureLimits.isEnabled.mockResolvedValue(false);
+
+			await expect(service.listAvailable(owner)).resolves.toEqual([]);
+			expect(model.find).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('create', () => {
 		it('rejects a name already used by a non-deleted message of the same owner', async () => {
 			const { service, model, lean } = build();

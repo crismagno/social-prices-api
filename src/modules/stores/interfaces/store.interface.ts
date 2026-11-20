@@ -26,4 +26,6 @@ export interface IStore
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	cnpj: string | null;
 	type: StoresEnum.Type | null;
+	/** Whether customers find the store in the open search. Its link works either way. */
+	isVisibleInSearch: boolean;
 }

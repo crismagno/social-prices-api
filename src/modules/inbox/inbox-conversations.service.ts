@@ -42,7 +42,13 @@ export class InboxConversationsService {
 	public async ensure(
 		ownerUserId: string,
 		key: IConversationKey,
-		init: { accountKey?: string | null; contact?: Partial<IInboxContact> } = {},
+		init: {
+			accountKey?: string | null;
+			contact?: Partial<IInboxContact>;
+			/** The account on the other side, when the person is a user of the platform. */
+			contactUserId?: string | null;
+			customerId?: string | null;
+		} = {},
 	): Promise<{ conversation: IInboxConversation; created: boolean }> {
 		const filter = { ownerUserId, ...key };
 
@@ -52,11 +58,13 @@ export class InboxConversationsService {
 				$setOnInsert: {
 					accountKey: init.accountKey ?? null,
 					contact: { ...EMPTY_CONTACT, ...init.contact },
-					customerId: null,
+					customerId: init.customerId ?? null,
 					customerChangedAt: null,
 					lastMessageAt: null,
 					lastIncomingAt: new Date(0),
 					unreadCount: 0,
+					contactUserId: init.contactUserId ?? null,
+					contactUnreadCount: 0,
 				},
 			},
 			{ upsert: true },
@@ -164,6 +172,28 @@ export class InboxConversationsService {
 	}
 
 	/** Ties the conversation to a customer, or to none. The messages go with it: nothing is copied. */
+	/** The store answered: one more for the account on the other side to read. */
+	public async incContactUnread(
+		ownerUserId: string,
+		conversationId: string,
+	): Promise<void> {
+		await this._conversationModel.updateOne(
+			{ _id: conversationId, ownerUserId },
+			{ $inc: { contactUnreadCount: 1 } },
+		);
+	}
+
+	/** The account read its side. Only its own conversation can match. */
+	public async markContactRead(
+		contactUserId: string,
+		conversationId: string,
+	): Promise<void> {
+		await this._conversationModel.updateOne(
+			{ _id: conversationId, contactUserId },
+			{ $set: { contactUnreadCount: 0 } },
+		);
+	}
+
 	public async setCustomer(
 		ownerUserId: string,
 		conversationId: string,
@@ -227,6 +257,52 @@ export class InboxConversationsService {
 		ownerUserId: string,
 	): Promise<IInboxConversation[]> {
 		return await this._list({ ownerUserId, customerId: null });
+	}
+
+	/**
+	 * A conversation from the account's side: found by who the account is, so it
+	 * can only ever be its own.
+	 */
+	public async findByContact(
+		contactUserId: string,
+		key: IConversationKey,
+	): Promise<IInboxConversation | null> {
+		return (await this._conversationModel.findOne({
+			contactUserId,
+			...key,
+		})) as unknown as IInboxConversation | null;
+	}
+
+	/** What an account has, whoever the owners are, most recent first. */
+	public async listByContactUser(
+		contactUserId: string,
+	): Promise<IInboxConversation[]> {
+		return await this._list({ contactUserId });
+	}
+
+	/** How many conversations an account opened since then: the base of its daily limit. */
+	public async countCreatedByContactSince(
+		contactUserId: string,
+		since: Date,
+	): Promise<number> {
+		return await this._conversationModel.countDocuments({
+			contactUserId,
+			createdAt: { $gte: since },
+		});
+	}
+
+	/** Messages waiting to be read by an account, over its conversations. */
+	public async countContactUnread(contactUserId: string): Promise<number> {
+		const [result] = await this._conversationModel.aggregate([
+			{
+				$match: {
+					contactUserId: new mongoose.Types.ObjectId(contactUserId),
+				},
+			},
+			{ $group: { _id: null, total: { $sum: '$contactUnreadCount' } } },
+		]);
+
+		return result?.total ?? 0;
 	}
 
 	/** Messages waiting to be read, over the owner's conversations, of one channel or of all. */

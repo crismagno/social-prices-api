@@ -33,6 +33,7 @@ import { ProductItemsModule } from './modules/product-items/product-items.module
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { SocketsModule } from './modules/sockets/sockets.module';
+import { StoreChatModule } from './modules/store-chat/store-chat.module';
 import { StoresModule } from './modules/stores/stores.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -76,6 +77,7 @@ import { AllExceptionFilter } from './shared/filters/http-exception.filter';
 		ProductItemsModule,
 		AppsModule,
 		CustomerPortalModule,
+		StoreChatModule,
 	],
 	controllers: [AppController, AppInitController],
 	providers: [

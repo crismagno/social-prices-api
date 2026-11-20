@@ -64,6 +64,10 @@ export interface IInboxConversation {
 	/** When the person last wrote: the base of the answer window. Epoch when they never did. */
 	lastIncomingAt: Date;
 	unreadCount: number;
+	/** The account on the other side, when the person is a user of the platform (store chat). */
+	contactUserId: mongoose.Schema.Types.ObjectId | null;
+	/** What that account has not read yet. */
+	contactUnreadCount: number;
 	createdAt: Date;
 	updatedAt: Date;
 }

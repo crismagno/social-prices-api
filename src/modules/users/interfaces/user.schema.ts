@@ -21,6 +21,15 @@ const UserLimitsSchema = new mongoose.Schema(
 			),
 			{ _id: false },
 		),
+		enabled: new mongoose.Schema(
+			Object.fromEntries(
+				FeatureLimitsEnum.ToggleableFeatures.map((feature: string) => [
+					feature,
+					{ type: Boolean },
+				]),
+			),
+			{ _id: false },
+		),
 	},
 	{ _id: false },
 );

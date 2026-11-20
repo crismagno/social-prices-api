@@ -5,6 +5,8 @@ namespace InboxEnum {
 		MESSENGER = 'MESSENGER',
 		INSTAGRAM = 'INSTAGRAM',
 		WHATSAPP = 'WHATSAPP',
+		/** The platform's own chat between a customer account and a store. No app behind it. */
+		STORE = 'STORE',
 	}
 
 	/** IN: the person wrote. OUT: someone answered, from here or from the channel's own app. */

@@ -13,6 +13,7 @@ import { FeatureLimitsService } from './feature-limits.service';
 		schemasModule.store,
 		schemasModule.category,
 		schemasModule.tag,
+		schemasModule.quickMessage,
 		UsersModule,
 	],
 	providers: [FeatureLimitsService],

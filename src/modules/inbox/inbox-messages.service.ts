@@ -247,6 +247,17 @@ export class InboxMessagesService {
 			.lean<IInboxMessage>();
 	}
 
+	/** A message by the id its channel gave it: how a channel reads back what it just stored. */
+	public async findByChannelMessageId(
+		ownerUserId: string,
+		conversationId: string,
+		channelMessageId: string,
+	): Promise<IInboxMessage | null> {
+		return await this._messageModel
+			.findOne({ ownerUserId, conversationId, channelMessageId })
+			.lean<IInboxMessage>();
+	}
+
 	/** The newest message a conversation still has, if any. */
 	public async findLatest(
 		ownerUserId: string,

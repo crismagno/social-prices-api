@@ -337,3 +337,105 @@ describe('InboxConversationsService', () => {
 		});
 	});
 });
+
+describe('InboxConversationsService: the contact side of a conversation', () => {
+	const CONTACT = '507f1f77bcf86cd799439033';
+	const CUSTOMER = '507f1f77bcf86cd799439044';
+
+	it('ensure keeps who the contact is and their customer when given', async () => {
+		const { service, model } = build();
+
+		await service.ensure(OWNER, KEY, {
+			contactUserId: CONTACT,
+			customerId: CUSTOMER,
+		});
+
+		expect(model.updateOne.mock.calls[0][1].$setOnInsert).toMatchObject({
+			contactUserId: CONTACT,
+			customerId: CUSTOMER,
+			contactUnreadCount: 0,
+		});
+	});
+
+	it('ensure leaves both empty when not given', async () => {
+		const { service, model } = build();
+
+		await service.ensure(OWNER, KEY);
+
+		expect(model.updateOne.mock.calls[0][1].$setOnInsert).toMatchObject({
+			contactUserId: null,
+			customerId: null,
+		});
+	});
+
+	it('markContactRead zeroes only the contact own conversation', async () => {
+		const { service, model } = build();
+
+		await service.markContactRead(CONTACT, CONV);
+
+		expect(model.updateOne).toHaveBeenCalledWith(
+			{ _id: CONV, contactUserId: CONTACT },
+			{ $set: { contactUnreadCount: 0 } },
+		);
+	});
+
+	it('incContactUnread adds one for the contact', async () => {
+		const { service, model } = build();
+
+		await service.incContactUnread(OWNER, CONV);
+
+		expect(model.updateOne).toHaveBeenCalledWith(
+			{ _id: CONV, ownerUserId: OWNER },
+			{ $inc: { contactUnreadCount: 1 } },
+		);
+	});
+
+	it('countCreatedByContactSince counts the conversations opened since then', async () => {
+		const { service, model } = build();
+		const since: Date = new Date('2030-01-01T00:00:00Z');
+
+		model.countDocuments = jest.fn().mockResolvedValue(3);
+
+		await expect(
+			service.countCreatedByContactSince(CONTACT, since),
+		).resolves.toBe(3);
+		expect(model.countDocuments).toHaveBeenCalledWith({
+			contactUserId: CONTACT,
+			createdAt: { $gte: since },
+		});
+	});
+
+	it('listByContactUser lists the contact conversations that have a message', async () => {
+		const { service, model } = build();
+
+		await service.listByContactUser(CONTACT);
+
+		expect(model.find).toHaveBeenCalledWith({
+			contactUserId: CONTACT,
+			lastMessageAt: { $ne: null },
+		});
+	});
+
+	it('countContactUnread sums what the contact has not read', async () => {
+		const { service, model } = build();
+
+		await expect(service.countContactUnread(CONTACT)).resolves.toBe(5);
+		expect(model.aggregate.mock.calls[0][0][1]).toEqual({
+			$group: { _id: null, total: { $sum: '$contactUnreadCount' } },
+		});
+	});
+});
+
+describe('InboxConversationsService.findByContact', () => {
+	it('finds a conversation only through the account it belongs to', async () => {
+		const { service, model } = build();
+
+		await service.findByContact('507f1f77bcf86cd799439033', KEY);
+
+		expect(model.findOne).toHaveBeenCalledWith({
+			contactUserId: '507f1f77bcf86cd799439033',
+			channel: 'TELEGRAM',
+			contactKey: '555',
+		});
+	});
+});

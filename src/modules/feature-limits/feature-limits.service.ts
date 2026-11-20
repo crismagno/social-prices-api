@@ -5,6 +5,7 @@ import { FilterQuery, Model } from 'mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
+import { FeatureDisabledException } from './feature-disabled.exception';
 import { FeatureLimitReachedException } from './feature-limit-reached.exception';
 import FeatureLimitsEnum from './interfaces/feature-limits.enum';
 import { IFeaturesUsage } from './interfaces/feature-limits.types';
@@ -12,6 +13,7 @@ import { IFeaturesUsage } from './interfaces/feature-limits.types';
 const OWNER_USER_ID_FEATURES: FeatureLimitsEnum.Feature[] = [
 	FeatureLimitsEnum.Feature.CUSTOMERS,
 	FeatureLimitsEnum.Feature.CATEGORIES,
+	FeatureLimitsEnum.Feature.QUICK_MESSAGES,
 ];
 
 @Injectable()
@@ -35,6 +37,7 @@ export class FeatureLimitsService {
 		@InjectModel(schemasName.store) storeModel: Model<any>,
 		@InjectModel(schemasName.category) categoryModel: Model<any>,
 		@InjectModel(schemasName.tag) tagModel: Model<any>,
+		@InjectModel(schemasName.quickMessage) quickMessageModel: Model<any>,
 		private readonly _usersService: UsersService,
 	) {
 		this._modelsByFeature = {
@@ -45,6 +48,7 @@ export class FeatureLimitsService {
 			[FeatureLimitsEnum.Feature.STORES]: storeModel,
 			[FeatureLimitsEnum.Feature.CATEGORIES]: categoryModel,
 			[FeatureLimitsEnum.Feature.TAGS]: tagModel,
+			[FeatureLimitsEnum.Feature.QUICK_MESSAGES]: quickMessageModel,
 		};
 	}
 
@@ -72,6 +76,24 @@ export class FeatureLimitsService {
 		}
 	}
 
+	public async isEnabled(
+		userId: string,
+		feature: FeatureLimitsEnum.Feature,
+	): Promise<boolean> {
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		return this._resolveEnabled(user, feature);
+	}
+
+	public async assertEnabled(
+		userId: string,
+		feature: FeatureLimitsEnum.Feature,
+	): Promise<void> {
+		if (!(await this.isEnabled(userId, feature))) {
+			throw new FeatureDisabledException(feature);
+		}
+	}
+
 	public async getUsage(userId: string): Promise<IFeaturesUsage> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
@@ -89,6 +111,7 @@ export class FeatureLimitsService {
 			usage[feature] = {
 				limit: this._resolveLimit(user, feature),
 				used: usedByFeature[index],
+				enabled: this._resolveEnabled(user, feature),
 			};
 
 			return usage;
@@ -106,6 +129,15 @@ export class FeatureLimitsService {
 		const limit: unknown = user.limits?.features?.[feature];
 
 		return typeof limit === 'number' ? limit : null;
+	}
+
+	// Only an explicit `false` switches a feature off, so accounts saved before
+	// the switch existed keep it.
+	private _resolveEnabled(
+		user: IUser,
+		feature: FeatureLimitsEnum.Feature,
+	): boolean {
+		return user.limits?.enabled?.[feature] !== false;
 	}
 
 	private async _count(

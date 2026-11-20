@@ -6,6 +6,8 @@ export const AppsRealtimeEvents = {
 	UNSUBSCRIBE: 'apps:unsubscribe',
 	/** Server to client: something changed in an app's inbox. Carries no message content. */
 	INBOX_UPDATED: 'apps:inbox-updated',
+	/** Server to client: a store chat changed, for the store's user or for the customer account. Carries no message content. */
+	STORE_CHAT_UPDATED: 'store-chat:updated',
 } as const;
 
 export const APPS_ROOM_PREFIX: string = 'apps:owner:';

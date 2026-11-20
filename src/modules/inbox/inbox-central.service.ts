@@ -48,7 +48,8 @@ export const REPLY_WINDOW_CLOSED_CODE: string = 'REPLY_WINDOW_CLOSED';
 const MAX_REPLY_LENGTH: number = 1000;
 
 /** The app a user must have enabled to see and answer each channel. */
-const APP_BY_CHANNEL: Record<InboxEnum.Channel, AppsEnum.App> = {
+// A channel with no app here (the store chat) is the platform's own: always on.
+const APP_BY_CHANNEL: Partial<Record<InboxEnum.Channel, AppsEnum.App>> = {
 	[InboxEnum.Channel.TELEGRAM]: AppsEnum.App.TELEGRAM,
 	[InboxEnum.Channel.MESSENGER]: AppsEnum.App.FACEBOOK,
 	[InboxEnum.Channel.INSTAGRAM]: AppsEnum.App.INSTAGRAM,
@@ -194,11 +195,7 @@ export class InboxCentralService {
 			customerId,
 		);
 
-		this._realtime.notifyInboxUpdated(
-			ownerUserId,
-			APP_BY_CHANNEL[conversation.channel],
-			conversation.contactKey,
-		);
+		this._notifyChanged(ownerUserId, conversation);
 
 		const row: IInboxChatView | undefined = (
 			await this.listChats(ownerUserId)
@@ -521,6 +518,7 @@ export class InboxCentralService {
 		return new Set(
 			(Object.values(InboxEnum.Channel) as InboxEnum.Channel[]).filter(
 				(channel: InboxEnum.Channel) =>
+					!APP_BY_CHANNEL[channel] ||
 					user?.enabledApps?.includes(APP_BY_CHANNEL[channel]),
 			),
 		);
@@ -536,6 +534,29 @@ export class InboxCentralService {
 	}
 
 	/** uniqName is not unique in the schema, so avoid collisions here. */
+	/** Pushes "this changed" the way the conversation's channel is listened to. */
+	private _notifyChanged(
+		ownerUserId: string,
+		conversation: IInboxConversation,
+	): void {
+		const app: AppsEnum.App | undefined = APP_BY_CHANNEL[conversation.channel];
+
+		if (app) {
+			this._realtime.notifyInboxUpdated(
+				ownerUserId,
+				app,
+				conversation.contactKey,
+			);
+
+			return;
+		}
+
+		this._realtime.notifyStoreChatUpdated(ownerUserId, {
+			storeId: String(conversation.accountKey),
+			conversationId: String(conversation._id),
+		});
+	}
+
 	private async _freeUniqName(
 		ownerUserId: string,
 		name: string,
