@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { IDynamicField } from '../../../shared/common/dynamic-field/dynamic-field.interface';
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import { IPricing } from '../../../shared/common/pricing/pricing.interface';
 import { IProduct } from '../../products/interfaces/product.interface';
 
 export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -30,6 +31,7 @@ export interface IProductItem extends ICreatedAtEntity, IUpdatedAtEntity {
 	releaseDate: Date | null;
 	expirationDate: Date | null;
 	dimensions: IProductItemDimensions | null;
+	pricing?: IPricing | null;
 	colors: string[] | null;
 	dynamicFields: IDynamicField[];
 	productId: mongoose.Schema.Types.ObjectId;

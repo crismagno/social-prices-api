@@ -34,6 +34,7 @@ export const mapProductToDefaultProductItemFields = (product: IProduct) => ({
 	colors: product.colors,
 	dynamicFields: product.dynamicFields ?? [],
 	dimensions: product.dimensions,
+	pricing: product.pricing ?? null,
 	historicPrices: product.historicPrices,
 	previousBarcodes: product.previousBarcodes,
 	uploadFilename: product.uploadFilename,

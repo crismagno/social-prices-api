@@ -4,6 +4,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { IDynamicField } from '../../../shared/common/dynamic-field/dynamic-field.interface';
 import { DynamicFieldSchema } from '../../../shared/common/dynamic-field/dynamic-field.schema';
+import { IPricing } from '../../../shared/common/pricing/pricing.interface';
+import { PricingSchema } from '../../../shared/common/pricing/pricing.schema';
 
 import {
 	IProduct,
@@ -131,6 +133,9 @@ export class Product implements IProduct {
 
 	@Prop({ type: ProductDimensionsSchema, _id: false })
 	dimensions: IProductDimensions | null;
+
+	@Prop({ type: PricingSchema, default: null })
+	pricing: IPricing | null;
 
 	@Prop({ type: [String] })
 	colors: string[] | null;

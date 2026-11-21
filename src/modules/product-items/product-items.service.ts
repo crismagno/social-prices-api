@@ -24,6 +24,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
 import { parseDynamicFields } from '../../shared/common/dynamic-field/dynamic-field.utils';
+import { parsePricing } from '../../shared/common/pricing/pricing.utils';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import {
@@ -330,6 +331,7 @@ export class ProductItemsService {
 			colors: createProductItemDto.colors,
 			dynamicFields: parseDynamicFields(createProductItemDto.dynamicFields),
 			dimensions: createProductItemDto.dimensions,
+			pricing: parsePricing(createProductItemDto.pricing),
 			productId: createProductItemDto.productId,
 		});
 
@@ -501,6 +503,7 @@ export class ProductItemsService {
 				colors: updateProductItemDto.colors,
 				dynamicFields: parseDynamicFields(updateProductItemDto.dynamicFields),
 				dimensions: updateProductItemDto.dimensions,
+				pricing: parsePricing(updateProductItemDto.pricing),
 			},
 		});
 	}

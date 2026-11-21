@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 import { IDynamicField } from '../../../../shared/common/dynamic-field/dynamic-field.interface';
+import { IPricing } from '../../../../shared/common/pricing/pricing.interface';
 
 import { CreateProductDimensionsDto } from './createProduct.dto';
 
@@ -63,6 +64,9 @@ export default class UpdateProductDto {
 	expirationDate: Date | null;
 
 	dimensions: CreateProductDimensionsDto | null;
+
+	@IsOptional()
+	pricing: IPricing | string | null;
 
 	colors: string[] | null;
 
