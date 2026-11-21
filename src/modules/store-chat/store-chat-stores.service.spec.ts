@@ -45,7 +45,7 @@ const matchOf = (storeModel: any) => storeModel.countDocuments.mock.calls[0][0];
 
 describe('StoreChatStoresService', () => {
 	describe('search', () => {
-		it('looks only at active, living stores of other users that are listed or were bought from', async () => {
+		it('looks only at active, living, listed stores of other users, even when a hidden one was bought from', async () => {
 			const { service, storeModel, saleModel } = build([], [STORE_B]);
 
 			await service.search(BUYER, {});
@@ -55,8 +55,9 @@ describe('StoreChatStoresService', () => {
 			expect(match.status).toBe('ACTIVE');
 			expect(match.softDelete).toBeNull();
 			expect(String(match.userId.$ne)).toBe(BUYER.userId);
-			expect(match.$or[0]).toEqual({ isVisibleInSearch: { $ne: false } });
-			expect(match.$or[1]._id.$in.map(String)).toEqual([STORE_B]);
+			expect(match.isVisibleInSearch).toEqual({ $ne: false });
+			expect(match.$or).toBeUndefined();
+			expect(match._id).toBeUndefined();
 
 			const saleFilter = saleModel.distinct.mock.calls[0][1];
 

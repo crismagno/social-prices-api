@@ -39,8 +39,9 @@ export class StoreChatStoresService {
 	//#region Public Methods
 
 	/**
-	 * The open search: active stores that chose to be listed, plus the ones the
-	 * account bought from (those come first), never its own.
+	 * The open search: active stores that chose to be listed, never the account's
+	 * own; the ones it bought from come first. A store that is not listed is not
+	 * found here even by who bought from it: they reach it from the purchase.
 	 */
 	public async search(
 		buyer: IStoreChatBuyer,
@@ -53,10 +54,7 @@ export class StoreChatStoresService {
 			status: StoresEnum.Status.ACTIVE,
 			softDelete: null,
 			userId: { $ne: new mongoose.Types.ObjectId(buyer.userId) },
-			$or: [
-				{ isVisibleInSearch: { $ne: false } },
-				{ _id: { $in: boughtFrom } },
-			],
+			isVisibleInSearch: { $ne: false },
 		};
 
 		const search: string = (tableState?.search ?? '').trim();
