@@ -60,6 +60,13 @@ export class InboxReplyDto {
 	text: string;
 }
 
+/** The new words of a message already sent; each channel applies its own limit. */
+export class InboxEditMessageDto {
+	@IsString()
+	@MaxLength(4096)
+	text: string;
+}
+
 /** A file or a recording sent through a conversation (the file itself comes as multipart). */
 export class InboxSendMediaDto {
 	@IsOptional()

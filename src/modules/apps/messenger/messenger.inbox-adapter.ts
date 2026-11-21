@@ -28,6 +28,8 @@ export class MessengerInboxAdapter
 		voice: true,
 		maxUploadBytes: MAX_MESSENGER_UPLOAD_BYTES,
 		deleteMessage: true,
+		// Messenger has no way to change a message already sent.
+		editMessage: false,
 		answerWindowMs: REPLY_WINDOW_MS,
 	};
 

@@ -15,7 +15,8 @@ export interface IInboxContact {
 export type IInboxAttachmentSource =
 	| { type: InboxEnum.AttachmentSourceType.TELEGRAM_FILE; fileId: string }
 	| { type: InboxEnum.AttachmentSourceType.WHATSAPP_MEDIA; mediaId: string }
-	| { type: InboxEnum.AttachmentSourceType.URL; url: string };
+	| { type: InboxEnum.AttachmentSourceType.URL; url: string }
+	| { type: InboxEnum.AttachmentSourceType.STORED_FILE; key: string };
 
 export interface IInboxAttachment {
 	kind: InboxEnum.MessageKind;
@@ -112,6 +113,8 @@ export interface IInboxMessage {
 	isEcho: boolean;
 	isUnsupported: boolean;
 	deletedAt: Date | null;
+	/** When the text was last changed after being sent; null when it never was. */
+	editedAt: Date | null;
 	channelData: Record<string, unknown> | null;
 	raw: unknown;
 	createdAt: Date;

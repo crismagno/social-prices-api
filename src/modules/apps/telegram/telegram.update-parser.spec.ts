@@ -1,5 +1,8 @@
 import TelegramEnum from './telegram.enum';
-import { parseTelegramUpdate } from './telegram.update-parser';
+import {
+	parseTelegramEdit,
+	parseTelegramUpdate,
+} from './telegram.update-parser';
 
 const privateMessage = (extra: any = {}, over: any = {}): any => ({
 	update_id: 100,
@@ -225,5 +228,69 @@ describe('parseTelegramUpdate', () => {
 			).toBeUndefined();
 			expect(media({ document: { file_name: 'x' } })).toBeUndefined();
 		});
+	});
+});
+
+describe('parseTelegramEdit', () => {
+	const edited = (extra: any = {}, over: any = {}): any => ({
+		update_id: 101,
+		edited_message: {
+			message_id: 7,
+			date: 1_760_000_000,
+			edit_date: 1_760_000_600,
+			chat: { id: 555, type: 'private' },
+			from: { id: 555, first_name: 'Ana' },
+			...extra,
+		},
+		...over,
+	});
+
+	it('reads the new text of a message the person changed', () => {
+		expect(parseTelegramEdit(edited({ text: 'oi, tudo bem?' }))).toEqual({
+			chatId: 555,
+			messageId: 7,
+			text: 'oi, tudo bem?',
+			editedAt: new Date(1_760_000_600 * 1000),
+		});
+	});
+
+	it('reads the new caption of a message with a file', () => {
+		expect(
+			parseTelegramEdit(
+				edited({ photo: [{ file_id: 'P1' }], caption: 'a foto certa' }),
+			),
+		).toMatchObject({ messageId: 7, text: 'a foto certa' });
+	});
+
+	it('gives no text when the caption was taken away', () => {
+		expect(
+			parseTelegramEdit(edited({ photo: [{ file_id: 'P1' }] })),
+		).toMatchObject({ text: null });
+	});
+
+	it('falls back to the message date when Telegram sends no edit date', () => {
+		expect(
+			parseTelegramEdit(edited({ text: 'x', edit_date: undefined })),
+		).toMatchObject({ editedAt: new Date(1_760_000_000 * 1000) });
+	});
+
+	it.each([
+		['a new message', privateMessage({ text: 'oi' })],
+		[
+			'an edit in a group',
+			edited({ text: 'x', chat: { id: -1, type: 'group' } }),
+		],
+		[
+			'an edit with no message id',
+			edited({ text: 'x', message_id: undefined }),
+		],
+		['nothing at all', null],
+		['a string', 'edited_message'],
+	])('ignores %s', (_name, update) => {
+		expect(parseTelegramEdit(update as any)).toBeNull();
+	});
+
+	it('is not mistaken for a new message', () => {
+		expect(parseTelegramUpdate(edited({ text: 'x' }))).toBeNull();
 	});
 });

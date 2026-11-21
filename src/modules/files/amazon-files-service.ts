@@ -12,6 +12,8 @@ export class AmazonFilesService implements IFilesServiceFactory {
 	//#region Private properties
 
 	private readonly _awsS3Bucket: string = process.env.AWS_S3_BUCKET;
+	private readonly _folder: string;
+	private readonly _isPublic: boolean;
 	private readonly _awsS3: AWS.S3;
 	private readonly _logger: Logger;
 
@@ -26,7 +28,16 @@ export class AmazonFilesService implements IFilesServiceFactory {
 
 	//#region Constructor
 
-	constructor() {
+	/**
+	 * By default the root of the bucket, with files anyone holding the address
+	 * can read. A folder of the same bucket (`chat/`) keeps other files apart,
+	 * and they can be private: read only through this service. File names given
+	 * to and by this class never carry the folder.
+	 */
+	constructor(options: { folder?: string; isPublic?: boolean } = {}) {
+		this._folder = options.folder ?? '';
+		this._isPublic = options.isPublic ?? true;
+
 		this._awsS3 = new AWS.S3({
 			accessKeyId: process.env.ACCESS_KEY_ID,
 			secretAccessKey: process.env.SECRET_ACCESS_KEY,
@@ -45,18 +56,23 @@ export class AmazonFilesService implements IFilesServiceFactory {
 	): Promise<AWS.S3.ManagedUpload.SendData> {
 		const { originalname, buffer, mimetype } = file;
 
-		return this._s3upload(
+		const filename: string = newFileOriginalname(originalname);
+
+		const response: AWS.S3.ManagedUpload.SendData = await this._s3upload(
 			buffer,
 			this._awsS3Bucket,
-			newFileOriginalname(originalname),
+			this._keyOf(filename),
 			mimetype,
 		);
+
+		// The name without the folder, as it is asked for later.
+		return { ...response, Key: filename };
 	}
 
 	public async deleteFile(filename: string): Promise<any | null> {
 		if (!filename) return null;
 
-		return this._s3delete(this._awsS3Bucket, filename);
+		return this._s3delete(this._awsS3Bucket, this._keyOf(filename));
 	}
 
 	public async getFileBufferByFilename(
@@ -68,7 +84,7 @@ export class AmazonFilesService implements IFilesServiceFactory {
 			await this._awsS3
 				.getObject({
 					Bucket: this._awsS3Bucket,
-					Key: filename,
+					Key: this._keyOf(filename),
 				})
 				.promise();
 
@@ -78,6 +94,11 @@ export class AmazonFilesService implements IFilesServiceFactory {
 	//#endregion
 
 	//#region Private methods
+
+	/** Where the file is in the bucket: inside this service's folder, if it has one. */
+	private _keyOf(filename: string): string {
+		return `${this._folder}${filename}`;
+	}
 
 	private async _s3upload(
 		buffer: any,
@@ -89,7 +110,7 @@ export class AmazonFilesService implements IFilesServiceFactory {
 			Bucket: bucket,
 			Key: filename,
 			Body: buffer,
-			ACL: 'public-read',
+			...(this._isPublic ? { ACL: 'public-read' } : {}),
 			ContentType: mimetype,
 			ContentDisposition: 'inline',
 		};

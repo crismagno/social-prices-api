@@ -1,3 +1,5 @@
+import { IInboxAttachmentView } from '../../inbox/interfaces/inbox-central.types';
+import InboxEnum from '../../inbox/interfaces/inbox.enum';
 import StoresEnum from '../../stores/interfaces/stores.enum';
 
 /** Who is asking, as the token says. */
@@ -20,6 +22,8 @@ export interface IStoreChatConversationView {
 	store: IStoreChatStoreCard;
 	lastMessageAt: Date;
 	lastMessageText: string | null;
+	/** What the last message is, for when it has no text (a photo, a recording). */
+	lastMessageKind: InboxEnum.MessageKind | null;
 	lastMessageFromMe: boolean;
 	unreadCount: number;
 }
@@ -28,8 +32,13 @@ export interface IStoreChatConversationView {
 export interface IStoreChatMessageView {
 	_id: string;
 	fromMe: boolean;
+	kind: InboxEnum.MessageKind;
 	text: string | null;
+	/** What each file is. Where it is kept stays on the server. */
+	attachments: IInboxAttachmentView[];
 	sentAt: Date;
+	/** When its words were last changed after being sent; null when they never were. */
+	editedAt: Date | null;
 }
 
 /** What starting a conversation from the store's side gives back, to open it in the inbox. */

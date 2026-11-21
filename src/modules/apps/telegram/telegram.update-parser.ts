@@ -1,5 +1,6 @@
 import TelegramEnum from './telegram.enum';
 import {
+	INormalizedTelegramEdit,
 	INormalizedTelegramMessage,
 	ITelegramMedia,
 	ITelegramMessage,
@@ -104,10 +105,56 @@ export const extractTelegramMedia = (
 	};
 };
 
+/** The words of a message: its text, or the caption of its file. */
+const textOf = (message: ITelegramMessage): string | null => {
+	const text: unknown =
+		contentTypeOf(message) === TelegramEnum.ContentType.TEXT
+			? message.text
+			: message.caption;
+
+	return typeof text === 'string' ? text : null;
+};
+
 /**
- * Reads what a customer wrote to the bot. Only direct messages count: edits,
- * button presses, group traffic and the like return null and are dropped.
- * Never throws, whatever the body looks like.
+ * Reads a customer changing a message they already sent to the bot. Only the
+ * words are taken: a swapped file keeps the one stored. Null for anything that
+ * is not an edit of a direct message. Never throws.
+ */
+export const parseTelegramEdit = (
+	update: ITelegramUpdate,
+): INormalizedTelegramEdit | null => {
+	if (!isObject(update)) {
+		return null;
+	}
+
+	const message: ITelegramMessage | undefined = update.edited_message;
+
+	if (
+		!isObject(message) ||
+		message.chat?.type !== 'private' ||
+		typeof message.chat?.id !== 'number' ||
+		typeof message.message_id !== 'number'
+	) {
+		return null;
+	}
+
+	const editedAt: number =
+		typeof message.edit_date === 'number' ? message.edit_date : message.date;
+
+	return {
+		chatId: message.chat.id,
+		messageId: message.message_id,
+		text: textOf(message),
+		editedAt: Number.isFinite(editedAt)
+			? new Date(editedAt * 1000)
+			: new Date(),
+	};
+};
+
+/**
+ * Reads what a customer wrote to the bot. Only direct messages count: button
+ * presses, group traffic and the like return null and are dropped (an edit is
+ * read by `parseTelegramEdit`). Never throws, whatever the body looks like.
  */
 export const parseTelegramUpdate = (
 	update: ITelegramUpdate,
@@ -130,11 +177,6 @@ export const parseTelegramUpdate = (
 
 	const media: ITelegramMedia | undefined = extractTelegramMedia(message);
 
-	const text: unknown =
-		contentType === TelegramEnum.ContentType.TEXT
-			? message.text
-			: message.caption;
-
 	return {
 		updateId: update.update_id,
 		messageId: message.message_id,
@@ -145,7 +187,7 @@ export const parseTelegramUpdate = (
 		fromUsername: message.from.username ?? null,
 		fromLanguageCode: message.from.language_code ?? null,
 		contentType,
-		text: typeof text === 'string' ? text : null,
+		text: textOf(message),
 		...(media ? { media } : {}),
 		sentAt: new Date(message.date * 1000),
 		raw: update,

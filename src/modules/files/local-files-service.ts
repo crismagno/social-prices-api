@@ -22,14 +22,21 @@ export class LocalFilesService implements IFilesServiceFactory {
 
 	//#region Public properties
 
-	public readonly filesFolderPath: any = path.join(process.cwd(), '/uploads/');
+	public readonly filesFolderPath: any;
 
 	//#endregion
 
 	//#region Constructor
 
-	constructor() {
+	/** By default the uploads folder; another folder keeps other files apart. */
+	constructor(folder: string = '/uploads/') {
 		this._logger = new Logger(LocalFilesService.name);
+
+		this.filesFolderPath = path.join(process.cwd(), folder);
+
+		if (folder !== '/uploads/') {
+			fs.mkdirSync(this.filesFolderPath, { recursive: true });
+		}
 	}
 
 	//#endregion

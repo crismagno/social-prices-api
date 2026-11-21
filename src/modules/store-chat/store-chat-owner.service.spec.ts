@@ -67,8 +67,49 @@ const build = (existing: any = null) => {
 			.mockReturnValue(lean({ _id: ACCOUNT, name: 'Ana Conta' })),
 	};
 	const realtime: any = { notifyStoreChatUpdated: jest.fn() };
+	const media: any = {
+		caption: jest
+			.fn()
+			.mockImplementation((text: any) => (text ? String(text).trim() : null)),
+		assertSendable: jest.fn(),
+		store: jest.fn().mockResolvedValue({
+			kind: 'IMAGE',
+			mimeType: 'image/png',
+			fileName: 'foto.png',
+			size: 3,
+			width: null,
+			height: null,
+			duration: null,
+			source: { type: 'STORED_FILE', key: 'stored.png' },
+		}),
+		read: jest.fn().mockResolvedValue({
+			buffer: Buffer.from('abc'),
+			contentType: 'image/png',
+			fileName: 'foto.png',
+		}),
+		removeFilesOf: jest.fn().mockResolvedValue(undefined),
+	};
+	const deletion: any = { remove: jest.fn().mockResolvedValue(undefined) };
+	const edition: any = {
+		edit: jest
+			.fn()
+			.mockImplementation(
+				async (_conversation: any, id: string, by: string, text: string) => ({
+					_id: id,
+					direction: by,
+					kind: 'TEXT',
+					text,
+					attachments: [],
+					sentAt: new Date('2030-01-05'),
+					editedAt: new Date('2030-01-06'),
+				}),
+			),
+	};
 
 	return {
+		media,
+		deletion,
+		edition,
 		conversations,
 		messages,
 		storeModel,
@@ -82,6 +123,9 @@ const build = (existing: any = null) => {
 			conversations,
 			messages,
 			realtime,
+			deletion,
+			media,
+			edition,
 		),
 	};
 };
@@ -115,6 +159,111 @@ describe('StoreChatOwnerService', () => {
 			});
 			expect(saved).toMatchObject({ _id: 'm1', text: 'temos sim' });
 		});
+	});
+
+	describe('typing', () => {
+		it('tells the account that the store is writing', () => {
+			const { service, realtime } = build();
+
+			realtime.notifyStoreChatTyping = jest.fn();
+
+			service.typing(conversation());
+
+			expect(realtime.notifyStoreChatTyping).toHaveBeenCalledWith(ACCOUNT, {
+				storeId: STORE,
+				conversationId: CONV,
+			});
+		});
+
+		it('tells nobody when the conversation has no account behind it', () => {
+			const { service, realtime } = build();
+
+			realtime.notifyStoreChatTyping = jest.fn();
+
+			service.typing(conversation({ contactUserId: null }));
+
+			expect(realtime.notifyStoreChatTyping).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('sendMedia', () => {
+		const file: any = {
+			buffer: Buffer.from('abc'),
+			fileName: 'foto.png',
+			mimeType: 'image/png',
+		};
+
+		it('stores the file, then the message with it and its caption, and tells the account', async () => {
+			const { service, media, messages, conversations, realtime } = build();
+
+			await service.sendMedia(CTX, conversation(), file, {
+				caption: '  veja  ',
+				asVoice: false,
+			});
+
+			expect(media.store).toHaveBeenCalledWith(file, false);
+
+			const input = messages.saveOutgoing.mock.calls[0][2];
+
+			expect(input).toMatchObject({
+				kind: 'IMAGE',
+				text: 'veja',
+				sentByEmployeeId: 'e1',
+			});
+			expect(input.attachments).toHaveLength(1);
+			expect(input.attachments[0].source).toEqual({
+				type: 'STORED_FILE',
+				key: 'stored.png',
+			});
+			expect(conversations.applyOutgoing).toHaveBeenCalledWith(
+				OWNER,
+				CONV,
+				expect.objectContaining({ kind: 'IMAGE', text: 'veja' }),
+			);
+			expect(conversations.incContactUnread).toHaveBeenCalledWith(OWNER, CONV);
+			expect(realtime.notifyStoreChatUpdated).toHaveBeenCalled();
+		});
+
+		it('sends a recording as a voice message, with no text', async () => {
+			const { service, media, messages } = build();
+
+			media.store.mockResolvedValue({ kind: 'VOICE', source: {} });
+
+			await service.sendMedia(CTX, conversation(), file, {
+				caption: null,
+				asVoice: true,
+			});
+
+			expect(media.store).toHaveBeenCalledWith(file, true);
+			expect(messages.saveOutgoing.mock.calls[0][2]).toMatchObject({
+				kind: 'VOICE',
+				text: null,
+			});
+		});
+
+		it('stores no message when the file is refused', async () => {
+			const { service, media, messages } = build();
+
+			media.store.mockRejectedValue(new BadRequestException('too large'));
+
+			await expect(
+				service.sendMedia(CTX, conversation(), file, {
+					caption: null,
+					asVoice: false,
+				}),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(messages.saveOutgoing).not.toHaveBeenCalled();
+		});
+	});
+
+	it('getAttachment reads the file of that message', async () => {
+		const { service, media } = build();
+		const message: any = { _id: 'm1' };
+
+		await expect(service.getAttachment(message, 0)).resolves.toMatchObject({
+			contentType: 'image/png',
+		});
+		expect(media.read).toHaveBeenCalledWith(message, 0);
 	});
 
 	describe('start', () => {
@@ -261,6 +410,35 @@ describe('StoreChatOwnerService', () => {
 			expect(conversations.ensure).not.toHaveBeenCalled();
 			expect(messages.saveOutgoing).toHaveBeenCalledTimes(1);
 		});
+	});
+
+	it('editMessage changes, as the store side, the words of a message of that conversation', async () => {
+		const { service, edition } = build();
+		const own = conversation();
+
+		await expect(
+			service.editMessage(own, { _id: 'm1' } as any, '  claro!  '),
+		).resolves.toMatchObject({ _id: 'm1', text: 'claro!' });
+
+		expect(edition.edit).toHaveBeenCalledWith(own, 'm1', 'OUT', 'claro!');
+	});
+
+	it('editMessage refuses an empty text', async () => {
+		const { service, edition } = build();
+
+		await expect(
+			service.editMessage(conversation(), { _id: 'm1' } as any, '  '),
+		).rejects.toBeInstanceOf(BadRequestException);
+		expect(edition.edit).not.toHaveBeenCalled();
+	});
+
+	it('deleteMessage removes, as the store side, a message of that conversation', async () => {
+		const { service, deletion } = build();
+		const own = conversation();
+
+		await service.deleteMessage(own, { _id: 'm1' } as any);
+
+		expect(deletion.remove).toHaveBeenCalledWith(own, 'm1', 'OUT');
 	});
 
 	it('countUnread is what the user has not read on this channel', async () => {

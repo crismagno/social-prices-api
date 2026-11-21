@@ -16,6 +16,8 @@ export interface ITelegramMessageRecord extends ICreatedAtEntity {
 	/** The file of a photo, document, voice note, etc. Its bytes stay at Telegram. */
 	media?: ITelegramMedia;
 	sentAt: Date;
+	/** When its words were last changed after being sent; null when they never were. */
+	editedAt?: Date | null;
 	/** IN only: Telegram's id of the update. Kept for tracing, not for de-duplication. */
 	updateId?: number;
 	/** IN only: who wrote. */

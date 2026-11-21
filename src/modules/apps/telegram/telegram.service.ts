@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	Logger,
+} from '@nestjs/common';
 
 import { FeatureLimitsService } from '../../feature-limits/feature-limits.service';
 import FeatureLimitsEnum from '../../feature-limits/interfaces/feature-limits.enum';
@@ -7,6 +12,10 @@ import { AppsRealtimeGateway } from '../core/realtime/apps-realtime.gateway';
 import AppsEnum from '../interfaces/apps.enum';
 import { IAppContext } from '../interfaces/apps.types';
 import { ITelegramConnection } from './telegram-connection.interface';
+import {
+	MAX_TELEGRAM_CAPTION_LENGTH,
+	MAX_TELEGRAM_TEXT_LENGTH,
+} from './telegram-chat.dto';
 import { ITelegramChat } from './telegram-chat.interface';
 import { TelegramChatsService } from './telegram-chats.service';
 import { TelegramConnectionsService } from './telegram-connections.service';
@@ -30,14 +39,20 @@ import {
 	TelegramInvalidTokenException,
 	TelegramMediaNotFoundException,
 	TelegramMessageNotDeletableException,
+	TelegramMessageNotEditableException,
 	TelegramMessageNotFoundException,
 	TelegramNotConnectedException,
 	TelegramRateLimitedException,
 	TelegramWebhookRejectedException,
 	TelegramWebhookUrlMissingException,
 } from './telegram.exceptions';
-import { parseTelegramUpdate } from './telegram.update-parser';
+import { hasCaption, isEditableTelegramMessage } from './telegram.inbox-mapper';
 import {
+	parseTelegramEdit,
+	parseTelegramUpdate,
+} from './telegram.update-parser';
+import {
+	INormalizedTelegramEdit,
 	INormalizedTelegramMessage,
 	ITelegramBotInfo,
 	ITelegramBotProfile,
@@ -55,7 +70,11 @@ import {
 	webhookSecretMatches,
 } from './telegram.webhook-credentials';
 
-export type TelegramWebhookOutcome = 'SAVED' | 'DUPLICATE' | 'IGNORED';
+export type TelegramWebhookOutcome =
+	| 'SAVED'
+	| 'DUPLICATE'
+	| 'EDITED'
+	| 'IGNORED';
 
 export interface ITelegramWebhookStatus extends ITelegramWebhookInfo {
 	/** The address this system registered. */
@@ -378,6 +397,15 @@ export class TelegramService {
 
 		const ownerUserId: string = String(connection.ownerUserId);
 
+		const edit: INormalizedTelegramEdit | null = parseTelegramEdit(update);
+
+		if (edit) {
+			return (await this._isEnabledFor(ownerUserId)) &&
+				(await this._applyIncomingEdit(ownerUserId, edit))
+				? 'EDITED'
+				: 'IGNORED';
+		}
+
 		const message: INormalizedTelegramMessage | null =
 			parseTelegramUpdate(update);
 
@@ -520,6 +548,90 @@ export class TelegramService {
 				}`,
 			);
 		}
+	}
+
+	/**
+	 * Changes the words of a message the bot sent, for both sides: the text, or
+	 * the caption of a file. Telegram goes first: if it refuses, the message
+	 * stays here as it was.
+	 */
+	public async editMessage(
+		ownerUserId: string,
+		chatId: number,
+		messageRecordId: string,
+		text: string,
+	): Promise<ITelegramMessageRecord> {
+		const connection: ITelegramConnection | null =
+			await this._connectionsService.findWithToken(ownerUserId);
+
+		if (!connection) {
+			throw new TelegramNotConnectedException();
+		}
+
+		const record: ITelegramMessageRecord | null =
+			await this._messagesService.findOwned(
+				ownerUserId,
+				chatId,
+				messageRecordId,
+			);
+
+		if (!record) {
+			throw new TelegramMessageNotFoundException();
+		}
+
+		if (!isEditableTelegramMessage(record)) {
+			throw new TelegramMessageNotEditableException(
+				'only a text or a caption the bot sent can be changed.',
+			);
+		}
+
+		const asCaption: boolean = hasCaption(record.contentType);
+
+		const body: string = this._editedText(text, asCaption);
+
+		if (body === record.text) {
+			return record;
+		}
+
+		try {
+			await this._botClient.editMessage(
+				this._connectionsService.readToken(connection),
+				chatId,
+				record.messageId,
+				body,
+				asCaption,
+			);
+		} catch (error) {
+			// Telegram already has these words: only this side is behind.
+			if (!this._isNotModified(error)) {
+				if (
+					error instanceof TelegramApiError &&
+					UNDELIVERABLE_STATUSES.includes(error.status)
+				) {
+					throw new TelegramMessageNotEditableException(error.description);
+				}
+
+				throw error;
+			}
+		}
+
+		const edited: ITelegramMessageRecord | null =
+			await this._messagesService.editOwned(
+				ownerUserId,
+				chatId,
+				messageRecordId,
+				body,
+			);
+
+		if (!edited) {
+			throw new TelegramMessageNotFoundException();
+		}
+
+		await this._refreshPreviewIfLatest(ownerUserId, chatId, edited);
+
+		this._notify(ownerUserId, chatId);
+
+		return edited;
 	}
 
 	/**
@@ -767,6 +879,85 @@ export class TelegramService {
 			AppsEnum.App.TELEGRAM,
 			String(chatId),
 		);
+	}
+
+	private _isNotModified(error: unknown): boolean {
+		return (
+			error instanceof TelegramApiError &&
+			error.status === 400 &&
+			/message is not modified/i.test(error.description)
+		);
+	}
+
+	/** The new words as they are sent, or a refusal: Telegram's own limits apply. */
+	private _editedText(text: unknown, asCaption: boolean): string {
+		const body: string = typeof text === 'string' ? text.trim() : '';
+
+		const max: number = asCaption
+			? MAX_TELEGRAM_CAPTION_LENGTH
+			: MAX_TELEGRAM_TEXT_LENGTH;
+
+		if (!body || body.length > max) {
+			throw new BadRequestException(
+				`The message must have between 1 and ${max} characters.`,
+			);
+		}
+
+		return body;
+	}
+
+	/**
+	 * A customer changed a message they had sent: its words follow here. False
+	 * when that message is not stored (it came before the bot was connected, or
+	 * was removed), which is nothing to worry about.
+	 */
+	private async _applyIncomingEdit(
+		ownerUserId: string,
+		edit: INormalizedTelegramEdit,
+	): Promise<boolean> {
+		const record: ITelegramMessageRecord | null =
+			await this._messagesService.findIncomingByMessageId(
+				ownerUserId,
+				edit.chatId,
+				edit.messageId,
+			);
+
+		if (!record) {
+			return false;
+		}
+
+		const edited: ITelegramMessageRecord | null =
+			await this._messagesService.editOwned(
+				ownerUserId,
+				edit.chatId,
+				String(record._id),
+				edit.text,
+				edit.editedAt,
+			);
+
+		if (!edited) {
+			return false;
+		}
+
+		await this._refreshPreviewIfLatest(ownerUserId, edit.chatId, edited);
+
+		this._notify(ownerUserId, edit.chatId);
+
+		return true;
+	}
+
+	/** The inbox list shows the words of the newest message: they follow an edit of it. */
+	private async _refreshPreviewIfLatest(
+		ownerUserId: string,
+		chatId: number,
+		edited: ITelegramMessageRecord,
+	): Promise<void> {
+		const latest: ITelegramMessageRecord | null =
+			await this._messagesService.findLatest(ownerUserId, chatId);
+
+		if (latest && String(latest._id) === String(edited._id)) {
+			await this._chatsService.setLastMessage(ownerUserId, chatId, latest);
+		}
 	}
 
 	private _isAlreadyGone(error: unknown): boolean {

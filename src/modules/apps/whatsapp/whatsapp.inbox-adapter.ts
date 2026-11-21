@@ -32,6 +32,8 @@ export class WhatsappInboxAdapter
 		maxUploadBytes: MAX_UPLOAD_BYTES,
 		// WhatsApp has no way to delete a message.
 		deleteMessage: false,
+		// Nor to change one already sent.
+		editMessage: false,
 	};
 
 	constructor(

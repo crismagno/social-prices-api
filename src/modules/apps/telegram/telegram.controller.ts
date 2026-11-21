@@ -226,6 +226,24 @@ export class TelegramController {
 		);
 	}
 
+	// Changing the words of a message the bot sent; the customer sees the new ones.
+	@Patch('chats/:chatId/messages/:messageId')
+	@UseGuards(AppEnabledGuard)
+	@UsePipes(validation)
+	public async editMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('chatId', ParseIntPipe) chatId: number,
+		@Param('messageId') messageId: string,
+		@Body() dto: SendTelegramMessageDto,
+	): Promise<ITelegramMessageRecord> {
+		return await this._telegramService.editMessage(
+			authPayload._id,
+			chatId,
+			messageId,
+			dto.text,
+		);
+	}
+
 	// Removing a message removes it for the customer too, so it needs more than replying.
 	@Delete('chats/:chatId/messages/:messageId')
 	@HttpCode(204)

@@ -6,6 +6,7 @@ import {
 	HttpException,
 	HttpStatus,
 	Injectable,
+	NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
@@ -15,8 +16,11 @@ import { Customer } from '../customers/interfaces/customer.schema';
 import { InboxConversationsService } from '../inbox/inbox-conversations.service';
 import { InboxMessagesService } from '../inbox/inbox-messages.service';
 import InboxEnum from '../inbox/interfaces/inbox.enum';
+import { IInboxUploadFile } from '../inbox/inbox-channel.adapter';
+import { IInboxAttachmentView } from '../inbox/interfaces/inbox-central.types';
 import {
 	IConversationKey,
+	IInboxAttachment,
 	IInboxConversation,
 	IInboxMessage,
 	IInboxMessageInput,
@@ -30,6 +34,12 @@ import {
 	IStoreChatMessageView,
 	IStoreChatStoreCard,
 } from './interfaces/store-chat.types';
+import { StoreChatDeletionService } from './store-chat-deletion.service';
+import { StoreChatEditionService } from './store-chat-edition.service';
+import {
+	IStoreChatFile,
+	StoreChatMediaService,
+} from './store-chat-media.service';
 import { StoreChatStoresService } from './store-chat-stores.service';
 import {
 	STORE_CHAT_CODES,
@@ -52,9 +62,26 @@ export const storeChatText = (text: unknown): string => {
 	return body;
 };
 
-/** A text message of the store chat, ready for the inbox to store. */
+/** What each file of a message is, without where it is kept. */
+export const storeChatAttachmentViews = (
+	message: IInboxMessage,
+): IInboxAttachmentView[] =>
+	(message.attachments ?? []).map(
+		(attachment: IInboxAttachment, index: number): IInboxAttachmentView => ({
+			index,
+			kind: attachment.kind,
+			mimeType: attachment.mimeType ?? null,
+			fileName: attachment.fileName ?? null,
+			size: attachment.size ?? null,
+			width: attachment.width ?? null,
+			height: attachment.height ?? null,
+			duration: attachment.duration ?? null,
+		}),
+	);
+
+/** A message of the store chat (a text, unless said otherwise), ready for the inbox to store. */
 export const storeChatMessageInput = (
-	text: string,
+	text: string | null,
 	extra: Partial<IInboxMessageInput> = {},
 ): IInboxMessageInput => ({
 	channelMessageId: new mongoose.Types.ObjectId().toString(),
@@ -82,6 +109,9 @@ export class StoreChatService {
 		private readonly _stores: StoreChatStoresService,
 		private readonly _usersService: UsersService,
 		private readonly _realtime: AppsRealtimeGateway,
+		private readonly _deletion: StoreChatDeletionService,
+		private readonly _media: StoreChatMediaService,
+		private readonly _edition: StoreChatEditionService,
 	) {}
 
 	//#endregion
@@ -113,6 +143,7 @@ export class StoreChatService {
 				store: cards.get(String(conversation.accountKey)),
 				lastMessageAt: conversation.lastMessageAt,
 				lastMessageText: conversation.lastMessageText,
+				lastMessageKind: conversation.lastMessageKind ?? null,
 				lastMessageFromMe:
 					conversation.lastMessageDirection === InboxEnum.Direction.IN,
 				unreadCount: conversation.contactUnreadCount ?? 0,
@@ -153,61 +184,141 @@ export class StoreChatService {
 	): Promise<IStoreChatMessageView> {
 		const body: string = storeChatText(text);
 
-		const store: IStore = await this._stores.findUsable(storeId);
+		return await this._deliver(buyer, storeId, async () => ({
+			kind: InboxEnum.MessageKind.TEXT,
+			text: body,
+			attachments: [],
+		}));
+	}
 
-		const ownerUserId: string = String(store.userId);
+	/**
+	 * Sends a file, or a recording, to a store, with a caption if there is one.
+	 * Like a text, it can be what opens the conversation.
+	 */
+	public async sendMedia(
+		buyer: IStoreChatBuyer,
+		storeId: string,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IStoreChatMessageView> {
+		const caption: string | null = this._media.caption(options.caption);
 
-		if (ownerUserId === String(buyer.userId)) {
-			throw new BadRequestException({
-				code: STORE_CHAT_CODES.OWN_STORE,
-				message: 'You cannot write to your own store.',
-			});
-		}
+		// Refused before the conversation is opened or anything is stored.
+		this._media.assertSendable(file);
 
-		const name: string = await this._nameOf(buyer);
-
-		const conversation: IInboxConversation =
-			(await this._own(buyer, storeId)) ??
-			(await this._open(buyer, store, ownerUserId, name));
-
-		const conversationId: string = String(conversation._id);
-
-		const input: IInboxMessageInput = storeChatMessageInput(body, {
-			sender: { id: buyer.userId, name, username: null },
-		});
-
-		await this._messages.saveIncoming(ownerUserId, conversation, input);
-
-		await this._conversations.applyIncoming(ownerUserId, conversationId, {
-			preview: {
-				text: body,
-				kind: InboxEnum.MessageKind.TEXT,
-				channelKind: null,
-				direction: InboxEnum.Direction.IN,
-				at: input.sentAt,
-			},
-		});
-
-		this._realtime.notifyStoreChatUpdated(ownerUserId, {
-			storeId: String(store._id),
-			conversationId,
-		});
-
-		const saved: IInboxMessage | null =
-			await this._messages.findByChannelMessageId(
-				ownerUserId,
-				conversationId,
-				input.channelMessageId,
+		return await this._deliver(buyer, storeId, async () => {
+			const attachment: IInboxAttachment = await this._media.store(
+				file,
+				options.asVoice,
 			);
 
+			return {
+				kind: attachment.kind,
+				text: caption,
+				attachments: [attachment],
+			};
+		});
+	}
+
+	/** One file of a message of the account's own conversation with that store. */
+	public async getAttachment(
+		buyer: IStoreChatBuyer,
+		storeId: string,
+		messageId: string,
+		index: number,
+	): Promise<IStoreChatFile> {
+		const conversation: IInboxConversation | null = await this._own(
+			buyer,
+			storeId,
+		);
+
+		const message: IInboxMessage | null =
+			conversation && mongoose.isValidObjectId(messageId)
+				? await this._messages.findOwned(
+						String(conversation.ownerUserId),
+						String(conversation._id),
+						messageId,
+				  )
+				: null;
+
+		if (!message) {
+			throw new NotFoundException('Attachment not found.');
+		}
+
+		return await this._media.read(message, index);
+	}
+
+	/**
+	 * Changes the words of a message the account itself wrote (its text, or the
+	 * caption of its file); the store sees the new ones.
+	 */
+	public async editMessage(
+		buyer: IStoreChatBuyer,
+		storeId: string,
+		messageId: string,
+		text: string,
+	): Promise<IStoreChatMessageView> {
+		const body: string = storeChatText(text);
+
+		const conversation: IInboxConversation | null = await this._own(
+			buyer,
+			storeId,
+		);
+
+		if (!conversation) {
+			throw new NotFoundException('Message not found.');
+		}
+
 		return this._toView(
-			saved ??
-				({
-					_id: input.channelMessageId,
-					direction: InboxEnum.Direction.IN,
-					text: body,
-					sentAt: input.sentAt,
-				} as IInboxMessage),
+			await this._edition.edit(
+				conversation,
+				messageId,
+				InboxEnum.Direction.IN,
+				body,
+			),
+		);
+	}
+
+	/**
+	 * The account is writing to the store: whoever has the conversation open
+	 * there sees it for a few seconds. Nothing is stored, and with no
+	 * conversation yet there is nobody to tell.
+	 */
+	public async typing(buyer: IStoreChatBuyer, storeId: string): Promise<void> {
+		const conversation: IInboxConversation | null = await this._own(
+			buyer,
+			storeId,
+		);
+
+		if (!conversation) {
+			return;
+		}
+
+		this._realtime.notifyStoreChatTyping(String(conversation.ownerUserId), {
+			storeId: String(conversation.accountKey),
+			conversationId: String(conversation._id),
+		});
+	}
+
+	/** Removes a message the account itself wrote; it is gone for the store too. */
+	public async deleteMessage(
+		buyer: IStoreChatBuyer,
+		storeId: string,
+		messageId: string,
+	): Promise<void> {
+		const conversation: IInboxConversation | null = await this._own(
+			buyer,
+			storeId,
+		);
+
+		if (!conversation) {
+			throw new NotFoundException('Message not found.');
+		}
+
+		await this._deletion.remove(
+			conversation,
+			messageId,
+			InboxEnum.Direction.IN,
 		);
 	}
 
@@ -237,6 +348,82 @@ export class StoreChatService {
 	//#endregion
 
 	//#region Private Methods
+
+	/**
+	 * Puts a message of the account in its conversation with the store, opening
+	 * it first if this is the first one. `make` builds the content only after
+	 * everything that can refuse the message has passed.
+	 */
+	private async _deliver(
+		buyer: IStoreChatBuyer,
+		storeId: string,
+		make: () => Promise<
+			Pick<IInboxMessageInput, 'kind' | 'text' | 'attachments'>
+		>,
+	): Promise<IStoreChatMessageView> {
+		const store: IStore = await this._stores.findUsable(storeId);
+
+		const ownerUserId: string = String(store.userId);
+
+		if (ownerUserId === String(buyer.userId)) {
+			throw new BadRequestException({
+				code: STORE_CHAT_CODES.OWN_STORE,
+				message: 'You cannot write to your own store.',
+			});
+		}
+
+		const name: string = await this._nameOf(buyer);
+
+		const conversation: IInboxConversation =
+			(await this._own(buyer, storeId)) ??
+			(await this._open(buyer, store, ownerUserId, name));
+
+		const conversationId: string = String(conversation._id);
+
+		const content = await make();
+
+		const input: IInboxMessageInput = storeChatMessageInput(content.text, {
+			kind: content.kind,
+			attachments: content.attachments,
+			sender: { id: buyer.userId, name, username: null },
+		});
+
+		await this._messages.saveIncoming(ownerUserId, conversation, input);
+
+		await this._conversations.applyIncoming(ownerUserId, conversationId, {
+			preview: {
+				text: content.text,
+				kind: content.kind,
+				channelKind: null,
+				direction: InboxEnum.Direction.IN,
+				at: input.sentAt,
+			},
+		});
+
+		this._realtime.notifyStoreChatUpdated(ownerUserId, {
+			storeId: String(store._id),
+			conversationId,
+		});
+
+		const saved: IInboxMessage | null =
+			await this._messages.findByChannelMessageId(
+				ownerUserId,
+				conversationId,
+				input.channelMessageId,
+			);
+
+		return this._toView(
+			saved ??
+				({
+					_id: input.channelMessageId,
+					direction: InboxEnum.Direction.IN,
+					kind: content.kind,
+					text: content.text,
+					attachments: content.attachments,
+					sentAt: input.sentAt,
+				} as IInboxMessage),
+		);
+	}
 
 	private _key(buyer: IStoreChatBuyer, storeId: string): IConversationKey {
 		return {
@@ -338,8 +525,11 @@ export class StoreChatService {
 		return {
 			_id: String(message._id),
 			fromMe: message.direction === InboxEnum.Direction.IN,
+			kind: message.kind ?? InboxEnum.MessageKind.TEXT,
 			text: message.text,
+			attachments: storeChatAttachmentViews(message),
 			sentAt: message.sentAt,
+			editedAt: message.editedAt ?? null,
 		};
 	}
 

@@ -45,6 +45,30 @@ const CONTENT_TYPE_BY_KIND: Partial<
 	[InboxEnum.MessageKind.CONTACT]: TelegramEnum.ContentType.CONTACT,
 };
 
+/** What a bot can send with a caption, which is what an edit of them changes. */
+const CAPTIONED_CONTENT_TYPES: TelegramEnum.ContentType[] = [
+	TelegramEnum.ContentType.PHOTO,
+	TelegramEnum.ContentType.DOCUMENT,
+	TelegramEnum.ContentType.VOICE,
+	TelegramEnum.ContentType.AUDIO,
+	TelegramEnum.ContentType.VIDEO,
+];
+
+/** Whether the words of a message of this kind sit in a caption, not in the message itself. */
+export const hasCaption = (contentType: TelegramEnum.ContentType): boolean =>
+	CAPTIONED_CONTENT_TYPES.includes(contentType);
+
+/**
+ * Whether the words of a message can be changed: only what the bot sent, and
+ * only a text or a file that takes a caption (not a sticker or a location).
+ */
+export const isEditableTelegramMessage = (
+	message: Pick<ITelegramMessageRecord, 'direction' | 'contentType'>,
+): boolean =>
+	message.direction === TelegramEnum.Direction.OUT &&
+	(message.contentType === TelegramEnum.ContentType.TEXT ||
+		hasCaption(message.contentType));
+
 export const kindOf = (
 	contentType: TelegramEnum.ContentType,
 ): InboxEnum.MessageKind =>
@@ -211,6 +235,7 @@ export const toTelegramMessage = (
 			  }
 			: {}),
 		sentAt: message.sentAt,
+		editedAt: message.editedAt ?? null,
 		...(data.updateId !== undefined ? { updateId: data.updateId } : {}),
 		sentByEmployeeId: message.sentByEmployeeId,
 		createdAt: message.createdAt,

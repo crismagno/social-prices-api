@@ -13,12 +13,16 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import { AppsRealtimeGateway } from '../apps/core/realtime/apps-realtime.gateway';
 import { ICustomer } from '../customers/interfaces/customer.interface';
 import { Customer } from '../customers/interfaces/customer.schema';
-import { IInboxReplyContext } from '../inbox/inbox-channel.adapter';
+import {
+	IInboxReplyContext,
+	IInboxUploadFile,
+} from '../inbox/inbox-channel.adapter';
 import { InboxConversationsService } from '../inbox/inbox-conversations.service';
 import { InboxMessagesService } from '../inbox/inbox-messages.service';
 import InboxEnum from '../inbox/interfaces/inbox.enum';
 import {
 	IConversationKey,
+	IInboxAttachment,
 	IInboxConversation,
 	IInboxMessage,
 	IInboxMessageInput,
@@ -27,6 +31,12 @@ import { IStore } from '../stores/interfaces/store.interface';
 import { Store } from '../stores/interfaces/store.schema';
 import { IUser } from '../users/interfaces/user.interface';
 import { IStoreChatStarted } from './interfaces/store-chat.types';
+import { StoreChatDeletionService } from './store-chat-deletion.service';
+import { StoreChatEditionService } from './store-chat-edition.service';
+import {
+	IStoreChatFile,
+	StoreChatMediaService,
+} from './store-chat-media.service';
 import { STORE_CHAT_CODES, storeChatContactKey } from './store-chat.constants';
 import { storeChatMessageInput, storeChatText } from './store-chat.service';
 
@@ -46,6 +56,9 @@ export class StoreChatOwnerService {
 		private readonly _conversations: InboxConversationsService,
 		private readonly _messages: InboxMessagesService,
 		private readonly _realtime: AppsRealtimeGateway,
+		private readonly _deletion: StoreChatDeletionService,
+		private readonly _media: StoreChatMediaService,
+		private readonly _edition: StoreChatEditionService,
 	) {}
 
 	//#endregion
@@ -58,36 +71,52 @@ export class StoreChatOwnerService {
 		conversation: IInboxConversation,
 		text: string,
 	): Promise<IInboxMessage> {
-		const conversationId: string = String(conversation._id);
-
-		const input: IInboxMessageInput = storeChatMessageInput(text, {
-			sentByEmployeeId: ctx.employeeId ?? null,
-		});
-
-		const saved: IInboxMessage = await this._messages.saveOutgoing(
-			ctx.ownerUserId,
-			conversation,
-			input,
-		);
-
-		await this._conversations.applyOutgoing(ctx.ownerUserId, conversationId, {
-			text,
+		return await this._send(ctx, conversation, {
 			kind: InboxEnum.MessageKind.TEXT,
-			channelKind: null,
-			direction: InboxEnum.Direction.OUT,
-			at: input.sentAt,
+			text,
+			attachments: [],
 		});
+	}
 
-		await this._conversations.incContactUnread(ctx.ownerUserId, conversationId);
-
-		if (conversation.contactUserId) {
-			this._realtime.notifyStoreChatUpdated(
-				String(conversation.contactUserId),
-				{ storeId: String(conversation.accountKey), conversationId },
-			);
+	/** The store is writing: the account sees it for a few seconds. Nothing is stored. */
+	public typing(conversation: IInboxConversation): void {
+		if (!conversation.contactUserId) {
+			return;
 		}
 
-		return saved;
+		this._realtime.notifyStoreChatTyping(String(conversation.contactUserId), {
+			storeId: String(conversation.accountKey),
+			conversationId: String(conversation._id),
+		});
+	}
+
+	/** Sends a file, or a recording, with a caption if there is one. */
+	public async sendMedia(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IInboxMessage> {
+		const caption: string | null = this._media.caption(options.caption);
+
+		const attachment: IInboxAttachment = await this._media.store(
+			file,
+			options.asVoice,
+		);
+
+		return await this._send(ctx, conversation, {
+			kind: attachment.kind,
+			text: caption,
+			attachments: [attachment],
+		});
+	}
+
+	/** One file of a message of the store's conversation. */
+	public async getAttachment(
+		message: IInboxMessage,
+		index: number,
+	): Promise<IStoreChatFile> {
+		return await this._media.read(message, index);
 	}
 
 	/**
@@ -158,6 +187,32 @@ export class StoreChatOwnerService {
 		};
 	}
 
+	/** Changes the words of a message the store wrote; the customer sees the new ones. */
+	public async editMessage(
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+		text: string,
+	): Promise<IInboxMessage> {
+		return await this._edition.edit(
+			conversation,
+			String(message._id),
+			InboxEnum.Direction.OUT,
+			storeChatText(text),
+		);
+	}
+
+	/** Removes a message the store wrote; it is gone for the customer too. */
+	public async deleteMessage(
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void> {
+		await this._deletion.remove(
+			conversation,
+			String(message._id),
+			InboxEnum.Direction.OUT,
+		);
+	}
+
 	/** What the user has not read on this channel, for the menu's badge. */
 	public async countUnread(ownerUserId: string): Promise<number> {
 		return await this._conversations.countUnread(
@@ -169,6 +224,45 @@ export class StoreChatOwnerService {
 	//#endregion
 
 	//#region Private Methods
+
+	private async _send(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		content: Pick<IInboxMessageInput, 'kind' | 'text' | 'attachments'>,
+	): Promise<IInboxMessage> {
+		const conversationId: string = String(conversation._id);
+
+		const input: IInboxMessageInput = storeChatMessageInput(content.text, {
+			kind: content.kind,
+			attachments: content.attachments,
+			sentByEmployeeId: ctx.employeeId ?? null,
+		});
+
+		const saved: IInboxMessage = await this._messages.saveOutgoing(
+			ctx.ownerUserId,
+			conversation,
+			input,
+		);
+
+		await this._conversations.applyOutgoing(ctx.ownerUserId, conversationId, {
+			text: content.text,
+			kind: content.kind,
+			channelKind: null,
+			direction: InboxEnum.Direction.OUT,
+			at: input.sentAt,
+		});
+
+		await this._conversations.incContactUnread(ctx.ownerUserId, conversationId);
+
+		if (conversation.contactUserId) {
+			this._realtime.notifyStoreChatUpdated(
+				String(conversation.contactUserId),
+				{ storeId: String(conversation.accountKey), conversationId },
+			);
+		}
+
+		return saved;
+	}
 
 	private async _ownStore(
 		ownerUserId: string,

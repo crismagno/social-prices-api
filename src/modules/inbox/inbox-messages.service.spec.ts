@@ -324,6 +324,37 @@ describe('InboxMessagesService', () => {
 			).resolves.toBe(false);
 		});
 
+		it('editText changes the words of a message that is still there and marks it as edited', async () => {
+			const { service, model } = build();
+			const at = new Date('2030-01-02');
+			model.findOneAndUpdate.mockReturnValue({
+				lean: jest.fn().mockResolvedValue({ _id: MSG, text: 'novo' }),
+			});
+
+			await expect(
+				service.editText(OWNER, CONV._id, MSG, 'novo', at),
+			).resolves.toEqual({ _id: MSG, text: 'novo' });
+			expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+				{
+					_id: MSG,
+					ownerUserId: OWNER,
+					conversationId: CONV._id,
+					deletedAt: null,
+				},
+				{ $set: { text: 'novo', editedAt: at } },
+				{ new: true },
+			);
+		});
+
+		it('editText does not ask the database for something that is not an id', async () => {
+			const { service, model } = build();
+
+			await expect(
+				service.editText(OWNER, CONV._id, 'not-an-id', 'novo'),
+			).resolves.toBeNull();
+			expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+		});
+
 		it('findById finds a message of this owner in any of their conversations', async () => {
 			const { service, model } = build();
 

@@ -70,6 +70,10 @@ export class InboxMessage {
 	@Prop({ type: Date, default: null })
 	deletedAt: Date | null;
 
+	/** When the text was last changed after being sent; null when it never was. */
+	@Prop({ type: Date, default: null })
+	editedAt: Date | null;
+
 	@Prop({ type: Object, default: null })
 	channelData: Record<string, unknown> | null;
 

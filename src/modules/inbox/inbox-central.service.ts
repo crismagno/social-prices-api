@@ -42,6 +42,7 @@ import {
 } from './interfaces/inbox.types';
 
 export const MESSAGE_NOT_DELETABLE_CODE: string = 'MESSAGE_NOT_DELETABLE';
+export const MESSAGE_NOT_EDITABLE_CODE: string = 'MESSAGE_NOT_EDITABLE';
 export const MEDIA_NOT_SUPPORTED_CODE: string = 'MEDIA_NOT_SUPPORTED';
 export const FILE_TOO_LARGE_CODE: string = 'FILE_TOO_LARGE';
 export const REPLY_WINDOW_CLOSED_CODE: string = 'REPLY_WINDOW_CLOSED';
@@ -331,7 +332,11 @@ export class InboxCentralService {
 			conversation.channel,
 		);
 
-		if (!adapter.capabilities.deleteMessage || !adapter.deleteMessage) {
+		if (
+			!adapter.capabilities.deleteMessage ||
+			!adapter.deleteMessage ||
+			adapter.canDeleteMessage?.(message) === false
+		) {
 			throw new ConflictException({
 				code: MESSAGE_NOT_DELETABLE_CODE,
 				message: 'This channel does not let messages be removed.',
@@ -339,6 +344,58 @@ export class InboxCentralService {
 		}
 
 		await adapter.deleteMessage(ownerUserId, conversation, message);
+	}
+
+	/**
+	 * Changes the words of a message through its channel, where the channel lets
+	 * a message already sent be changed: the person on the other side sees the
+	 * new ones.
+	 */
+	public async editMessage(
+		ownerUserId: string,
+		messageId: string,
+		text: string,
+	): Promise<IInboxMessageView> {
+		const body: string = (text ?? '').trim();
+
+		if (!body) {
+			throw new BadRequestException('The message must not be empty.');
+		}
+
+		const message: IInboxMessage | null = await this._messages.findById(
+			ownerUserId,
+			messageId,
+		);
+
+		const conversation: IInboxConversation | null = message
+			? await this._ownedConversation(
+					ownerUserId,
+					String(message.conversationId),
+			  )
+			: null;
+
+		if (!message || !conversation) {
+			throw new NotFoundException('Message not found.');
+		}
+
+		const adapter: IInboxChannelAdapter = this._registry.get(
+			conversation.channel,
+		);
+
+		if (
+			!adapter.capabilities.editMessage ||
+			!adapter.editMessage ||
+			adapter.canEditMessage?.(message) === false
+		) {
+			throw new ConflictException({
+				code: MESSAGE_NOT_EDITABLE_CODE,
+				message: 'This message cannot be changed.',
+			});
+		}
+
+		return this._toMessageView(
+			await adapter.editMessage(ownerUserId, conversation, message, body),
+		);
 	}
 
 	/**
@@ -751,13 +808,34 @@ export class InboxCentralService {
 			isUnsupported: message.isUnsupported,
 			sentAt: message.sentAt,
 			sentByEmployeeId: message.sentByEmployeeId,
-			canDelete: this._canDelete(message.channel),
+			editedAt: message.editedAt ?? null,
+			canDelete: this._canDelete(message),
+			canEdit: this._canEdit(message),
 		};
 	}
 
-	private _canDelete(channel: InboxEnum.Channel): boolean {
+	private _canEdit(message: IInboxMessage): boolean {
 		try {
-			return this._registry.get(channel).capabilities.deleteMessage;
+			const adapter: IInboxChannelAdapter = this._registry.get(message.channel);
+
+			return (
+				adapter.capabilities.editMessage &&
+				!!adapter.editMessage &&
+				(adapter.canEditMessage?.(message) ?? true)
+			);
+		} catch {
+			return false;
+		}
+	}
+
+	private _canDelete(message: IInboxMessage): boolean {
+		try {
+			const adapter: IInboxChannelAdapter = this._registry.get(message.channel);
+
+			return (
+				adapter.capabilities.deleteMessage &&
+				(adapter.canDeleteMessage?.(message) ?? true)
+			);
 		} catch {
 			return false;
 		}

@@ -8,6 +8,8 @@ export const AppsRealtimeEvents = {
 	INBOX_UPDATED: 'apps:inbox-updated',
 	/** Server to client: a store chat changed, for the store's user or for the customer account. Carries no message content. */
 	STORE_CHAT_UPDATED: 'store-chat:updated',
+	/** Server to client: the other side of a store chat is writing. Lasts a few seconds; nothing is stored. */
+	STORE_CHAT_TYPING: 'store-chat:typing',
 } as const;
 
 export const APPS_ROOM_PREFIX: string = 'apps:owner:';

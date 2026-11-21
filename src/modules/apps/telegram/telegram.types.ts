@@ -13,6 +13,8 @@ export interface ITelegramUser {
 export interface ITelegramMessage {
 	message_id: number;
 	date: number;
+	/** Only on an edited message: when it was changed. */
+	edit_date?: number;
 	chat: { id: number; type: string };
 	from?: ITelegramUser;
 	text?: string;
@@ -23,6 +25,8 @@ export interface ITelegramMessage {
 export interface ITelegramUpdate {
 	update_id: number;
 	message?: ITelegramMessage;
+	/** A message the person changed after sending it. */
+	edited_message?: ITelegramMessage;
 	[otherUpdateType: string]: unknown;
 }
 
@@ -53,6 +57,14 @@ export interface INormalizedTelegramMessage {
 	sentAt: Date;
 	/** The update exactly as Telegram delivered it. */
 	raw?: unknown;
+}
+
+/** A customer's change to a message already stored: its new text (or caption). */
+export interface INormalizedTelegramEdit {
+	chatId: number;
+	messageId: number;
+	text: string | null;
+	editedAt: Date;
 }
 
 /** What Telegram answers after a message or a file was sent. */

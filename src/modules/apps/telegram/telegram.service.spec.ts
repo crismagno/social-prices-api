@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 import AppsEnum from '../interfaces/apps.enum';
 import { FeatureLimitReachedException } from '../../feature-limits/feature-limit-reached.exception';
@@ -9,6 +9,7 @@ import {
 	TelegramChatNotFoundException,
 	TelegramMediaNotFoundException,
 	TelegramMessageNotDeletableException,
+	TelegramMessageNotEditableException,
 	TelegramMessageNotFoundException,
 	TelegramChatUnavailableException,
 	TelegramBotProfileRejectedException,
@@ -104,6 +105,8 @@ const build = (
 		findWithMedia: jest.fn().mockResolvedValue(null),
 		findOwned: jest.fn().mockResolvedValue(null),
 		deleteOwned: jest.fn().mockResolvedValue(undefined),
+		editOwned: jest.fn().mockResolvedValue(null),
+		findIncomingByMessageId: jest.fn().mockResolvedValue(null),
 		findLatest: jest.fn().mockResolvedValue(null),
 	};
 	const chats: any = {
@@ -1083,6 +1086,297 @@ describe('TelegramService', () => {
 			await expect(
 				build().service.deleteMessage('u1', 555, 'm1'),
 			).rejects.toBeInstanceOf(TelegramNotConnectedException);
+		});
+	});
+
+	describe('editMessage', () => {
+		const record = (over: any = {}): any => ({
+			_id: 'm1',
+			chatId: 555,
+			messageId: 42,
+			direction: 'OUT',
+			contentType: 'TEXT',
+			text: 'ola',
+			...over,
+		});
+
+		const setup = (stored: any = record(), botBehaviour?: jest.Mock) => {
+			const built = build({
+				connection: { token: 'ENC' },
+				chat: { chatId: 555 },
+			});
+			built.messages.findOwned.mockResolvedValue(stored);
+			built.messages.editOwned.mockImplementation(
+				async (_owner: string, _chat: number, _id: string, text: string) => ({
+					...stored,
+					text,
+					editedAt: new Date('2030-01-02'),
+				}),
+			);
+			built.bot.editMessage =
+				botBehaviour ?? jest.fn().mockResolvedValue(undefined);
+
+			return built;
+		};
+
+		it('changes the text at Telegram, then here, and tells the open pages', async () => {
+			const { service, bot, messages, realtime } = setup();
+
+			const edited = await service.editMessage('u1', 555, 'm1', '  olá!  ');
+
+			expect(bot.editMessage).toHaveBeenCalledWith(
+				TOKEN,
+				555,
+				42,
+				'olá!',
+				false,
+			);
+			expect(messages.editOwned).toHaveBeenCalledWith('u1', 555, 'm1', 'olá!');
+			expect(edited).toMatchObject({ _id: 'm1', text: 'olá!' });
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalledWith(
+				'u1',
+				AppsEnum.App.TELEGRAM,
+				'555',
+			);
+		});
+
+		it.each(['PHOTO', 'DOCUMENT', 'VOICE', 'AUDIO', 'VIDEO'])(
+			'changes the caption of a %s',
+			async (contentType) => {
+				const { service, bot } = setup(record({ contentType, text: null }));
+
+				await service.editMessage('u1', 555, 'm1', 'legenda');
+
+				expect(bot.editMessage).toHaveBeenCalledWith(
+					TOKEN,
+					555,
+					42,
+					'legenda',
+					true,
+				);
+			},
+		);
+
+		it('fixes the inbox preview when the edited message is the newest', async () => {
+			const { service, messages, chats } = setup();
+			const newest = { _id: 'm1', text: 'novo' };
+			messages.findLatest.mockResolvedValue(newest);
+
+			await service.editMessage('u1', 555, 'm1', 'novo');
+
+			expect(chats.setLastMessage).toHaveBeenCalledWith('u1', 555, newest);
+		});
+
+		it('leaves the preview alone when a newer message exists', async () => {
+			const { service, messages, chats } = setup();
+			messages.findLatest.mockResolvedValue({ _id: 'm2', text: 'depois' });
+
+			await service.editMessage('u1', 555, 'm1', 'novo');
+
+			expect(chats.setLastMessage).not.toHaveBeenCalled();
+		});
+
+		it('does nothing at all when the words are the same', async () => {
+			const { service, bot, messages } = setup();
+
+			await expect(
+				service.editMessage('u1', 555, 'm1', ' ola '),
+			).resolves.toMatchObject({ text: 'ola' });
+			expect(bot.editMessage).not.toHaveBeenCalled();
+			expect(messages.editOwned).not.toHaveBeenCalled();
+		});
+
+		it('still changes it here when Telegram already has those words', async () => {
+			const { service, messages } = setup(
+				record(),
+				jest
+					.fn()
+					.mockRejectedValue(
+						new TelegramApiError(400, 'Bad Request: message is not modified'),
+					),
+			);
+
+			await service.editMessage('u1', 555, 'm1', 'novo');
+
+			expect(messages.editOwned).toHaveBeenCalled();
+		});
+
+		it.each([400, 403])(
+			'keeps it as it was, and says why, when Telegram refuses (status %p)',
+			async (status) => {
+				const { service, messages } = setup(
+					record(),
+					jest
+						.fn()
+						.mockRejectedValue(
+							new TelegramApiError(
+								status,
+								"Bad Request: message can't be edited",
+							),
+						),
+				);
+
+				const error = await service
+					.editMessage('u1', 555, 'm1', 'novo')
+					.catch((e) => e);
+
+				expect(error).toBeInstanceOf(TelegramMessageNotEditableException);
+				expect(JSON.stringify(error.getResponse())).toContain(
+					"can't be edited",
+				);
+				expect(messages.editOwned).not.toHaveBeenCalled();
+			},
+		);
+
+		it('lets other failures through and keeps the message', async () => {
+			const { service, messages } = setup(
+				record(),
+				jest
+					.fn()
+					.mockRejectedValue(
+						new TelegramApiError(0, 'Could not reach Telegram.'),
+					),
+			);
+
+			await expect(
+				service.editMessage('u1', 555, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(TelegramApiError);
+			expect(messages.editOwned).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			['what the customer wrote', { direction: 'IN' }],
+			['a sticker', { contentType: 'STICKER' }],
+			['a location', { contentType: 'LOCATION' }],
+			['a round video', { contentType: 'VIDEO_NOTE' }],
+		])('refuses %s, without asking Telegram', async (_name, over) => {
+			const { service, bot } = setup(record(over));
+
+			await expect(
+				service.editMessage('u1', 555, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(TelegramMessageNotEditableException);
+			expect(bot.editMessage).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			['an empty text', 'TEXT', '   '],
+			['a text over 4096 characters', 'TEXT', 'a'.repeat(4097)],
+			['a caption over 1024 characters', 'PHOTO', 'a'.repeat(1025)],
+		])('refuses %s', async (_name, contentType, text) => {
+			const { service, bot } = setup(record({ contentType }));
+
+			await expect(
+				service.editMessage('u1', 555, 'm1', text),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(bot.editMessage).not.toHaveBeenCalled();
+		});
+
+		it("does not know a message that is not this user's", async () => {
+			const { service, bot } = setup(null);
+
+			await expect(
+				service.editMessage('u1', 555, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(TelegramMessageNotFoundException);
+			expect(bot.editMessage).not.toHaveBeenCalled();
+		});
+
+		it('refuses when no bot is connected', async () => {
+			await expect(
+				build().service.editMessage('u1', 555, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(TelegramNotConnectedException);
+		});
+	});
+
+	describe('handleWebhook, a customer editing a message', () => {
+		const editUpdate = (over: any = {}): any => ({
+			update_id: 101,
+			edited_message: {
+				message_id: 7,
+				date: 1_760_000_000,
+				edit_date: 1_760_000_600,
+				chat: { id: 555, type: 'private' },
+				from: { id: 555, first_name: 'Ana' },
+				text: 'oi, corrigido',
+				...over,
+			},
+		});
+
+		const setup = (opts: any = {}) => {
+			const { creds, connection } = connectionWithSecret();
+			const built = build({ connection, ...opts });
+			built.messages.findIncomingByMessageId.mockResolvedValue({
+				_id: 'm7',
+				messageId: 7,
+				text: 'oi',
+			});
+			built.messages.editOwned.mockResolvedValue({
+				_id: 'm7',
+				text: 'oi, corrigido',
+			});
+
+			return { ...built, creds };
+		};
+
+		it('changes the stored message and tells the open pages', async () => {
+			const { service, creds, messages, realtime } = setup();
+
+			await expect(
+				service.handleWebhook(creds.key, creds.secret, editUpdate()),
+			).resolves.toBe('EDITED');
+
+			expect(messages.findIncomingByMessageId).toHaveBeenCalledWith(
+				'u1',
+				555,
+				7,
+			);
+			expect(messages.editOwned).toHaveBeenCalledWith(
+				'u1',
+				555,
+				'm7',
+				'oi, corrigido',
+				new Date(1_760_000_600 * 1000),
+			);
+			expect(messages.saveIncoming).not.toHaveBeenCalled();
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalled();
+		});
+
+		it('fixes the inbox preview when it is the newest message', async () => {
+			const { service, creds, messages, chats } = setup();
+			const newest = { _id: 'm7', text: 'oi, corrigido' };
+			messages.findLatest.mockResolvedValue(newest);
+
+			await service.handleWebhook(creds.key, creds.secret, editUpdate());
+
+			expect(chats.setLastMessage).toHaveBeenCalledWith('u1', 555, newest);
+		});
+
+		it('ignores the edit of a message that is not stored', async () => {
+			const { service, creds, messages, realtime } = setup();
+			messages.findIncomingByMessageId.mockResolvedValue(null);
+
+			await expect(
+				service.handleWebhook(creds.key, creds.secret, editUpdate()),
+			).resolves.toBe('IGNORED');
+			expect(messages.editOwned).not.toHaveBeenCalled();
+			expect(realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+		});
+
+		it('ignores it when the app is switched off for the account', async () => {
+			const { service, creds, messages } = setup({ enabledApps: [] });
+
+			await expect(
+				service.handleWebhook(creds.key, creds.secret, editUpdate()),
+			).resolves.toBe('IGNORED');
+			expect(messages.editOwned).not.toHaveBeenCalled();
+		});
+
+		it('still refuses a wrong secret', async () => {
+			const { service, creds, messages } = setup();
+
+			await expect(
+				service.handleWebhook(creds.key, 'wrong', editUpdate()),
+			).rejects.toBeInstanceOf(ForbiddenException);
+			expect(messages.findIncomingByMessageId).not.toHaveBeenCalled();
 		});
 	});
 

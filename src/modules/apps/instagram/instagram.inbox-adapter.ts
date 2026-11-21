@@ -26,6 +26,8 @@ export class InstagramInboxAdapter
 		voice: false,
 		maxUploadBytes: null,
 		deleteMessage: true,
+		// Instagram has no way to change a message already sent.
+		editMessage: false,
 		answerWindowMs: REPLY_WINDOW_MS,
 	};
 

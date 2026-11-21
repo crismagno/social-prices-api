@@ -45,7 +45,7 @@ export class TelegramBotClient {
 		return { id: bot.id, username: bot.username, firstName: bot.first_name };
 	}
 
-	/** Only plain messages are asked for: nothing else is used yet. */
+	/** Messages and the person's edits of them: nothing else is used yet. */
 	public async setWebhook(
 		token: string,
 		url: string,
@@ -54,7 +54,7 @@ export class TelegramBotClient {
 		await this._call(token, 'setWebhook', {
 			url,
 			secret_token: secretToken,
-			allowed_updates: ['message'],
+			allowed_updates: ['message', 'edited_message'],
 			drop_pending_updates: false,
 		});
 	}
@@ -114,6 +114,28 @@ export class TelegramBotClient {
 			contentType: contentTypeOf(sent),
 			media: extractTelegramMedia(sent),
 		};
+	}
+
+	/**
+	 * Changes the words of a message the bot sent, for both sides: the text of a
+	 * plain message, or the caption of one with a file.
+	 */
+	public async editMessage(
+		token: string,
+		chatId: number,
+		messageId: number,
+		text: string,
+		asCaption: boolean = false,
+	): Promise<void> {
+		await this._call(
+			token,
+			asCaption ? 'editMessageCaption' : 'editMessageText',
+			{
+				chat_id: chatId,
+				message_id: messageId,
+				...(asCaption ? { caption: text } : { text }),
+			},
+		);
 	}
 
 	/** Removes a message for both sides. Telegram allows it for the last 48 hours. */

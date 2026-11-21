@@ -1,4 +1,8 @@
-import { BadRequestException, HttpException } from '@nestjs/common';
+import {
+	BadRequestException,
+	HttpException,
+	NotFoundException,
+} from '@nestjs/common';
 
 import { StoreChatService } from './store-chat.service';
 
@@ -43,11 +47,14 @@ const build = (existing: any = null) => {
 				async (_owner: string, _conv: string, channelMessageId: string) => ({
 					_id: 'm1',
 					direction: 'IN',
+					kind: 'TEXT',
 					text: 'oi',
+					attachments: [],
 					sentAt: new Date('2030-01-03'),
 					channelMessageId,
 				}),
 			),
+		findOwned: jest.fn().mockResolvedValue({ _id: 'm1', attachments: [{}] }),
 		listByConversation: jest.fn().mockResolvedValue([]),
 	};
 	const stores: any = {
@@ -78,8 +85,49 @@ const build = (existing: any = null) => {
 		}),
 	};
 	const realtime: any = { notifyStoreChatUpdated: jest.fn() };
+	const media: any = {
+		caption: jest
+			.fn()
+			.mockImplementation((text: any) => (text ? String(text).trim() : null)),
+		assertSendable: jest.fn(),
+		store: jest.fn().mockResolvedValue({
+			kind: 'IMAGE',
+			mimeType: 'image/png',
+			fileName: 'foto.png',
+			size: 3,
+			width: null,
+			height: null,
+			duration: null,
+			source: { type: 'STORED_FILE', key: 'stored.png' },
+		}),
+		read: jest.fn().mockResolvedValue({
+			buffer: Buffer.from('abc'),
+			contentType: 'image/png',
+			fileName: 'foto.png',
+		}),
+		removeFilesOf: jest.fn().mockResolvedValue(undefined),
+	};
+	const deletion: any = { remove: jest.fn().mockResolvedValue(undefined) };
+	const edition: any = {
+		edit: jest
+			.fn()
+			.mockImplementation(
+				async (_conversation: any, id: string, by: string, text: string) => ({
+					_id: id,
+					direction: by,
+					kind: 'TEXT',
+					text,
+					attachments: [],
+					sentAt: new Date('2030-01-05'),
+					editedAt: new Date('2030-01-06'),
+				}),
+			),
+	};
 
 	return {
+		media,
+		deletion,
+		edition,
 		conversations,
 		messages,
 		stores,
@@ -93,6 +141,9 @@ const build = (existing: any = null) => {
 			stores,
 			usersService,
 			realtime,
+			deletion,
+			media,
+			edition,
 		),
 	};
 };
@@ -179,8 +230,11 @@ describe('StoreChatService', () => {
 			expect(view).toEqual({
 				_id: 'm1',
 				fromMe: true,
+				kind: 'TEXT',
 				text: 'oi',
+				attachments: [],
 				sentAt: new Date('2030-01-03'),
+				editedAt: null,
 			});
 		});
 
@@ -323,6 +377,16 @@ describe('StoreChatService', () => {
 					sentByEmployeeId: 'e1',
 					sender: { id: 'x' },
 					raw: { a: 1 },
+					kind: 'IMAGE',
+					attachments: [
+						{
+							kind: 'IMAGE',
+							mimeType: 'image/png',
+							fileName: 'foto.png',
+							size: 3,
+							source: { type: 'STORED_FILE', key: 'stored.png' },
+						},
+					],
 				},
 				{
 					_id: 'm1',
@@ -343,11 +407,35 @@ describe('StoreChatService', () => {
 				{
 					_id: 'm2',
 					fromMe: false,
+					kind: 'IMAGE',
 					text: 'temos',
+					attachments: [
+						{
+							index: 0,
+							kind: 'IMAGE',
+							mimeType: 'image/png',
+							fileName: 'foto.png',
+							size: 3,
+							width: null,
+							height: null,
+							duration: null,
+						},
+					],
 					sentAt: new Date('2030-01-04'),
+					editedAt: null,
 				},
-				{ _id: 'm1', fromMe: true, text: 'oi', sentAt: new Date('2030-01-03') },
+				{
+					_id: 'm1',
+					fromMe: true,
+					kind: 'TEXT',
+					text: 'oi',
+					attachments: [],
+					sentAt: new Date('2030-01-03'),
+					editedAt: null,
+				},
 			]);
+			// Where a file is kept never reaches the customer.
+			expect(JSON.stringify(result)).not.toContain('stored.png');
 		});
 	});
 
@@ -402,10 +490,237 @@ describe('StoreChatService', () => {
 					},
 					lastMessageAt: new Date('2030-01-02'),
 					lastMessageText: 'oi',
+					lastMessageKind: null,
 					lastMessageFromMe: true,
 					unreadCount: 2,
 				},
 			]);
+		});
+	});
+
+	describe('sendMedia', () => {
+		const file: any = {
+			buffer: Buffer.from('abc'),
+			fileName: 'foto.png',
+			mimeType: 'image/png',
+		};
+
+		it('stores the file and sends it with its caption, telling the store', async () => {
+			const { service, media, messages, conversations, realtime } = build(
+				conversation(),
+			);
+
+			await service.sendMedia(BUYER, STORE, file, {
+				caption: ' veja ',
+				asVoice: false,
+			});
+
+			expect(media.store).toHaveBeenCalledWith(file, false);
+
+			const input = messages.saveIncoming.mock.calls[0][2];
+
+			expect(input).toMatchObject({ kind: 'IMAGE', text: 'veja' });
+			expect(input.attachments[0].source).toEqual({
+				type: 'STORED_FILE',
+				key: 'stored.png',
+			});
+			expect(conversations.applyIncoming).toHaveBeenCalledWith(
+				OWNER,
+				CONV,
+				expect.objectContaining({
+					preview: expect.objectContaining({ kind: 'IMAGE', text: 'veja' }),
+				}),
+			);
+			expect(realtime.notifyStoreChatUpdated).toHaveBeenCalled();
+		});
+
+		it('can be what opens the conversation, under the same daily limit', async () => {
+			const { service, conversations, media } = build();
+
+			await service.sendMedia(BUYER, STORE, file, {
+				caption: null,
+				asVoice: true,
+			});
+
+			expect(conversations.ensure).toHaveBeenCalled();
+			expect(media.store).toHaveBeenCalledWith(file, true);
+
+			conversations.countCreatedByContactSince.mockResolvedValue(10);
+			media.store.mockClear();
+
+			await expect(
+				service.sendMedia(BUYER, STORE, file, {
+					caption: null,
+					asVoice: false,
+				}),
+			).rejects.toMatchObject({ status: 429 });
+			expect(media.store).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			[
+				'a file that cannot be sent',
+				(mocks: any) =>
+					mocks.media.assertSendable.mockImplementation(() => {
+						throw new BadRequestException('too large');
+					}),
+			],
+			[
+				'a store that is not usable',
+				(mocks: any) =>
+					mocks.stores.findUsable.mockRejectedValue(
+						new NotFoundException('Store not found.'),
+					),
+			],
+			[
+				'the account own store',
+				(mocks: any) =>
+					mocks.stores.findUsable.mockResolvedValue({
+						_id: STORE,
+						userId: BUYER.userId,
+					}),
+			],
+		])('stores nothing for %s', async (_label, arrange) => {
+			const mocks = build();
+
+			arrange(mocks);
+
+			await expect(
+				mocks.service.sendMedia(BUYER, STORE, file, {
+					caption: null,
+					asVoice: false,
+				}),
+			).rejects.toBeDefined();
+			expect(mocks.media.store).not.toHaveBeenCalled();
+			expect(mocks.messages.saveIncoming).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getAttachment', () => {
+		const MSG: string = '507f1f77bcf86cd799439051';
+
+		it('reads a file of a message of the account own conversation', async () => {
+			const { service, messages, media } = build(conversation());
+
+			await expect(
+				service.getAttachment(BUYER, STORE, MSG, 0),
+			).resolves.toMatchObject({ contentType: 'image/png' });
+			expect(messages.findOwned).toHaveBeenCalledWith(OWNER, CONV, MSG);
+			expect(media.read).toHaveBeenCalledWith(
+				{ _id: 'm1', attachments: [{}] },
+				0,
+			);
+		});
+
+		it.each([
+			['the account has no conversation with that store', false, MSG],
+			['the id is not an id', true, 'nope'],
+		])('finds nothing when %s', async (_label, hasConversation, messageId) => {
+			const { service, media, messages } = build(
+				hasConversation ? conversation() : null,
+			);
+
+			await expect(
+				service.getAttachment(BUYER, STORE, messageId, 0),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(messages.findOwned).not.toHaveBeenCalled();
+			expect(media.read).not.toHaveBeenCalled();
+		});
+
+		it('finds nothing for a message of another conversation', async () => {
+			const { service, messages, media } = build(conversation());
+
+			messages.findOwned.mockResolvedValue(null);
+
+			await expect(
+				service.getAttachment(BUYER, STORE, MSG, 0),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(media.read).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('editMessage', () => {
+		it('changes, as the customer side, the words of a message of the account own conversation', async () => {
+			const own = conversation();
+			const { service, edition } = build(own);
+
+			const view = await service.editMessage(BUYER, STORE, 'm1', '  oi!  ');
+
+			expect(edition.edit).toHaveBeenCalledWith(own, 'm1', 'IN', 'oi!');
+			expect(view).toMatchObject({
+				_id: 'm1',
+				fromMe: true,
+				text: 'oi!',
+				editedAt: new Date('2030-01-06'),
+			});
+		});
+
+		it.each([
+			['an empty text', '   '],
+			['a text over the limit', 'a'.repeat(1001)],
+		])('refuses %s', async (_name, text) => {
+			const { service, edition } = build(conversation());
+
+			await expect(
+				service.editMessage(BUYER, STORE, 'm1', text),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(edition.edit).not.toHaveBeenCalled();
+		});
+
+		it('finds nothing when the account has no conversation with that store', async () => {
+			const { service, edition } = build();
+
+			await expect(
+				service.editMessage(BUYER, STORE, 'm1', 'oi'),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(edition.edit).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('typing', () => {
+		it('tells the store that the account is writing, storing nothing', async () => {
+			const { service, realtime, messages } = build(conversation());
+
+			realtime.notifyStoreChatTyping = jest.fn();
+
+			await service.typing(BUYER, STORE);
+
+			expect(realtime.notifyStoreChatTyping).toHaveBeenCalledWith(OWNER, {
+				storeId: STORE,
+				conversationId: CONV,
+			});
+			expect(messages.saveIncoming).not.toHaveBeenCalled();
+		});
+
+		it('tells nobody before there is a conversation, and opens none', async () => {
+			const { service, realtime, conversations } = build();
+
+			realtime.notifyStoreChatTyping = jest.fn();
+
+			await service.typing(BUYER, STORE);
+
+			expect(realtime.notifyStoreChatTyping).not.toHaveBeenCalled();
+			expect(conversations.ensure).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('deleteMessage', () => {
+		it('removes, as the customer side, a message of the account own conversation', async () => {
+			const own = conversation();
+			const { service, deletion } = build(own);
+
+			await service.deleteMessage(BUYER, STORE, 'm1');
+
+			expect(deletion.remove).toHaveBeenCalledWith(own, 'm1', 'IN');
+		});
+
+		it('finds nothing when the account has no conversation with that store', async () => {
+			const { service, deletion } = build();
+
+			await expect(
+				service.deleteMessage(BUYER, STORE, 'm1'),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(deletion.remove).not.toHaveBeenCalled();
 		});
 	});
 

@@ -122,6 +122,61 @@ export class TelegramMessagesService {
 		}
 	}
 
+	/** Changes the words of one of this owner's messages; null when it is not there. */
+	public async editOwned(
+		ownerUserId: string,
+		chatId: number,
+		id: string,
+		text: string | null,
+		editedAt: Date = new Date(),
+	): Promise<ITelegramMessageRecord | null> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		const message: IInboxMessage | null = conversation
+			? await this._messages.editText(
+					ownerUserId,
+					conversation._id,
+					id,
+					text,
+					editedAt,
+			  )
+			: null;
+
+		return message ? toTelegramMessage(message, chatId) : null;
+	}
+
+	/**
+	 * A customer's message by the number Telegram gave it, when it is stored and
+	 * was not removed: what an edit of theirs is applied to.
+	 */
+	public async findIncomingByMessageId(
+		ownerUserId: string,
+		chatId: number,
+		messageId: number,
+	): Promise<ITelegramMessageRecord | null> {
+		const conversation: IInboxConversation | null = await this._find(
+			ownerUserId,
+			chatId,
+		);
+
+		const message: IInboxMessage | null = conversation
+			? await this._messages.findByChannelMessageId(
+					ownerUserId,
+					conversation._id,
+					String(messageId),
+			  )
+			: null;
+
+		return message &&
+			!message.deletedAt &&
+			message.direction === InboxEnum.Direction.IN
+			? toTelegramMessage(message, chatId)
+			: null;
+	}
+
 	/** The newest message a conversation still has, if any. */
 	public async findLatest(
 		ownerUserId: string,

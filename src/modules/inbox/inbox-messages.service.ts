@@ -160,6 +160,30 @@ export class InboxMessagesService {
 		return result.modifiedCount > 0;
 	}
 
+	/**
+	 * Changes the text of a message that is still there, and marks it as edited.
+	 * Null when there is no such message.
+	 */
+	public async editText(
+		ownerUserId: string,
+		conversationId: string,
+		id: string,
+		text: string | null,
+		editedAt: Date = new Date(),
+	): Promise<IInboxMessage | null> {
+		if (!mongoose.isValidObjectId(id)) {
+			return null;
+		}
+
+		return await this._messageModel
+			.findOneAndUpdate(
+				{ _id: id, ownerUserId, conversationId, deletedAt: null },
+				{ $set: { text, editedAt } },
+				{ new: true },
+			)
+			.lean<IInboxMessage>();
+	}
+
 	//#endregion
 
 	//#region Reading

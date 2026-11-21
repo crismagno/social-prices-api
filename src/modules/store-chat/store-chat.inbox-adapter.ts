@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 
 import {
 	IInboxChannelAdapter,
 	IInboxChannelCapabilities,
 	IInboxReplyContext,
+	IInboxUploadFile,
 } from '../inbox/inbox-channel.adapter';
 import { InboxChannelRegistry } from '../inbox/inbox-channel.registry';
 import InboxEnum from '../inbox/interfaces/inbox.enum';
@@ -12,10 +13,14 @@ import {
 	IInboxMessage,
 } from '../inbox/interfaces/inbox.types';
 import { StoreChatOwnerService } from './store-chat-owner.service';
+import { STORE_CHAT_MAX_UPLOAD_BYTES } from './store-chat.constants';
 
 /**
  * How the central inbox answers a customer account on the platform's own chat.
- * Text only for now, and with no answer window: nobody else's rules apply here.
+ * Texts, files and recordings, with no answer window: nobody else's rules
+ * apply here.
+ * A message the store wrote can be removed, or have its words changed, for
+ * both sides.
  */
 @Injectable()
 export class StoreChatInboxAdapter
@@ -24,10 +29,11 @@ export class StoreChatInboxAdapter
 	public readonly channel: InboxEnum.Channel = InboxEnum.Channel.STORE;
 	public readonly capabilities: IInboxChannelCapabilities = {
 		text: true,
-		media: false,
-		voice: false,
-		maxUploadBytes: null,
-		deleteMessage: false,
+		media: true,
+		voice: true,
+		maxUploadBytes: STORE_CHAT_MAX_UPLOAD_BYTES,
+		deleteMessage: true,
+		editMessage: true,
 		answerWindowMs: null,
 	};
 
@@ -52,11 +58,57 @@ export class StoreChatInboxAdapter
 		return await this._owner.sendText(ctx, conversation, text);
 	}
 
-	public async fetchAttachment(): Promise<{
-		buffer: Buffer;
-		contentType: string;
-		fileName: string | null;
-	}> {
-		throw new NotFoundException('The store chat has no files.');
+	/** Only what the store itself wrote: the customer's messages are the customer's. */
+	public canDeleteMessage(message: IInboxMessage): boolean {
+		return message.direction === InboxEnum.Direction.OUT;
+	}
+
+	public async deleteMessage(
+		_ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void> {
+		await this._owner.deleteMessage(conversation, message);
+	}
+
+	/** Only what the store itself wrote, and never something it could not read. */
+	public canEditMessage(message: IInboxMessage): boolean {
+		return (
+			message.direction === InboxEnum.Direction.OUT && !message.isUnsupported
+		);
+	}
+
+	public async editMessage(
+		_ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+		text: string,
+	): Promise<IInboxMessage> {
+		return await this._owner.editMessage(conversation, message, text);
+	}
+
+	public async sendTyping(
+		_ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void> {
+		this._owner.typing(conversation);
+	}
+
+	public async sendMedia(
+		ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+		file: IInboxUploadFile,
+		options: { caption: string | null; asVoice: boolean },
+	): Promise<IInboxMessage> {
+		return await this._owner.sendMedia(ctx, conversation, file, options);
+	}
+
+	public async fetchAttachment(
+		_ownerUserId: string,
+		_conversation: IInboxConversation,
+		message: IInboxMessage,
+		index: number,
+	): Promise<{ buffer: Buffer; contentType: string; fileName: string | null }> {
+		return await this._owner.getAttachment(message, index);
 	}
 }

@@ -48,6 +48,7 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 		sendTyping: jest.fn().mockResolvedValue(undefined),
 		capabilities: {
 			deleteMessage: true,
+			editMessage: true,
 			media: true,
 			voice: true,
 			maxUploadBytes: 10,
@@ -65,6 +66,21 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 			sentByEmployeeId: 'e1',
 		}),
 		deleteMessage: jest.fn().mockResolvedValue(undefined),
+		editMessage: jest
+			.fn()
+			.mockImplementation(
+				async (
+					_owner: string,
+					_conversation: any,
+					message: any,
+					text: string,
+				) => ({
+					...message,
+					attachments: [],
+					text,
+					editedAt: new Date('2030-01-06'),
+				}),
+			),
 		canReply: jest.fn().mockReturnValue({ allowed: true, windowEndsAt: null }),
 		sendText: jest.fn().mockResolvedValue({
 			_id: 'out1',
@@ -526,6 +542,111 @@ describe('InboxCentralService', () => {
 		});
 	});
 
+	describe('editMessage', () => {
+		const message = {
+			_id: 'm1',
+			conversationId: 'c1',
+			channel: 'TELEGRAM',
+			direction: 'OUT',
+			kind: 'TEXT',
+			text: 'ola',
+		};
+
+		it("asks the message's channel to change its words and gives it back as it is now", async () => {
+			const { service, messages, adapter } = build([conv()]);
+			messages.findById.mockResolvedValue(message);
+
+			const view = await service.editMessage(OWNER, 'm1', '  olá!  ');
+
+			expect(adapter.editMessage).toHaveBeenCalledWith(
+				OWNER,
+				conv(),
+				message,
+				'olá!',
+			);
+			expect(view).toMatchObject({
+				_id: 'm1',
+				text: 'olá!',
+				editedAt: new Date('2030-01-06'),
+				canEdit: true,
+			});
+		});
+
+		it('refuses an empty text before looking for the message', async () => {
+			const { service, messages } = build([conv()]);
+
+			await expect(
+				service.editMessage(OWNER, 'm1', '   '),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(messages.findById).not.toHaveBeenCalled();
+		});
+
+		it('refuses a message that is not there', async () => {
+			const { service, messages, adapter } = build([conv()]);
+			messages.findById.mockResolvedValue(null);
+
+			await expect(
+				service.editMessage(OWNER, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(adapter.editMessage).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			[
+				'a channel that cannot change messages',
+				(adapter: any) => (adapter.capabilities.editMessage = false),
+			],
+			[
+				'a channel with no way to do it',
+				(adapter: any) => (adapter.editMessage = undefined),
+			],
+			[
+				'a message the channel keeps as it is',
+				(adapter: any) => (adapter.canEditMessage = () => false),
+			],
+		])('refuses %s', async (_name, arrange) => {
+			const { service, messages, adapter } = build([conv()]);
+			const edit = adapter.editMessage;
+			messages.findById.mockResolvedValue(message);
+			arrange(adapter);
+
+			await expect(
+				service.editMessage(OWNER, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(ConflictException);
+			expect(edit).not.toHaveBeenCalled();
+		});
+
+		it('refuses a channel whose app is not enabled', async () => {
+			const { service, messages, usersService } = build([conv()]);
+			messages.findById.mockResolvedValue(message);
+			usersService.findOneById.mockResolvedValue({ enabledApps: [] });
+
+			await expect(
+				service.editMessage(OWNER, 'm1', 'novo'),
+			).rejects.toBeInstanceOf(AppNotEnabledException);
+		});
+
+		it('tells each message of the timeline whether its words can be changed, and when they were', async () => {
+			const { service, messages, adapter } = build([conv({ customerId: CU1 })]);
+			const editedAt = new Date('2030-01-06');
+			messages.listTimeline.mockResolvedValue([
+				{ ...message, attachments: [], editedAt },
+				{ ...message, _id: 'm2', direction: 'IN', attachments: [] },
+			]);
+			adapter.canEditMessage = (item: any) => item.direction === 'OUT';
+
+			const views = await service.listMessages(OWNER, { customerId: CU1 });
+
+			expect(views.map((view: any) => view.canEdit)).toEqual([true, false]);
+			expect(views.map((view: any) => view.editedAt)).toEqual([editedAt, null]);
+
+			adapter.capabilities.editMessage = false;
+			expect(
+				(await service.listMessages(OWNER, { customerId: CU1 }))[0].canEdit,
+			).toBe(false);
+		});
+	});
+
 	describe('reply', () => {
 		const ctx = { ownerUserId: OWNER, employeeId: 'e1' };
 
@@ -807,5 +928,45 @@ describe('InboxCentralService: a channel that belongs to no app (STORE)', () => 
 			conversationId: 's1',
 		});
 		expect(realtime.notifyInboxUpdated).not.toHaveBeenCalled();
+	});
+});
+
+describe('InboxCentralService: a channel that lets only some messages go', () => {
+	const message = (direction: string): any => ({
+		_id: 'm1',
+		conversationId: 's1',
+		channel: 'STORE',
+		direction,
+		kind: 'TEXT',
+		text: 'oi',
+		attachments: [],
+		sentAt: new Date('2030-01-04'),
+	});
+
+	it('marks as removable only the messages the channel says', async () => {
+		const { service, messages, adapter } = build([
+			conv({ _id: 's1', channel: 'STORE', accountKey: 'st1' }),
+		]);
+
+		adapter.canDeleteMessage = (item: any) => item.direction === 'OUT';
+		messages.listTimeline.mockResolvedValue([message('OUT'), message('IN')]);
+
+		const views = await service.listMessages(OWNER, { conversationId: 's1' });
+
+		expect(views.map((view: any) => view.canDelete)).toEqual([true, false]);
+	});
+
+	it('refuses to remove one the channel keeps', async () => {
+		const { service, messages, adapter } = build([
+			conv({ _id: 's1', channel: 'STORE', accountKey: 'st1' }),
+		]);
+
+		adapter.canDeleteMessage = () => false;
+		messages.findById.mockResolvedValue(message('IN'));
+
+		await expect(service.deleteMessage(OWNER, 'm1')).rejects.toBeInstanceOf(
+			ConflictException,
+		);
+		expect(adapter.deleteMessage).not.toHaveBeenCalled();
 	});
 });

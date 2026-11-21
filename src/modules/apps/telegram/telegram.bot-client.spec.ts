@@ -69,7 +69,7 @@ describe('TelegramBotClient', () => {
 		);
 	});
 
-	it('setWebhook sends the url, the secret and only the message updates', async () => {
+	it('setWebhook sends the url, the secret and asks for messages and their edits', async () => {
 		fetchMock.mockResolvedValue(ok(true));
 
 		await client.setWebhook(TOKEN, 'https://x.example/hook', 'secret-1');
@@ -80,7 +80,7 @@ describe('TelegramBotClient', () => {
 		expect(JSON.parse(init.body)).toEqual({
 			url: 'https://x.example/hook',
 			secret_token: 'secret-1',
-			allowed_updates: ['message'],
+			allowed_updates: ['message', 'edited_message'],
 			drop_pending_updates: false,
 		});
 	});
@@ -364,6 +364,48 @@ describe('TelegramBotClient', () => {
 		const [url, init] = fetchMock.mock.calls[0];
 		expect(url).toBe(`https://api.telegram.org/bot${TOKEN}/deleteMessage`);
 		expect(JSON.parse(init.body)).toEqual({ chat_id: 555, message_id: 9 });
+	});
+
+	describe('editMessage', () => {
+		it('changes the text of a plain message', async () => {
+			fetchMock.mockResolvedValue(ok({ message_id: 9 }));
+
+			await client.editMessage(TOKEN, 555, 9, 'novo texto');
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url).toBe(`https://api.telegram.org/bot${TOKEN}/editMessageText`);
+			expect(JSON.parse(init.body)).toEqual({
+				chat_id: 555,
+				message_id: 9,
+				text: 'novo texto',
+			});
+		});
+
+		it('changes the caption of a message with a file', async () => {
+			fetchMock.mockResolvedValue(ok({ message_id: 9 }));
+
+			await client.editMessage(TOKEN, 555, 9, 'nova legenda', true);
+
+			const [url, init] = fetchMock.mock.calls[0];
+			expect(url).toBe(
+				`https://api.telegram.org/bot${TOKEN}/editMessageCaption`,
+			);
+			expect(JSON.parse(init.body)).toEqual({
+				chat_id: 555,
+				message_id: 9,
+				caption: 'nova legenda',
+			});
+		});
+
+		it('passes on what Telegram refuses', async () => {
+			fetchMock.mockResolvedValue(
+				fail(400, "Bad Request: message can't be edited"),
+			);
+
+			await expect(
+				client.editMessage(TOKEN, 555, 9, 'x'),
+			).rejects.toBeInstanceOf(TelegramApiError);
+		});
 	});
 
 	describe('downloadFile', () => {

@@ -31,6 +31,7 @@ describe('channel adapters of the central inbox', () => {
 			sendMedia: jest.fn().mockResolvedValue({ _id: 'out1' }),
 			sendTyping: jest.fn().mockResolvedValue(undefined),
 			deleteMessage: jest.fn().mockResolvedValue(undefined),
+			editMessage: jest.fn().mockResolvedValue({ _id: 'out1' }),
 			getMedia: jest.fn().mockResolvedValue({
 				buffer: Buffer.alloc(1),
 				mimeType: 'image/png',
@@ -93,6 +94,41 @@ describe('channel adapters of the central inbox', () => {
 			expect(adapter.capabilities.deleteMessage).toBe(true);
 		});
 
+		it('changes the words of a message in the bot chat and returns it as stored', async () => {
+			await expect(
+				adapter.editMessage(OWNER, conversation, { _id: 'm1' } as any, 'novo'),
+			).resolves.toEqual({ _id: 'out1' });
+
+			expect(service.editMessage).toHaveBeenCalledWith(
+				OWNER,
+				555,
+				'm1',
+				'novo',
+			);
+			expect(adapter.capabilities.editMessage).toBe(true);
+		});
+
+		it.each([
+			['a text the bot sent', 'OUT', 'TEXT', {}, true],
+			['a photo the bot sent', 'OUT', 'IMAGE', { contentType: 'PHOTO' }, true],
+			['a sticker', 'OUT', 'STICKER', { contentType: 'STICKER' }, false],
+			['a round video', 'OUT', 'VIDEO', { contentType: 'VIDEO_NOTE' }, false],
+			['what the customer wrote', 'IN', 'TEXT', {}, false],
+		])(
+			'says whether %s can be changed',
+			(_name, direction, kind, channelData, expected) => {
+				expect(
+					adapter.canEditMessage({
+						_id: 'm1',
+						direction,
+						kind,
+						channelData,
+						attachments: [],
+					} as any),
+				).toBe(expected);
+			},
+		);
+
 		it('fetches the file of a message', async () => {
 			const file = await adapter.fetchAttachment(OWNER, conversation, {
 				_id: 'm1',
@@ -120,6 +156,11 @@ describe('channel adapters of the central inbox', () => {
 			}),
 		};
 		const adapter = new Adapter(registry, service, messages);
+
+		it('cannot change a message already sent', () => {
+			expect(adapter.capabilities.editMessage).toBe(false);
+			expect(adapter.editMessage).toBeUndefined();
+		});
 
 		it('allows an answer for 24 hours after the person last wrote', () => {
 			const recent = adapter.canReply({

@@ -15,6 +15,10 @@ import {
 } from '../../inbox/interfaces/inbox.types';
 import { MAX_TELEGRAM_UPLOAD_BYTES } from './telegram-chat.dto';
 import { ITelegramMessageRecord } from './telegram-message.interface';
+import {
+	isEditableTelegramMessage,
+	toTelegramMessage,
+} from './telegram.inbox-mapper';
 import { TelegramService } from './telegram.service';
 
 /** How the central inbox reaches the Telegram bot: answers and files. */
@@ -29,6 +33,7 @@ export class TelegramInboxAdapter
 		voice: true,
 		maxUploadBytes: MAX_TELEGRAM_UPLOAD_BYTES,
 		deleteMessage: true,
+		editMessage: true,
 		answerWindowMs: null,
 	};
 
@@ -99,6 +104,28 @@ export class TelegramInboxAdapter
 			Number(conversation.contactKey),
 			String(message._id),
 		);
+	}
+
+	/** Only what the bot sent, and only a text or a file that takes a caption. */
+	public canEditMessage(message: IInboxMessage): boolean {
+		return isEditableTelegramMessage(toTelegramMessage(message, 0));
+	}
+
+	public async editMessage(
+		ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+		text: string,
+	): Promise<IInboxMessage> {
+		const edited: ITelegramMessageRecord =
+			await this._telegramService.editMessage(
+				ownerUserId,
+				Number(conversation.contactKey),
+				String(message._id),
+				text,
+			);
+
+		return await this._messages.findById(ownerUserId, edited._id);
 	}
 
 	public async fetchAttachment(

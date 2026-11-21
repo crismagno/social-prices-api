@@ -36,6 +36,8 @@ namespace InboxEnum {
 		TELEGRAM_FILE = 'TELEGRAM_FILE',
 		WHATSAPP_MEDIA = 'WHATSAPP_MEDIA',
 		URL = 'URL',
+		/** Kept by us, in the chat's own storage: the platform's store chat. */
+		STORED_FILE = 'STORED_FILE',
 	}
 }
 

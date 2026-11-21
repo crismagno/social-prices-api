@@ -7,6 +7,7 @@ import {
 	HttpCode,
 	Param,
 	ParseIntPipe,
+	Patch,
 	Post,
 	Query,
 	Res,
@@ -28,6 +29,7 @@ import { MAX_UPLOAD_BYTES } from './inbox.constants';
 import {
 	InboxAssignCustomerDto,
 	InboxChatsQueryDto,
+	InboxEditMessageDto,
 	InboxMessagesQueryDto,
 	InboxReplyDto,
 	InboxSendMediaDto,
@@ -178,6 +180,22 @@ export class InboxController {
 				mimeType: file.mimetype,
 			},
 			{ caption: dto.caption?.trim() || null, asVoice: dto.voice === true },
+		);
+	}
+
+	// Changing the words of a message already sent, where its channel allows it.
+	// Whoever can answer can correct an answer.
+	@Patch('messages/:messageId')
+	@UsePipes(validation)
+	public async editMessage(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('messageId') messageId: string,
+		@Body() body: InboxEditMessageDto,
+	): Promise<IInboxMessageView> {
+		return await this._central.editMessage(
+			authPayload._id,
+			messageId,
+			body.text,
 		);
 	}
 

@@ -116,6 +116,25 @@ export class AppsRealtimeGateway {
 		}
 	}
 
+	/**
+	 * Tells one account that the other side of a store chat is writing. Best
+	 * effort and never throws: it is only a hint on the screen.
+	 */
+	public notifyStoreChatTyping(
+		userId: string,
+		payload: { storeId: string; conversationId: string },
+	): void {
+		try {
+			this.server
+				.to(appsRoomOf(userId))
+				.emit(AppsRealtimeEvents.STORE_CHAT_TYPING, payload);
+		} catch (error) {
+			this._logger.warn(
+				`Could not push the store chat typing: ${String(error)}`,
+			);
+		}
+	}
+
 	private _leaveAppsRooms(client: Socket): void {
 		for (const room of Array.from(client.rooms ?? [])) {
 			if (room.startsWith(APPS_ROOM_PREFIX)) {

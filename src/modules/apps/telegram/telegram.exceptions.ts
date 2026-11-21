@@ -109,6 +109,20 @@ export class TelegramMessageNotDeletableException extends ConflictException {
 	}
 }
 
+export const TELEGRAM_MESSAGE_NOT_EDITABLE_CODE: string =
+	'TELEGRAM_MESSAGE_NOT_EDITABLE';
+
+/** Only what the bot itself sent, and only its words, can be changed. */
+export class TelegramMessageNotEditableException extends ConflictException {
+	constructor(reason: string) {
+		super({
+			code: TELEGRAM_MESSAGE_NOT_EDITABLE_CODE,
+			message: `Telegram could not edit the message: ${reason}`,
+			reason,
+		});
+	}
+}
+
 export class TelegramChatNotFoundException extends NotFoundException {
 	constructor() {
 		super({
