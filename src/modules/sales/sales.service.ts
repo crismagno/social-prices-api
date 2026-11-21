@@ -1,6 +1,7 @@
 import { isNumber } from 'class-validator';
 import * as ExcelJS from 'exceljs';
 import {
+	compact,
 	filter,
 	find,
 	flatMap,
@@ -122,6 +123,7 @@ import {
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
+	IGetCustomerProductResponse,
 	IGetSalesBalanceResponse,
 	IGetSalesProductBalanceResponse,
 	IGetSalesSummaryByUserTableStateResponse,
@@ -1100,6 +1102,92 @@ export class SalesService {
 			productIds: params.productIds,
 			productItemIds: params.productItemIds,
 		});
+	}
+
+	public async getProductsByCustomer(
+		userId: string,
+		customerId: string,
+	): Promise<IGetCustomerProductResponse[]> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		// A sale spans several stores, each with its own customer: the same
+		// filter runs again after the unwind to keep only this customer's lines.
+		const saleStoreFilter = {
+			'stores.storeId': { $in: arrayStringToObjectId(storesIds) },
+			'stores.customerId': new mongoose.Types.ObjectId(customerId),
+		};
+
+		const pipeline: PipelineStage[] = [
+			{
+				$match: {
+					...saleStoreFilter,
+					status: { $in: SalesEnum.StatusToFilterCharts },
+					softDelete: null,
+				},
+			},
+			{ $unwind: '$stores' },
+			{ $match: saleStoreFilter },
+			{ $unwind: '$stores.products' },
+			{
+				$group: {
+					_id: {
+						productId: '$stores.products.productId',
+						productItemId: '$stores.products.productItemId',
+					},
+					quantity: { $sum: '$stores.products.quantity' },
+					total: {
+						$sum: {
+							$multiply: [
+								'$stores.products.quantity',
+								'$stores.products.price',
+							],
+						},
+					},
+					saleIds: { $addToSet: '$_id' },
+					lastPurchaseAt: { $max: '$createdDate' },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					productId: { $toString: '$_id.productId' },
+					productItemId: { $toString: '$_id.productItemId' },
+					quantity: 1,
+					total: 1,
+					salesQuantity: { $size: '$saleIds' },
+					lastPurchaseAt: 1,
+				},
+			},
+			{ $sort: { lastPurchaseAt: -1 } },
+		];
+
+		const customerProducts: IGetCustomerProductResponse[] =
+			await this._saleModel.aggregate(pipeline).exec();
+
+		const [products, productItems]: [IProduct[], IProductItem[]] =
+			await Promise.all([
+				this._productsService.findByIds(
+					compact(map(customerProducts, 'productId')),
+				),
+				this._productItemsService.findByIds(
+					compact(map(customerProducts, 'productItemId')),
+				),
+			]);
+
+		return customerProducts.map(
+			(customerProduct: IGetCustomerProductResponse) => ({
+				...customerProduct,
+				product: products.find(
+					(product: IProduct) =>
+						product._id.toString() === customerProduct.productId,
+				),
+				productItem: productItems.find(
+					(productItem: IProductItem) =>
+						productItem._id.toString() === customerProduct.productItemId,
+				),
+			}),
+		);
 	}
 
 	public async findByNumberManual(numberManual: string): Promise<ISale | null> {

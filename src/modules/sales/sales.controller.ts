@@ -36,6 +36,7 @@ import UpdateSaleStatusManualDto from './interfaces/dto/updateSaleStatusManual.d
 import { ISale } from './interfaces/sale.interface';
 import {
 	IFiltersDownloadSales,
+	IGetCustomerProductResponse,
 	IGetSalesAnalyticsParams,
 	IGetSalesAnalyticsResponse,
 	IGetSalesBalanceParams,
@@ -207,6 +208,18 @@ export class SalesController {
 		@Body() params: IGetSalesBalanceParams,
 	): Promise<IGetSalesBalanceResponse> {
 		return await this._salesService.getSalesBalance(authPayload._id, params);
+	}
+
+	@Get('/getProductsByCustomer/:customerId')
+	@UsePipes(ValidationPipe)
+	public async getProductsByCustomer(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('customerId', ValidationParamsPipe) customerId: string,
+	): Promise<IGetCustomerProductResponse[]> {
+		return await this._salesService.getProductsByCustomer(
+			authPayload._id,
+			customerId,
+		);
 	}
 
 	@Post('/uploadSales')

@@ -83,6 +83,12 @@ export interface IGetSalesProductBalanceResponse {
 	quantity: number;
 }
 
+export interface IGetCustomerProductResponse
+	extends IGetSalesProductBalanceResponse {
+	salesQuantity: number;
+	lastPurchaseAt: Date;
+}
+
 // #region Upload
 
 export interface ISaleFileUploadTemplateRow {
