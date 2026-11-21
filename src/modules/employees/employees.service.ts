@@ -445,27 +445,37 @@ export class EmployeesService {
 			],
 		});
 
-		const employeesSearched: ISearchEmployee[] = await Promise.all(
-			employees.map(async (employee: IEmployee): Promise<ISearchEmployee> => {
-				const user: IUser = await this._usersService.findOneById(
-					employee.userId.toString(),
-				);
+		const employeesSearched: (ISearchEmployee | null)[] = await Promise.all(
+			employees.map(
+				async (employee: IEmployee): Promise<ISearchEmployee | null> => {
+					const user: IUser | null = await this._usersService.findOneById(
+						employee.userId.toString(),
+					);
 
-				return {
-					employeeName: employee.name,
-					employeeUsername: employee.username,
-					employeeAvatar: employee.avatar,
-					employeeEmail: employee.email,
-					employeeLevel: employee.level,
-					employeeStatus: employee.status,
-					userName: user.name,
-					userUsername: user.username,
-					userAvatar: user.avatar,
-				};
-			}),
+					// An employee whose owner account no longer exists cannot sign in.
+					if (!user) {
+						return null;
+					}
+
+					return {
+						employeeName: employee.name,
+						employeeUsername: employee.username,
+						employeeAvatar: employee.avatar,
+						employeeEmail: employee.email,
+						employeeLevel: employee.level,
+						employeeStatus: employee.status,
+						userName: user.name,
+						userUsername: user.username,
+						userAvatar: user.avatar,
+					};
+				},
+			),
 		);
 
-		return employeesSearched;
+		return employeesSearched.filter(
+			(employeeSearched: ISearchEmployee | null): boolean =>
+				!!employeeSearched,
+		);
 	}
 
 	public async findByIdAndActive(employeeId: string): Promise<void> {
