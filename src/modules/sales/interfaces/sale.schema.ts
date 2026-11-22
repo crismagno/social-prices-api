@@ -397,6 +397,9 @@ export class Sale extends Document implements ISale {
 	@Prop({ type: Date })
 	completedAt: Date;
 
+	@Prop({ type: Date, default: null })
+	siteOrderApprovedAt: Date | null;
+
 	@Prop({ required: true, type: Date })
 	createdAt: Date;
 

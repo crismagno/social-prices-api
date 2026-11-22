@@ -47,6 +47,11 @@ export interface ISale
 	previousCustomerIds: string[];
 	isSendCustomerNotifications: boolean;
 	completedAt: Date | null;
+	/**
+	 * Only for an order sent from the site: when the store accepted it, which is
+	 * when its products left the stock. Null while it waits.
+	 */
+	siteOrderApprovedAt?: Date | null;
 }
 
 export interface ISaleTotals {

@@ -13,6 +13,7 @@ import { ProductItemsService } from '../../src/modules/product-items/product-ite
 import { ProductsService } from '../../src/modules/products/products.service';
 import { SalesValidationService } from '../../src/modules/sales/sales-validation.service';
 import { SalesService } from '../../src/modules/sales/sales.service';
+import { SiteOrderApprovalService } from '../../src/modules/sales/site-order-approval.service';
 import { SocketsGateway } from '../../src/modules/sockets/sockets.gateway';
 import { StoresService } from '../../src/modules/stores/stores.service';
 import { TagsService } from '../../src/modules/tags/tags.service';
@@ -44,6 +45,7 @@ describe('SalesService - find', () => {
 			FilesService,
 			EmployeesService,
 			HashCrypt,
+			SiteOrderApprovalService,
 		];
 
 		const module: TestingModule = await Test.createTestingModule({

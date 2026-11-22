@@ -203,6 +203,23 @@ export class CustomersService {
 		return customer;
 	}
 
+	/** The owner's customer with this email, whatever the case it was typed in. */
+	public async findByOwnerUserIdAndEmail(
+		ownerUserId: string,
+		email: string,
+	): Promise<ICustomer | null> {
+		const trimmed: string = String(email ?? '').trim();
+
+		if (!trimmed) {
+			return null;
+		}
+
+		return this._customerModel.findOne({
+			ownerUserId,
+			email: new RegExp(`^${escapeRegExp(trimmed)}$`, 'i'),
+		});
+	}
+
 	public async findByOwnerUserIdAndUniqName(
 		ownerUserId: string,
 		uniqName: string,

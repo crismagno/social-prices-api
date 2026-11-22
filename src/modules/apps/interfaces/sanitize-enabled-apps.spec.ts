@@ -18,6 +18,10 @@ describe('sanitizeEnabledApps', () => {
 		]);
 	});
 
+	it('keeps the site app', () => {
+		expect(sanitizeEnabledApps(['SITE', 'X'])).toEqual([AppsEnum.App.SITE]);
+	});
+
 	it('returns an empty list for non-arrays', () => {
 		expect(sanitizeEnabledApps(undefined)).toEqual([]);
 		expect(sanitizeEnabledApps(null)).toEqual([]);

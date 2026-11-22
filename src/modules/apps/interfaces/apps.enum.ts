@@ -5,6 +5,7 @@ namespace AppsEnum {
 		FACEBOOK = 'FACEBOOK',
 		WHATSAPP = 'WHATSAPP',
 		TELEGRAM = 'TELEGRAM',
+		SITE = 'SITE',
 	}
 
 	export enum ConnectionStatus {
@@ -19,6 +20,7 @@ namespace AppsEnum {
 		[App.FACEBOOK]: 'Messenger',
 		[App.WHATSAPP]: 'WhatsApp',
 		[App.TELEGRAM]: 'Telegram',
+		[App.SITE]: 'Site',
 	};
 
 	export const ConnectionStatusLabels = {

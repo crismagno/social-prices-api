@@ -15,6 +15,8 @@ import { TelegramStatusProvider } from './telegram/telegram.status.provider';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { WhatsappStatusProvider } from './whatsapp/whatsapp.status.provider';
 import { IAppStatusProvider } from './core/status/app-status.types';
+import { StoreSitesModule } from '../store-sites/store-sites.module';
+import { StoreSitesStatusProvider } from '../store-sites/store-sites.status.provider';
 
 @Module({
 	// A new app is a new folder with its own module: import it here and add its
@@ -26,6 +28,7 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 		MessengerModule,
 		InstagramModule,
 		WhatsappModule,
+		StoreSitesModule,
 	],
 	controllers: [AppsController],
 	providers: [
@@ -38,12 +41,14 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 				messenger: MessengerStatusProvider,
 				instagram: InstagramStatusProvider,
 				whatsapp: WhatsappStatusProvider,
+				site: StoreSitesStatusProvider,
 			): IAppStatusProvider[] => [
 				google,
 				telegram,
 				messenger,
 				instagram,
 				whatsapp,
+				site,
 			],
 			inject: [
 				GoogleContactsStatusProvider,
@@ -51,6 +56,7 @@ import { IAppStatusProvider } from './core/status/app-status.types';
 				MessengerStatusProvider,
 				InstagramStatusProvider,
 				WhatsappStatusProvider,
+				StoreSitesStatusProvider,
 			],
 		},
 	],

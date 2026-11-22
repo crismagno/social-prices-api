@@ -145,6 +145,7 @@ import {
 	ISaleSummaryTemplate,
 } from './interfaces/template/sale-summary.template';
 import { SalesValidationService } from './sales-validation.service';
+import { SiteOrderApprovalService } from './site-order-approval.service';
 import { parsePopulatedSale, parsePopulatedSales } from './sales.utils';
 
 @Injectable()
@@ -174,6 +175,7 @@ export class SalesService {
 		private readonly _filesService: FilesService,
 		private readonly _employeesService: EmployeesService,
 		private readonly _hashCrypt: HashCrypt,
+		private readonly _siteOrderApprovalService: SiteOrderApprovalService,
 	) {
 		this._logger = new Logger(SalesService.name);
 	}
@@ -662,6 +664,7 @@ export class SalesService {
 				noteToCustomer: createSaleDto.noteToCustomer,
 				completedAt:
 					createSaleDto.status === SalesEnum.Status.COMPLETED ? now : null,
+				siteOrderApprovedAt: null,
 			};
 
 			const saleModel = new this._saleModel(saleToCreate);
@@ -670,7 +673,10 @@ export class SalesService {
 
 			await this._linkCustomersToStores([newSale]);
 
-			await this._subtractProductsQuantityBySaleStores(saleStores);
+			// A site order takes no stock until the store accepts it.
+			if (!this._siteOrderApprovalService.isAwaitingApproval(newSale)) {
+				await this._subtractProductsQuantityBySaleStores(saleStores);
+			}
 
 			const userIdByStores: string = stores[0].userId.toString();
 
@@ -769,7 +775,8 @@ export class SalesService {
 				status: updateSaleDto.status,
 				stores: saleStores,
 				totals: updateSaleDto.totals,
-				type: updateSaleDto.type,
+				// Where a sale came from never changes by editing it.
+				type: sale.type ?? updateSaleDto.type,
 				paymentStatus: updateSaleDto.paymentStatus,
 				tagsIds: updateSaleDto.tagsIds as any[],
 				categoriesIds: updateSaleDto.categoriesIds as any[],
@@ -799,10 +806,16 @@ export class SalesService {
 
 			await this._linkCustomersToStores([updatedSale]);
 
-			await this._updateProductsQuantityByUpdateManualSale(
-				updateSaleDto.stores,
-				sale.stores,
-			);
+			if (this._siteOrderApprovalService.isAwaitingApproval(sale)) {
+				// Its products were never taken from stock, so there is no difference
+				// to settle: accepting it takes what the order says now.
+				await this._approveSiteOrderIfNeeded(updatedSale);
+			} else {
+				await this._updateProductsQuantityByUpdateManualSale(
+					updateSaleDto.stores,
+					sale.stores,
+				);
+			}
 
 			const userIdByStores: string = stores[0].userId.toString();
 
@@ -1227,6 +1240,10 @@ export class SalesService {
 				},
 			);
 
+			if (updatedSale) {
+				await this._approveSiteOrderIfNeeded(updatedSale);
+			}
+
 			if (updatedSale.status === SalesEnum.Status.COMPLETED) {
 				await this._completeSaleStoresProducts(updatedSale._id.toString());
 
@@ -1400,7 +1417,7 @@ export class SalesService {
 						},
 						status: { $ne: SalesEnum.Status.COMPLETED },
 					},
-					{ _id: 1 },
+					{ _id: 1, type: 1, siteOrderApprovedAt: 1, stores: 1 },
 				)
 				.lean();
 
@@ -1430,6 +1447,14 @@ export class SalesService {
 				{ multi: true },
 			);
 
+			// Completing a site order that was still waiting accepts it too.
+			for (const saleToComplete of salesToComplete) {
+				await this._approveSiteOrderIfNeeded({
+					...saleToComplete,
+					status: SalesEnum.Status.COMPLETED,
+				} as ISale);
+			}
+
 			const userIdOwnerStore: IUser =
 				await this._usersService.findOneByIdOrFail(userId);
 
@@ -1457,6 +1482,14 @@ export class SalesService {
 	// #region Private Methods
 
 	/** The buyer's email is optional: a blank one is stored as null. */
+	private async _approveSiteOrderIfNeeded(sale: ISale): Promise<void> {
+		await this._siteOrderApprovalService.approveIfNeeded(
+			sale,
+			(saleStores: ISaleStore[]) =>
+				this._subtractProductsQuantityBySaleStores(saleStores),
+		);
+	}
+
 	private _normalizeBuyerEmail(buyer: SaleBuyerDto | null | undefined): void {
 		if (buyer) {
 			buyer.email = buyer.email?.trim() || null;

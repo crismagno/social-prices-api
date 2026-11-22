@@ -17,6 +17,7 @@ import { UsersModule } from '../users/users.module';
 import { SalesValidationService } from './sales-validation.service';
 import { SalesController } from './sales.controller';
 import { SalesService } from './sales.service';
+import { SiteOrderApprovalService } from './site-order-approval.service';
 
 @Module({
 	imports: [
@@ -35,6 +36,12 @@ import { SalesService } from './sales.service';
 		EmployeesModule,
 	],
 	controllers: [SalesController],
-	providers: [SalesService, SalesValidationService, HashCrypt],
+	providers: [
+		SalesService,
+		SalesValidationService,
+		SiteOrderApprovalService,
+		HashCrypt,
+	],
+	exports: [SalesService],
 })
 export class SalesModule {}

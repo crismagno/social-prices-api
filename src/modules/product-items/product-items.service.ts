@@ -119,6 +119,16 @@ export class ProductItemsService {
 		return this._productItemModel.findOne({ productId, isDefault: true });
 	}
 
+	/** The default item of each product, for the products that have one. */
+	public async findDefaultsByProductIds(
+		productIds: string[],
+	): Promise<IProductItem[]> {
+		return this._productItemModel.find({
+			productId: { $in: productIds },
+			isDefault: true,
+		});
+	}
+
 	public async findByIds(productItemIds: string[]): Promise<IProductItem[]> {
 		return this._productItemModel.find({ _id: { $in: productItemIds } });
 	}
