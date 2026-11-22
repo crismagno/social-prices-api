@@ -19,6 +19,7 @@ import {
 	ISiteSellable,
 	TPublicSite,
 } from './interfaces/store-sites.type';
+import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
 import { StoreSitesService } from './store-sites.service';
 
 /**
@@ -55,7 +56,7 @@ export class StoreSitesPublicService {
 					(sellable: ISiteSellable) => sellable.product._id as any,
 				),
 			},
-			store: this._toPublicStore(store),
+			store: this._toPublicStore(store, site),
 			products: sellables.map((sellable: ISiteSellable) =>
 				this._toPublicProduct(sellable),
 			),
@@ -171,6 +172,7 @@ export class StoreSitesPublicService {
 				background: site.theme?.background,
 				text: site.theme?.text,
 			},
+			displayName: site.displayName?.trim() || null,
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',
@@ -190,16 +192,18 @@ export class StoreSitesPublicService {
 				isActive: !!site.marquee?.isActive,
 				items: [...(site.marquee?.items ?? [])],
 			},
+			logo: siteLogoOf(site.logo),
 			productIds: site.productIds,
 			createdAt: site.createdAt,
 			updatedAt: site.updatedAt,
 		};
 	}
 
-	private _toPublicStore(store: IStore): IPublicSiteStore {
+	private _toPublicStore(store: IStore, site: IStoreSite): IPublicSiteStore {
 		return {
 			name: store.name,
-			logo: store.logo ?? null,
+			// What the site shows: its own image, the store's, or none.
+			logo: resolveSiteLogo(site.logo, store.logo),
 			description: store.description ?? null,
 			about: store.about ?? null,
 		};

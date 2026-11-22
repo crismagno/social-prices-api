@@ -13,6 +13,7 @@ import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
+import { siteLogoOf } from './store-site-logo';
 import SaveStoreSiteDto from './interfaces/dto/saveStoreSite.dto';
 import { IStoreSite } from './interfaces/store-site.interface';
 import { StoreSite } from './interfaces/store-site.schema';
@@ -103,9 +104,11 @@ export class StoreSitesService {
 						slug,
 						templateId: saveStoreSiteDto.templateId,
 						theme: saveStoreSiteDto.theme,
+						displayName: saveStoreSiteDto.displayName?.trim() || null,
 						hero: saveStoreSiteDto.hero,
 						sections: saveStoreSiteDto.sections,
 						marquee: saveStoreSiteDto.marquee,
+						logo: siteLogoOf(saveStoreSiteDto.logo),
 						productIds: productIds.map(
 							(productId: string) => new Types.ObjectId(productId),
 						),

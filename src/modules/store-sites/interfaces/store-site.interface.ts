@@ -30,6 +30,15 @@ export interface IStoreSiteSection {
 	isActive: boolean;
 }
 
+/**
+ * The logo shown on the site. Without an image of its own it is the logo of
+ * the store; switched off, the site shows none.
+ */
+export interface IStoreSiteLogo {
+	isActive: boolean;
+	imageUrl: string | null;
+}
+
 export interface IStoreSiteMarquee {
 	isActive: boolean;
 	items: string[];
@@ -48,9 +57,12 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	isPublished: boolean;
 	publishedAt: Date | null;
 	theme: IStoreSiteTheme;
+	/** The name shown at the top of the site; empty means the store's name. */
+	displayName?: string | null;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;
+	logo: IStoreSiteLogo;
 	/** The order is the order the products are shown in. */
 	productIds: mongoose.Schema.Types.ObjectId[];
 }

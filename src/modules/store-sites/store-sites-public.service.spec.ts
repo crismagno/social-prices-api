@@ -214,6 +214,18 @@ describe('StoreSitesPublicService', () => {
 			expect(products[0]).toMatchObject({ _id: P1, isAvailable: false });
 		});
 
+		it('gives the name chosen for the site, and none for a site without one', async () => {
+			const named = await build({
+				site: { displayName: 'Ateliê da Mari' },
+			}).findBySlugOrFail('atelie');
+
+			expect(named.site.displayName).toBe('Ateliê da Mari');
+
+			const unnamed = await build().findBySlugOrFail('atelie');
+
+			expect(unnamed.site.displayName).toBeNull();
+		});
+
 		it('describes the store with public facts only', async () => {
 			const { store } = await build().findBySlugOrFail('atelie');
 
@@ -223,6 +235,29 @@ describe('StoreSitesPublicService', () => {
 				description: 'd',
 				about: 'a',
 			});
+		});
+
+		it('shows the logo of the store on a site saved before the logo was editable', async () => {
+			const { site, store } = await build().findBySlugOrFail('atelie');
+
+			expect(site.logo).toEqual({ isActive: true, imageUrl: null });
+			expect(store.logo).toBe('logo.png');
+		});
+
+		it('shows the image chosen for the site instead of the logo of the store', async () => {
+			const { store } = await build({
+				site: { logo: { isActive: true, imageUrl: 'site-logo.png' } },
+			}).findBySlugOrFail('atelie');
+
+			expect(store.logo).toBe('site-logo.png');
+		});
+
+		it('shows no logo when it is switched off', async () => {
+			const { store } = await build({
+				site: { logo: { isActive: false, imageUrl: 'site-logo.png' } },
+			}).findBySlugOrFail('atelie');
+
+			expect(store.logo).toBeNull();
 		});
 	});
 });

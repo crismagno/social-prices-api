@@ -65,6 +65,7 @@ const build = ({
 	createManual,
 	createCustomer,
 	assertAllowed,
+	invite,
 }: any = {}) => {
 	const findSellables: jest.Mock = jest.fn().mockResolvedValue(sellables);
 
@@ -92,7 +93,9 @@ const build = ({
 	const customersService: any = {
 		findByOwnerUserIdAndEmail: jest.fn().mockResolvedValue(customer),
 		create:
-			createCustomer ?? jest.fn().mockResolvedValue({ _id: NEW_CUSTOMER }),
+			createCustomer ??
+			jest.fn().mockResolvedValue({ _id: NEW_CUSTOMER, email: 'ana@x.com' }),
+		invite: invite ?? jest.fn().mockResolvedValue({}),
 	};
 
 	const rateLimiter: any = { assertAllowed: assertAllowed ?? jest.fn() };
@@ -114,6 +117,10 @@ const build = ({
 		),
 	};
 };
+
+/** The invite is not awaited by the order: this lets it run. */
+const afterInvite = (): Promise<void> =>
+	new Promise((done) => setImmediate(done));
 
 const sentSale = (salesService: any): any =>
 	salesService.createManual.mock.calls[0][0];
@@ -292,6 +299,44 @@ describe('StoreSiteOrdersService', () => {
 		expect(sentSale(salesService).stores[0].products).toEqual([
 			expect.objectContaining({ productId: P1, quantity: 3 }),
 		]);
+	});
+
+	it('invites a new customer to create an account as soon as the order is sent', async () => {
+		const { service, customersService } = build();
+
+		await service.create('atelie', '1.1.1.1', order());
+		await afterInvite();
+
+		expect(customersService.invite).toHaveBeenCalledWith(OWNER, NEW_CUSTOMER);
+	});
+
+	it('does not invite again a customer that was invited or has an account', async () => {
+		const invited = build({
+			customer: { _id: 'c1', email: 'ana@x.com', invitedAt: new Date() },
+		});
+
+		await invited.service.create('atelie', '1.1.1.1', order());
+
+		const withAccount = build({
+			customer: { _id: 'c2', email: 'ana@x.com', userId: 'u1' },
+		});
+
+		await withAccount.service.create('atelie', '1.1.1.1', order());
+		await afterInvite();
+
+		expect(invited.customersService.invite).not.toHaveBeenCalled();
+		expect(withAccount.customersService.invite).not.toHaveBeenCalled();
+	});
+
+	it('keeps the order when the invite cannot be sent', async () => {
+		const { service } = build({
+			invite: jest.fn().mockRejectedValue(new Error('smtp down')),
+		});
+
+		await expect(service.create('atelie', '1.1.1.1', order())).resolves.toEqual(
+			{ number: 42 },
+		);
+		await afterInvite();
 	});
 
 	it('reuses the customer that already has this email, whatever its case', async () => {

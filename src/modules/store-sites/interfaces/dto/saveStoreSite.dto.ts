@@ -100,6 +100,16 @@ export class StoreSiteMarqueeDto {
 	items: string[];
 }
 
+export class StoreSiteLogoDto {
+	@IsBoolean()
+	isActive: boolean;
+
+	@IsOptional()
+	@IsString()
+	@MaxLength(600)
+	imageUrl: string | null;
+}
+
 export default class SaveStoreSiteDto {
 	@Transform(({ value }) =>
 		typeof value === 'string' ? value.trim().toLowerCase() : value,
@@ -114,6 +124,11 @@ export default class SaveStoreSiteDto {
 	@Type(() => StoreSiteThemeDto)
 	theme: StoreSiteThemeDto;
 
+	@IsOptional()
+	@IsString()
+	@MaxLength(60)
+	displayName?: string | null;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;
@@ -127,6 +142,11 @@ export default class SaveStoreSiteDto {
 	@ValidateNested()
 	@Type(() => StoreSiteMarqueeDto)
 	marquee: StoreSiteMarqueeDto;
+
+	@IsOptional()
+	@ValidateNested()
+	@Type(() => StoreSiteLogoDto)
+	logo?: StoreSiteLogoDto;
 
 	@IsArray()
 	@ArrayMaxSize(StoreSitesEnum.MAX_PRODUCTS)

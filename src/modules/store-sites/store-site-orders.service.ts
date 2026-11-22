@@ -104,7 +104,7 @@ export class StoreSiteOrdersService {
 			const admin: IEmployee =
 				await this._employeesService.findAdminByUserId(ownerUserId);
 
-			const customerId: string = await this._findOrCreateCustomerId({
+			const customer: ICustomer = await this._findOrCreateCustomer({
 				ownerUserId,
 				storeId: String(store._id),
 				name: createSiteOrderDto.buyer.name.trim(),
@@ -123,9 +123,12 @@ export class StoreSiteOrdersService {
 					store,
 					ownerUserId,
 					adminEmployeeId: String(admin._id),
-					customerId,
+					customerId: String(customer._id),
 				}),
 			);
+
+			// Not awaited: the visitor must not wait for an email server to answer.
+			void this._inviteQuietly(ownerUserId, customer);
 
 			return { number: sale.number };
 		} catch (error: any) {
@@ -154,7 +157,7 @@ export class StoreSiteOrdersService {
 	 * who they are. Always resolving the customer here also keeps the sale
 	 * service from looking an account up by that email.
 	 */
-	private async _findOrCreateCustomerId({
+	private async _findOrCreateCustomer({
 		ownerUserId,
 		storeId,
 		name,
@@ -168,7 +171,7 @@ export class StoreSiteOrdersService {
 		email: string;
 		address: CreateAddressDto;
 		phoneNumber: CreatePhoneNumberDto;
-	}): Promise<string> {
+	}): Promise<ICustomer> {
 		const existing: ICustomer | null =
 			await this._customersService.findByOwnerUserIdAndEmail(
 				ownerUserId,
@@ -176,10 +179,10 @@ export class StoreSiteOrdersService {
 			);
 
 		if (existing) {
-			return String(existing._id);
+			return existing;
 		}
 
-		const created: ICustomer = await this._customersService.create(
+		return await this._customersService.create(
 			null,
 			{
 				name,
@@ -200,8 +203,33 @@ export class StoreSiteOrdersService {
 			},
 			ownerUserId,
 		);
+	}
 
-		return String(created._id);
+	/**
+	 * Emails the customer a link to create an account, so the order can be
+	 * followed without waiting for the store. Once per customer, and never
+	 * throws: an invite that fails must not undo the order.
+	 */
+	private async _inviteQuietly(
+		ownerUserId: string,
+		customer: ICustomer,
+	): Promise<void> {
+		if (!customer.email || customer.userId || customer.invitedAt) {
+			return;
+		}
+
+		try {
+			await this._customersService.invite(ownerUserId, String(customer._id));
+		} catch (error: any) {
+			// The email already has an account: the order is already in its portal.
+			if (error?.getResponse?.()?.code === 'CUSTOMER_ALREADY_HAS_ACCOUNT') {
+				return;
+			}
+
+			this._logger.error(
+				`Could not invite customer ${customer._id}: ${error?.message}`,
+			);
+		}
 	}
 
 	private _sumQuantities(items: SiteOrderItemDto[]): Map<string, number> {

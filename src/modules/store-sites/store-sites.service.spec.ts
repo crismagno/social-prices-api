@@ -31,6 +31,7 @@ const dto = (patch: Partial<SaveStoreSiteDto> = {}): SaveStoreSiteDto => ({
 		featuredImageUrl: null,
 		ctaLabel: null,
 	},
+	displayName: '  Ateliê da Mari ',
 	sections: [],
 	marquee: { isActive: false, items: [] },
 	productIds: [PRODUCT],
@@ -80,6 +81,26 @@ describe('StoreSitesService', () => {
 			expect(update.$set.slug).toBe('minha-loja');
 			expect(String(update.$set.userId)).toBe(OWNER);
 			expect(options).toMatchObject({ upsert: true, new: true });
+		});
+
+		it('keeps the name shown at the top of the site, trimmed', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(OWNER, STORE, dto());
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.displayName,
+			).toBe('Ateliê da Mari');
+		});
+
+		it('keeps no name when none is sent, so the site shows the store one', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(OWNER, STORE, dto({ displayName: '   ' }));
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.displayName,
+			).toBeNull();
 		});
 
 		it('refuses a store of another owner', async () => {

@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {
 	IStoreSite,
 	IStoreSiteHero,
+	IStoreSiteLogo,
 	IStoreSiteMarquee,
 	IStoreSiteSection,
 	IStoreSiteTheme,
@@ -53,6 +54,14 @@ const StoreSiteMarqueeSchema = new mongoose.Schema(
 	{ _id: false },
 );
 
+const StoreSiteLogoSchema = new mongoose.Schema(
+	{
+		isActive: { type: Boolean, default: true },
+		imageUrl: { type: String, default: null },
+	},
+	{ _id: false },
+);
+
 @Schema({ timestamps: true, collection: 'store-sites' })
 export class StoreSite implements IStoreSite {
 	readonly _id: mongoose.Schema.Types.ObjectId;
@@ -82,6 +91,9 @@ export class StoreSite implements IStoreSite {
 	@Prop({ required: true, type: StoreSiteThemeSchema })
 	theme: IStoreSiteTheme;
 
+	@Prop({ type: String, default: null })
+	displayName: string | null;
+
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;
 
@@ -90,6 +102,13 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ required: true, type: StoreSiteMarqueeSchema })
 	marquee: IStoreSiteMarquee;
+
+	// Sites saved before the logo was editable show the logo of the store.
+	@Prop({
+		type: StoreSiteLogoSchema,
+		default: () => ({ isActive: true, imageUrl: null }),
+	})
+	logo: IStoreSiteLogo;
 
 	@Prop({ type: [mongoose.Schema.Types.ObjectId], default: [] })
 	productIds: mongoose.Schema.Types.ObjectId[];
