@@ -6,6 +6,7 @@ import {
 	IsEnum,
 	IsMongoId,
 	IsNotEmpty,
+	IsObject,
 	IsOptional,
 	IsString,
 	Matches,
@@ -128,6 +129,16 @@ export default class SaveStoreSiteDto {
 	@IsString()
 	@MaxLength(60)
 	displayName?: string | null;
+
+	// Checked value by value when saved: see siteSizesOf.
+	@IsOptional()
+	@IsObject()
+	sizes?: Record<string, unknown>;
+
+	// Checked link by link when saved: see siteFooterOf.
+	@IsOptional()
+	@IsObject()
+	footer?: Record<string, unknown>;
 
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)

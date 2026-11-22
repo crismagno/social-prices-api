@@ -103,6 +103,69 @@ describe('StoreSitesService', () => {
 			).toBeNull();
 		});
 
+		it('stores the sizes checked, never as they were sent', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({ sizes: { logoWidth: 99999, heroTitleSize: 'x', hack: 1 } }),
+			);
+
+			const sizes: any =
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.sizes;
+
+			expect(sizes.logoWidth).toBe(1600);
+			expect(sizes.heroTitleSize).toBeNull();
+			expect(sizes).not.toHaveProperty('hack');
+		});
+
+		it('stores the footer checked: a link that is not safe never gets in', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({
+					footer: {
+						text: 'Oi',
+						links: [
+							{
+								key: 'x',
+								type: 'WEBSITE',
+								label: 'x',
+								url: 'javascript:alert(1)',
+							},
+							{
+								key: 'i',
+								type: 'INSTAGRAM',
+								label: '',
+								url: 'instagram.com/a',
+							},
+						],
+					},
+				}),
+			);
+
+			const footer: any =
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.footer;
+
+			expect(footer.links).toEqual([
+				{
+					key: 'i',
+					type: 'INSTAGRAM',
+					label: '',
+					url: 'https://instagram.com/a',
+					section: 'links',
+				},
+			]);
+			expect(footer).toMatchObject({
+				isActive: true,
+				isLoginVisible: true,
+				text: 'Oi',
+			});
+		});
+
 		it('refuses a store of another owner', async () => {
 			const { service } = build({
 				store: { _id: STORE, userId: new Types.ObjectId().toString() },

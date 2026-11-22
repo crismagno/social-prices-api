@@ -15,6 +15,11 @@ export interface IStoreChatStoreCard {
 	logo: string | null;
 	description: string | null;
 	type: StoresEnum.Type | null;
+	/**
+	 * The address of the store's site while it is online. Only told for the
+	 * store being opened, not in lists.
+	 */
+	siteSlug?: string | null;
 }
 
 /** A conversation as the customer account lists it. */

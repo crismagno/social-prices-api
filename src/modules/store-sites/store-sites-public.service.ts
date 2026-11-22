@@ -19,7 +19,9 @@ import {
 	ISiteSellable,
 	TPublicSite,
 } from './interfaces/store-sites.type';
+import { siteFooterOf } from './store-site-footer';
 import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
+import { siteSizesOf } from './store-site-sizes';
 import { StoreSitesService } from './store-sites.service';
 
 /**
@@ -77,26 +79,31 @@ export class StoreSitesPublicService {
 			throw new NotFoundException('Site not found!');
 		}
 
-		const [owner, store]: [IUser | undefined, IStore | null] =
-			await Promise.all([
-				this._usersService.findOneById(String(site.userId)),
-				this._storesService.findById(String(site.storeId)),
-			]);
+		const context: IPublishedSiteContext | null =
+			await this._contextIfOnline(site);
 
-		const isOwnerAllowed: boolean = !!owner?.enabledApps?.includes(
-			AppsEnum.App.SITE,
-		);
-
-		const isStoreOnline: boolean =
-			!!store &&
-			!store.softDelete?.isDeleted &&
-			store.status === StoresEnum.Status.ACTIVE;
-
-		if (!isOwnerAllowed || !isStoreOnline) {
+		if (!context) {
 			throw new NotFoundException('Site not found!');
 		}
 
-		return { site, owner, store };
+		return context;
+	}
+
+	/**
+	 * The address of the store's site while a visitor can open it, or null. For
+	 * who wants to link to the site without showing it.
+	 */
+	public async findOnlineSlugByStoreId(
+		storeId: string,
+	): Promise<string | null> {
+		const site: IStoreSite | null =
+			await this._storeSitesService.findPublishedByStoreId(storeId);
+
+		if (!site) {
+			return null;
+		}
+
+		return (await this._contextIfOnline(site)) ? site.slug : null;
 	}
 
 	/**
@@ -157,6 +164,28 @@ export class StoreSitesPublicService {
 
 	//#region Private Methods
 
+	/** The published site with its owner and store, only while both allow it. */
+	private async _contextIfOnline(
+		site: IStoreSite,
+	): Promise<IPublishedSiteContext | null> {
+		const [owner, store]: [IUser | undefined, IStore | null] =
+			await Promise.all([
+				this._usersService.findOneById(String(site.userId)),
+				this._storesService.findById(String(site.storeId)),
+			]);
+
+		const isOwnerAllowed: boolean = !!owner?.enabledApps?.includes(
+			AppsEnum.App.SITE,
+		);
+
+		const isStoreOnline: boolean =
+			!!store &&
+			!store.softDelete?.isDeleted &&
+			store.status === StoresEnum.Status.ACTIVE;
+
+		return isOwnerAllowed && isStoreOnline ? { site, owner, store } : null;
+	}
+
 	private _toPublicSite(site: IStoreSite): TPublicSite {
 		return {
 			_id: site._id,
@@ -173,6 +202,8 @@ export class StoreSitesPublicService {
 				text: site.theme?.text,
 			},
 			displayName: site.displayName?.trim() || null,
+			sizes: siteSizesOf(site.sizes),
+			footer: siteFooterOf(site.footer),
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',

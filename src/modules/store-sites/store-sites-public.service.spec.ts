@@ -80,7 +80,10 @@ const build = ({
 			  };
 
 	return new StoreSitesPublicService(
-		{ findPublishedBySlug: jest.fn().mockResolvedValue(published) } as any,
+		{
+			findPublishedBySlug: jest.fn().mockResolvedValue(published),
+			findPublishedByStoreId: jest.fn().mockResolvedValue(published),
+		} as any,
 		{ findOneById: jest.fn().mockResolvedValue(owner) } as any,
 		{ findById: jest.fn().mockResolvedValue(store) } as any,
 		{ findByIds: jest.fn().mockResolvedValue(products) } as any,
@@ -226,6 +229,31 @@ describe('StoreSitesPublicService', () => {
 			expect(unnamed.site.displayName).toBeNull();
 		});
 
+		it('gives the sizes of the site, all empty for one saved before they existed', async () => {
+			const sized = await build({
+				site: { sizes: { logoWidth: 64, junk: 1 } },
+			}).findBySlugOrFail('atelie');
+
+			expect(sized.site.sizes.logoWidth).toBe(64);
+			expect(sized.site.sizes).not.toHaveProperty('junk');
+
+			const older = await build().findBySlugOrFail('atelie');
+
+			expect(older.site.sizes.logoWidth).toBeNull();
+		});
+
+		it('gives the footer, with the login button for a site saved before it existed', async () => {
+			const { site } = await build().findBySlugOrFail('atelie');
+
+			expect(site.footer).toMatchObject({
+				isActive: true,
+				text: null,
+				isLoginVisible: true,
+				links: [],
+			});
+			expect(site.footer.sections).toHaveLength(2);
+		});
+
 		it('describes the store with public facts only', async () => {
 			const { store } = await build().findBySlugOrFail('atelie');
 
@@ -258,6 +286,36 @@ describe('StoreSitesPublicService', () => {
 			}).findBySlugOrFail('atelie');
 
 			expect(store.logo).toBeNull();
+		});
+	});
+
+	describe('findOnlineSlugByStoreId', () => {
+		it('gives the address of the site that is online', async () => {
+			await expect(build().findOnlineSlugByStoreId(STORE)).resolves.toBe(
+				'atelie',
+			);
+		});
+
+		it('gives nothing when the store has no published site', async () => {
+			await expect(
+				build({ site: null }).findOnlineSlugByStoreId(STORE),
+			).resolves.toBeNull();
+		});
+
+		it('gives nothing when the owner no longer has the site app', async () => {
+			await expect(
+				build({
+					owner: { _id: OWNER, enabledApps: [] },
+				}).findOnlineSlugByStoreId(STORE),
+			).resolves.toBeNull();
+		});
+
+		it('gives nothing when the store is not active', async () => {
+			await expect(
+				build({
+					store: { _id: STORE, status: StoresEnum.Status.INACTIVE },
+				}).findOnlineSlugByStoreId(STORE),
+			).resolves.toBeNull();
 		});
 	});
 });

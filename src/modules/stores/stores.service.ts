@@ -230,7 +230,7 @@ export class StoresService {
 			createdAt: now,
 			updatedAt: now,
 			cnpj: createStoreDto.cnpj,
-			type: createStoreDto.type,
+			type: this._parseType(createStoreDto.type),
 			isVisibleInSearch:
 				this._parseBoolean(createStoreDto.isVisibleInSearch) ?? true,
 		});
@@ -303,7 +303,7 @@ export class StoresService {
 			tagsIds: updateStoreDto.tagsIds,
 			updatedAt: now,
 			cnpj: updateStoreDto.cnpj,
-			type: updateStoreDto.type,
+			type: this._parseType(updateStoreDto.type),
 		};
 
 		const isVisibleInSearch: boolean | undefined = this._parseBoolean(
@@ -368,6 +368,16 @@ export class StoresService {
 		}
 
 		return undefined;
+	}
+
+	/**
+	 * The type of the store, or null when none was chosen: a multipart form
+	 * sends an empty one as the text "null".
+	 */
+	private _parseType(value: unknown): StoresEnum.Type | null {
+		return Object.values(StoresEnum.Type).includes(value as StoresEnum.Type)
+			? (value as StoresEnum.Type)
+			: null;
 	}
 
 	// #endregion

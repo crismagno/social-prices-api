@@ -13,7 +13,9 @@ import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
+import { siteFooterOf } from './store-site-footer';
 import { siteLogoOf } from './store-site-logo';
+import { siteSizesOf } from './store-site-sizes';
 import SaveStoreSiteDto from './interfaces/dto/saveStoreSite.dto';
 import { IStoreSite } from './interfaces/store-site.interface';
 import { StoreSite } from './interfaces/store-site.schema';
@@ -63,6 +65,19 @@ export class StoreSitesService {
 		});
 	}
 
+	public async findPublishedByStoreId(
+		storeId: string,
+	): Promise<IStoreSite | null> {
+		if (!Types.ObjectId.isValid(storeId)) {
+			return null;
+		}
+
+		return this._storeSiteModel.findOne({
+			storeId: new Types.ObjectId(storeId),
+			isPublished: true,
+		});
+	}
+
 	public async isSlugAvailable(
 		slug: string,
 		exceptStoreId?: string,
@@ -105,6 +120,8 @@ export class StoreSitesService {
 						templateId: saveStoreSiteDto.templateId,
 						theme: saveStoreSiteDto.theme,
 						displayName: saveStoreSiteDto.displayName?.trim() || null,
+						sizes: siteSizesOf(saveStoreSiteDto.sizes),
+						footer: siteFooterOf(saveStoreSiteDto.footer),
 						hero: saveStoreSiteDto.hero,
 						sections: saveStoreSiteDto.sections,
 						marquee: saveStoreSiteDto.marquee,

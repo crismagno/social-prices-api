@@ -4,12 +4,14 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import {
 	IStoreSite,
+	IStoreSiteFooter,
 	IStoreSiteHero,
 	IStoreSiteLogo,
 	IStoreSiteMarquee,
 	IStoreSiteSection,
 	IStoreSiteTheme,
 } from './store-site.interface';
+import { TStoreSiteSizes } from '../store-site-sizes';
 import StoreSitesEnum from './store-sites.enum';
 
 const StoreSiteThemeSchema = new mongoose.Schema(
@@ -93,6 +95,12 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: String, default: null })
 	displayName: string | null;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	sizes: Partial<TStoreSiteSizes>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	footer: Partial<IStoreSiteFooter>;
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

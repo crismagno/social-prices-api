@@ -102,4 +102,40 @@ describe('StoresService.isVisibleInSearch', () => {
 
 		expect('isVisibleInSearch' in setOf(model)).toBe(false);
 	});
+
+	// A multipart form sends an empty type as the text "null".
+	it.each(['null', 'undefined', '', null, undefined])(
+		'creates a store with no type when the form sends %p',
+		async (sent: unknown) => {
+			const { service, saved } = build();
+
+			await service.create(undefined, baseDto({ type: sent }), USER_ID);
+
+			expect(saved[0].type).toBeNull();
+		},
+	);
+
+	it('keeps the type chosen for the store', async () => {
+		const { service, saved, model } = build();
+
+		await service.create(undefined, baseDto({ type: 'ONLINE' }), USER_ID);
+		await service.update(
+			undefined,
+			baseDto({ storeId: STORE_ID, type: 'PHYSICAL' }),
+		);
+
+		expect(saved[0].type).toBe('ONLINE');
+		expect(setOf(model).type).toBe('PHYSICAL');
+	});
+
+	it('clears the type on update when the form sends none', async () => {
+		const { service, model } = build();
+
+		await service.update(
+			undefined,
+			baseDto({ storeId: STORE_ID, type: 'null' }),
+		);
+
+		expect(setOf(model).type).toBeNull();
+	});
 });

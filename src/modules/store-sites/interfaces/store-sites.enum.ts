@@ -15,6 +15,27 @@ namespace StoreSitesEnum {
 		[Template.STUDIO]: 'Studio',
 	};
 
+	/** What a link of the footer leads to: it decides its icon and how it opens. */
+	export enum FooterLinkType {
+		INSTAGRAM = 'INSTAGRAM',
+		FACEBOOK = 'FACEBOOK',
+		WHATSAPP = 'WHATSAPP',
+		TIKTOK = 'TIKTOK',
+		YOUTUBE = 'YOUTUBE',
+		X = 'X',
+		LINKEDIN = 'LINKEDIN',
+		PINTEREST = 'PINTEREST',
+		TELEGRAM = 'TELEGRAM',
+		EMAIL = 'EMAIL',
+		PHONE = 'PHONE',
+		WEBSITE = 'WEBSITE',
+		/** Words of the owner's own, shown as plain text with no icon. */
+		TEXT = 'TEXT',
+	}
+
+	export const MAX_FOOTER_LINKS = 12;
+	export const MAX_FOOTER_SECTIONS = 5;
+
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 

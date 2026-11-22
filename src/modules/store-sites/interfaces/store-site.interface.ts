@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
 import { IUpdatedAtEntity } from '../../../shared/common/global/updated-at.interface';
+import { TStoreSiteSizes } from '../store-site-sizes';
 import StoreSitesEnum from './store-sites.enum';
 
 /** Hex colors (#rrggbb). Every template reads the same five. */
@@ -11,6 +12,40 @@ export interface IStoreSiteTheme {
 	accent: string;
 	background: string;
 	text: string;
+}
+
+export interface IStoreSiteFooterLink {
+	key: string;
+	type: StoreSitesEnum.FooterLinkType;
+	/** What the link says; empty, the site names it by its kind. */
+	label: string;
+	url: string;
+	/** The key of the section of the footer it is shown in. */
+	section: string;
+}
+
+/** One column of the footer, with an optional title above what is in it. */
+export interface IStoreSiteFooterSection {
+	key: string;
+	title: string | null;
+}
+
+/**
+ * The foot of the site: a few words, as many links as the owner wants (social
+ * networks, other sites, ways to get in touch) and the way into the app.
+ */
+export interface IStoreSiteFooter {
+	isActive: boolean;
+	text: string | null;
+	/** The button that takes a customer to the login of the app. */
+	isLoginVisible: boolean;
+	/** The columns of the footer, left to right: one to five. */
+	sections: IStoreSiteFooterSection[];
+	/** The section the name and the text are in. */
+	textSection: string;
+	/** The section the login button is in. */
+	loginSection: string;
+	links: IStoreSiteFooterLink[];
 }
 
 export interface IStoreSiteHero {
@@ -59,6 +94,9 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	theme: IStoreSiteTheme;
 	/** The name shown at the top of the site; empty means the store's name. */
 	displayName?: string | null;
+	/** Sizes the owner set, in pixels; an empty one is the template's own. */
+	sizes?: Partial<TStoreSiteSizes>;
+	footer?: Partial<IStoreSiteFooter>;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

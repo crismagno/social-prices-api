@@ -5,6 +5,7 @@ import { AppsCoreModule } from '../apps/core/apps-core.module';
 import { CustomerOnlyGuard } from '../customer-portal/customer-only.guard';
 import { FilesModule } from '../files/files.module';
 import { InboxModule } from '../inbox/inbox.module';
+import { StoreSitesModule } from '../store-sites/store-sites.module';
 import { StoreChatDeletionService } from './store-chat-deletion.service';
 import { StoreChatEditionService } from './store-chat-edition.service';
 import { StoreChatMediaService } from './store-chat-media.service';
@@ -25,6 +26,7 @@ import { StoreChatService } from './store-chat.service';
 		AppsCoreModule,
 		InboxModule,
 		FilesModule,
+		StoreSitesModule,
 		schemasModule.store,
 		schemasModule.customer,
 		schemasModule.sale,

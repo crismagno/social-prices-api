@@ -32,6 +32,7 @@ import { mediaResponseHeaders } from '../apps/telegram/telegram.media-response';
 import { CustomerOnlyGuard } from '../customer-portal/customer-only.guard';
 import { InboxSendMediaDto } from '../inbox/inbox.dto';
 import { IStore } from '../stores/interfaces/store.interface';
+import { StoreSitesPublicService } from '../store-sites/store-sites-public.service';
 import SendStoreChatMessageDto from './interfaces/dto/sendStoreChatMessage.dto';
 import {
 	IStoreChatBuyer,
@@ -56,6 +57,7 @@ export class StoreChatController {
 	constructor(
 		private readonly _storeChatService: StoreChatService,
 		private readonly _storeChatStoresService: StoreChatStoresService,
+		private readonly _storeSitesPublicService: StoreSitesPublicService,
 	) {}
 
 	@Get('conversations')
@@ -88,9 +90,15 @@ export class StoreChatController {
 	public async findStore(
 		@Param('storeId') storeId: string,
 	): Promise<IStoreChatStoreCard> {
-		return this._storeChatStoresService.toCard(
-			await this._storeChatStoresService.findUsable(storeId),
-		);
+		const store: IStore =
+			await this._storeChatStoresService.findUsable(storeId);
+
+		return {
+			...this._storeChatStoresService.toCard(store),
+			siteSlug: await this._storeSitesPublicService.findOnlineSlugByStoreId(
+				String(store._id),
+			),
+		};
 	}
 
 	@Get('stores/:storeId/messages')

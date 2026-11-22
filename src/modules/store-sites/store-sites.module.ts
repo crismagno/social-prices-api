@@ -40,6 +40,10 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 		SiteOrderRateLimiter,
 		StoreSitesStatusProvider,
 	],
-	exports: [StoreSitesService, StoreSitesStatusProvider],
+	exports: [
+		StoreSitesService,
+		StoreSitesPublicService,
+		StoreSitesStatusProvider,
+	],
 })
 export class StoreSitesModule {}
