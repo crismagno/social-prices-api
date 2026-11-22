@@ -267,15 +267,26 @@ describe('StoreChatOwnerService', () => {
 	});
 
 	describe('start', () => {
-		it.each([[''], ['   '], ['a'.repeat(1001)]])(
-			'refuses the text %p',
-			async (text) => {
-				const { service, messages } = build();
+		it('refuses a text that is too long', async () => {
+			const { service, conversations, messages } = build();
 
-				await expect(
-					service.start(CTX, CUSTOMER, STORE, text),
-				).rejects.toBeInstanceOf(BadRequestException);
+			await expect(
+				service.start(CTX, CUSTOMER, STORE, 'a'.repeat(1001)),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(conversations.ensure).not.toHaveBeenCalled();
+			expect(messages.saveOutgoing).not.toHaveBeenCalled();
+		});
+
+		it.each([[undefined], [''], ['   ']])(
+			'with the text %p only opens the conversation: a file or a recording comes next',
+			async (text) => {
+				const { service, conversations, messages } = build();
+
+				const result = await service.start(CTX, CUSTOMER, STORE, text);
+
+				expect(conversations.ensure).toHaveBeenCalledTimes(1);
 				expect(messages.saveOutgoing).not.toHaveBeenCalled();
+				expect(result).toEqual({ conversationId: CONV, customerId: CUSTOMER });
 			},
 		);
 

@@ -136,4 +136,33 @@ export class StoreSitesController {
 
 		return { url };
 	}
+
+	/** Stores one video of the site (its about section) and answers with its file key. */
+	@Post('/store/:storeId/videos')
+	@HttpCode(200)
+	@UseInterceptors(FilesInterceptor('files', 1))
+	public async uploadVideo(
+		@UploadedFiles(
+			parseFilePipeBuilder({
+				allowOnlyTypes: ['video'],
+				build: { fileIsRequired: true },
+			}),
+		)
+		files: Express.Multer.File[],
+		@AuthPayload() authPayload: IAuthPayload,
+		@Param('storeId', ValidationParamsPipe) storeId: string,
+	): Promise<{ url: string }> {
+		await this._storeSitesService.assertOwnStore(authPayload._id, storeId);
+
+		if (files[0].size > StoreSitesEnum.MAX_VIDEO_SIZE_BYTES) {
+			throw new BadRequestException({
+				code: 'STORE_SITE_VIDEO_TOO_LARGE',
+				message: 'The video can be at most 20MB.',
+			});
+		}
+
+		const [url]: string[] = await this._filesService.getUploadFilesUrl(files);
+
+		return { url };
+	}
 }

@@ -764,6 +764,35 @@ describe('InboxCentralService', () => {
 				'Conversation not found.',
 			);
 		});
+
+		it('finds the conversation by the person on a channel, for an app that only knows its own id of them', async () => {
+			const { service, convService } = build([conv()]);
+			convService.findByKey = jest.fn().mockResolvedValue(conv());
+
+			await expect(
+				service.getSendTarget(OWNER, {
+					channel: 'TELEGRAM',
+					contactKey: '555',
+				} as any),
+			).resolves.toMatchObject({ conversation: conv(), canReply: true });
+			expect(convService.findByKey).toHaveBeenCalledWith(OWNER, {
+				channel: 'TELEGRAM',
+				contactKey: '555',
+			});
+			expect(convService.findById).not.toHaveBeenCalled();
+		});
+
+		it('is 404 when nobody wrote from that contact on that channel', async () => {
+			const { service, convService } = build([]);
+			convService.findByKey = jest.fn().mockResolvedValue(null);
+
+			await expect(
+				service.getSendTarget(OWNER, {
+					channel: 'TELEGRAM',
+					contactKey: '9',
+				} as any),
+			).rejects.toThrow('Conversation not found.');
+		});
 	});
 
 	describe('sendMedia', () => {

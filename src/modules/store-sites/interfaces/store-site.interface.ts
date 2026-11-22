@@ -56,6 +56,24 @@ export interface IStoreSiteSignIn {
 	destination: StoreSitesEnum.SignInDestination;
 }
 
+export interface IStoreSiteAboutMedia {
+	type: StoreSitesEnum.AboutMediaType;
+	/** The key of an uploaded file, or the player address of a video link. */
+	url: string;
+}
+
+/**
+ * The "about" of the site: a title, as many paragraphs as the owner writes and
+ * an image or a video. Empty, it falls back to the store's own description.
+ */
+export interface IStoreSiteAbout {
+	isActive: boolean;
+	title: string | null;
+	texts: string[];
+	media: IStoreSiteAboutMedia | null;
+	mediaPosition: StoreSitesEnum.AboutMediaPosition;
+}
+
 export interface IStoreSiteHero {
 	tagline: string | null;
 	title: string;
@@ -110,6 +128,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	sizes?: Partial<TStoreSiteSizes>;
 	footer?: Partial<IStoreSiteFooter>;
 	signIn?: Partial<IStoreSiteSignIn>;
+	about?: Partial<IStoreSiteAbout>;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

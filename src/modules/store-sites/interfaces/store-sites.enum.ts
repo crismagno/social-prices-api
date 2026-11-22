@@ -52,6 +52,25 @@ namespace StoreSitesEnum {
 		HOME = 'HOME',
 	}
 
+	/** What the about section shows beside its words. */
+	export enum AboutMediaType {
+		IMAGE = 'IMAGE',
+		/** A video file the owner uploaded. */
+		VIDEO = 'VIDEO',
+		/** A YouTube or Vimeo video, shown in its player. */
+		EMBED = 'EMBED',
+	}
+
+	export enum AboutMediaPosition {
+		LEFT = 'LEFT',
+		RIGHT = 'RIGHT',
+		TOP = 'TOP',
+	}
+
+	export const MAX_ABOUT_TEXTS = 6;
+
+	export const MAX_VIDEO_SIZE_BYTES = 20 * 1024 * 1024;
+
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 

@@ -4,6 +4,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import {
 	IStoreSite,
+	IStoreSiteAbout,
 	IStoreSiteFooter,
 	IStoreSiteSignIn,
 	IStoreSiteHero,
@@ -110,6 +111,9 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	signIn: Partial<IStoreSiteSignIn>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	about: Partial<IStoreSiteAbout>;
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

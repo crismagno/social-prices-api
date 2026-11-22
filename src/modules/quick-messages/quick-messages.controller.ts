@@ -124,7 +124,10 @@ export class QuickMessagesController {
 		return this._senderService.send(
 			toActor(authPayload),
 			id,
-			dto.conversationId,
+			dto.conversationId ?? {
+				channel: dto.channel,
+				contactKey: dto.contactKey,
+			},
 		);
 	}
 

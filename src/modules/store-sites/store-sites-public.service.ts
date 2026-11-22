@@ -19,6 +19,7 @@ import {
 	ISiteSellable,
 	TPublicSite,
 } from './interfaces/store-sites.type';
+import { siteAboutOf } from './store-site-about';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { siteSignInOf } from './store-site-sign-in';
@@ -207,6 +208,7 @@ export class StoreSitesPublicService {
 			sizes: siteSizesOf(site.sizes),
 			footer: siteFooterOf(site.footer),
 			signIn: siteSignInOf(site.signIn),
+			about: siteAboutOf(site.about),
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',

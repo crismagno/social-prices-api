@@ -137,6 +137,16 @@ describe('QuickMessagesSenderService', () => {
 		expect(central.reply).not.toHaveBeenCalled();
 	});
 
+	it('sent from an app chat, goes through the conversation of that person on that channel', async () => {
+		const { service, central } = build([{ type: 'TEXT', text: 'oi' }]);
+		const key = { channel: 'TELEGRAM', contactKey: '555' } as any;
+
+		await service.send(ctx, MSG, key);
+
+		expect(central.getSendTarget).toHaveBeenCalledWith(OWNER, key);
+		expect(central.reply).toHaveBeenCalledWith(ctx, CONV, 'oi');
+	});
+
 	it('sends blocks in order, filling fields in texts and captions, skipping a text that renders empty', async () => {
 		const { service, calls, central } = build([
 			{ type: 'TEXT', text: 'Oi {cliente.nome}' },

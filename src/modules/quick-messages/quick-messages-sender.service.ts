@@ -23,7 +23,10 @@ import {
 	REPLY_WINDOW_CLOSED_CODE,
 } from '../inbox/inbox-central.service';
 import { IInboxMessageView } from '../inbox/interfaces/inbox-central.types';
-import { IInboxConversation } from '../inbox/interfaces/inbox.types';
+import {
+	IConversationKey,
+	IInboxConversation,
+} from '../inbox/interfaces/inbox.types';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import {
@@ -72,7 +75,8 @@ export class QuickMessagesSenderService {
 	public async send(
 		ctx: IInboxReplyContext,
 		quickMessageId: string,
-		conversationId: string,
+		/** The conversation's id, or the person on a channel (from an app's own chat). */
+		to: string | IConversationKey,
 	): Promise<IQuickMessageSendResult> {
 		const message: IQuickMessage =
 			await this._quickMessagesService.findOneOwned(
@@ -84,8 +88,10 @@ export class QuickMessagesSenderService {
 
 		const target = await this._inboxCentralService.getSendTarget(
 			ctx.ownerUserId,
-			conversationId,
+			to,
 		);
+
+		const conversationId: string = String(target.conversation._id);
 
 		if (!target.canReply) {
 			throw new ConflictException({

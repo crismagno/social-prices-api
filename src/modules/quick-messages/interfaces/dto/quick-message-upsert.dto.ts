@@ -7,13 +7,16 @@ import {
 	IsEnum,
 	IsInt,
 	IsMongoId,
+	IsNotEmpty,
 	IsOptional,
 	IsString,
 	MaxLength,
 	Min,
+	ValidateIf,
 	ValidateNested,
 } from 'class-validator';
 
+import InboxEnum from '../../../inbox/interfaces/inbox.enum';
 import QuickMessagesEnum from '../quick-messages.enum';
 
 /**
@@ -71,7 +74,22 @@ export class QuickMessageDeleteDto {
 	reason?: string;
 }
 
+/**
+ * Where it goes: the conversation's id (the central inbox), or the person on a
+ * channel (an app's own chat, which only knows its own id of them).
+ */
 export class QuickMessageSendDto {
+	@ValidateIf((dto: QuickMessageSendDto) => !dto.channel)
 	@IsMongoId()
-	conversationId: string;
+	conversationId?: string;
+
+	@ValidateIf((dto: QuickMessageSendDto) => !dto.conversationId)
+	@IsEnum(InboxEnum.Channel)
+	channel?: InboxEnum.Channel;
+
+	@ValidateIf((dto: QuickMessageSendDto) => !dto.conversationId)
+	@IsString()
+	@IsNotEmpty()
+	@MaxLength(100)
+	contactKey?: string;
 }

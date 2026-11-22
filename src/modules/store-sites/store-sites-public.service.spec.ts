@@ -291,6 +291,18 @@ describe('StoreSitesPublicService', () => {
 			expect(String(site.storeId)).toBe(STORE);
 		});
 
+		it('gives the about section, empty for an older site so the store text shows', async () => {
+			const { site } = await build().findBySlugOrFail('atelie');
+
+			expect(site.about).toEqual({
+				isActive: true,
+				title: null,
+				texts: [],
+				media: null,
+				mediaPosition: 'LEFT',
+			});
+		});
+
 		it('describes the store with public facts only', async () => {
 			const { store } = await build().findBySlugOrFail('atelie');
 

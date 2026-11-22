@@ -161,6 +161,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	signIn?: Record<string, unknown>;
 
+	// Checked when saved: see siteAboutOf.
+	@IsOptional()
+	@IsObject()
+	about?: Record<string, unknown>;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

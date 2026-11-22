@@ -1,10 +1,11 @@
-import { IsMongoId, IsNotEmpty, IsString } from 'class-validator';
+import { IsMongoId, IsOptional, IsString } from 'class-validator';
 
 export default class StartStoreChatDto {
 	@IsMongoId()
 	storeId: string;
 
+	/** Absent when what comes first is a file, a recording or a quick message. */
+	@IsOptional()
 	@IsString()
-	@IsNotEmpty()
-	text: string;
+	text?: string;
 }

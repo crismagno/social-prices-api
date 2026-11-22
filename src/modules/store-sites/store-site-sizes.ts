@@ -33,6 +33,10 @@ const KIND_BY_KEY = {
 	productWidth: 'width',
 	productImageHeight: 'height',
 	productNameSize: 'fontSize',
+	aboutTitleSize: 'fontSize',
+	aboutTextSize: 'fontSize',
+	aboutMediaWidth: 'width',
+	aboutMediaHeight: 'height',
 } as const satisfies Record<string, TSizeKind>;
 
 export type TSiteSizeKey = keyof typeof KIND_BY_KEY;

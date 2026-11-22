@@ -36,6 +36,7 @@ import {
 } from './interfaces/inbox-central.types';
 import InboxEnum from './interfaces/inbox.enum';
 import {
+	IConversationKey,
 	IInboxAttachment,
 	IInboxConversation,
 	IInboxMessage,
@@ -423,21 +424,22 @@ export class InboxCentralService {
 
 	/**
 	 * What a conversation takes right now, for callers that must check a whole
-	 * batch before sending any of it (quick messages).
+	 * batch before sending any of it (quick messages). The conversation is named
+	 * by its id, or by the person on a channel: all an app's own chat knows.
 	 */
 	public async getSendTarget(
 		ownerUserId: string,
-		conversationId: string,
+		target: string | IConversationKey,
 	): Promise<{
 		conversation: IInboxConversation;
 		capabilities: IInboxChannelCapabilities;
 		canReply: boolean;
 		canSendMedia: boolean;
 	}> {
-		const conversation: IInboxConversation = await this._ownedConversation(
-			ownerUserId,
-			conversationId,
-		);
+		const conversation: IInboxConversation =
+			typeof target === 'string'
+				? await this._ownedConversation(ownerUserId, target)
+				: await this._ownedConversationOf(ownerUserId, target);
 
 		const adapter: IInboxChannelAdapter = this._registry.get(
 			conversation.channel,
@@ -643,6 +645,25 @@ export class InboxCentralService {
 	): Promise<IInboxConversation> {
 		const conversation: IInboxConversation | null =
 			await this._conversations.findById(ownerUserId, conversationId);
+
+		if (!conversation) {
+			throw new NotFoundException('Conversation not found.');
+		}
+
+		await this._assertEnabled(ownerUserId, conversation.channel);
+
+		return conversation;
+	}
+
+	private async _ownedConversationOf(
+		ownerUserId: string,
+		key: IConversationKey,
+	): Promise<IInboxConversation> {
+		const conversation: IInboxConversation | null =
+			await this._conversations.findByKey(ownerUserId, {
+				channel: key.channel,
+				contactKey: key.contactKey,
+			});
 
 		if (!conversation) {
 			throw new NotFoundException('Conversation not found.');

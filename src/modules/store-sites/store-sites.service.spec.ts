@@ -209,6 +209,32 @@ describe('StoreSitesService', () => {
 			});
 		});
 
+		it('stores the about section checked: only known video players get in', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({
+					about: {
+						title: 'Nossa história',
+						texts: ['Oi', ''],
+						media: { type: 'EMBED', url: 'https://evil.com/v' },
+					},
+				}),
+			);
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.about,
+			).toEqual({
+				isActive: true,
+				title: 'Nossa história',
+				texts: ['Oi'],
+				media: null,
+				mediaPosition: 'LEFT',
+			});
+		});
+
 		it('refuses a store of another owner', async () => {
 			const { service } = build({
 				store: { _id: STORE, userId: new Types.ObjectId().toString() },

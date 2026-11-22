@@ -121,15 +121,17 @@ export class StoreChatOwnerService {
 
 	/**
 	 * Writes first to a customer, from one of the user's stores. The customer must
-	 * have an account on the platform: that is where the message is read.
+	 * have an account on the platform: that is where the message is read. With no
+	 * text it only opens the conversation, for a file, a recording or a quick
+	 * message to go through the central inbox next; until then nobody sees it.
 	 */
 	public async start(
 		ctx: IInboxReplyContext,
 		customerId: string,
 		storeId: string,
-		text: string,
+		text?: string | null,
 	): Promise<IStoreChatStarted> {
-		const body: string = storeChatText(text);
+		const body: string | null = text?.trim() ? storeChatText(text) : null;
 
 		const store: IStore = await this._ownStore(ctx.ownerUserId, storeId);
 
@@ -179,7 +181,9 @@ export class StoreChatOwnerService {
 				})
 			).conversation;
 
-		await this.sendText(ctx, conversation, body);
+		if (body) {
+			await this.sendText(ctx, conversation, body);
+		}
 
 		return {
 			conversationId: String(conversation._id),
