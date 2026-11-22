@@ -20,6 +20,8 @@ import {
 	TPublicSite,
 } from './interfaces/store-sites.type';
 import { siteFooterOf } from './store-site-footer';
+import { heroSlidesOf } from './store-site-hero';
+import { siteSignInOf } from './store-site-sign-in';
 import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
 import { StoreSitesService } from './store-sites.service';
@@ -204,11 +206,13 @@ export class StoreSitesPublicService {
 			displayName: site.displayName?.trim() || null,
 			sizes: siteSizesOf(site.sizes),
 			footer: siteFooterOf(site.footer),
+			signIn: siteSignInOf(site.signIn),
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',
 				subtitle: site.hero?.subtitle ?? null,
 				backgroundImageUrl: site.hero?.backgroundImageUrl ?? null,
+				...heroSlidesOf(site.hero),
 				featuredImageUrl: site.hero?.featuredImageUrl ?? null,
 				ctaLabel: site.hero?.ctaLabel ?? null,
 			},

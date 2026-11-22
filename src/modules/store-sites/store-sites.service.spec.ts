@@ -166,6 +166,49 @@ describe('StoreSitesService', () => {
 			});
 		});
 
+		it('stores the extra backgrounds of the entrance checked', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({
+					hero: {
+						...dto().hero,
+						backgroundImageUrl: 'a.png',
+						backgroundImageUrls: ['b.png', 'a.png', ''],
+						slideSeconds: 4,
+					},
+				}),
+			);
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.hero,
+			).toMatchObject({
+				backgroundImageUrl: 'a.png',
+				backgroundImageUrls: ['b.png'],
+				slideSeconds: 4,
+			});
+		});
+
+		it('stores the sign-in button checked', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({ signIn: { label: ' Entrar ', destination: 'nowhere' } }),
+			);
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.signIn,
+			).toEqual({
+				isVisible: true,
+				label: 'Entrar',
+				destination: 'STORE_CHAT',
+			});
+		});
+
 		it('refuses a store of another owner', async () => {
 			const { service } = build({
 				store: { _id: STORE, userId: new Types.ObjectId().toString() },

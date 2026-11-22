@@ -4,13 +4,16 @@ import {
 	IsArray,
 	IsBoolean,
 	IsEnum,
+	IsInt,
 	IsMongoId,
 	IsNotEmpty,
 	IsObject,
 	IsOptional,
 	IsString,
 	Matches,
+	Max,
 	MaxLength,
+	Min,
 	ValidateNested,
 } from 'class-validator';
 
@@ -53,6 +56,19 @@ export class StoreSiteHeroDto {
 	@IsString()
 	@MaxLength(600)
 	backgroundImageUrl: string | null;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(StoreSitesEnum.MAX_HERO_EXTRA_IMAGES)
+	@IsString({ each: true })
+	@MaxLength(600, { each: true })
+	backgroundImageUrls?: string[];
+
+	@IsOptional()
+	@IsInt()
+	@Min(StoreSitesEnum.MIN_SLIDE_SECONDS)
+	@Max(StoreSitesEnum.MAX_SLIDE_SECONDS)
+	slideSeconds?: number;
 
 	@IsOptional()
 	@IsString()
@@ -139,6 +155,11 @@ export default class SaveStoreSiteDto {
 	@IsOptional()
 	@IsObject()
 	footer?: Record<string, unknown>;
+
+	// Checked when saved: see siteSignInOf.
+	@IsOptional()
+	@IsObject()
+	signIn?: Record<string, unknown>;
 
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)

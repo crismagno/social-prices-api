@@ -48,11 +48,23 @@ export interface IStoreSiteFooter {
 	links: IStoreSiteFooterLink[];
 }
 
+/** The sign-in button at the top of the site. */
+export interface IStoreSiteSignIn {
+	isVisible: boolean;
+	/** What the button says; empty, the site says "Sign in". */
+	label: string | null;
+	destination: StoreSitesEnum.SignInDestination;
+}
+
 export interface IStoreSiteHero {
 	tagline: string | null;
 	title: string;
 	subtitle: string | null;
 	backgroundImageUrl: string | null;
+	/** More backgrounds: with any, the entrance changes from one to the next. */
+	backgroundImageUrls?: string[];
+	/** Seconds each background stays, when there is more than one. */
+	slideSeconds?: number;
 	featuredImageUrl: string | null;
 	ctaLabel: string | null;
 }
@@ -97,6 +109,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	/** Sizes the owner set, in pixels; an empty one is the template's own. */
 	sizes?: Partial<TStoreSiteSizes>;
 	footer?: Partial<IStoreSiteFooter>;
+	signIn?: Partial<IStoreSiteSignIn>;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

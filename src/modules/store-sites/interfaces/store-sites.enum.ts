@@ -33,8 +33,24 @@ namespace StoreSitesEnum {
 		TEXT = 'TEXT',
 	}
 
+	/** Background images of the entrance besides the first, shown in turn. */
+	export const MAX_HERO_EXTRA_IMAGES = 5;
+	export const MIN_SLIDE_SECONDS = 3;
+	export const MAX_SLIDE_SECONDS = 20;
+	export const DEFAULT_SLIDE_SECONDS = 6;
+
 	export const MAX_FOOTER_LINKS = 12;
 	export const MAX_FOOTER_SECTIONS = 5;
+
+	/** Where the sign-in button of the site takes a customer, once signed in. */
+	export enum SignInDestination {
+		/** The conversation with the store, in the customer's account. */
+		STORE_CHAT = 'STORE_CHAT',
+		/** The customer's orders. */
+		ORDERS = 'ORDERS',
+		/** The home of the customer's account. */
+		HOME = 'HOME',
+	}
 
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;

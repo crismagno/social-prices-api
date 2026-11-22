@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {
 	IStoreSite,
 	IStoreSiteFooter,
+	IStoreSiteSignIn,
 	IStoreSiteHero,
 	IStoreSiteLogo,
 	IStoreSiteMarquee,
@@ -31,6 +32,11 @@ const StoreSiteHeroSchema = new mongoose.Schema(
 		title: { type: String, required: true },
 		subtitle: { type: String, default: null },
 		backgroundImageUrl: { type: String, default: null },
+		backgroundImageUrls: { type: [String], default: [] },
+		slideSeconds: {
+			type: Number,
+			default: StoreSitesEnum.DEFAULT_SLIDE_SECONDS,
+		},
 		featuredImageUrl: { type: String, default: null },
 		ctaLabel: { type: String, default: null },
 	},
@@ -101,6 +107,9 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	footer: Partial<IStoreSiteFooter>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	signIn: Partial<IStoreSiteSignIn>;
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

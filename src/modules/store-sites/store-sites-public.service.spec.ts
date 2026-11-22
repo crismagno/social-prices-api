@@ -254,6 +254,43 @@ describe('StoreSitesPublicService', () => {
 			expect(site.footer.sections).toHaveLength(2);
 		});
 
+		it('gives the backgrounds of the entrance, none extra for an older site', async () => {
+			const older = await build().findBySlugOrFail('atelie');
+
+			expect(older.site.hero).toMatchObject({
+				backgroundImageUrls: [],
+				slideSeconds: 6,
+			});
+
+			const sliding = await build({
+				site: {
+					hero: {
+						title: 'Oi',
+						backgroundImageUrl: 'a.png',
+						backgroundImageUrls: ['b.png', 'c.png'],
+						slideSeconds: 9,
+					},
+				},
+			}).findBySlugOrFail('atelie');
+
+			expect(sliding.site.hero).toMatchObject({
+				backgroundImageUrls: ['b.png', 'c.png'],
+				slideSeconds: 9,
+			});
+		});
+
+		it('gives the sign-in button, leading to the store for an older site', async () => {
+			const { site } = await build().findBySlugOrFail('atelie');
+
+			expect(site.signIn).toEqual({
+				isVisible: true,
+				label: null,
+				destination: 'STORE_CHAT',
+			});
+			// The button needs the store to send the customer to it.
+			expect(String(site.storeId)).toBe(STORE);
+		});
+
 		it('describes the store with public facts only', async () => {
 			const { store } = await build().findBySlugOrFail('atelie');
 

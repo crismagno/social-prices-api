@@ -14,6 +14,8 @@ import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
 import { siteFooterOf } from './store-site-footer';
+import { heroSlidesOf } from './store-site-hero';
+import { siteSignInOf } from './store-site-sign-in';
 import { siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
 import SaveStoreSiteDto from './interfaces/dto/saveStoreSite.dto';
@@ -122,7 +124,11 @@ export class StoreSitesService {
 						displayName: saveStoreSiteDto.displayName?.trim() || null,
 						sizes: siteSizesOf(saveStoreSiteDto.sizes),
 						footer: siteFooterOf(saveStoreSiteDto.footer),
-						hero: saveStoreSiteDto.hero,
+						signIn: siteSignInOf(saveStoreSiteDto.signIn),
+						hero: {
+							...saveStoreSiteDto.hero,
+							...heroSlidesOf(saveStoreSiteDto.hero),
+						},
 						sections: saveStoreSiteDto.sections,
 						marquee: saveStoreSiteDto.marquee,
 						logo: siteLogoOf(saveStoreSiteDto.logo),
