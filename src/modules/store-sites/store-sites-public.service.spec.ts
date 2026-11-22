@@ -260,6 +260,8 @@ describe('StoreSitesPublicService', () => {
 			expect(older.site.hero).toMatchObject({
 				backgroundImageUrls: [],
 				slideSeconds: 6,
+				featuredImageUrls: [],
+				featuredSlideSeconds: 6,
 			});
 
 			const sliding = await build({

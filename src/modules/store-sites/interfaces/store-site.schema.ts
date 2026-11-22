@@ -39,6 +39,11 @@ const StoreSiteHeroSchema = new mongoose.Schema(
 			default: StoreSitesEnum.DEFAULT_SLIDE_SECONDS,
 		},
 		featuredImageUrl: { type: String, default: null },
+		featuredImageUrls: { type: [String], default: [] },
+		featuredSlideSeconds: {
+			type: Number,
+			default: StoreSitesEnum.DEFAULT_SLIDE_SECONDS,
+		},
 		ctaLabel: { type: String, default: null },
 	},
 	{ _id: false },

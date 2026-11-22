@@ -84,6 +84,10 @@ export interface IStoreSiteHero {
 	/** Seconds each background stays, when there is more than one. */
 	slideSeconds?: number;
 	featuredImageUrl: string | null;
+	/** More featured images: with any, they take turns. */
+	featuredImageUrls?: string[];
+	/** Seconds each featured image stays, when there is more than one. */
+	featuredSlideSeconds?: number;
 	ctaLabel: string | null;
 }
 

@@ -76,6 +76,19 @@ export class StoreSiteHeroDto {
 	featuredImageUrl: string | null;
 
 	@IsOptional()
+	@IsArray()
+	@ArrayMaxSize(StoreSitesEnum.MAX_HERO_EXTRA_IMAGES)
+	@IsString({ each: true })
+	@MaxLength(600, { each: true })
+	featuredImageUrls?: string[];
+
+	@IsOptional()
+	@IsInt()
+	@Min(StoreSitesEnum.MIN_SLIDE_SECONDS)
+	@Max(StoreSitesEnum.MAX_SLIDE_SECONDS)
+	featuredSlideSeconds?: number;
+
+	@IsOptional()
 	@IsString()
 	@MaxLength(40)
 	ctaLabel: string | null;
