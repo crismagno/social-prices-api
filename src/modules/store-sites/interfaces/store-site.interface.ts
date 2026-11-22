@@ -74,6 +74,38 @@ export interface IStoreSiteAbout {
 	mediaPosition: StoreSitesEnum.AboutMediaPosition;
 }
 
+export interface IStoreSiteFaqItem {
+	question: string;
+	answer: string;
+}
+
+/** What a page shows below its title: texts and an image or a video. */
+export interface IStoreSitePageContent {
+	texts: string[];
+	media: IStoreSiteAboutMedia | null;
+	mediaPosition: StoreSitesEnum.AboutMediaPosition;
+}
+
+/**
+ * A page of the site besides its home, at /site/<site>/<slug>. Its place in
+ * the list is its place in the menu.
+ */
+export interface IStoreSitePage {
+	key: string;
+	type: StoreSitesEnum.SitePageType;
+	slug: string;
+	/** The name in the menu; empty, the site names it by its kind. */
+	label: string | null;
+	isInMenu: boolean;
+	/** The title at the top of the page; empty, the name in the menu. */
+	title: string | null;
+	/** A line under the title. */
+	intro: string | null;
+	content: IStoreSitePageContent;
+	/** Questions and answers: only the support page has them. */
+	faq: IStoreSiteFaqItem[];
+}
+
 export interface IStoreSiteHero {
 	tagline: string | null;
 	title: string;
@@ -133,6 +165,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	footer?: Partial<IStoreSiteFooter>;
 	signIn?: Partial<IStoreSiteSignIn>;
 	about?: Partial<IStoreSiteAbout>;
+	pages?: IStoreSitePage[];
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

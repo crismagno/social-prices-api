@@ -16,6 +16,7 @@ import { StoresService } from '../stores/stores.service';
 import { siteAboutOf } from './store-site-about';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
+import { sitePagesOf } from './store-site-pages';
 import { siteSignInOf } from './store-site-sign-in';
 import { siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
@@ -127,6 +128,7 @@ export class StoreSitesService {
 						footer: siteFooterOf(saveStoreSiteDto.footer),
 						signIn: siteSignInOf(saveStoreSiteDto.signIn),
 						about: siteAboutOf(saveStoreSiteDto.about),
+						pages: sitePagesOf(saveStoreSiteDto.pages),
 						hero: {
 							...saveStoreSiteDto.hero,
 							...heroSlidesOf(saveStoreSiteDto.hero),

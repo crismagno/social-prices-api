@@ -6,6 +6,7 @@ import {
 	IStoreSite,
 	IStoreSiteAbout,
 	IStoreSiteFooter,
+	IStoreSitePage,
 	IStoreSiteSignIn,
 	IStoreSiteHero,
 	IStoreSiteLogo,
@@ -119,6 +120,9 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	about: Partial<IStoreSiteAbout>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => [] })
+	pages: IStoreSitePage[];
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

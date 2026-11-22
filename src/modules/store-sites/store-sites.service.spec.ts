@@ -235,6 +235,35 @@ describe('StoreSitesService', () => {
 			});
 		});
 
+		it('stores the pages checked, always with the three ready ones', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(
+				OWNER,
+				STORE,
+				dto({
+					pages: [
+						{
+							key: 'c',
+							type: 'CUSTOM',
+							slug: 'Encomendas',
+							label: 'Encomendas',
+						},
+					],
+				}),
+			);
+
+			const pages: any[] =
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.pages;
+
+			expect(pages.map((page) => [page.type, page.slug])).toEqual([
+				['CUSTOM', 'encomendas'],
+				['PRODUCTS', 'produtos'],
+				['ABOUT', 'sobre'],
+				['SUPPORT', 'suporte'],
+			]);
+		});
+
 		it('refuses a store of another owner', async () => {
 			const { service } = build({
 				store: { _id: STORE, userId: new Types.ObjectId().toString() },

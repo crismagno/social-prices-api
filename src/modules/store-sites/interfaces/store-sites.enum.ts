@@ -71,6 +71,28 @@ namespace StoreSitesEnum {
 
 	export const MAX_VIDEO_SIZE_BYTES = 20 * 1024 * 1024;
 
+	/** The kinds of page a site has besides its home. */
+	export enum SitePageType {
+		PRODUCTS = 'PRODUCTS',
+		ABOUT = 'ABOUT',
+		SUPPORT = 'SUPPORT',
+		/** A page the owner made: title, texts and an image or a video. */
+		CUSTOM = 'CUSTOM',
+	}
+
+	/** The fixed addresses of the ready pages, under the address of the site. */
+	export const READY_PAGE_SLUGS: Record<
+		Exclude<SitePageType, SitePageType.CUSTOM>,
+		string
+	> = {
+		[SitePageType.PRODUCTS]: 'produtos',
+		[SitePageType.ABOUT]: 'sobre',
+		[SitePageType.SUPPORT]: 'suporte',
+	};
+
+	export const MAX_CUSTOM_PAGES = 7;
+	export const MAX_FAQ_ITEMS = 12;
+
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 

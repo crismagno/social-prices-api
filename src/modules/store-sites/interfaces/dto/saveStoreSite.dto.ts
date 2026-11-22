@@ -179,6 +179,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	about?: Record<string, unknown>;
 
+	// Checked page by page when saved: see sitePagesOf.
+	@IsOptional()
+	@IsArray()
+	pages?: unknown[];
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;
