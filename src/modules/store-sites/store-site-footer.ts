@@ -177,6 +177,15 @@ const toSections = (sections: unknown): IStoreSiteFooterSection[] => {
  * The footer of a site, whatever was stored or sent. A site saved before the
  * footer existed gets one with the way into the app and nothing else.
  */
+const MAX_LOGO_URL_LENGTH = 600;
+const DEFAULT_LOGO_HEIGHT = 48;
+
+/** The height of the footer's logo: a whole number of pixels, 20 to 160. */
+const logoHeightOf = (value: unknown): number =>
+	typeof value === 'number' && Number.isFinite(value)
+		? Math.min(160, Math.max(20, Math.round(value)))
+		: DEFAULT_LOGO_HEIGHT;
+
 export const siteFooterOf = (footer: unknown): IStoreSiteFooter => {
 	const source: Record<string, unknown> =
 		footer && typeof footer === 'object' && !Array.isArray(footer)
@@ -210,6 +219,12 @@ export const siteFooterOf = (footer: unknown): IStoreSiteFooter => {
 				? source.text.trim().slice(0, MAX_TEXT_LENGTH)
 				: null,
 		isLoginVisible: source.isLoginVisible !== false,
+		isLogoVisible: source.isLogoVisible === true,
+		logoUrl:
+			typeof source.logoUrl === 'string' && source.logoUrl.trim()
+				? source.logoUrl.trim().slice(0, MAX_LOGO_URL_LENGTH)
+				: null,
+		logoHeight: logoHeightOf(source.logoHeight),
 		sections,
 		textSection: placeOf(source.textSection, first),
 		loginSection: placeOf(source.loginSection, first),

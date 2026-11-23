@@ -65,6 +65,10 @@ describe('siteFooterOf', () => {
 			isActive: true,
 			text: null,
 			isLoginVisible: true,
+			// No logo until the owner turns it on: older sites look the same.
+			isLogoVisible: false,
+			logoUrl: null,
+			logoHeight: 48,
 			// As it looked before sections existed: words on one side, links on the other.
 			sections: [
 				{ key: 'main', title: null },
@@ -95,6 +99,9 @@ describe('siteFooterOf', () => {
 			isActive: false,
 			text: 'Feito com carinho em Fortaleza',
 			isLoginVisible: false,
+			isLogoVisible: false,
+			logoUrl: null,
+			logoHeight: 48,
 			sections: [
 				{ key: 'main', title: null },
 				{ key: 'links', title: null },
@@ -279,5 +286,35 @@ describe('siteFooterOf', () => {
 	it('survives garbage', () => {
 		expect(siteFooterOf('x' as any).links).toEqual([]);
 		expect(siteFooterOf({ links: 'x' } as any).links).toEqual([]);
+	});
+
+	it('keeps the logo the owner turned on, its own image and its height', () => {
+		const footer = siteFooterOf({
+			isLogoVisible: true,
+			logoUrl: ' footer-logo.png ',
+			logoHeight: 72,
+		});
+
+		expect(footer.isLogoVisible).toBe(true);
+		expect(footer.logoUrl).toBe('footer-logo.png');
+		expect(footer.logoHeight).toBe(72);
+	});
+
+	it.each([
+		[5, 20],
+		[999, 160],
+		[63.6, 64],
+		['big', 48],
+	])(
+		'keeps the height of the logo between 20 and 160: %p gives %p',
+		(given, kept) => {
+			expect(siteFooterOf({ logoHeight: given }).logoHeight).toBe(kept);
+		},
+	);
+
+	it('uses the site logo when the footer has no image of its own', () => {
+		expect(
+			siteFooterOf({ isLogoVisible: true, logoUrl: '  ' }).logoUrl,
+		).toBeNull();
 	});
 });

@@ -39,6 +39,12 @@ export interface IStoreSiteFooter {
 	text: string | null;
 	/** The button that takes a customer to the login of the app. */
 	isLoginVisible: boolean;
+	/** A logo above the name, in the same column. */
+	isLogoVisible: boolean;
+	/** The footer's own logo; empty, the logo of the site. */
+	logoUrl: string | null;
+	/** Its height in pixels, 20 to 160. */
+	logoHeight: number;
 	/** The columns of the footer, left to right: one to five. */
 	sections: IStoreSiteFooterSection[];
 	/** The section the name and the text are in. */
