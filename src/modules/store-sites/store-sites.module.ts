@@ -12,6 +12,7 @@ import { SalesModule } from '../sales/sales.module';
 import { StoresModule } from '../stores/stores.module';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
 import { SiteChatController } from './site-chat.controller';
+import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
 import { SiteChatInboxAdapter } from './site-chat.inbox-adapter';
 import { SiteChatService } from './site-chat.service';
 import { SiteOrderRateLimiter } from './site-order-rate-limiter';
@@ -50,6 +51,8 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 		SiteChatService,
 		SiteChatRateLimiter,
 		SiteChatInboxAdapter,
+		// The files of the chat, in its private storage, as the store chat keeps them.
+		StoreChatMediaService,
 		StoreSiteOrdersService,
 		SiteOrderRateLimiter,
 		StoreSitesStatusProvider,

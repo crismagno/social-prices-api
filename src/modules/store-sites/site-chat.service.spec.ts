@@ -19,6 +19,23 @@ const GUEST = new Types.ObjectId().toString();
 // As the service makes them: 32 random bytes, base64url.
 const TOKEN = 'A'.repeat(43);
 
+const STORED = {
+	kind: InboxEnum.MessageKind.VOICE,
+	mimeType: 'audio/webm',
+	fileName: 'voz.webm',
+	size: 1200,
+	width: null,
+	height: null,
+	duration: null,
+	source: { type: InboxEnum.AttachmentSourceType.STORED_FILE, key: 'chat/k1' },
+};
+
+const FILE = {
+	buffer: Buffer.from('audio'),
+	fileName: 'voz.webm',
+	mimeType: 'audio/webm',
+};
+
 const hash = (token: string): string =>
 	createHash('sha256').update(token).digest('hex');
 
@@ -90,7 +107,24 @@ const build = ({
 		]),
 	};
 
+	messages.findOwned = jest.fn().mockResolvedValue({
+		_id: 'm3',
+		attachments: [STORED],
+	});
+
 	const realtime: any = { notifyInboxUpdated: jest.fn() };
+
+	const media: any = {
+		store: jest.fn().mockResolvedValue(STORED),
+		caption: jest.fn((text: unknown) =>
+			typeof text === 'string' && text.trim() ? text.trim() : null,
+		),
+		read: jest.fn().mockResolvedValue({
+			buffer: Buffer.from('audio'),
+			contentType: 'audio/webm',
+			fileName: 'voz.webm',
+		}),
+	};
 
 	const limiter: any = {
 		assertAllowed: jest.fn(() => {
@@ -106,6 +140,7 @@ const build = ({
 		messages,
 		realtime,
 		limiter,
+		media,
 		service: new SiteChatService(
 			guestModel,
 			publicService,
@@ -113,6 +148,7 @@ const build = ({
 			messages,
 			realtime,
 			limiter,
+			media,
 		),
 	};
 };
@@ -266,13 +302,17 @@ describe('SiteChatService', () => {
 				{
 					id: 'm1',
 					fromStore: false,
+					kind: InboxEnum.MessageKind.TEXT,
 					text: 'Tem em azul?',
+					attachments: [],
 					sentAt: new Date('2026-01-01T10:00:00Z'),
 				},
 				{
 					id: 'm2',
 					fromStore: true,
+					kind: InboxEnum.MessageKind.TEXT,
 					text: 'Oi!',
+					attachments: [],
 					sentAt: new Date('2026-01-01T10:01:00Z'),
 				},
 			]);
@@ -312,6 +352,114 @@ describe('SiteChatService', () => {
 				BadRequestException,
 			);
 			expect(messages.saveIncoming).not.toHaveBeenCalled();
+		});
+
+		it('shows the files of a message without where they are stored', async () => {
+			const { service, messages } = build({ guest });
+
+			messages.listByConversation.mockResolvedValue([
+				{
+					_id: 'm3',
+					direction: InboxEnum.Direction.OUT,
+					kind: InboxEnum.MessageKind.VOICE,
+					text: null,
+					attachments: [STORED],
+					sentAt: new Date('2026-01-01T10:02:00Z'),
+				},
+			]);
+
+			const [message] = await service.messages('atelie', TOKEN);
+
+			expect(message.attachments).toEqual([
+				{
+					kind: InboxEnum.MessageKind.VOICE,
+					mimeType: 'audio/webm',
+					fileName: 'voz.webm',
+					size: 1200,
+				},
+			]);
+			expect(JSON.stringify(message)).not.toContain('chat/k1');
+		});
+
+		it('records a file or a recording of the visitor, with its words, and tells the inbox', async () => {
+			const { service, messages, conversations, realtime, media } = build({
+				guest,
+			});
+
+			const sent = await service.sendMedia('atelie', TOKEN, FILE, {
+				caption: '  ouve isso  ',
+				asVoice: true,
+			});
+
+			expect(media.store).toHaveBeenCalledWith(FILE, true);
+
+			const [ownerUserId, conversation, input] =
+				messages.saveIncoming.mock.calls[0];
+
+			expect(ownerUserId).toBe(OWNER);
+			expect(String(conversation._id)).toBe(CONVERSATION);
+			expect(input).toMatchObject({
+				kind: InboxEnum.MessageKind.VOICE,
+				text: 'ouve isso',
+				attachments: [STORED],
+				sender: { id: GUEST, name: 'Ana Lima', username: null },
+			});
+			expect(
+				conversations.applyIncoming.mock.calls[0][2].preview,
+			).toMatchObject({ kind: InboxEnum.MessageKind.VOICE, text: 'ouve isso' });
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalled();
+			expect(sent).toMatchObject({
+				fromStore: false,
+				kind: InboxEnum.MessageKind.VOICE,
+				attachments: [{ fileName: 'voz.webm', size: 1200 }],
+			});
+		});
+
+		it('stores no file of an unknown visitor, nor of one sending too fast', async () => {
+			const unknown = build({ guest: null });
+
+			await expect(
+				unknown.service.sendMedia('atelie', 'nope', FILE, {
+					caption: null,
+					asVoice: false,
+				}),
+			).rejects.toBeInstanceOf(UnauthorizedException);
+			expect(unknown.media.store).not.toHaveBeenCalled();
+
+			const fast = build({ guest, allow: false });
+
+			await expect(
+				fast.service.sendMedia('atelie', TOKEN, FILE, {
+					caption: null,
+					asVoice: false,
+				}),
+			).rejects.toBeInstanceOf(HttpException);
+			expect(fast.media.store).not.toHaveBeenCalled();
+		});
+
+		it('gives a file only from a message of the visitor own conversation', async () => {
+			const { service, messages, media } = build({ guest });
+
+			const MESSAGE = new Types.ObjectId().toString();
+
+			const file = await service.attachment('atelie', TOKEN, MESSAGE, 0);
+
+			expect(messages.findOwned).toHaveBeenCalledWith(
+				OWNER,
+				CONVERSATION,
+				MESSAGE,
+			);
+			expect(media.read).toHaveBeenCalledWith(
+				expect.objectContaining({ _id: 'm3' }),
+				0,
+			);
+			expect(file.contentType).toBe('audio/webm');
+
+			messages.findOwned.mockResolvedValue(null);
+
+			await expect(
+				service.attachment('atelie', TOKEN, new Types.ObjectId().toString(), 0),
+			).rejects.toBeInstanceOf(NotFoundException);
 		});
 
 		it('stops a visitor who writes too fast', async () => {

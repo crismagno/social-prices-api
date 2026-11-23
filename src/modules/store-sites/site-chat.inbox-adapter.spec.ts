@@ -14,23 +14,46 @@ const build = () => {
 			),
 	};
 
+	const media: any = {
+		store: jest.fn().mockResolvedValue({
+			kind: InboxEnum.MessageKind.IMAGE,
+			mimeType: 'image/png',
+			fileName: 'foto.png',
+			size: 10,
+			width: null,
+			height: null,
+			duration: null,
+			source: { type: InboxEnum.AttachmentSourceType.STORED_FILE, key: 'k' },
+		}),
+		read: jest.fn().mockResolvedValue({
+			buffer: Buffer.from('x'),
+			contentType: 'image/png',
+			fileName: 'foto.png',
+		}),
+	};
+
 	return {
 		registry,
+		media,
 		conversations,
 		messages,
-		adapter: new SiteChatInboxAdapter(registry, conversations, messages),
+		adapter: new SiteChatInboxAdapter(registry, conversations, messages, media),
 	};
 };
 
 describe('SiteChatInboxAdapter', () => {
-	it('joins the inbox as the site channel, text only, always open to an answer', () => {
+	it('joins the inbox as the site channel, with files and recordings, always open to an answer', () => {
 		const { adapter, registry } = build();
 
 		adapter.onModuleInit();
 
 		expect(registry.register).toHaveBeenCalledWith(adapter);
 		expect(adapter.channel).toBe(InboxEnum.Channel.SITE);
-		expect(adapter.capabilities).toMatchObject({ text: true, media: false });
+		expect(adapter.capabilities).toMatchObject({
+			text: true,
+			media: true,
+			voice: true,
+		});
 		expect(adapter.canReply()).toEqual({ allowed: true, windowEndsAt: null });
 	});
 
@@ -62,5 +85,44 @@ describe('SiteChatInboxAdapter', () => {
 			at: input.sentAt,
 		});
 		expect(saved).toMatchObject({ _id: 'saved', text: 'Fazemos sim!' });
+	});
+
+	it('sends a file of the store to the visitor, its words as the caption', async () => {
+		const { adapter, messages, conversations, media } = build();
+
+		const conversation: any = { _id: 'c1', channel: InboxEnum.Channel.SITE };
+		const file = {
+			buffer: Buffer.from('x'),
+			fileName: 'foto.png',
+			mimeType: 'image/png',
+		};
+
+		await adapter.sendMedia(
+			{ ownerUserId: 'owner', employeeId: null },
+			conversation,
+			file,
+			{ caption: 'Olha a foto', asVoice: false },
+		);
+
+		expect(media.store).toHaveBeenCalledWith(file, false);
+		expect(messages.saveOutgoing.mock.calls[0][2]).toMatchObject({
+			kind: InboxEnum.MessageKind.IMAGE,
+			text: 'Olha a foto',
+			attachments: [expect.objectContaining({ fileName: 'foto.png' })],
+		});
+		expect(conversations.applyOutgoing.mock.calls[0][2]).toMatchObject({
+			kind: InboxEnum.MessageKind.IMAGE,
+			text: 'Olha a foto',
+		});
+	});
+
+	it('reads a file of a message back from the chat storage', async () => {
+		const { adapter, media } = build();
+		const message: any = { _id: 'm1', attachments: [] };
+
+		const file = await adapter.fetchAttachment('owner', {} as any, message, 0);
+
+		expect(media.read).toHaveBeenCalledWith(message, 0);
+		expect(file.contentType).toBe('image/png');
 	});
 });

@@ -14,11 +14,17 @@ import { AppsRealtimeGateway } from '../apps/core/realtime/apps-realtime.gateway
 import AppsEnum from '../apps/interfaces/apps.enum';
 import { InboxConversationsService } from '../inbox/inbox-conversations.service';
 import { InboxMessagesService } from '../inbox/inbox-messages.service';
+import { IInboxUploadFile } from '../inbox/inbox-channel.adapter';
 import InboxEnum from '../inbox/interfaces/inbox.enum';
 import {
+	IInboxAttachment,
 	IInboxMessage,
 	IInboxMessageInput,
 } from '../inbox/interfaces/inbox.types';
+import {
+	IStoreChatFile,
+	StoreChatMediaService,
+} from '../store-chat/store-chat-media.service';
 import { SiteChatGuest } from './interfaces/site-chat-guest.schema';
 import { IStoreSiteChat } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
@@ -39,12 +45,23 @@ const MESSAGES_SHOWN = 100;
 const STARTS_PER_VISITOR = 5;
 const STARTS_PER_SITE = 60;
 const MESSAGES_PER_VISITOR = 30;
+const FILES_PER_VISITOR = 10;
+
+/** A file of a message as the visitor sees it: never where it is stored. */
+export interface ISiteChatAttachmentView {
+	kind: InboxEnum.MessageKind;
+	mimeType: string | null;
+	fileName: string | null;
+	size: number | null;
+}
 
 /** One message as the visitor sees it: who wrote it and what, nothing more. */
 export interface ISiteChatMessageView {
 	id: string;
 	fromStore: boolean;
+	kind: InboxEnum.MessageKind;
 	text: string | null;
+	attachments: ISiteChatAttachmentView[];
 	sentAt: Date;
 }
 
@@ -77,6 +94,7 @@ export class SiteChatService {
 		private readonly _messages: InboxMessagesService,
 		private readonly _realtime: AppsRealtimeGateway,
 		private readonly _limiter: SiteChatRateLimiter,
+		private readonly _media: StoreChatMediaService,
 	) {}
 
 	//#endregion
@@ -182,7 +200,69 @@ export class SiteChatService {
 
 		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
 
+		return await this._receive(guest, ownerUserId, text, []);
+	}
+
+	/** A file or a recording of the visitor, with its words when there are any. */
+	public async sendMedia(
+		slug: string,
+		token: string,
+		file: IInboxUploadFile,
+		options: { caption: unknown; asVoice: boolean },
+	): Promise<ISiteChatMessageView> {
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		const caption: string | null = this._media.caption(options.caption);
+
+		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
+		this._limiter.assertAllowed(`file:${guest._id}`, FILES_PER_VISITOR);
+
+		const attachment: IInboxAttachment = await this._media.store(
+			file,
+			options.asVoice === true,
+		);
+
+		return await this._receive(guest, ownerUserId, caption, [attachment]);
+	}
+
+	/** One file of a message, only of the visitor's own conversation. */
+	public async attachment(
+		slug: string,
+		token: string,
+		messageId: string,
+		index: number,
+	): Promise<IStoreChatFile> {
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		const message: IInboxMessage | null = Types.ObjectId.isValid(messageId)
+			? await this._messages.findOwned(
+					ownerUserId,
+					String(guest.conversationId),
+					messageId,
+			  )
+			: null;
+
+		if (!message) {
+			throw new NotFoundException('Attachment not found.');
+		}
+
+		return await this._media.read(message, index);
+	}
+
+	//#endregion
+
+	//#region Private Methods
+
+	/** Records a message of the visitor in the store's inbox and tells it. */
+	private async _receive(
+		guest: SiteChatGuest & { _id?: unknown },
+		ownerUserId: string,
+		text: string | null,
+		attachments: IInboxAttachment[],
+	): Promise<ISiteChatMessageView> {
 		const conversationId: string = String(guest.conversationId);
+		const kind: InboxEnum.MessageKind =
+			attachments[0]?.kind ?? InboxEnum.MessageKind.TEXT;
 
 		const conversation = {
 			_id: conversationId,
@@ -191,9 +271,9 @@ export class SiteChatService {
 
 		const input: IInboxMessageInput = {
 			channelMessageId: new mongoose.Types.ObjectId().toString(),
-			kind: InboxEnum.MessageKind.TEXT,
+			kind,
 			text,
-			attachments: [],
+			attachments,
 			sentAt: new Date(),
 			sender: { id: String(guest._id), name: guest.name, username: null },
 		};
@@ -203,7 +283,7 @@ export class SiteChatService {
 		await this._conversations.applyIncoming(ownerUserId, conversationId, {
 			preview: {
 				text,
-				kind: InboxEnum.MessageKind.TEXT,
+				kind,
 				channelKind: null,
 				direction: InboxEnum.Direction.IN,
 				at: input.sentAt,
@@ -219,14 +299,23 @@ export class SiteChatService {
 		return {
 			id: input.channelMessageId,
 			fromStore: false,
+			kind,
 			text,
+			attachments: attachments.map(this._attachmentView),
 			sentAt: input.sentAt,
 		};
 	}
 
-	//#endregion
-
-	//#region Private Methods
+	private _attachmentView(
+		attachment: IInboxAttachment,
+	): ISiteChatAttachmentView {
+		return {
+			kind: attachment.kind,
+			mimeType: attachment.mimeType ?? null,
+			fileName: attachment.fileName ?? null,
+			size: attachment.size ?? null,
+		};
+	}
 
 	private async _siteWithChatOrFail(
 		slug: string,
@@ -305,7 +394,9 @@ export class SiteChatService {
 		return {
 			id: String(message._id),
 			fromStore: message.direction === InboxEnum.Direction.OUT,
+			kind: message.kind ?? InboxEnum.MessageKind.TEXT,
 			text: message.text ?? null,
+			attachments: (message.attachments ?? []).map(this._attachmentView),
 			sentAt: message.sentAt,
 		};
 	}

@@ -1,4 +1,7 @@
+import { Response } from 'express';
+
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Get,
@@ -6,11 +9,18 @@ import {
 	HttpCode,
 	Ip,
 	Param,
+	ParseIntPipe,
 	Post,
+	Res,
+	UploadedFile,
+	UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import { Public } from '../../shared/decorators/custom.decorator';
 import { ValidationParamsPipe } from '../../shared/pipes/validation-params-pipe';
+import { mediaResponseHeaders } from '../apps/telegram/telegram.media-response';
+import { STORE_CHAT_MAX_UPLOAD_BYTES } from '../store-chat/store-chat.constants';
 import {
 	ISiteChatMessageView,
 	ISiteChatVisitor,
@@ -58,5 +68,60 @@ export class SiteChatController {
 		@Body() body: { text?: unknown },
 	): Promise<ISiteChatMessageView> {
 		return await this._siteChatService.send(slug, token, body?.text);
+	}
+
+	// A file or a recording of the visitor; the text, when there is one, goes with it.
+	@Public()
+	@Post('/media')
+	@HttpCode(201)
+	@UseInterceptors(
+		FileInterceptor('file', {
+			limits: { fileSize: STORE_CHAT_MAX_UPLOAD_BYTES, files: 1 },
+		}),
+	)
+	public async sendMedia(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Headers(TOKEN_HEADER) token: string,
+		@UploadedFile() file: Express.Multer.File,
+		@Body() body: { caption?: unknown; voice?: unknown },
+	): Promise<ISiteChatMessageView> {
+		if (!file?.buffer?.length) {
+			throw new BadRequestException('A file is required.');
+		}
+
+		return await this._siteChatService.sendMedia(
+			slug,
+			token,
+			{
+				buffer: file.buffer,
+				// Multer reads the name as latin1; the browser sent UTF-8.
+				fileName: Buffer.from(file.originalname, 'latin1').toString('utf8'),
+				mimeType: file.mimetype,
+			},
+			{
+				caption: body?.caption,
+				asVoice: body?.voice === true || body?.voice === 'true',
+			},
+		);
+	}
+
+	@Public()
+	@Get('/messages/:messageId/attachments/:index')
+	public async attachment(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Param('messageId') messageId: string,
+		@Param('index', ParseIntPipe) index: number,
+		@Headers(TOKEN_HEADER) token: string,
+		@Res() res: Response,
+	): Promise<void> {
+		const file = await this._siteChatService.attachment(
+			slug,
+			token,
+			messageId,
+			index,
+		);
+
+		res.set(mediaResponseHeaders(file.contentType, file.fileName ?? 'file'));
+		res.send(file.buffer);
 	}
 }
