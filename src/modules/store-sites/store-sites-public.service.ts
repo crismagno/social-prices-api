@@ -24,6 +24,7 @@ import {
 	TPublicSiteProductDimensions,
 } from './interfaces/store-sites.type';
 import { siteAboutOf } from './store-site-about';
+import { publicBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
@@ -208,6 +209,8 @@ export class StoreSitesPublicService {
 	}
 
 	private _toPublicSite(site: IStoreSite): TPublicSite {
+		const pages = sitePagesOf(site.pages);
+
 		return {
 			_id: site._id,
 			storeId: site.storeId,
@@ -227,8 +230,12 @@ export class StoreSitesPublicService {
 			footer: siteFooterOf(site.footer),
 			signIn: siteSignInOf(site.signIn),
 			about: siteAboutOf(site.about),
-			pages: sitePagesOf(site.pages),
+			pages,
 			chat: siteChatOf(site.chat),
+			blocks: publicBlocksOf(
+				site.blocks,
+				pages.map((page) => page.key),
+			),
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',

@@ -189,6 +189,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	chat?: Record<string, unknown>;
 
+	// Checked block by block when saved: see siteBlocksOf.
+	@IsOptional()
+	@IsArray()
+	blocks?: unknown[];
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

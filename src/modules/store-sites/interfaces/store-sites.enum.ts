@@ -121,6 +121,51 @@ namespace StoreSitesEnum {
 		HIDDEN = 'HIDDEN',
 	}
 
+	/** The kinds of content block an owner can add to the site. */
+	export enum BlockType {
+		TEAM = 'TEAM',
+		TESTIMONIALS = 'TESTIMONIALS',
+		LOGOS = 'LOGOS',
+		FEATURES = 'FEATURES',
+		FAQ = 'FAQ',
+		STATS = 'STATS',
+		STEPS = 'STEPS',
+		CTA = 'CTA',
+	}
+
+	/** Where the button of a call-to-action block goes. */
+	export enum BlockButtonTarget {
+		PAGE = 'PAGE',
+		WHATSAPP = 'WHATSAPP',
+		PHONE = 'PHONE',
+		EMAIL = 'EMAIL',
+		URL = 'URL',
+	}
+
+	/** The ready icons of a feature card. */
+	export enum FeatureIcon {
+		STAR = 'STAR',
+		HEART = 'HEART',
+		ROCKET = 'ROCKET',
+		SHIELD = 'SHIELD',
+		BOLT = 'BOLT',
+		CHECK = 'CHECK',
+		CLOCK = 'CLOCK',
+		GIFT = 'GIFT',
+		TRUCK = 'TRUCK',
+		SMILE = 'SMILE',
+		TROPHY = 'TROPHY',
+		BULB = 'BULB',
+		TEAM = 'TEAM',
+		GLOBAL = 'GLOBAL',
+		LOCK = 'LOCK',
+		CUSTOMER_SERVICE = 'CUSTOMER_SERVICE',
+	}
+
+	export const MAX_BLOCKS = 20;
+	export const MAX_BLOCK_ITEMS = 12;
+	export const MAX_FAQ_BLOCK_ITEMS = 20;
+
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 

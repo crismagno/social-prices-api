@@ -150,6 +150,51 @@ export interface IStoreSiteSection {
 	isActive: boolean;
 }
 
+/** One entry of a block; which fields count depends on the block's type. */
+export interface IStoreSiteBlockItem {
+	key: string;
+	/** A name, a question, a number or a step. */
+	title: string | null;
+	/** A role, a place or a label. */
+	subtitle: string | null;
+	/** A quote, an answer or a description. */
+	text: string | null;
+	/** A photo or a logo: the key of an uploaded image. */
+	imageUrl: string | null;
+	/** Feature cards only. */
+	icon: StoreSitesEnum.FeatureIcon | null;
+	/** Testimonials only: 1 to 5 stars. */
+	rating: number | null;
+}
+
+/** The button of a call-to-action block. */
+export interface IStoreSiteBlockButton {
+	label: string | null;
+	target: StoreSitesEnum.BlockButtonTarget;
+	/** A page target: null is the home. */
+	pageKey: string | null;
+	/** What the owner typed for the other targets: a number, an e-mail, an address. */
+	value: string | null;
+}
+
+/**
+ * A block of content the owner added: team, testimonials, logos, features,
+ * questions, numbers, steps or a call to action, on the home or on a page.
+ */
+export interface IStoreSiteBlock {
+	key: string;
+	type: StoreSitesEnum.BlockType;
+	isActive: boolean;
+	/** The page it shows on; null is the home. */
+	pageKey: string | null;
+	kicker: string | null;
+	title: string | null;
+	subtitle: string | null;
+	items: IStoreSiteBlockItem[];
+	/** Calls to action only. */
+	button: IStoreSiteBlockButton | null;
+}
+
 /**
  * The logo shown on the site. Without an image of its own it is the logo of
  * the store; switched off, the site shows none.
@@ -186,6 +231,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	about?: Partial<IStoreSiteAbout>;
 	pages?: IStoreSitePage[];
 	chat?: Partial<IStoreSiteChat>;
+	blocks?: IStoreSiteBlock[];
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

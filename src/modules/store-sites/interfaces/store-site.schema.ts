@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {
 	IStoreSite,
 	IStoreSiteAbout,
+	IStoreSiteBlock,
 	IStoreSiteChat,
 	IStoreSiteFooter,
 	IStoreSitePage,
@@ -129,6 +130,10 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	chat: Partial<IStoreSiteChat>;
+
+	// No default: a site saved before blocks existed simply has none.
+	@Prop({ type: mongoose.Schema.Types.Mixed })
+	blocks?: IStoreSiteBlock[];
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;
