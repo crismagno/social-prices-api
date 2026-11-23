@@ -12,8 +12,27 @@ export interface IPublicSiteProduct {
 	price: number;
 	mainUrl: string | null;
 	filesUrl: string[];
+	/** The longer text about it, shown when a visitor opens the product. */
+	details: string | null;
+	brand: string | null;
+	colors: string[];
+	/** Only the measures that were filled; null when none was. */
+	dimensions: TPublicSiteProductDimensions | null;
 	isAvailable: boolean;
 }
+
+/** Lengths in meters, volume in liters, weight in kilos: as the product form asks. */
+export type TPublicSiteProductDimensions = Partial<{
+	size: string;
+	height: number;
+	width: number;
+	length: number;
+	depth: number;
+	diameter: number;
+	thickness: number;
+	volume: number;
+	weight: number;
+}>;
 
 export interface IPublicSiteStore {
 	name: string;

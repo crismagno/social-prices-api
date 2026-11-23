@@ -3,7 +3,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import AppsEnum from '../apps/interfaces/apps.enum';
 import { IProductItem } from '../product-items/interfaces/product-item.interface';
 import { ProductItemsService } from '../product-items/product-items.service';
-import { IProduct } from '../products/interfaces/product.interface';
+import {
+	IProduct,
+	IProductDimensions,
+} from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import StoresEnum from '../stores/interfaces/stores.enum';
@@ -18,6 +21,7 @@ import {
 	IPublishedSiteContext,
 	ISiteSellable,
 	TPublicSite,
+	TPublicSiteProductDimensions,
 } from './interfaces/store-sites.type';
 import { siteAboutOf } from './store-site-about';
 import { siteChatOf } from './store-site-chat';
@@ -28,6 +32,18 @@ import { siteSignInOf } from './store-site-sign-in';
 import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
 import { StoreSitesService } from './store-sites.service';
+
+/** The numeric measures of a product, in the order the site lists them. */
+const MEASURES = [
+	'height',
+	'width',
+	'length',
+	'depth',
+	'diameter',
+	'thickness',
+	'volume',
+	'weight',
+] as const;
 
 /**
  * The site as anyone on the internet gets it. Every answer is built field by
@@ -262,8 +278,37 @@ export class StoreSitesPublicService {
 			price: item.price,
 			mainUrl: product.mainUrl ?? null,
 			filesUrl: [...(product.filesUrl ?? [])],
+			details: product.details?.trim() || null,
+			brand: product.brand?.trim() || null,
+			colors: (product.colors ?? []).filter(
+				(color: unknown) => typeof color === 'string' && !!color.trim(),
+			),
+			dimensions: this._toPublicDimensions(product.dimensions),
 			isAvailable,
 		};
+	}
+
+	/** The measures that were filled, in the order a visitor reads them. */
+	private _toPublicDimensions(
+		dimensions: IProductDimensions | null | undefined,
+	): TPublicSiteProductDimensions | null {
+		const filled: TPublicSiteProductDimensions = {};
+
+		const size: string = dimensions?.size?.trim() ?? '';
+
+		if (size) {
+			filled.size = size;
+		}
+
+		for (const key of MEASURES) {
+			const value: number = Number(dimensions?.[key]);
+
+			if (Number.isFinite(value) && value > 0) {
+				filled[key] = value;
+			}
+		}
+
+		return Object.keys(filled).length ? filled : null;
 	}
 
 	//#endregion

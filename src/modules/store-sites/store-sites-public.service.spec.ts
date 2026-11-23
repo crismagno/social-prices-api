@@ -166,8 +166,53 @@ describe('StoreSitesPublicService', () => {
 				price: 50,
 				mainUrl: 'main.png',
 				filesUrl: ['a.png'],
+				details: null,
+				brand: null,
+				colors: [],
+				dimensions: null,
 				isAvailable: true,
 			});
+		});
+
+		it('tells what a visitor wants to know before buying: details, brand, colors and the measures that were filled', async () => {
+			const { products } = await build({
+				products: [
+					product(P1, {
+						details: '  Algodão cru.  ',
+						brand: ' Ateliê ',
+						colors: ['#ffffff', '', null, '#000000'],
+						dimensions: {
+							size: ' M ',
+							height: 0.3,
+							width: 0,
+							length: null,
+							weight: 1.2,
+						},
+					}),
+				],
+			}).findBySlugOrFail('atelie');
+
+			expect(products[0]).toMatchObject({
+				details: 'Algodão cru.',
+				brand: 'Ateliê',
+				colors: ['#ffffff', '#000000'],
+				dimensions: { size: 'M', height: 0.3, weight: 1.2 },
+			});
+			expect(Object.keys(products[0].dimensions)).toEqual([
+				'size',
+				'height',
+				'weight',
+			]);
+		});
+
+		it('has no measures when none was filled', async () => {
+			const { products } = await build({
+				products: [
+					product(P1, { dimensions: { size: '  ', height: null, width: 0 } }),
+				],
+			}).findBySlugOrFail('atelie');
+
+			expect(products[0].dimensions).toBeNull();
 		});
 
 		it('keeps the order chosen for the site', async () => {
