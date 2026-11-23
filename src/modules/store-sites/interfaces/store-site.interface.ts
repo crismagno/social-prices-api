@@ -106,6 +106,25 @@ export interface IStoreSitePage {
 	faq: IStoreSiteFaqItem[];
 }
 
+/**
+ * The chat of the site: a button that opens a conversation with the store,
+ * which answers it in its inbox. The visitor gives a name (always) and an
+ * email and a phone as the owner asks.
+ */
+export interface IStoreSiteChat {
+	isActive: boolean;
+	position: StoreSitesEnum.ChatPosition;
+	icon: StoreSitesEnum.ChatIcon;
+	/** What the button says; empty, the site says its own. */
+	buttonLabel: string | null;
+	/** The title of the chat window; empty, the name of the site. */
+	title: string | null;
+	/** The first words the visitor reads. */
+	greeting: string | null;
+	emailField: StoreSitesEnum.ChatFieldMode;
+	phoneField: StoreSitesEnum.ChatFieldMode;
+}
+
 export interface IStoreSiteHero {
 	tagline: string | null;
 	title: string;
@@ -166,6 +185,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	signIn?: Partial<IStoreSiteSignIn>;
 	about?: Partial<IStoreSiteAbout>;
 	pages?: IStoreSitePage[];
+	chat?: Partial<IStoreSiteChat>;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

@@ -20,6 +20,7 @@ import {
 	TPublicSite,
 } from './interfaces/store-sites.type';
 import { siteAboutOf } from './store-site-about';
+import { siteChatOf } from './store-site-chat';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
@@ -211,6 +212,7 @@ export class StoreSitesPublicService {
 			signIn: siteSignInOf(site.signIn),
 			about: siteAboutOf(site.about),
 			pages: sitePagesOf(site.pages),
+			chat: siteChatOf(site.chat),
 			hero: {
 				tagline: site.hero?.tagline ?? null,
 				title: site.hero?.title ?? '',

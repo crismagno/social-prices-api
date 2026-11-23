@@ -56,6 +56,7 @@ const APP_BY_CHANNEL: Partial<Record<InboxEnum.Channel, AppsEnum.App>> = {
 	[InboxEnum.Channel.MESSENGER]: AppsEnum.App.FACEBOOK,
 	[InboxEnum.Channel.INSTAGRAM]: AppsEnum.App.INSTAGRAM,
 	[InboxEnum.Channel.WHATSAPP]: AppsEnum.App.WHATSAPP,
+	[InboxEnum.Channel.SITE]: AppsEnum.App.SITE,
 };
 
 interface ICustomerCard {

@@ -184,6 +184,11 @@ export default class SaveStoreSiteDto {
 	@IsArray()
 	pages?: unknown[];
 
+	// Checked when saved: see siteChatOf.
+	@IsOptional()
+	@IsObject()
+	chat?: Record<string, unknown>;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

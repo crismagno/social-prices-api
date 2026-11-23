@@ -5,6 +5,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import {
 	IStoreSite,
 	IStoreSiteAbout,
+	IStoreSiteChat,
 	IStoreSiteFooter,
 	IStoreSitePage,
 	IStoreSiteSignIn,
@@ -125,6 +126,9 @@ export class StoreSite implements IStoreSite {
 	// empty list means the owner removed them all.
 	@Prop({ type: mongoose.Schema.Types.Mixed })
 	pages: IStoreSitePage[];
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	chat: Partial<IStoreSiteChat>;
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

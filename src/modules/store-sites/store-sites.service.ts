@@ -14,6 +14,7 @@ import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
 import { siteAboutOf } from './store-site-about';
+import { siteChatOf } from './store-site-chat';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
@@ -129,6 +130,7 @@ export class StoreSitesService {
 						signIn: siteSignInOf(saveStoreSiteDto.signIn),
 						about: siteAboutOf(saveStoreSiteDto.about),
 						pages: sitePagesOf(saveStoreSiteDto.pages),
+						chat: siteChatOf(saveStoreSiteDto.chat),
 						hero: {
 							...saveStoreSiteDto.hero,
 							...heroSlidesOf(saveStoreSiteDto.hero),

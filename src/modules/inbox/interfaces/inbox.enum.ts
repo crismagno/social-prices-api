@@ -7,6 +7,8 @@ namespace InboxEnum {
 		WHATSAPP = 'WHATSAPP',
 		/** The platform's own chat between a customer account and a store. No app behind it. */
 		STORE = 'STORE',
+		/** A visitor of a store's site, without an account, through its chat window. */
+		SITE = 'SITE',
 	}
 
 	/** IN: the person wrote. OUT: someone answered, from here or from the channel's own app. */

@@ -93,6 +93,31 @@ namespace StoreSitesEnum {
 	export const MAX_CUSTOM_PAGES = 7;
 	export const MAX_FAQ_ITEMS = 12;
 
+	/** Which corner of the site the chat button sits in. */
+	export enum ChatPosition {
+		RIGHT = 'RIGHT',
+		LEFT = 'LEFT',
+	}
+
+	/** The ready icons the owner can pick for the chat button. */
+	export enum ChatIcon {
+		MESSAGE = 'MESSAGE',
+		COMMENT = 'COMMENT',
+		CUSTOMER_SERVICE = 'CUSTOMER_SERVICE',
+		QUESTION = 'QUESTION',
+		SMILE = 'SMILE',
+		HEART = 'HEART',
+		SHOP = 'SHOP',
+		MAIL = 'MAIL',
+	}
+
+	/** How the chat asks a field before it starts. */
+	export enum ChatFieldMode {
+		REQUIRED = 'REQUIRED',
+		OPTIONAL = 'OPTIONAL',
+		HIDDEN = 'HIDDEN',
+	}
+
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 

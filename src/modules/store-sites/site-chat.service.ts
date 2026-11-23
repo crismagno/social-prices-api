@@ -1,0 +1,314 @@
+import { createHash, randomBytes } from 'crypto';
+import mongoose, { Model, Types } from 'mongoose';
+
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+	UnauthorizedException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+
+import { schemasName } from '../../infra/database/mongo/schemas';
+import { AppsRealtimeGateway } from '../apps/core/realtime/apps-realtime.gateway';
+import AppsEnum from '../apps/interfaces/apps.enum';
+import { InboxConversationsService } from '../inbox/inbox-conversations.service';
+import { InboxMessagesService } from '../inbox/inbox-messages.service';
+import InboxEnum from '../inbox/interfaces/inbox.enum';
+import {
+	IInboxMessage,
+	IInboxMessageInput,
+} from '../inbox/interfaces/inbox.types';
+import { SiteChatGuest } from './interfaces/site-chat-guest.schema';
+import { IStoreSiteChat } from './interfaces/store-site.interface';
+import StoreSitesEnum from './interfaces/store-sites.enum';
+import { IPublishedSiteContext } from './interfaces/store-sites.type';
+import { SiteChatRateLimiter } from './site-chat-rate-limiter';
+import { siteChatOf } from './store-site-chat';
+import { StoreSitesPublicService } from './store-sites-public.service';
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_NAME_LENGTH = 80;
+const MAX_EMAIL_LENGTH = 160;
+const MAX_PHONE_LENGTH = 30;
+const MAX_MESSAGE_LENGTH = 2000;
+const MESSAGES_SHOWN = 100;
+
+// How many chats one address may start, and one site may receive, a minute;
+// how many messages one visitor may send.
+const STARTS_PER_VISITOR = 5;
+const STARTS_PER_SITE = 60;
+const MESSAGES_PER_VISITOR = 30;
+
+/** One message as the visitor sees it: who wrote it and what, nothing more. */
+export interface ISiteChatMessageView {
+	id: string;
+	fromStore: boolean;
+	text: string | null;
+	sentAt: Date;
+}
+
+export interface ISiteChatVisitor {
+	name?: unknown;
+	email?: unknown;
+	phone?: unknown;
+}
+
+const hashOf = (token: string): string =>
+	createHash('sha256').update(token).digest('hex');
+
+const textOf = (value: unknown, max: number): string =>
+	typeof value === 'string' ? value.trim().slice(0, max) : '';
+
+/**
+ * The chat of a store's site, from the visitor's side. A visitor without an
+ * account tells who they are and gets a secret; each conversation is a chat
+ * of the store's inbox, on the site channel, where the store answers.
+ */
+@Injectable()
+export class SiteChatService {
+	//#region Constructor
+
+	constructor(
+		@InjectModel(schemasName.siteChatGuest)
+		private readonly _guestModel: Model<SiteChatGuest>,
+		private readonly _storeSitesPublicService: StoreSitesPublicService,
+		private readonly _conversations: InboxConversationsService,
+		private readonly _messages: InboxMessagesService,
+		private readonly _realtime: AppsRealtimeGateway,
+		private readonly _limiter: SiteChatRateLimiter,
+	) {}
+
+	//#endregion
+
+	//#region Public Methods
+
+	/** Opens a chat for a visitor: answers with the secret that reaches it later. */
+	public async start(
+		slug: string,
+		visitorAddress: string,
+		visitor: ISiteChatVisitor,
+	): Promise<{ token: string }> {
+		const { site, owner, store, chat } = await this._siteWithChatOrFail(slug);
+
+		const name: string = textOf(visitor.name, MAX_NAME_LENGTH);
+		const email: string | null = this._field(
+			chat.emailField,
+			textOf(visitor.email, MAX_EMAIL_LENGTH).toLowerCase(),
+			(value: string) => EMAIL.test(value),
+		);
+		const phone: string | null = this._field(
+			chat.phoneField,
+			textOf(visitor.phone, MAX_PHONE_LENGTH),
+			(value: string) => /\d{6,}/.test(value.replace(/\D/g, '')),
+		);
+
+		if (!name) {
+			throw this._invalid('name');
+		}
+
+		this._limiter.assertAllowed(
+			`start:${visitorAddress || 'unknown'}`,
+			STARTS_PER_VISITOR,
+		);
+		this._limiter.assertAllowed(`start-site:${site.slug}`, STARTS_PER_SITE);
+
+		const ownerUserId: string = String(owner._id);
+		const storeId: string = String(store._id);
+
+		const token: string = randomBytes(32).toString('base64url');
+
+		const guest = await this._guestModel.create({
+			ownerUserId: new Types.ObjectId(ownerUserId),
+			storeId: new Types.ObjectId(storeId),
+			tokenHash: hashOf(token),
+			conversationId: null,
+			name,
+			email,
+			phone,
+		});
+
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			{ channel: InboxEnum.Channel.SITE, contactKey: String(guest._id) },
+			{
+				accountKey: storeId,
+				contact: {
+					name,
+					extra: { email, phone, storeName: store.name, siteSlug: site.slug },
+				},
+			},
+		);
+
+		await this._guestModel.updateOne(
+			{ _id: guest._id },
+			{ $set: { conversationId: conversation._id } },
+		);
+
+		return { token };
+	}
+
+	/** The conversation, oldest first, as the visitor sees it. */
+	public async messages(
+		slug: string,
+		token: string,
+	): Promise<ISiteChatMessageView[]> {
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		const messages: IInboxMessage[] = await this._messages.listByConversation(
+			ownerUserId,
+			String(guest.conversationId),
+			{ limit: MESSAGES_SHOWN },
+		);
+
+		return messages
+			.map((message: IInboxMessage) => this._toView(message))
+			.reverse();
+	}
+
+	/** What the visitor writes, as a message to the store's inbox. */
+	public async send(
+		slug: string,
+		token: string,
+		rawText: unknown,
+	): Promise<ISiteChatMessageView> {
+		const text: string = typeof rawText === 'string' ? rawText.trim() : '';
+
+		if (!text || text.length > MAX_MESSAGE_LENGTH) {
+			throw this._invalid('text');
+		}
+
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
+
+		const conversationId: string = String(guest.conversationId);
+
+		const conversation = {
+			_id: conversationId,
+			channel: InboxEnum.Channel.SITE,
+		};
+
+		const input: IInboxMessageInput = {
+			channelMessageId: new mongoose.Types.ObjectId().toString(),
+			kind: InboxEnum.MessageKind.TEXT,
+			text,
+			attachments: [],
+			sentAt: new Date(),
+			sender: { id: String(guest._id), name: guest.name, username: null },
+		};
+
+		await this._messages.saveIncoming(ownerUserId, conversation, input);
+
+		await this._conversations.applyIncoming(ownerUserId, conversationId, {
+			preview: {
+				text,
+				kind: InboxEnum.MessageKind.TEXT,
+				channelKind: null,
+				direction: InboxEnum.Direction.IN,
+				at: input.sentAt,
+			},
+		});
+
+		this._realtime.notifyInboxUpdated(
+			ownerUserId,
+			AppsEnum.App.SITE,
+			conversationId,
+		);
+
+		return {
+			id: input.channelMessageId,
+			fromStore: false,
+			text,
+			sentAt: input.sentAt,
+		};
+	}
+
+	//#endregion
+
+	//#region Private Methods
+
+	private async _siteWithChatOrFail(
+		slug: string,
+	): Promise<IPublishedSiteContext & { chat: IStoreSiteChat }> {
+		const context: IPublishedSiteContext =
+			await this._storeSitesPublicService.resolvePublishedOrFail(slug);
+
+		const chat: IStoreSiteChat = siteChatOf(context.site.chat);
+
+		if (!chat.isActive) {
+			throw new NotFoundException('Chat not found!');
+		}
+
+		return { ...context, chat };
+	}
+
+	private async _guestOrFail(
+		slug: string,
+		token: string,
+	): Promise<{ guest: SiteChatGuest; ownerUserId: string }> {
+		const { store } = await this._siteWithChatOrFail(slug);
+
+		// Found only through the secret, and only on this site's store.
+		const guest: SiteChatGuest | null =
+			typeof token === 'string' && token.length >= 32
+				? await this._guestModel.findOne({
+						tokenHash: hashOf(token),
+						storeId: new Types.ObjectId(String(store._id)),
+				  })
+				: null;
+
+		if (!guest?.conversationId) {
+			throw new UnauthorizedException({
+				code: 'SITE_CHAT_UNKNOWN_VISITOR',
+				message: 'This chat is not known.',
+			});
+		}
+
+		return { guest, ownerUserId: String(guest.ownerUserId) };
+	}
+
+	/** A field of the form as the store asks it: required, optional or not asked. */
+	private _field(
+		mode: StoreSitesEnum.ChatFieldMode,
+		value: string,
+		isValid: (value: string) => boolean,
+	): string | null {
+		if (mode === StoreSitesEnum.ChatFieldMode.HIDDEN) {
+			return null;
+		}
+
+		if (!value) {
+			if (mode === StoreSitesEnum.ChatFieldMode.REQUIRED) {
+				throw this._invalid('required');
+			}
+
+			return null;
+		}
+
+		if (!isValid(value)) {
+			throw this._invalid('format');
+		}
+
+		return value;
+	}
+
+	private _invalid(field: string): BadRequestException {
+		return new BadRequestException({
+			code: 'SITE_CHAT_INVALID',
+			message: 'Check the fields of the chat.',
+			field,
+		});
+	}
+
+	private _toView(message: IInboxMessage): ISiteChatMessageView {
+		return {
+			id: String(message._id),
+			fromStore: message.direction === InboxEnum.Direction.OUT,
+			text: message.text ?? null,
+			sentAt: message.sentAt,
+		};
+	}
+
+	//#endregion
+}
