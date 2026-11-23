@@ -34,6 +34,16 @@ describe('sitePagesOf', () => {
 		});
 	});
 
+	it('leaves out a ready page the owner removed', () => {
+		const pages = sitePagesOf([custom()]);
+
+		expect(pages.map((page) => page.type)).toEqual([Type.CUSTOM]);
+	});
+
+	it('keeps a site with no page besides its home', () => {
+		expect(sitePagesOf([])).toEqual([]);
+	});
+
 	it('keeps the order chosen, which is the order of the menu', () => {
 		const pages = sitePagesOf([
 			{ key: 'support', type: Type.SUPPORT, isInMenu: true },
@@ -45,8 +55,6 @@ describe('sitePagesOf', () => {
 			Type.SUPPORT,
 			Type.CUSTOM,
 			Type.PRODUCTS,
-			// A ready page that was left out comes back at the end.
-			Type.ABOUT,
 		]);
 	});
 
@@ -155,6 +163,6 @@ describe('sitePagesOf', () => {
 
 	it('survives garbage', () => {
 		expect(sitePagesOf('x')).toHaveLength(3);
-		expect(sitePagesOf([null, 'x', { type: 'NOPE' }])).toHaveLength(3);
+		expect(sitePagesOf([null, 'x', { type: 'NOPE' }])).toEqual([]);
 	});
 });

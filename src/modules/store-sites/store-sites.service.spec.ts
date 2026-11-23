@@ -235,7 +235,7 @@ describe('StoreSitesService', () => {
 			});
 		});
 
-		it('stores the pages checked, always with the three ready ones', async () => {
+		it('stores the pages checked, without bringing back ready ones removed', async () => {
 			const { service, storeSiteModel } = build();
 
 			await service.save(
@@ -258,9 +258,6 @@ describe('StoreSitesService', () => {
 
 			expect(pages.map((page) => [page.type, page.slug])).toEqual([
 				['CUSTOM', 'encomendas'],
-				['PRODUCTS', 'produtos'],
-				['ABOUT', 'sobre'],
-				['SUPPORT', 'suporte'],
 			]);
 		});
 

@@ -86,12 +86,24 @@ const pageOf = (
 
 /**
  * The pages of a site, in the order of its menu, whatever was stored or sent.
- * The ready ones (products, about, support) are always there, once each, at
- * their own address; the owner's own pages get a clean address that no other
- * page uses. A site saved before pages existed gets the ready ones.
+ * A site saved before pages existed gets the ready ones (products, about,
+ * support). After that the owner decides: a ready page can be removed, and
+ * is then simply not there. A ready page is kept once, at its own address; the
+ * owner's own pages get a clean address that no other page uses.
  */
 export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
-	const sources: Record<string, unknown>[] = (Array.isArray(pages) ? pages : [])
+	if (!Array.isArray(pages)) {
+		return READY_PAGES.map((ready) =>
+			pageOf(
+				{},
+				ready.type,
+				StoreSitesEnum.READY_PAGE_SLUGS[ready.type],
+				ready.isInMenu,
+			),
+		);
+	}
+
+	const sources: Record<string, unknown>[] = pages
 		.filter((page: unknown) => !!page && typeof page === 'object')
 		.map((page: unknown) => page as Record<string, unknown>);
 
@@ -136,20 +148,6 @@ export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
 				ready.isInMenu,
 			),
 		);
-	}
-
-	// A ready page that was left out comes back, at the end of the menu.
-	for (const ready of READY_PAGES) {
-		if (!result.some((page) => page.type === ready.type)) {
-			result.push(
-				pageOf(
-					{},
-					ready.type,
-					StoreSitesEnum.READY_PAGE_SLUGS[ready.type],
-					ready.isInMenu,
-				),
-			);
-		}
 	}
 
 	return result;

@@ -121,7 +121,9 @@ export class StoreSite implements IStoreSite {
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	about: Partial<IStoreSiteAbout>;
 
-	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => [] })
+	// No default: a site that never set its pages gets the ready ones, while an
+	// empty list means the owner removed them all.
+	@Prop({ type: mongoose.Schema.Types.Mixed })
 	pages: IStoreSitePage[];
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
