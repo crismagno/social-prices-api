@@ -350,13 +350,14 @@ describe('StoreSitesPublicService', () => {
 			});
 		});
 
-		it('gives the pages, the three ready ones for an older site', async () => {
+		it('gives the pages, the ready ones for an older site', async () => {
 			const { site } = await build().findBySlugOrFail('atelie');
 
 			expect(site.pages.map((page) => page.slug)).toEqual([
 				'produtos',
 				'sobre',
 				'suporte',
+				'contato',
 			]);
 		});
 

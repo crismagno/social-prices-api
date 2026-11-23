@@ -17,13 +17,15 @@ const custom = (patch: any = {}) => ({
 });
 
 describe('sitePagesOf', () => {
-	it('gives the three ready pages to a site saved before pages existed', () => {
+	it('gives the ready pages to a site saved before pages existed', () => {
 		const pages = sitePagesOf(undefined);
 
 		expect(pages.map((page) => [page.type, page.slug, page.isInMenu])).toEqual([
 			[Type.PRODUCTS, 'produtos', true],
 			[Type.ABOUT, 'sobre', true],
 			[Type.SUPPORT, 'suporte', false],
+			// The form writes to the store's inbox: the owner turns it on.
+			[Type.CONTACT, 'contato', false],
 		]);
 		expect(pages[0]).toMatchObject({
 			label: null,
@@ -162,7 +164,7 @@ describe('sitePagesOf', () => {
 	});
 
 	it('survives garbage', () => {
-		expect(sitePagesOf('x')).toHaveLength(3);
+		expect(sitePagesOf('x')).toHaveLength(4);
 		expect(sitePagesOf([null, 'x', { type: 'NOPE' }])).toEqual([]);
 	});
 });

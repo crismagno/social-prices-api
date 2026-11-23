@@ -24,6 +24,7 @@ import { STORE_CHAT_MAX_UPLOAD_BYTES } from '../store-chat/store-chat.constants'
 import {
 	ISiteChatMessageView,
 	ISiteChatVisitor,
+	ISiteContactForm,
 	SiteChatService,
 } from './site-chat.service';
 
@@ -47,6 +48,22 @@ export class SiteChatController {
 			slug,
 			visitorAddress,
 			visitor ?? {},
+		);
+	}
+
+	// The form of the contact page: who writes and what, in one request.
+	@Public()
+	@Post('/contact')
+	@HttpCode(201)
+	public async contact(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Ip() visitorAddress: string,
+		@Body() form: ISiteContactForm,
+	): Promise<{ token: string | null }> {
+		return await this._siteChatService.contact(
+			slug,
+			visitorAddress,
+			form ?? {},
 		);
 	}
 

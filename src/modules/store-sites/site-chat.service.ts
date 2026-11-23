@@ -26,11 +26,15 @@ import {
 	StoreChatMediaService,
 } from '../store-chat/store-chat-media.service';
 import { SiteChatGuest } from './interfaces/site-chat-guest.schema';
-import { IStoreSiteChat } from './interfaces/store-site.interface';
+import {
+	IStoreSiteChat,
+	IStoreSitePage,
+} from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { IPublishedSiteContext } from './interfaces/store-sites.type';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
 import { siteChatOf } from './store-site-chat';
+import { sitePagesOf } from './store-site-pages';
 import { StoreSitesPublicService } from './store-sites-public.service';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,6 +74,26 @@ export interface ISiteChatVisitor {
 	email?: unknown;
 	phone?: unknown;
 }
+
+/** What the form of the contact page sends. */
+export interface ISiteContactForm extends ISiteChatVisitor {
+	message?: unknown;
+}
+
+/** What of a visitor a message of theirs needs to reach the inbox. */
+type TSiteChatSender = Pick<SiteChatGuest, 'name' | 'conversationId'> & {
+	_id?: unknown;
+};
+
+/** Who a visitor said they are, already checked. */
+interface ISiteChatIdentity {
+	name: string;
+	email: string | null;
+	phone: string | null;
+}
+
+const isPhone = (value: string): boolean =>
+	/\d{6,}/.test(value.replace(/\D/g, ''));
 
 const hashOf = (token: string): string =>
 	createHash('sha256').update(token).digest('hex');
@@ -118,52 +142,80 @@ export class SiteChatService {
 		const phone: string | null = this._field(
 			chat.phoneField,
 			textOf(visitor.phone, MAX_PHONE_LENGTH),
-			(value: string) => /\d{6,}/.test(value.replace(/\D/g, '')),
+			isPhone,
 		);
 
 		if (!name) {
 			throw this._invalid('name');
 		}
 
-		this._limiter.assertAllowed(
-			`start:${visitorAddress || 'unknown'}`,
-			STARTS_PER_VISITOR,
-		);
-		this._limiter.assertAllowed(`start-site:${site.slug}`, STARTS_PER_SITE);
+		this._assertMayStart(site.slug, visitorAddress);
 
-		const ownerUserId: string = String(owner._id);
-		const storeId: string = String(store._id);
-
-		const token: string = randomBytes(32).toString('base64url');
-
-		const guest = await this._guestModel.create({
-			ownerUserId: new Types.ObjectId(ownerUserId),
-			storeId: new Types.ObjectId(storeId),
-			tokenHash: hashOf(token),
-			conversationId: null,
-			name,
-			email,
-			phone,
-		});
-
-		const { conversation } = await this._conversations.ensure(
-			ownerUserId,
-			{ channel: InboxEnum.Channel.SITE, contactKey: String(guest._id) },
-			{
-				accountKey: storeId,
-				contact: {
-					name,
-					extra: { email, phone, storeName: store.name, siteSlug: site.slug },
-				},
-			},
-		);
-
-		await this._guestModel.updateOne(
-			{ _id: guest._id },
-			{ $set: { conversationId: conversation._id } },
+		const { token } = await this._open(
+			{ site, owner, store },
+			{ name, email, phone },
 		);
 
 		return { token };
+	}
+
+	/**
+	 * The form of the contact page: a visitor says who they are and what they
+	 * want, in one go, and it lands in the store's inbox as a conversation of
+	 * the site. With the chat of the site on, the secret lets its window follow
+	 * the answer; without it, the store answers by the e-mail that was given.
+	 */
+	public async contact(
+		slug: string,
+		visitorAddress: string,
+		form: ISiteContactForm,
+	): Promise<{ token: string | null }> {
+		const context: IPublishedSiteContext =
+			await this._storeSitesPublicService.resolvePublishedOrFail(slug);
+
+		const hasContactPage: boolean = sitePagesOf(context.site.pages).some(
+			(page: IStoreSitePage) =>
+				page.type === StoreSitesEnum.SitePageType.CONTACT,
+		);
+
+		if (!hasContactPage) {
+			throw new NotFoundException('Contact page not found!');
+		}
+
+		const name: string = textOf(form.name, MAX_NAME_LENGTH);
+		const email: string = textOf(form.email, MAX_EMAIL_LENGTH).toLowerCase();
+		const phone: string = textOf(form.phone, MAX_PHONE_LENGTH);
+		const message: string =
+			typeof form.message === 'string' ? form.message.trim() : '';
+
+		if (!name) {
+			throw this._invalid('name');
+		}
+
+		// Without the chat window, the e-mail is the only way back to the visitor.
+		if (!EMAIL.test(email)) {
+			throw this._invalid('email');
+		}
+
+		if (phone && !isPhone(phone)) {
+			throw this._invalid('phone');
+		}
+
+		if (!message || message.length > MAX_MESSAGE_LENGTH) {
+			throw this._invalid('text');
+		}
+
+		this._assertMayStart(context.site.slug, visitorAddress);
+
+		const { token, guest } = await this._open(context, {
+			name,
+			email,
+			phone: phone || null,
+		});
+
+		await this._receive(guest, String(context.owner._id), message, []);
+
+		return { token: siteChatOf(context.site.chat).isActive ? token : null };
 	}
 
 	/** The conversation, oldest first, as the visitor sees it. */
@@ -253,9 +305,65 @@ export class SiteChatService {
 
 	//#region Private Methods
 
+	private _assertMayStart(siteSlug: string, visitorAddress: string): void {
+		this._limiter.assertAllowed(
+			`start:${visitorAddress || 'unknown'}`,
+			STARTS_PER_VISITOR,
+		);
+		this._limiter.assertAllowed(`start-site:${siteSlug}`, STARTS_PER_SITE);
+	}
+
+	/** A new visitor and their conversation in the store's inbox, still empty. */
+	private async _open(
+		{ site, owner, store }: IPublishedSiteContext,
+		{ name, email, phone }: ISiteChatIdentity,
+	): Promise<{ token: string; guest: TSiteChatSender }> {
+		const ownerUserId: string = String(owner._id);
+		const storeId: string = String(store._id);
+
+		const token: string = randomBytes(32).toString('base64url');
+
+		const guest = await this._guestModel.create({
+			ownerUserId: new Types.ObjectId(ownerUserId),
+			storeId: new Types.ObjectId(storeId),
+			tokenHash: hashOf(token),
+			conversationId: null,
+			name,
+			email,
+			phone,
+		});
+
+		const { conversation } = await this._conversations.ensure(
+			ownerUserId,
+			{ channel: InboxEnum.Channel.SITE, contactKey: String(guest._id) },
+			{
+				accountKey: storeId,
+				contact: {
+					name,
+					extra: { email, phone, storeName: store.name, siteSlug: site.slug },
+				},
+			},
+		);
+
+		await this._guestModel.updateOne(
+			{ _id: guest._id },
+			{ $set: { conversationId: conversation._id } },
+		);
+
+		return {
+			token,
+			guest: {
+				_id: guest._id,
+				name,
+				conversationId:
+					conversation._id as unknown as SiteChatGuest['conversationId'],
+			},
+		};
+	}
+
 	/** Records a message of the visitor in the store's inbox and tells it. */
 	private async _receive(
-		guest: SiteChatGuest & { _id?: unknown },
+		guest: TSiteChatSender,
 		ownerUserId: string,
 		text: string | null,
 		attachments: IInboxAttachment[],

@@ -24,6 +24,8 @@ const READY_PAGES: {
 	{ type: StoreSitesEnum.SitePageType.ABOUT, isInMenu: true },
 	// Empty until the owner writes it, so it starts out of the menu.
 	{ type: StoreSitesEnum.SitePageType.SUPPORT, isInMenu: false },
+	// Its form writes to the store's inbox: the owner decides to show it.
+	{ type: StoreSitesEnum.SitePageType.CONTACT, isInMenu: false },
 ];
 
 const textOf = (value: unknown, max: number): string | null =>

@@ -471,4 +471,106 @@ describe('SiteChatService', () => {
 			expect(messages.saveIncoming).not.toHaveBeenCalled();
 		});
 	});
+
+	describe('contact', () => {
+		const CONTACT_PAGE = { key: 'contact', type: 'CONTACT', slug: 'contato' };
+
+		const FORM = {
+			name: '  Ana  ',
+			email: ' ANA@Mail.com ',
+			phone: '',
+			message: '  Vocês entregam em Recife?  ',
+		};
+
+		const withPage = (patch: any = {}, pages: any[] = [CONTACT_PAGE]) =>
+			build({
+				resolve: jest.fn().mockResolvedValue({
+					site: { slug: 'atelie', storeId: STORE, chat: chatOn(), pages },
+					owner: { _id: OWNER },
+					store: { _id: STORE, name: 'Ateliê' },
+					...patch,
+				}),
+			});
+
+		it('opens a conversation in the store inbox with who wrote and what they wrote', async () => {
+			const { service, conversations, messages, realtime, guestModel } =
+				withPage();
+
+			const result = await service.contact('atelie', '1.1.1.1', FORM);
+
+			expect(guestModel.create.mock.calls[0][0]).toMatchObject({
+				name: 'Ana',
+				email: 'ana@mail.com',
+				phone: null,
+			});
+			expect(conversations.ensure).toHaveBeenCalledWith(
+				OWNER,
+				{ channel: InboxEnum.Channel.SITE, contactKey: GUEST },
+				expect.objectContaining({
+					contact: expect.objectContaining({ name: 'Ana' }),
+				}),
+			);
+			expect(messages.saveIncoming.mock.calls[0][2]).toMatchObject({
+				kind: InboxEnum.MessageKind.TEXT,
+				text: 'Vocês entregam em Recife?',
+			});
+			expect(realtime.notifyInboxUpdated).toHaveBeenCalled();
+			// The chat of the site is on: its window can follow the answer.
+			expect(result.token).toHaveLength(43);
+		});
+
+		it('gives no secret when the site has no chat window to follow the answer', async () => {
+			const { service, messages } = withPage({
+				site: {
+					slug: 'atelie',
+					storeId: STORE,
+					chat: chatOn({ isActive: false }),
+					pages: [CONTACT_PAGE],
+				},
+			});
+
+			await expect(service.contact('atelie', '1.1.1.1', FORM)).resolves.toEqual(
+				{ token: null },
+			);
+			expect(messages.saveIncoming).toHaveBeenCalledTimes(1);
+		});
+
+		it('is 404 on a site without the contact page', async () => {
+			const { service, guestModel } = withPage({}, []);
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', FORM),
+			).rejects.toBeInstanceOf(NotFoundException);
+			expect(guestModel.create).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			[{ name: ' ' }],
+			[{ email: '' }],
+			[{ email: 'ana@' }],
+			[{ phone: '12' }],
+			[{ message: '  ' }],
+			[{ message: 'a'.repeat(2001) }],
+		])('refuses %p before anything is stored', async (patch) => {
+			const { service, guestModel, messages } = withPage();
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', { ...FORM, ...patch }),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(guestModel.create).not.toHaveBeenCalled();
+			expect(messages.saveIncoming).not.toHaveBeenCalled();
+		});
+
+		it('is limited like starting a chat', async () => {
+			const { service, limiter, guestModel } = withPage();
+			limiter.assertAllowed.mockImplementation(() => {
+				throw new HttpException('too many', 429);
+			});
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', FORM),
+			).rejects.toBeInstanceOf(HttpException);
+			expect(guestModel.create).not.toHaveBeenCalled();
+		});
+	});
 });
