@@ -171,6 +171,8 @@ export interface IStoreSiteBlockItem {
 	icon: StoreSitesEnum.FeatureIcon | null;
 	/** Testimonials only: 1 to 5 stars. */
 	rating: number | null;
+	/** A column of a box only. */
+	button: IStoreSiteBlockButton | null;
 }
 
 /** The button of a call-to-action block. */
@@ -181,6 +183,19 @@ export interface IStoreSiteBlockButton {
 	pageKey: string | null;
 	/** What the owner typed for the other targets: a number, an e-mail, an address. */
 	value: string | null;
+	variant: StoreSitesEnum.ButtonVariant;
+}
+
+/** The few options a piece of the page has; null where its type has none. */
+export interface IStoreSiteBlockSettings {
+	align: StoreSitesEnum.SectionAlign | null;
+	width: StoreSitesEnum.SectionWidth | null;
+	tone: StoreSitesEnum.SectionTone | null;
+	/** A spacer's height in pixels. */
+	height: number | null;
+	divider: StoreSitesEnum.DividerStyle | null;
+	/** A video piece: an uploaded video or a YouTube/Vimeo player. */
+	media: IStoreSiteAboutMedia | null;
 }
 
 /**
@@ -199,6 +214,9 @@ export interface IStoreSiteBlock {
 	items: IStoreSiteBlockItem[];
 	/** Calls to action only. */
 	button: IStoreSiteBlockButton | null;
+	/** A row of buttons only. */
+	buttons: IStoreSiteBlockButton[];
+	settings: IStoreSiteBlockSettings;
 }
 
 /**
@@ -219,6 +237,16 @@ export interface IStoreSiteMarquee {
  * The storefront of one store. The content is the same whatever the template:
  * changing `templateId` changes only how it is drawn.
  */
+/** What each product shows on the site, and whether they can be searched. */
+export interface IStoreSiteCatalog {
+	isNameShown: boolean;
+	isPriceShown: boolean;
+	/** The short description, under the name and the price. */
+	isDescriptionShown: boolean;
+	/** A search box on the page of products. */
+	isSearchShown: boolean;
+}
+
 export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	readonly _id: mongoose.Schema.Types.ObjectId;
 	userId: mongoose.Schema.Types.ObjectId;
@@ -234,10 +262,13 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	sizes?: Partial<TStoreSiteSizes>;
 	footer?: Partial<IStoreSiteFooter>;
 	signIn?: Partial<IStoreSiteSignIn>;
+	catalog?: Partial<IStoreSiteCatalog>;
 	about?: Partial<IStoreSiteAbout>;
 	pages?: IStoreSitePage[];
 	chat?: Partial<IStoreSiteChat>;
 	blocks?: IStoreSiteBlock[];
+	/** The owner arranged the pages: only the blocks list says what shows where. */
+	isLayoutCustom?: boolean;
 	hero: IStoreSiteHero;
 	sections: IStoreSiteSection[];
 	marquee: IStoreSiteMarquee;

@@ -19,6 +19,7 @@ import { siteChatOf } from './store-site-chat';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
+import { siteCatalogOf } from './store-site-catalog';
 import { siteSignInOf } from './store-site-sign-in';
 import { siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
@@ -129,10 +130,12 @@ export class StoreSitesService {
 						sizes: siteSizesOf(saveStoreSiteDto.sizes),
 						footer: siteFooterOf(saveStoreSiteDto.footer),
 						signIn: siteSignInOf(saveStoreSiteDto.signIn),
+						catalog: siteCatalogOf(saveStoreSiteDto.catalog),
 						about: siteAboutOf(saveStoreSiteDto.about),
 						pages: sitePagesOf(saveStoreSiteDto.pages),
 						chat: siteChatOf(saveStoreSiteDto.chat),
 						blocks: siteBlocksOf(saveStoreSiteDto.blocks),
+						isLayoutCustom: saveStoreSiteDto.isLayoutCustom === true,
 						hero: {
 							...saveStoreSiteDto.hero,
 							...heroSlidesOf(saveStoreSiteDto.hero),

@@ -29,6 +29,7 @@ import { siteChatOf } from './store-site-chat';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
+import { siteCatalogOf } from './store-site-catalog';
 import { siteSignInOf } from './store-site-sign-in';
 import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
@@ -229,9 +230,11 @@ export class StoreSitesPublicService {
 			sizes: siteSizesOf(site.sizes),
 			footer: siteFooterOf(site.footer),
 			signIn: siteSignInOf(site.signIn),
+			catalog: siteCatalogOf(site.catalog),
 			about: siteAboutOf(site.about),
 			pages,
 			chat: siteChatOf(site.chat),
+			isLayoutCustom: site.isLayoutCustom === true,
 			blocks: publicBlocksOf(
 				site.blocks,
 				pages.map((page) => page.key),

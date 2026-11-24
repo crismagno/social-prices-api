@@ -9,6 +9,7 @@ import {
 	IStoreSiteChat,
 	IStoreSiteFooter,
 	IStoreSitePage,
+	IStoreSiteCatalog,
 	IStoreSiteSignIn,
 	IStoreSiteHero,
 	IStoreSiteLogo,
@@ -121,6 +122,9 @@ export class StoreSite implements IStoreSite {
 	signIn: Partial<IStoreSiteSignIn>;
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	catalog: Partial<IStoreSiteCatalog>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	about: Partial<IStoreSiteAbout>;
 
 	// No default: a site that never set its pages gets the ready ones, while an
@@ -134,6 +138,11 @@ export class StoreSite implements IStoreSite {
 	// No default: a site saved before blocks existed simply has none.
 	@Prop({ type: mongoose.Schema.Types.Mixed })
 	blocks?: IStoreSiteBlock[];
+
+	// False on every site saved before the page builder: they keep the
+	// template's order until the owner arranges the pages.
+	@Prop({ type: Boolean, default: false })
+	isLayoutCustom: boolean;
 
 	@Prop({ required: true, type: StoreSiteHeroSchema })
 	hero: IStoreSiteHero;

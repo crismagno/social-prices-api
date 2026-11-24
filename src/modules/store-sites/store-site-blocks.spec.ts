@@ -4,6 +4,7 @@ import {
 	publicBlocksOf,
 	siteBlocksOf,
 } from './store-site-blocks';
+import { embedUrlOf } from './store-site-about';
 
 const KEY = /^[a-z0-9-]{1,40}$/;
 
@@ -62,9 +63,19 @@ describe('siteBlocksOf', () => {
 					imageUrl: 'ana.png',
 					icon: null,
 					rating: 5,
+					button: null,
 				},
 			],
 			button: null,
+			buttons: [],
+			settings: {
+				align: null,
+				width: null,
+				tone: null,
+				height: null,
+				divider: null,
+				media: null,
+			},
 		});
 	});
 
@@ -118,7 +129,7 @@ describe('siteBlocksOf', () => {
 
 		expect(
 			siteBlocksOf(
-				Array.from({ length: 25 }, (_, index: number) =>
+				Array.from({ length: 70 }, (_, index: number) =>
 					block({ key: `b${index}` }),
 				),
 			),
@@ -216,6 +227,7 @@ describe('siteBlocksOf', () => {
 			target: StoreSitesEnum.BlockButtonTarget.WHATSAPP,
 			pageKey: null,
 			value: '11 99999-0000',
+			variant: StoreSitesEnum.ButtonVariant.PRIMARY,
 		});
 	});
 
@@ -229,6 +241,7 @@ describe('siteBlocksOf', () => {
 			target: StoreSitesEnum.BlockButtonTarget.PAGE,
 			pageKey: null,
 			value: null,
+			variant: StoreSitesEnum.ButtonVariant.PRIMARY,
 		});
 	});
 });
@@ -320,7 +333,16 @@ describe('publicBlocksOf', () => {
 describe('blockButtonHref', () => {
 	it('makes the address of each kind of target', () => {
 		const of = (target: StoreSitesEnum.BlockButtonTarget, value: string) =>
-			blockButtonHref({ label: null, target, pageKey: null, value }, []);
+			blockButtonHref(
+				{
+					label: null,
+					target,
+					pageKey: null,
+					value,
+					variant: StoreSitesEnum.ButtonVariant.PRIMARY,
+				},
+				[],
+			);
 
 		expect(
 			of(StoreSitesEnum.BlockButtonTarget.WHATSAPP, '+55 11 99999-0000'),
@@ -344,6 +366,7 @@ describe('blockButtonHref', () => {
 					target: StoreSitesEnum.BlockButtonTarget.PAGE,
 					pageKey,
 					value: null,
+					variant: StoreSitesEnum.ButtonVariant.PRIMARY,
 				},
 				['p1'],
 			);
@@ -351,5 +374,204 @@ describe('blockButtonHref', () => {
 		expect(page(null)).toBe('');
 		expect(page('p1')).toBe('');
 		expect(page('gone')).toBeNull();
+	});
+});
+
+describe('sections of the page builder', () => {
+	const T = StoreSitesEnum.BlockType;
+
+	const section = (patch: any = {}) => ({
+		type: T.TEXT,
+		isActive: true,
+		pageKey: null,
+		title: 'Oi',
+		...patch,
+	});
+
+	it('keeps the parts of the site, once per page, and never the page body on the home', () => {
+		const kept = siteBlocksOf([
+			section({ type: T.PRODUCTS }),
+			section({ type: T.PRODUCTS }),
+			section({ type: T.PAGE_BODY }),
+			section({ type: T.ABOUT }),
+			section({ type: T.PRODUCTS, pageKey: 'p1' }),
+			section({ type: T.PAGE_BODY, pageKey: 'p1' }),
+		]);
+
+		expect(
+			kept.filter((each) => each.pageKey === null).map((each) => each.type),
+		).toEqual([T.PRODUCTS, T.ABOUT]);
+		expect(
+			kept.filter((each) => each.pageKey === 'p1').map((each) => each.type),
+		).toEqual([T.PRODUCTS, T.PAGE_BODY]);
+	});
+
+	it('gives parts no content of their own', () => {
+		const [part] = siteBlocksOf([
+			section({
+				type: T.PRODUCTS,
+				title: 'x',
+				items: [{ title: 'y' }],
+				buttons: [{ label: 'z' }],
+			}),
+		]);
+
+		expect(part).toMatchObject({
+			title: null,
+			items: [],
+			buttons: [],
+			button: null,
+		});
+	});
+
+	it('keeps a text piece with its alignment and tone', () => {
+		const [text] = siteBlocksOf([
+			section({
+				subtitle: 'Linha 1\nLinha 2',
+				settings: { align: 'CENTER', tone: 'SOFT', height: 99 },
+			}),
+		]);
+
+		expect(text.subtitle).toBe('Linha 1\nLinha 2');
+		expect(text.settings).toEqual({
+			align: 'CENTER',
+			width: null,
+			tone: 'SOFT',
+			height: null,
+			divider: null,
+			media: null,
+		});
+	});
+
+	it('keeps 1 to 3 buttons, each with its variant', () => {
+		const [buttons] = siteBlocksOf([
+			section({
+				type: T.BUTTONS,
+				buttons: Array.from({ length: 5 }, (_, index: number) => ({
+					label: `B${index}`,
+					target: StoreSitesEnum.BlockButtonTarget.URL,
+					value: 'loja.com',
+					variant: index === 1 ? 'GHOST' : 'OUTLINE',
+				})),
+			}),
+		]);
+
+		expect(buttons.buttons).toHaveLength(3);
+		expect(buttons.buttons.map((each) => each.variant)).toEqual([
+			'OUTLINE',
+			'PRIMARY',
+			'OUTLINE',
+		]);
+	});
+
+	it.each([
+		[2, 8],
+		[999, 240],
+		[undefined, 48],
+	])('clamps the spacer between 8 and 240: %p gives %p', (height, kept) => {
+		const [spacer] = siteBlocksOf([
+			section({ type: T.SPACER, settings: { height } }),
+		]);
+
+		expect(spacer.settings.height).toBe(kept);
+	});
+
+	it('keeps a video only from an upload or a YouTube/Vimeo player', () => {
+		const videoOf = (media: unknown) =>
+			siteBlocksOf([section({ type: T.VIDEO, settings: { media } })])[0];
+
+		expect(
+			videoOf({ type: 'EMBED', url: 'https://youtu.be/abc12345678' }).settings
+				.media,
+		).toEqual({
+			type: StoreSitesEnum.AboutMediaType.EMBED,
+			url: embedUrlOf('https://youtu.be/abc12345678'),
+		});
+		expect(
+			videoOf({ type: 'EMBED', url: 'https://evil.com/x' }).settings.media,
+		).toBeNull();
+		expect(videoOf({ type: 'VIDEO', url: ' key.mp4 ' }).settings.media).toEqual(
+			{
+				type: StoreSitesEnum.AboutMediaType.VIDEO,
+				url: 'key.mp4',
+			},
+		);
+	});
+
+	it('keeps a box of 1 to 3 columns, each with its button', () => {
+		const [box] = siteBlocksOf([
+			section({
+				type: T.BOX,
+				items: Array.from({ length: 4 }, (_, index: number) => ({
+					title: `C${index}`,
+					button: {
+						label: 'Ver',
+						target: StoreSitesEnum.BlockButtonTarget.URL,
+						value: 'loja.com',
+					},
+				})),
+			}),
+		]);
+
+		expect(box.items).toHaveLength(3);
+		expect(box.items[0].button).toMatchObject({
+			label: 'Ver',
+			value: 'loja.com',
+			variant: 'PRIMARY',
+		});
+	});
+
+	it('allows up to 60 sections', () => {
+		expect(
+			siteBlocksOf(Array.from({ length: 70 }, () => section())),
+		).toHaveLength(60);
+	});
+
+	it('drops buttons that go nowhere safe on the public site', () => {
+		const url = (value: string) => ({
+			label: 'Ir',
+			target: StoreSitesEnum.BlockButtonTarget.URL,
+			value,
+		});
+
+		const [some, box] = publicBlocksOf(
+			[
+				section({
+					type: T.BUTTONS,
+					buttons: [url('javascript:x'), url('loja.com')],
+				}),
+				section({ type: T.BUTTONS, buttons: [url('javascript:x')] }),
+				section({
+					type: T.BOX,
+					items: [{ title: 'C', button: url('javascript:x') }],
+				}),
+			],
+			[],
+		);
+
+		expect(some.buttons).toHaveLength(1);
+		expect(box.type).toBe(T.BOX);
+		expect(box.items[0].button).toBeNull();
+	});
+
+	it('keeps an empty part publicly so the order stays', () => {
+		expect(publicBlocksOf([section({ type: T.ABOUT })], [])).toHaveLength(1);
+	});
+
+	it('keeps a piece still being filled when saved, and shows it only when filled', () => {
+		const pieces = [
+			section({ key: 'img', type: T.IMAGE, title: null, items: [] }),
+			section({ key: 'vid', type: T.VIDEO, title: null }),
+			section({ key: 'btn', type: T.BUTTONS, title: null, buttons: [] }),
+			section({ key: 'txt', type: T.TEXT, title: null }),
+		];
+
+		expect(siteBlocksOf(pieces).map((each) => each.key)).toEqual([
+			'img',
+			'vid',
+			'btn',
+			'txt',
+		]);
+		expect(publicBlocksOf(pieces, [])).toEqual([]);
 	});
 });

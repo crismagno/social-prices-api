@@ -174,6 +174,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	signIn?: Record<string, unknown>;
 
+	// Checked when saved: see siteCatalogOf.
+	@IsOptional()
+	@IsObject()
+	catalog?: Record<string, unknown>;
+
 	// Checked when saved: see siteAboutOf.
 	@IsOptional()
 	@IsObject()
@@ -193,6 +198,10 @@ export default class SaveStoreSiteDto {
 	@IsOptional()
 	@IsArray()
 	blocks?: unknown[];
+
+	@IsOptional()
+	@IsBoolean()
+	isLayoutCustom?: boolean;
 
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)

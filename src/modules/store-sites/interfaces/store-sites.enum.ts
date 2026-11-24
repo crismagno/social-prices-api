@@ -5,6 +5,11 @@ namespace StoreSitesEnum {
 		ATELIER = 'ATELIER',
 		GARDEN = 'GARDEN',
 		STUDIO = 'STUDIO',
+		RIVIERA = 'RIVIERA',
+		MARE = 'MARE',
+		SWELL = 'SWELL',
+		BUDDY = 'BUDDY',
+		ARCADE = 'ARCADE',
 	}
 
 	export const TemplateLabels = {
@@ -13,6 +18,11 @@ namespace StoreSitesEnum {
 		[Template.ATELIER]: 'Atelier',
 		[Template.GARDEN]: 'Garden',
 		[Template.STUDIO]: 'Studio',
+		[Template.RIVIERA]: 'Riviera',
+		[Template.MARE]: 'Maré',
+		[Template.SWELL]: 'Swell',
+		[Template.BUDDY]: 'Buddy',
+		[Template.ARCADE]: 'Arcade',
 	};
 
 	/** What a link of the footer leads to: it decides its icon and how it opens. */
@@ -131,6 +141,58 @@ namespace StoreSitesEnum {
 		STATS = 'STATS',
 		STEPS = 'STEPS',
 		CTA = 'CTA',
+		// The template's own parts: they draw what their own tab edits.
+		MARQUEE = 'MARQUEE',
+		CARDS = 'CARDS',
+		PRODUCTS = 'PRODUCTS',
+		ABOUT = 'ABOUT',
+		PAGE_BODY = 'PAGE_BODY',
+		// Simple pieces of a page.
+		TEXT = 'TEXT',
+		BUTTONS = 'BUTTONS',
+		IMAGE = 'IMAGE',
+		VIDEO = 'VIDEO',
+		SPACER = 'SPACER',
+		DIVIDER = 'DIVIDER',
+		BOX = 'BOX',
+	}
+
+	/** The template's own parts: each at most once on a page. */
+	export const PART_TYPES: BlockType[] = [
+		BlockType.MARQUEE,
+		BlockType.CARDS,
+		BlockType.PRODUCTS,
+		BlockType.ABOUT,
+		BlockType.PAGE_BODY,
+	];
+
+	export enum SectionAlign {
+		LEFT = 'LEFT',
+		CENTER = 'CENTER',
+	}
+
+	export enum SectionWidth {
+		NARROW = 'NARROW',
+		WIDE = 'WIDE',
+		FULL = 'FULL',
+	}
+
+	/** The background of a section, from the site's own colours. */
+	export enum SectionTone {
+		NONE = 'NONE',
+		SOFT = 'SOFT',
+		STRONG = 'STRONG',
+	}
+
+	export enum DividerStyle {
+		LINE = 'LINE',
+		DOTS = 'DOTS',
+		WAVE = 'WAVE',
+	}
+
+	export enum ButtonVariant {
+		PRIMARY = 'PRIMARY',
+		OUTLINE = 'OUTLINE',
 	}
 
 	/** Where the button of a call-to-action block goes. */
@@ -162,7 +224,10 @@ namespace StoreSitesEnum {
 		CUSTOMER_SERVICE = 'CUSTOMER_SERVICE',
 	}
 
-	export const MAX_BLOCKS = 20;
+	/** Sections of the whole site, every page together. */
+	export const MAX_BLOCKS = 60;
+	export const MAX_SECTION_BUTTONS = 3;
+	export const MAX_BOX_COLUMNS = 3;
 	export const MAX_BLOCK_ITEMS = 12;
 	export const MAX_FAQ_BLOCK_ITEMS = 20;
 
