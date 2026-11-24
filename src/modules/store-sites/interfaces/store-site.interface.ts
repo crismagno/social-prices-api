@@ -54,6 +54,12 @@ export interface IStoreSiteFooter {
 	links: IStoreSiteFooterLink[];
 }
 
+/** How the top of the site behaves. */
+export interface IStoreSiteHeader {
+	/** The menu stays at the top of the screen while the visitor scrolls. */
+	isFixed: boolean;
+}
+
 /** The sign-in button at the top of the site. */
 export interface IStoreSiteSignIn {
 	isVisible: boolean;
@@ -267,6 +273,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	pages?: IStoreSitePage[];
 	chat?: Partial<IStoreSiteChat>;
 	blocks?: IStoreSiteBlock[];
+	header?: Partial<IStoreSiteHeader>;
 	/** The owner arranged the pages: only the blocks list says what shows where. */
 	isLayoutCustom?: boolean;
 	hero: IStoreSiteHero;

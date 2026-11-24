@@ -7,6 +7,7 @@ import {
 	IStoreSiteAbout,
 	IStoreSiteBlock,
 	IStoreSiteChat,
+	IStoreSiteHeader,
 	IStoreSiteFooter,
 	IStoreSitePage,
 	IStoreSiteCatalog,
@@ -138,6 +139,9 @@ export class StoreSite implements IStoreSite {
 	// No default: a site saved before blocks existed simply has none.
 	@Prop({ type: mongoose.Schema.Types.Mixed })
 	blocks?: IStoreSiteBlock[];
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	header: Partial<IStoreSiteHeader>;
 
 	// False on every site saved before the page builder: they keep the
 	// template's order until the owner arranges the pages.

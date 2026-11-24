@@ -203,6 +203,11 @@ export default class SaveStoreSiteDto {
 	@IsBoolean()
 	isLayoutCustom?: boolean;
 
+	// Checked when saved: see siteHeaderOf.
+	@IsOptional()
+	@IsObject()
+	header?: Record<string, unknown>;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

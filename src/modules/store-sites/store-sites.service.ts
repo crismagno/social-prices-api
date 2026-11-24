@@ -16,6 +16,7 @@ import { StoresService } from '../stores/stores.service';
 import { siteAboutOf } from './store-site-about';
 import { siteBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
+import { siteHeaderOf } from './store-site-header';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
@@ -136,6 +137,7 @@ export class StoreSitesService {
 						chat: siteChatOf(saveStoreSiteDto.chat),
 						blocks: siteBlocksOf(saveStoreSiteDto.blocks),
 						isLayoutCustom: saveStoreSiteDto.isLayoutCustom === true,
+						header: siteHeaderOf(saveStoreSiteDto.header),
 						hero: {
 							...saveStoreSiteDto.hero,
 							...heroSlidesOf(saveStoreSiteDto.hero),

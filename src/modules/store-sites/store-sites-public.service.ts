@@ -26,6 +26,7 @@ import {
 import { siteAboutOf } from './store-site-about';
 import { publicBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
+import { siteHeaderOf } from './store-site-header';
 import { siteFooterOf } from './store-site-footer';
 import { heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
@@ -235,6 +236,7 @@ export class StoreSitesPublicService {
 			pages,
 			chat: siteChatOf(site.chat),
 			isLayoutCustom: site.isLayoutCustom === true,
+			header: siteHeaderOf(site.header),
 			blocks: publicBlocksOf(
 				site.blocks,
 				pages.map((page) => page.key),
