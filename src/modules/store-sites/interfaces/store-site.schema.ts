@@ -7,6 +7,10 @@ import {
 	IStoreSiteAbout,
 	IStoreSiteBlock,
 	IStoreSiteChat,
+	IStoreSiteCartButton,
+	IStoreSiteImageStyle,
+	IStoreSiteCheckout,
+	IStoreSiteMarqueeStyle,
 	IStoreSiteHeader,
 	IStoreSiteFooter,
 	IStoreSitePage,
@@ -50,6 +54,8 @@ const StoreSiteHeroSchema = new mongoose.Schema(
 			default: StoreSitesEnum.DEFAULT_SLIDE_SECONDS,
 		},
 		ctaLabel: { type: String, default: null },
+		// Checked when saved: see heroOptionsOf.
+		options: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
 	},
 	{ _id: false },
 );
@@ -142,6 +148,18 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	header: Partial<IStoreSiteHeader>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	cartButton: Partial<IStoreSiteCartButton>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	imageStyle: Partial<IStoreSiteImageStyle>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	checkout: Partial<IStoreSiteCheckout>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	marqueeStyle: Partial<IStoreSiteMarqueeStyle>;
 
 	// False on every site saved before the page builder: they keep the
 	// template's order until the owner arranges the pages.

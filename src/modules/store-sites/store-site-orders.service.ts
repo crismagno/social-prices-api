@@ -27,7 +27,10 @@ import {
 	IPublishedSiteContext,
 	ISiteSellable,
 } from './interfaces/store-sites.type';
+import { IStoreSiteCheckout } from './interfaces/store-site.interface';
+import StoreSitesEnum from './interfaces/store-sites.enum';
 import { SiteOrderRateLimiter } from './site-order-rate-limiter';
+import { siteCheckoutOf } from './store-site-checkout';
 import { StoreSitesPublicService } from './store-sites-public.service';
 
 const DEFAULT_COUNTRY = { code: 'BR', name: 'Brasil' };
@@ -35,6 +38,14 @@ const DEFAULT_COUNTRY = { code: 'BR', name: 'Brasil' };
 interface IOrderLine {
 	sellable: ISiteSellable;
 	quantity: number;
+}
+
+/** What the visitor gave of what the bag of this site asks. */
+interface IOrderContact {
+	email: string | null;
+	phoneNumber: CreatePhoneNumberDto | null;
+	address: CreateAddressDto | null;
+	note: string | null;
 }
 
 /**
@@ -75,6 +86,12 @@ export class StoreSiteOrdersService {
 		const { site, owner, store }: IPublishedSiteContext =
 			await this._storeSitesPublicService.resolvePublishedOrFail(slug);
 
+		const contact: IOrderContact = this._contactOrFail(
+			createSiteOrderDto,
+			siteCheckoutOf(site.checkout),
+			store,
+		);
+
 		// Counted only now: the body is valid and the site is online, so requests
 		// that are neither cannot use up the site's allowance.
 		this._siteOrderRateLimiter.assertAllowed(visitorAddress, site.slug);
@@ -86,20 +103,6 @@ export class StoreSiteOrdersService {
 
 		const ownerUserId: string = String(owner._id);
 
-		const email: string = createSiteOrderDto.buyer.email.trim().toLowerCase();
-
-		const address: CreateAddressDto = this._toAddress(
-			createSiteOrderDto.buyer.address,
-			store,
-		);
-
-		const phoneNumber: CreatePhoneNumberDto = {
-			uid: randomUUID(),
-			type: PhoneNumberEnum.Type.MOBILE,
-			number: createSiteOrderDto.buyer.phoneNumber.trim(),
-			messengers: [],
-		};
-
 		try {
 			const admin: IEmployee =
 				await this._employeesService.findAdminByUserId(ownerUserId);
@@ -108,17 +111,13 @@ export class StoreSiteOrdersService {
 				ownerUserId,
 				storeId: String(store._id),
 				name: createSiteOrderDto.buyer.name.trim(),
-				email,
-				address,
-				phoneNumber,
+				contact,
 			});
 
 			const sale: ISale = await this._salesService.createManual(
 				this._toCreateSaleDto({
 					createSiteOrderDto,
-					email,
-					address,
-					phoneNumber,
+					contact,
 					lines,
 					store,
 					ownerUserId,
@@ -152,31 +151,86 @@ export class StoreSiteOrdersService {
 	//#region Private Methods
 
 	/**
+	 * What the visitor gave, read as the bag of this site asks it: a field the
+	 * site does not ask is dropped even if sent, and one it needs must be there.
+	 */
+	private _contactOrFail(
+		createSiteOrderDto: CreateSiteOrderDto,
+		checkout: IStoreSiteCheckout,
+		store: IStore,
+	): IOrderContact {
+		const Field = StoreSitesEnum.CheckoutField;
+		const Mode = StoreSitesEnum.ChatFieldMode;
+
+		const { buyer } = createSiteOrderDto;
+
+		const given: Record<StoreSitesEnum.CheckoutField, unknown> = {
+			[Field.EMAIL]: buyer.email?.trim().toLowerCase() || null,
+			[Field.PHONE]: buyer.phoneNumber?.trim() || null,
+			[Field.ADDRESS]: buyer.address ?? null,
+			[Field.NOTE]: createSiteOrderDto.note?.trim() || null,
+		};
+
+		const missing: StoreSitesEnum.CheckoutField[] = [];
+
+		Object.values(Field).forEach((field: StoreSitesEnum.CheckoutField) => {
+			if (checkout.fields[field] === Mode.HIDDEN) {
+				given[field] = null;
+			} else if (checkout.fields[field] === Mode.REQUIRED && !given[field]) {
+				missing.push(field);
+			}
+		});
+
+		if (missing.length) {
+			throw new BadRequestException({
+				code: 'SITE_ORDER_FIELDS_MISSING',
+				message: 'Some required fields are missing.',
+				fields: missing,
+			});
+		}
+
+		const phone = given[Field.PHONE] as string | null;
+		const address = given[Field.ADDRESS] as SiteOrderAddressDto | null;
+
+		return {
+			email: given[Field.EMAIL] as string | null,
+			phoneNumber: phone
+				? {
+						uid: randomUUID(),
+						type: PhoneNumberEnum.Type.MOBILE,
+						number: phone,
+						messengers: [],
+				  }
+				: null,
+			address: address ? this._toAddress(address, store) : null,
+			note: given[Field.NOTE] as string | null,
+		};
+	}
+
+	/**
 	 * The store's customer with this email, or a new one. The new one is linked
 	 * to no account: the email was typed by a visitor and proves nothing about
 	 * who they are. Always resolving the customer here also keeps the sale
-	 * service from looking an account up by that email.
+	 * service from looking an account up by that email. Without an email there
+	 * is nothing to tell one visitor from another: the customer is a new one.
 	 */
 	private async _findOrCreateCustomer({
 		ownerUserId,
 		storeId,
 		name,
-		email,
-		address,
-		phoneNumber,
+		contact: { email, address, phoneNumber },
 	}: {
 		ownerUserId: string;
 		storeId: string;
 		name: string;
-		email: string;
-		address: CreateAddressDto;
-		phoneNumber: CreatePhoneNumberDto;
+		contact: IOrderContact;
 	}): Promise<ICustomer> {
-		const existing: ICustomer | null =
-			await this._customersService.findByOwnerUserIdAndEmail(
-				ownerUserId,
-				email,
-			);
+		const existing: ICustomer | null = email
+			? await this._customersService.findByOwnerUserIdAndEmail(
+					ownerUserId,
+					email,
+			  )
+			: null;
 
 		if (existing) {
 			return existing;
@@ -196,8 +250,8 @@ export class StoreSiteOrdersService {
 				cpf: null,
 				cnpj: null,
 				userId: null,
-				addresses: [{ ...address, isValid: true }],
-				phoneNumbers: [phoneNumber],
+				addresses: address ? [{ ...address, isValid: true }] : [],
+				phoneNumbers: phoneNumber ? [phoneNumber] : [],
 				tagsIds: [],
 				storesIds: [storeId],
 			},
@@ -282,9 +336,7 @@ export class StoreSiteOrdersService {
 
 	private _toCreateSaleDto({
 		createSiteOrderDto,
-		email,
-		address,
-		phoneNumber,
+		contact: { email, address, phoneNumber, note },
 		lines,
 		store,
 		ownerUserId,
@@ -292,9 +344,7 @@ export class StoreSiteOrdersService {
 		customerId,
 	}: {
 		createSiteOrderDto: CreateSiteOrderDto;
-		email: string;
-		address: CreateAddressDto;
-		phoneNumber: CreatePhoneNumberDto;
+		contact: IOrderContact;
 		lines: IOrderLine[];
 		store: IStore;
 		ownerUserId: string;
@@ -348,7 +398,7 @@ export class StoreSiteOrdersService {
 			createdDate: null,
 			numberManual: null,
 			noteToCustomer: null,
-			note: createSiteOrderDto.note?.trim() || null,
+			note,
 			totals,
 			buyer: {
 				userId: null,
@@ -365,8 +415,11 @@ export class StoreSiteOrdersService {
 			},
 			header: {
 				billing: null,
-				shipping: { address, trackingNumber: null },
-				deliveryType: SalesEnum.DeliveryType.DELIVERY,
+				// With no address there is nowhere to deliver to: the store hands it over.
+				shipping: address ? { address, trackingNumber: null } : null,
+				deliveryType: address
+					? SalesEnum.DeliveryType.DELIVERY
+					: SalesEnum.DeliveryType.PICKUP,
 			},
 			stores: [
 				{

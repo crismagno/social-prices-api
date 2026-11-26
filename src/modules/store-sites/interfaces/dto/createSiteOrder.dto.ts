@@ -20,6 +20,10 @@ import StoreSitesEnum from '../store-sites.enum';
 const trim = ({ value }: { value: unknown }): unknown =>
 	typeof value === 'string' ? value.trim() : value;
 
+/** Trimmed, and nothing at all when left empty: the site may not ask it. */
+const trimOrNull = ({ value }: { value: unknown }): unknown =>
+	typeof value === 'string' ? value.trim() || null : value;
+
 export class SiteOrderAddressDto {
 	@Transform(trim)
 	@IsString()
@@ -71,22 +75,26 @@ export class SiteOrderBuyerDto {
 	@MaxLength(120)
 	name: string;
 
+	// Email, phone and address are asked or not as the owner set the bag:
+	// the service checks which ones this site needs.
 	@Transform(({ value }) =>
-		typeof value === 'string' ? value.trim().toLowerCase() : value,
+		typeof value === 'string' ? value.trim().toLowerCase() || null : value,
 	)
+	@IsOptional()
 	@IsEmail()
 	@MaxLength(160)
-	email: string;
+	email: string | null;
 
-	@Transform(trim)
+	@Transform(trimOrNull)
+	@IsOptional()
 	@IsString()
-	@IsNotEmpty()
 	@MaxLength(30)
-	phoneNumber: string;
+	phoneNumber: string | null;
 
+	@IsOptional()
 	@ValidateNested()
 	@Type(() => SiteOrderAddressDto)
-	address: SiteOrderAddressDto;
+	address: SiteOrderAddressDto | null;
 }
 
 export class SiteOrderItemDto {

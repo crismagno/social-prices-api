@@ -7,6 +7,11 @@ describe('siteCatalogOf', () => {
 			isPriceShown: true,
 			isDescriptionShown: false,
 			isSearchShown: true,
+			isAddButtonShown: true,
+			isDetailsOpened: true,
+			isTitleShown: true,
+			title: null,
+			addLabel: null,
 		});
 	});
 
@@ -23,6 +28,11 @@ describe('siteCatalogOf', () => {
 			isPriceShown: false,
 			isDescriptionShown: true,
 			isSearchShown: false,
+			isAddButtonShown: true,
+			isDetailsOpened: true,
+			isTitleShown: true,
+			title: null,
+			addLabel: null,
 		});
 	});
 
@@ -39,6 +49,11 @@ describe('siteCatalogOf', () => {
 			isPriceShown: true,
 			isDescriptionShown: false,
 			isSearchShown: true,
+			isAddButtonShown: true,
+			isDetailsOpened: true,
+			isTitleShown: true,
+			title: null,
+			addLabel: null,
 		});
 	});
 
@@ -48,10 +63,40 @@ describe('siteCatalogOf', () => {
 			isPriceShown: false,
 			isDescriptionShown: false,
 			isSearchShown: true,
+			isAddButtonShown: true,
+			isDetailsOpened: true,
+			isTitleShown: true,
+			title: null,
+			addLabel: null,
 		});
 	});
 
 	it('treats what is not an object as nothing', () => {
 		expect(siteCatalogOf('hidden').isPriceShown).toBe(true);
+	});
+
+	it('lets products be only shown: no add button, no details, own texts', () => {
+		expect(
+			siteCatalogOf({
+				isAddButtonShown: false,
+				isDetailsOpened: false,
+				isTitleShown: false,
+				title: '  Nossos trabalhos ',
+				addLabel: ' Quero este ',
+			}),
+		).toMatchObject({
+			isAddButtonShown: false,
+			isDetailsOpened: false,
+			isTitleShown: false,
+			title: 'Nossos trabalhos',
+			addLabel: 'Quero este',
+		});
+	});
+
+	it('cuts texts too long and drops empty ones', () => {
+		const catalog = siteCatalogOf({ title: 'x'.repeat(200), addLabel: '   ' });
+
+		expect(catalog.title).toHaveLength(60);
+		expect(catalog.addLabel).toBeNull();
 	});
 });

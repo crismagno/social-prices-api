@@ -152,7 +152,7 @@ const itemsOf = (
 		.map(({ item, key }) => ({ ...item, key: keyOf(key, taken) }));
 };
 
-const buttonOf = (button: unknown): IStoreSiteBlockButton => {
+export const buttonOf = (button: unknown): IStoreSiteBlockButton => {
 	const source: TRecord = recordOf(button);
 
 	const target: StoreSitesEnum.BlockButtonTarget =

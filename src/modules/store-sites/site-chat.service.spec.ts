@@ -112,7 +112,12 @@ const build = ({
 		attachments: [STORED],
 	});
 
-	const realtime: any = { notifyInboxUpdated: jest.fn() };
+	const realtime: any = {
+		notifyInboxUpdated: jest.fn(),
+		notifyStoreChatTyping: jest.fn(),
+	};
+
+	const typing: any = { isTyping: jest.fn().mockReturnValue(true) };
 
 	const media: any = {
 		store: jest.fn().mockResolvedValue(STORED),
@@ -141,6 +146,7 @@ const build = ({
 		realtime,
 		limiter,
 		media,
+		typing,
 		service: new SiteChatService(
 			guestModel,
 			publicService,
@@ -149,6 +155,7 @@ const build = ({
 			realtime,
 			limiter,
 			media,
+			typing,
 		),
 	};
 };
@@ -181,6 +188,78 @@ describe('SiteChatService', () => {
 					extra: { email: 'ana@x.com', phone: null, storeName: 'Ateliê' },
 				},
 			});
+		});
+
+		const F = StoreSitesEnum.ChatCustomerField;
+		const FIELDS = [
+			{ field: F.CPF, isRequired: true },
+			{ field: F.BIRTH_DATE, isRequired: false },
+			{ field: F.GENDER, isRequired: false },
+			{ field: F.ADDRESS, isRequired: false },
+		];
+
+		it('asks the customer fields the store chose, required or optional', async () => {
+			const { service } = build({ chat: chatOn({ extraFields: FIELDS }) });
+
+			await expect(
+				service.start('atelie', '1.1.1.1', visitor({ answers: {} })),
+			).rejects.toMatchObject({ response: { field: F.CPF } });
+		});
+
+		it.each([
+			[F.CPF, '123'],
+			[F.BIRTH_DATE, '2026-13-40'],
+			[F.BIRTH_DATE, '2999-01-01'],
+			[F.GENDER, 'ROBOT'],
+		])(
+			'checks the answer to %s by what the field is: %p is refused',
+			async (field, value) => {
+				const { service } = build({ chat: chatOn({ extraFields: FIELDS }) });
+
+				await expect(
+					service.start(
+						'atelie',
+						'1.1.1.1',
+						visitor({ answers: { [F.CPF]: '123.456.789-09', [field]: value } }),
+					),
+				).rejects.toMatchObject({ response: { field } });
+			},
+		);
+
+		it('keeps the answers with the visitor and shows them as the first message', async () => {
+			const { service, conversations, messages, guestModel } = build({
+				chat: chatOn({ extraFields: FIELDS }),
+			});
+
+			await service.start(
+				'atelie',
+				'1.1.1.1',
+				visitor({
+					answers: {
+						[F.CPF]: ' 123.456.789-09 ',
+						[F.GENDER]: 'FEMALE',
+						[F.ADDRESS]: 'Rua A, 10',
+					},
+				}),
+			);
+
+			const answers = [
+				{ field: F.CPF, label: 'CPF', value: '123.456.789-09' },
+				{ field: F.GENDER, label: 'Gênero', value: 'FEMALE' },
+				{ field: F.ADDRESS, label: 'Endereço', value: 'Rua A, 10' },
+			];
+
+			expect(guestModel.create.mock.calls[0][0].answers).toEqual(answers);
+			expect(
+				conversations.ensure.mock.calls[0][2].contact.extra.answers,
+			).toEqual(answers);
+
+			const [, , first] = messages.saveIncoming.mock.calls[0];
+
+			expect(first.text).toContain('Ana Lima');
+			expect(first.text).toContain('CPF: 123.456.789-09');
+			expect(first.text).toContain('Gênero: Feminino');
+			expect(first.text).toContain('Endereço: Rua A, 10');
 		});
 
 		it('answers with a secret token, keeping only its hash', async () => {
@@ -260,6 +339,46 @@ describe('SiteChatService', () => {
 		});
 	});
 
+	describe('typing', () => {
+		const guest = {
+			_id: GUEST,
+			storeId: STORE,
+			ownerUserId: OWNER,
+			conversationId: CONVERSATION,
+			name: 'Ana Lima',
+			tokenHash: hash(TOKEN),
+		};
+
+		it('tells the store inbox that the visitor is writing', async () => {
+			const { service, realtime } = build({ guest });
+
+			await service.typing('atelie', TOKEN);
+
+			expect(realtime.notifyStoreChatTyping).toHaveBeenCalledWith(OWNER, {
+				storeId: STORE,
+				conversationId: CONVERSATION,
+			});
+		});
+
+		it('tells nothing for an unknown visitor', async () => {
+			const { service, realtime } = build({ guest: null });
+
+			await expect(service.typing('atelie', 'nope')).rejects.toBeInstanceOf(
+				UnauthorizedException,
+			);
+			expect(realtime.notifyStoreChatTyping).not.toHaveBeenCalled();
+		});
+
+		it('says whether the store is writing to this visitor', async () => {
+			const { service, typing } = build({ guest });
+
+			await expect(service.storeTyping('atelie', TOKEN)).resolves.toEqual({
+				isStoreTyping: true,
+			});
+			expect(typing.isTyping).toHaveBeenCalledWith(CONVERSATION);
+		});
+	});
+
 	describe('with a token', () => {
 		const guest = {
 			_id: GUEST,
@@ -269,6 +388,79 @@ describe('SiteChatService', () => {
 			name: 'Ana Lima',
 			tokenHash: hash(TOKEN),
 		};
+
+		it('uses the time the owner chose for a chat', async () => {
+			const { service } = build({
+				chat: chatOn({ sessionMinutes: 10 }),
+				guest: {
+					...guest,
+					lastActiveAt: new Date(Date.now() - 11 * 60 * 1000),
+				},
+			});
+
+			await expect(service.messages('atelie', TOKEN)).rejects.toMatchObject({
+				response: { code: 'SITE_CHAT_EXPIRED' },
+			});
+		});
+
+		it('forgets a visitor who has not written for an hour', async () => {
+			const { service } = build({
+				guest: {
+					...guest,
+					lastActiveAt: new Date(Date.now() - 61 * 60 * 1000),
+				},
+			});
+
+			await expect(service.messages('atelie', TOKEN)).rejects.toMatchObject({
+				response: { code: 'SITE_CHAT_EXPIRED' },
+			});
+			await expect(service.send('atelie', TOKEN, 'Oi')).rejects.toBeInstanceOf(
+				UnauthorizedException,
+			);
+		});
+
+		it('counts an hour from when the chat started, for a visitor who never wrote', async () => {
+			const { service } = build({
+				guest: {
+					...guest,
+					lastActiveAt: null,
+					createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+				},
+			});
+
+			await expect(service.messages('atelie', TOKEN)).rejects.toBeInstanceOf(
+				UnauthorizedException,
+			);
+		});
+
+		it('keeps the chat for another hour each time the visitor writes', async () => {
+			const { service, guestModel } = build({
+				guest: {
+					...guest,
+					lastActiveAt: new Date(Date.now() - 50 * 60 * 1000),
+				},
+			});
+
+			await service.send('atelie', TOKEN, 'Ainda estou aqui');
+			await service.typing('atelie', TOKEN);
+
+			const renewals = guestModel.updateOne.mock.calls.filter(
+				([, update]: any[]) => update?.$set?.lastActiveAt instanceof Date,
+			);
+
+			expect(renewals).toHaveLength(2);
+			expect(String(renewals[0][0]._id)).toBe(GUEST);
+		});
+
+		it('does not keep the chat alive only by reading it', async () => {
+			const { service, guestModel } = build({
+				guest: { ...guest, lastActiveAt: new Date() },
+			});
+
+			await service.messages('atelie', TOKEN);
+
+			expect(guestModel.updateOne).not.toHaveBeenCalled();
+		});
 
 		it('finds the visitor only by the hash of the token, within this site', async () => {
 			const { service, guestModel } = build({ guest });

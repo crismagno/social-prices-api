@@ -4316,7 +4316,7 @@ export class SalesService {
 				address2: sale.buyer.address?.address2,
 				district: sale.buyer.address?.district,
 				addressDescription: sale.buyer.address?.description,
-				addressTypes: sale.buyer.address.types?.length
+				addressTypes: sale.buyer.address?.types?.length
 					? map(
 							sale.buyer.address.types,
 							(type: AddressEnum.Type) => AddressEnum.TypesLabels[type],

@@ -18,6 +18,7 @@ import {
 	IInboxMessage,
 	IInboxMessageInput,
 } from '../inbox/interfaces/inbox.types';
+import { SiteChatTypingState } from './site-chat-typing';
 import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
 import { STORE_CHAT_MAX_UPLOAD_BYTES } from '../store-chat/store-chat.constants';
 
@@ -47,6 +48,7 @@ export class SiteChatInboxAdapter
 		private readonly _conversations: InboxConversationsService,
 		private readonly _messages: InboxMessagesService,
 		private readonly _media: StoreChatMediaService,
+		private readonly _typing: SiteChatTypingState,
 	) {}
 
 	public onModuleInit(): void {
@@ -63,6 +65,14 @@ export class SiteChatInboxAdapter
 		text: string,
 	): Promise<IInboxMessage> {
 		return await this._record(ctx, conversation, text, []);
+	}
+
+	/** The visitor's window shows "writing…" while the store writes. */
+	public async sendTyping(
+		_ctx: IInboxReplyContext,
+		conversation: IInboxConversation,
+	): Promise<void> {
+		this._typing.mark(String(conversation._id));
 	}
 
 	public async sendMedia(
@@ -99,6 +109,9 @@ export class SiteChatInboxAdapter
 	): Promise<IInboxMessage> {
 		const kind: InboxEnum.MessageKind =
 			attachments[0]?.kind ?? InboxEnum.MessageKind.TEXT;
+
+		// The answer is here: the store is no longer writing.
+		this._typing.clear(String(conversation._id));
 
 		const input: IInboxMessageInput = {
 			channelMessageId: new mongoose.Types.ObjectId().toString(),

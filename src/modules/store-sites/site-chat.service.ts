@@ -27,11 +27,15 @@ import {
 } from '../store-chat/store-chat-media.service';
 import { SiteChatGuest } from './interfaces/site-chat-guest.schema';
 import {
+	ISiteChatAnswer,
+	ISiteChatExtraField,
 	IStoreSiteChat,
 	IStoreSitePage,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { IPublishedSiteContext } from './interfaces/store-sites.type';
+import { SiteChatTypingState } from './site-chat-typing';
+import { CHAT_FIELD_RULES } from './store-site-chat-fields';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
 import { siteChatOf } from './store-site-chat';
 import { sitePagesOf } from './store-site-pages';
@@ -50,6 +54,8 @@ const STARTS_PER_VISITOR = 5;
 const STARTS_PER_SITE = 60;
 const MESSAGES_PER_VISITOR = 30;
 const FILES_PER_VISITOR = 10;
+// The window says "writing" every few seconds at most; more is not a person typing.
+const TYPING_PER_VISITOR = 30;
 
 /** A file of a message as the visitor sees it: never where it is stored. */
 export interface ISiteChatAttachmentView {
@@ -73,6 +79,8 @@ export interface ISiteChatVisitor {
 	name?: unknown;
 	email?: unknown;
 	phone?: unknown;
+	/** The answers to the owner's own fields, by the key of each field. */
+	answers?: unknown;
 }
 
 /** What the form of the contact page sends. */
@@ -90,6 +98,7 @@ interface ISiteChatIdentity {
 	name: string;
 	email: string | null;
 	phone: string | null;
+	answers?: ISiteChatAnswer[];
 }
 
 const isPhone = (value: string): boolean =>
@@ -119,6 +128,7 @@ export class SiteChatService {
 		private readonly _realtime: AppsRealtimeGateway,
 		private readonly _limiter: SiteChatRateLimiter,
 		private readonly _media: StoreChatMediaService,
+		private readonly _typing: SiteChatTypingState,
 	) {}
 
 	//#endregion
@@ -149,11 +159,25 @@ export class SiteChatService {
 			throw this._invalid('name');
 		}
 
+		const answers: ISiteChatAnswer[] = this._answers(
+			chat.extraFields,
+			visitor.answers,
+		);
+
 		this._assertMayStart(site.slug, visitorAddress);
 
-		const { token } = await this._open(
+		const { token, guest } = await this._open(
 			{ site, owner, store },
-			{ name, email, phone },
+			{ name, email, phone, answers },
+		);
+
+		// What the visitor told is the first thing the store reads, and the
+		// conversation shows in its inbox at once.
+		await this._receive(
+			guest,
+			String(owner._id),
+			this._summary({ name, email, phone, answers }),
+			[],
 		);
 
 		return { token };
@@ -236,6 +260,32 @@ export class SiteChatService {
 			.reverse();
 	}
 
+	/** The visitor is writing: the store's inbox shows it for a few seconds. */
+	public async typing(slug: string, token: string): Promise<void> {
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		this._limiter.assertAllowed(`typing:${guest._id}`, TYPING_PER_VISITOR);
+
+		await this._touch(guest);
+
+		this._realtime.notifyStoreChatTyping(ownerUserId, {
+			storeId: String(guest.storeId),
+			conversationId: String(guest.conversationId),
+		});
+	}
+
+	/** Whether the store is writing to this visitor right now. */
+	public async storeTyping(
+		slug: string,
+		token: string,
+	): Promise<{ isStoreTyping: boolean }> {
+		const { guest } = await this._guestOrFail(slug, token);
+
+		return {
+			isStoreTyping: this._typing.isTyping(String(guest.conversationId)),
+		};
+	}
+
 	/** What the visitor writes, as a message to the store's inbox. */
 	public async send(
 		slug: string,
@@ -251,6 +301,8 @@ export class SiteChatService {
 		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
 
 		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
+
+		await this._touch(guest);
 
 		return await this._receive(guest, ownerUserId, text, []);
 	}
@@ -268,6 +320,8 @@ export class SiteChatService {
 
 		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
 		this._limiter.assertAllowed(`file:${guest._id}`, FILES_PER_VISITOR);
+
+		await this._touch(guest);
 
 		const attachment: IInboxAttachment = await this._media.store(
 			file,
@@ -316,7 +370,7 @@ export class SiteChatService {
 	/** A new visitor and their conversation in the store's inbox, still empty. */
 	private async _open(
 		{ site, owner, store }: IPublishedSiteContext,
-		{ name, email, phone }: ISiteChatIdentity,
+		{ name, email, phone, answers }: ISiteChatIdentity,
 	): Promise<{ token: string; guest: TSiteChatSender }> {
 		const ownerUserId: string = String(owner._id);
 		const storeId: string = String(store._id);
@@ -327,10 +381,12 @@ export class SiteChatService {
 			ownerUserId: new Types.ObjectId(ownerUserId),
 			storeId: new Types.ObjectId(storeId),
 			tokenHash: hashOf(token),
+			lastActiveAt: new Date(),
 			conversationId: null,
 			name,
 			email,
 			phone,
+			answers: answers ?? [],
 		});
 
 		const { conversation } = await this._conversations.ensure(
@@ -340,7 +396,13 @@ export class SiteChatService {
 				accountKey: storeId,
 				contact: {
 					name,
-					extra: { email, phone, storeName: store.name, siteSlug: site.slug },
+					extra: {
+						email,
+						phone,
+						answers: answers ?? [],
+						storeName: store.name,
+						siteSlug: site.slug,
+					},
 				},
 			},
 		);
@@ -444,7 +506,7 @@ export class SiteChatService {
 		slug: string,
 		token: string,
 	): Promise<{ guest: SiteChatGuest; ownerUserId: string }> {
-		const { store } = await this._siteWithChatOrFail(slug);
+		const { store, chat } = await this._siteWithChatOrFail(slug);
 
 		// Found only through the secret, and only on this site's store.
 		const guest: SiteChatGuest | null =
@@ -462,7 +524,91 @@ export class SiteChatService {
 			});
 		}
 
+		// Too long without writing (the owner chose how long): the window starts
+		// a new chat. The old one stays in the store's inbox.
+		const lastActiveAt: Date | null =
+			guest.lastActiveAt ?? guest.createdAt ?? null;
+
+		if (
+			lastActiveAt &&
+			Date.now() - new Date(lastActiveAt).getTime() >
+				chat.sessionMinutes * 60 * 1000
+		) {
+			throw new UnauthorizedException({
+				code: 'SITE_CHAT_EXPIRED',
+				message: 'This chat has ended.',
+			});
+		}
+
 		return { guest, ownerUserId: String(guest.ownerUserId) };
+	}
+
+	/** The visitor wrote: the chat stays theirs for the owner's time again. */
+	private async _touch(guest: SiteChatGuest): Promise<void> {
+		await this._guestModel.updateOne(
+			{ _id: guest._id },
+			{ $set: { lastActiveAt: new Date() } },
+		);
+	}
+
+	/** The answers to the customer fields the owner asks, each checked by its rule. */
+	private _answers(
+		fields: ISiteChatExtraField[],
+		raw: unknown,
+	): ISiteChatAnswer[] {
+		const given: Record<string, unknown> =
+			raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+
+		return fields
+			.map(
+				({
+					field,
+					isRequired,
+				}: ISiteChatExtraField): ISiteChatAnswer | null => {
+					const rule = CHAT_FIELD_RULES[field];
+
+					if (!rule) {
+						return null;
+					}
+
+					const value: string = textOf(given[field], rule.maxLength);
+
+					if (!value) {
+						if (isRequired) {
+							throw this._invalid(field);
+						}
+
+						return null;
+					}
+
+					if (!rule.isValid(value)) {
+						throw this._invalid(field);
+					}
+
+					return { field, label: rule.label, value };
+				},
+			)
+			.filter(
+				(answer: ISiteChatAnswer | null): answer is ISiteChatAnswer => !!answer,
+			);
+	}
+
+	/** Who the visitor is and what they answered, as the store reads it. */
+	private _summary({ name, email, phone, answers }: ISiteChatIdentity): string {
+		return [
+			`👤 ${name}`,
+			email && `✉️ ${email}`,
+			phone && `📞 ${phone}`,
+			...(answers ?? []).map(
+				(answer: ISiteChatAnswer) =>
+					`${answer.label}: ${
+						CHAT_FIELD_RULES[answer.field]?.shown?.(answer.value) ??
+						answer.value
+					}`,
+			),
+		]
+			.filter(Boolean)
+			.join('\n');
 	}
 
 	/** A field of the form as the store asks it: required, optional or not asked. */

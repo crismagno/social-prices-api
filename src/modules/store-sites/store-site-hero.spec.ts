@@ -1,4 +1,4 @@
-import { heroSlidesOf } from './store-site-hero';
+import { heroOptionsOf, heroSlidesOf } from './store-site-hero';
 
 describe('heroSlidesOf', () => {
 	it('has no extra images and six seconds each for a site saved before the slider', () => {
@@ -73,5 +73,73 @@ describe('heroSlidesOf', () => {
 			heroSlidesOf({ backgroundImageUrls: 'x' }).backgroundImageUrls,
 		).toEqual([]);
 		expect(heroSlidesOf('x').backgroundImageUrls).toEqual([]);
+	});
+});
+
+describe('heroOptionsOf', () => {
+	const untouched = {
+		isTaglineVisible: true,
+		isSubtitleVisible: true,
+		isFeaturedVisible: true,
+		isButtonVisible: true,
+		extraText: null,
+		button: null,
+		secondButton: null,
+		colors: { background: null, text: null, button: null },
+	};
+
+	it('shows the entrance as it always was for a site saved before the options', () => {
+		expect(heroOptionsOf(undefined)).toEqual(untouched);
+		expect(heroOptionsOf('x')).toEqual(untouched);
+		expect(heroOptionsOf([])).toEqual(untouched);
+	});
+
+	it('keeps the pieces the owner hid and the extra paragraph, trimmed and cut', () => {
+		const options = heroOptionsOf({
+			isTaglineVisible: false,
+			isSubtitleVisible: false,
+			isFeaturedVisible: false,
+			isButtonVisible: false,
+			extraText: `  ${'a'.repeat(500)}  `,
+		});
+
+		expect(options).toMatchObject({
+			isTaglineVisible: false,
+			isSubtitleVisible: false,
+			isFeaturedVisible: false,
+			isButtonVisible: false,
+		});
+		expect(options.extraText).toHaveLength(400);
+	});
+
+	it('keeps only colours that are colours', () => {
+		expect(
+			heroOptionsOf({
+				colors: {
+					background: '#AABBCC',
+					text: 'red',
+					button: 'url(javascript:1)',
+				},
+			}).colors,
+		).toEqual({ background: '#aabbcc', text: null, button: null });
+	});
+
+	it('keeps where the main button leads, with or without words of its own', () => {
+		expect(
+			heroOptionsOf({ button: { target: 'WHATSAPP', value: '85999990000' } })
+				.button,
+		).toMatchObject({ target: 'WHATSAPP', value: '85999990000' });
+	});
+
+	it('has a second button only when it says something', () => {
+		expect(
+			heroOptionsOf({ secondButton: { target: 'PAGE', pageKey: 'about' } })
+				.secondButton,
+		).toBeNull();
+		expect(
+			heroOptionsOf({
+				secondButton: { label: ' Fale com a gente ', target: 'PAGE' },
+			}).secondButton,
+		).toMatchObject({ label: 'Fale com a gente', target: 'PAGE' });
 	});
 });

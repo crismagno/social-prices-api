@@ -87,6 +87,27 @@ export class SiteChatController {
 		return await this._siteChatService.send(slug, token, body?.text);
 	}
 
+	// The visitor is writing: the store's inbox shows it. Never fails the window.
+	@Public()
+	@Post('/typing')
+	@HttpCode(204)
+	public async typing(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Headers(TOKEN_HEADER) token: string,
+	): Promise<void> {
+		await this._siteChatService.typing(slug, token);
+	}
+
+	// Whether the store is writing to this visitor right now.
+	@Public()
+	@Get('/typing')
+	public async storeTyping(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Headers(TOKEN_HEADER) token: string,
+	): Promise<{ isStoreTyping: boolean }> {
+		return await this._siteChatService.storeTyping(slug, token);
+	}
+
 	// A file or a recording of the visitor; the text, when there is one, goes with it.
 	@Public()
 	@Post('/media')

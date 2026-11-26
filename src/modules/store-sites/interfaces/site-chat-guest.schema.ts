@@ -31,6 +31,14 @@ export class SiteChatGuest {
 	@Prop({ type: String, default: null })
 	phone: string | null;
 
+	/** What the visitor answered to the owner's own fields. */
+	@Prop({ type: [Object], default: [] })
+	answers: { field: string; label: string; value: string }[];
+
+	/** When the visitor last wrote: the chat is theirs for an hour after it. */
+	@Prop({ type: Date, default: null })
+	lastActiveAt: Date | null;
+
 	createdAt: Date;
 
 	updatedAt: Date;

@@ -26,9 +26,13 @@ import {
 import { siteAboutOf } from './store-site-about';
 import { publicBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
+import { siteCartButtonOf } from './store-site-cart-button';
+import { siteImageStyleOf } from './store-site-image-style';
+import { siteCheckoutOf } from './store-site-checkout';
 import { siteHeaderOf } from './store-site-header';
+import { siteMarqueeStyleOf } from './store-site-marquee-style';
 import { siteFooterOf } from './store-site-footer';
-import { heroSlidesOf } from './store-site-hero';
+import { heroOptionsOf, heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
 import { siteCatalogOf } from './store-site-catalog';
 import { siteSignInOf } from './store-site-sign-in';
@@ -237,6 +241,10 @@ export class StoreSitesPublicService {
 			chat: siteChatOf(site.chat),
 			isLayoutCustom: site.isLayoutCustom === true,
 			header: siteHeaderOf(site.header),
+			cartButton: siteCartButtonOf(site.cartButton),
+			imageStyle: siteImageStyleOf(site.imageStyle),
+			checkout: siteCheckoutOf(site.checkout),
+			marqueeStyle: siteMarqueeStyleOf(site.marqueeStyle),
 			blocks: publicBlocksOf(
 				site.blocks,
 				pages.map((page) => page.key),
@@ -249,6 +257,7 @@ export class StoreSitesPublicService {
 				...heroSlidesOf(site.hero),
 				featuredImageUrl: site.hero?.featuredImageUrl ?? null,
 				ctaLabel: site.hero?.ctaLabel ?? null,
+				options: heroOptionsOf(site.hero?.options),
 			},
 			sections: (site.sections ?? []).map((section) => ({
 				key: section.key,

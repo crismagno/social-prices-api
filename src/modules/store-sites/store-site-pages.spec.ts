@@ -11,7 +11,12 @@ const custom = (patch: any = {}) => ({
 	isInMenu: true,
 	title: 'Como encomendar',
 	intro: 'Passo a passo',
-	content: { texts: ['Escolha', 'Pague'], media: null, mediaPosition: 'LEFT' },
+	content: {
+		title: null,
+		texts: ['Escolha', 'Pague'],
+		media: null,
+		mediaPosition: 'LEFT',
+	},
 	faq: [],
 	...patch,
 });
@@ -31,7 +36,7 @@ describe('sitePagesOf', () => {
 			label: null,
 			title: null,
 			intro: null,
-			content: { texts: [], media: null, mediaPosition: 'LEFT' },
+			content: { title: null, texts: [], media: null, mediaPosition: 'LEFT' },
 			faq: [],
 		});
 	});
@@ -85,6 +90,16 @@ describe('sitePagesOf', () => {
 			isInMenu: true,
 			content: { texts: ['Escolha', 'Pague'] },
 		});
+	});
+
+	it('keeps the heading of the content, trimmed and no longer than a title', () => {
+		const [page] = sitePagesOf([
+			custom({
+				content: { title: `  ${'a'.repeat(100)}  `, texts: ['Escolha'] },
+			}),
+		]);
+
+		expect(page.content.title).toBe('a'.repeat(80));
 	});
 
 	it('turns the address of a page of the owner into a clean one', () => {

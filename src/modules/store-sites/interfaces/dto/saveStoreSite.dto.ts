@@ -92,6 +92,11 @@ export class StoreSiteHeroDto {
 	@IsString()
 	@MaxLength(40)
 	ctaLabel: string | null;
+
+	// Checked when saved: see heroOptionsOf.
+	@IsOptional()
+	@IsObject()
+	options?: Record<string, unknown>;
 }
 
 export class StoreSiteSectionDto {
@@ -207,6 +212,26 @@ export default class SaveStoreSiteDto {
 	@IsOptional()
 	@IsObject()
 	header?: Record<string, unknown>;
+
+	// Checked when saved: see siteCartButtonOf.
+	@IsOptional()
+	@IsObject()
+	cartButton?: Record<string, unknown>;
+
+	// Checked when saved: see siteImageStyleOf.
+	@IsOptional()
+	@IsObject()
+	imageStyle?: Record<string, unknown>;
+
+	// Checked when saved: see siteCheckoutOf.
+	@IsOptional()
+	@IsObject()
+	checkout?: Record<string, unknown>;
+
+	// Checked when saved: see siteMarqueeStyleOf.
+	@IsOptional()
+	@IsObject()
+	marqueeStyle?: Record<string, unknown>;
 
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)

@@ -63,7 +63,12 @@ const pageOf = (
 	slug: string,
 	isInMenuByDefault: boolean,
 ): IStoreSitePage => {
-	const { texts, media, mediaPosition } = siteAboutOf(source.content);
+	const {
+		title: contentTitle,
+		texts,
+		media,
+		mediaPosition,
+	} = siteAboutOf(source.content);
 
 	return {
 		key:
@@ -81,7 +86,7 @@ const pageOf = (
 				: isInMenuByDefault,
 		title: textOf(source.title, MAX_TITLE_LENGTH),
 		intro: textOf(source.intro, MAX_INTRO_LENGTH),
-		content: { texts, media, mediaPosition },
+		content: { title: contentTitle, texts, media, mediaPosition },
 		faq: type === StoreSitesEnum.SitePageType.SUPPORT ? faqOf(source.faq) : [],
 	};
 };

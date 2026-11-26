@@ -1,4 +1,11 @@
+import {
+	IStoreSiteBlockButton,
+	IStoreSiteHeroOptions,
+} from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
+import { buttonOf } from './store-site-blocks';
+
+const MAX_EXTRA_TEXT_LENGTH = 400;
 
 export interface IHeroSlides {
 	/** Background images shown after the first one, in turn. */
@@ -53,5 +60,57 @@ export const heroSlidesOf = (hero: unknown): IHeroSlides => {
 			source.featuredImageUrls,
 		),
 		featuredSlideSeconds: secondsOf(source.featuredSlideSeconds),
+	};
+};
+
+const colorOf = (value: unknown): string | null =>
+	typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value.trim())
+		? value.trim().toLowerCase()
+		: null;
+
+const recordOf = (value: unknown): Record<string, unknown> =>
+	value && typeof value === 'object' && !Array.isArray(value)
+		? (value as Record<string, unknown>)
+		: {};
+
+/** A button of the entrance, or none: the second one needs words to show. */
+const heroButtonOf = (
+	button: unknown,
+	needsLabel: boolean,
+): IStoreSiteBlockButton | null => {
+	if (!button || typeof button !== 'object' || Array.isArray(button)) {
+		return null;
+	}
+
+	const checked: IStoreSiteBlockButton = buttonOf(button);
+
+	return needsLabel && !checked.label ? null : checked;
+};
+
+/**
+ * The owner's choices for the entrance, whatever was stored or sent. A site
+ * saved before them shows the entrance as it always was: every piece, the
+ * button to the products, no second button and the template's colours.
+ */
+export const heroOptionsOf = (options: unknown): IStoreSiteHeroOptions => {
+	const source: Record<string, unknown> = recordOf(options);
+	const colors: Record<string, unknown> = recordOf(source.colors);
+
+	return {
+		isTaglineVisible: source.isTaglineVisible !== false,
+		isSubtitleVisible: source.isSubtitleVisible !== false,
+		isFeaturedVisible: source.isFeaturedVisible !== false,
+		isButtonVisible: source.isButtonVisible !== false,
+		extraText:
+			typeof source.extraText === 'string' && source.extraText.trim()
+				? source.extraText.trim().slice(0, MAX_EXTRA_TEXT_LENGTH)
+				: null,
+		button: heroButtonOf(source.button, false),
+		secondButton: heroButtonOf(source.secondButton, true),
+		colors: {
+			background: colorOf(colors.background),
+			text: colorOf(colors.text),
+			button: colorOf(colors.button),
+		},
 	};
 };

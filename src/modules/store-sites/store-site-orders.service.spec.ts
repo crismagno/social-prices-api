@@ -66,6 +66,7 @@ const build = ({
 	createCustomer,
 	assertAllowed,
 	invite,
+	checkout,
 }: any = {}) => {
 	const findSellables: jest.Mock = jest.fn().mockResolvedValue(sellables);
 
@@ -78,6 +79,7 @@ const build = ({
 					userId: OWNER,
 					slug: 'atelie',
 					productIds: [P1, P2],
+					checkout,
 				},
 				owner: { _id: OWNER },
 				store: { _id: STORE, userId: OWNER, addresses: [] },
@@ -485,5 +487,134 @@ describe('StoreSiteOrdersService', () => {
 			service.create('atelie', '1.1.1.1', order()),
 		).rejects.toBeInstanceOf(NotFoundException);
 		expect(salesService.createManual).not.toHaveBeenCalled();
+	});
+
+	describe('what the bag of the site asks', () => {
+		const fields = (patch: any) => ({
+			fields: {
+				EMAIL: 'REQUIRED',
+				PHONE: 'REQUIRED',
+				ADDRESS: 'REQUIRED',
+				NOTE: 'OPTIONAL',
+				...patch,
+			},
+		});
+
+		const buyer = (patch: any) => ({
+			buyer: { ...order().buyer, ...patch },
+		});
+
+		const missing = async (promise: Promise<unknown>): Promise<string[]> => {
+			const error: any = await promise.catch((caught: unknown) => caught);
+
+			expect(error).toBeInstanceOf(BadRequestException);
+			expect(error.getResponse().code).toBe('SITE_ORDER_FIELDS_MISSING');
+
+			return error.getResponse().fields;
+		};
+
+		it('refuses an order without what a site saved before the option needs', async () => {
+			const { service, salesService, rateLimiter } = build();
+
+			expect(
+				await missing(
+					service.create(
+						'atelie',
+						'1.1.1.1',
+						order(buyer({ email: null, phoneNumber: ' ', address: null })),
+					),
+				),
+			).toEqual(['EMAIL', 'PHONE', 'ADDRESS']);
+			expect(salesService.createManual).not.toHaveBeenCalled();
+			// Not a valid order: it does not use up the site's allowance.
+			expect(rateLimiter.assertAllowed).not.toHaveBeenCalled();
+		});
+
+		it('refuses an order without a field the owner made required', async () => {
+			const { service } = build({ checkout: fields({ NOTE: 'REQUIRED' }) });
+
+			expect(
+				await missing(
+					service.create('atelie', '1.1.1.1', order({ note: '  ' })),
+				),
+			).toEqual(['NOTE']);
+		});
+
+		it('takes an order without the fields the owner made optional', async () => {
+			const { service, salesService, customersService } = build({
+				checkout: fields({
+					EMAIL: 'OPTIONAL',
+					PHONE: 'OPTIONAL',
+					ADDRESS: 'OPTIONAL',
+				}),
+				createCustomer: jest
+					.fn()
+					.mockResolvedValue({ _id: NEW_CUSTOMER, email: null }),
+			});
+
+			await service.create(
+				'atelie',
+				'1.1.1.1',
+				order(buyer({ email: null, phoneNumber: null, address: null })),
+			);
+			await afterInvite();
+
+			const sale: any = sentSale(salesService);
+
+			expect(sale.buyer.email).toBeNull();
+			expect(sale.buyer.phoneNumber).toBeNull();
+			expect(sale.buyer.address).toBeNull();
+			// Nowhere to deliver to: the store hands it over.
+			expect(sale.header.shipping).toBeNull();
+			expect(sale.header.deliveryType).toBe(SalesEnum.DeliveryType.PICKUP);
+
+			// No email to know the visitor by: a new customer, and no invite.
+			expect(customersService.findByOwnerUserIdAndEmail).not.toHaveBeenCalled();
+			expect(customersService.create.mock.calls[0][1]).toMatchObject({
+				email: null,
+				addresses: [],
+				phoneNumbers: [],
+			});
+			expect(customersService.invite).not.toHaveBeenCalled();
+		});
+
+		it('keeps an optional field the visitor filled in', async () => {
+			const { service, salesService } = build({
+				checkout: fields({ EMAIL: 'OPTIONAL', ADDRESS: 'OPTIONAL' }),
+			});
+
+			await service.create('atelie', '1.1.1.1', order());
+
+			const sale: any = sentSale(salesService);
+
+			expect(sale.buyer.email).toBe('ana@x.com');
+			expect(sale.header.shipping.address.city).toBe('Fortaleza');
+			expect(sale.header.deliveryType).toBe(SalesEnum.DeliveryType.DELIVERY);
+		});
+
+		it('drops a field the site does not ask, even if it is sent', async () => {
+			const { service, salesService, customersService } = build({
+				checkout: fields({
+					EMAIL: 'HIDDEN',
+					PHONE: 'HIDDEN',
+					ADDRESS: 'HIDDEN',
+					NOTE: 'HIDDEN',
+				}),
+				createCustomer: jest
+					.fn()
+					.mockResolvedValue({ _id: NEW_CUSTOMER, email: null }),
+			});
+
+			await service.create('atelie', '1.1.1.1', order());
+
+			const sale: any = sentSale(salesService);
+
+			expect(sale.buyer.name).toBe('Ana Lima');
+			expect(sale.buyer.email).toBeNull();
+			expect(sale.buyer.phoneNumber).toBeNull();
+			expect(sale.buyer.address).toBeNull();
+			expect(sale.note).toBeNull();
+			expect(customersService.findByOwnerUserIdAndEmail).not.toHaveBeenCalled();
+		});
 	});
 });

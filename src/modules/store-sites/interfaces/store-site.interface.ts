@@ -54,6 +54,45 @@ export interface IStoreSiteFooter {
 	links: IStoreSiteFooterLink[];
 }
 
+/** How the strip of phrases looks and runs; empty is the template's own. */
+export interface IStoreSiteMarqueeStyle {
+	speed: StoreSitesEnum.MarqueeSpeed;
+	direction: StoreSitesEnum.MarqueeDirection;
+	/** Between the phrases; empty, the template's own symbol. */
+	separator: string | null;
+	size: StoreSitesEnum.MarqueeSize;
+	background: string | null;
+	color: string | null;
+	pauseOnHover: boolean;
+}
+
+/** The cart button at the top of the site. */
+export interface IStoreSiteCartButton {
+	/** Off for a site that sells nothing: no cart and no "add" buttons. */
+	isVisible: boolean;
+	icon: StoreSitesEnum.CartButtonIcon;
+	/** The words on it; empty, the template's own. */
+	label: string | null;
+	/** Off, only the icon shows. */
+	isLabelVisible: boolean;
+	size: StoreSitesEnum.CartButtonSize;
+}
+
+/** How the images of one place of the site look. */
+export interface IStoreSiteImageLook {
+	shape: StoreSitesEnum.ImageShape;
+	ratio: StoreSitesEnum.ImageRatio;
+}
+
+/** How the images of the site look, by place. */
+export interface IStoreSiteImageStyle {
+	product: IStoreSiteImageLook;
+	/** The photos of the sections the template draws. */
+	section: IStoreSiteImageLook;
+	/** The images of the blocks: image pieces, columns, team. */
+	block: IStoreSiteImageLook;
+}
+
 /** How the top of the site behaves. */
 export interface IStoreSiteHeader {
 	/** The menu stays at the top of the screen while the visitor scrolls. */
@@ -86,6 +125,14 @@ export interface IStoreSiteAbout {
 	mediaPosition: StoreSitesEnum.AboutMediaPosition;
 }
 
+/**
+ * What the bag asks before an order is sent, besides the name: each field
+ * asked and needed, asked but free to skip, or not asked.
+ */
+export interface IStoreSiteCheckout {
+	fields: Record<StoreSitesEnum.CheckoutField, StoreSitesEnum.ChatFieldMode>;
+}
+
 export interface IStoreSiteFaqItem {
 	question: string;
 	answer: string;
@@ -93,6 +140,8 @@ export interface IStoreSiteFaqItem {
 
 /** What a page shows below its title: texts and an image or a video. */
 export interface IStoreSitePageContent {
+	/** A heading over the texts, in the look of the template; empty, none. */
+	title: string | null;
 	texts: string[];
 	media: IStoreSiteAboutMedia | null;
 	mediaPosition: StoreSitesEnum.AboutMediaPosition;
@@ -133,8 +182,30 @@ export interface IStoreSiteChat {
 	title: string | null;
 	/** The first words the visitor reads. */
 	greeting: string | null;
+	/** How the email is asked, read from `extraFields`. */
 	emailField: StoreSitesEnum.ChatFieldMode;
+	/** How the phone is asked, read from `extraFields`. */
 	phoneField: StoreSitesEnum.ChatFieldMode;
+	/** Minutes a chat stays the visitor's after they last wrote; then they start again. */
+	sessionMinutes: number;
+	/** The fields the owner asks after the name, email and phone among them, in order. */
+	extraFields: ISiteChatExtraField[];
+	/** 2 once email and phone live in `extraFields`; older chats are read from their modes. */
+	fieldsVersion: number;
+}
+
+/** A field of the customer record the owner asks in the chat's form. */
+export interface ISiteChatExtraField {
+	field: StoreSitesEnum.ChatCustomerField;
+	isRequired: boolean;
+}
+
+/** What a visitor answered to one of those fields. */
+export interface ISiteChatAnswer {
+	field: StoreSitesEnum.ChatCustomerField;
+	/** The field's name, as the store reads it. */
+	label: string;
+	value: string;
 }
 
 export interface IStoreSiteHero {
@@ -152,6 +223,33 @@ export interface IStoreSiteHero {
 	/** Seconds each featured image stays, when there is more than one. */
 	featuredSlideSeconds?: number;
 	ctaLabel: string | null;
+	/** What the owner changed of how the entrance looks and what it says. */
+	options?: Partial<IStoreSiteHeroOptions>;
+}
+
+/** Colours of the entrance alone; an empty one is the template's own. */
+export interface IStoreSiteHeroColors {
+	background: string | null;
+	text: string | null;
+	button: string | null;
+}
+
+/**
+ * The owner's own choices for the entrance: which of its pieces show, one more
+ * paragraph, where its button leads, a second button and its own colours.
+ */
+export interface IStoreSiteHeroOptions {
+	isTaglineVisible: boolean;
+	isSubtitleVisible: boolean;
+	isFeaturedVisible: boolean;
+	isButtonVisible: boolean;
+	/** A paragraph under the subtitle. */
+	extraText: string | null;
+	/** Where the main button leads; none, to the products. Its words are `ctaLabel`. */
+	button: IStoreSiteBlockButton | null;
+	/** One more button beside the main one; none without words. */
+	secondButton: IStoreSiteBlockButton | null;
+	colors: IStoreSiteHeroColors;
 }
 
 export interface IStoreSiteSection {
@@ -251,6 +349,16 @@ export interface IStoreSiteCatalog {
 	isDescriptionShown: boolean;
 	/** A search box on the page of products. */
 	isSearchShown: boolean;
+	/** The "add" button of each product; off, products are only shown. */
+	isAddButtonShown: boolean;
+	/** A click on a product opens its details. */
+	isDetailsOpened: boolean;
+	/** The heading of the products section. */
+	isTitleShown: boolean;
+	/** The owner's own heading; empty, the site says its own. */
+	title: string | null;
+	/** The owner's own text of the add button; empty, the site says its own. */
+	addLabel: string | null;
 }
 
 export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
@@ -274,6 +382,11 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	chat?: Partial<IStoreSiteChat>;
 	blocks?: IStoreSiteBlock[];
 	header?: Partial<IStoreSiteHeader>;
+	cartButton?: Partial<IStoreSiteCartButton>;
+	imageStyle?: Partial<IStoreSiteImageStyle>;
+	/** What the bag asks before an order is sent. */
+	checkout?: Partial<IStoreSiteCheckout>;
+	marqueeStyle?: Partial<IStoreSiteMarqueeStyle>;
 	/** The owner arranged the pages: only the blocks list says what shows where. */
 	isLayoutCustom?: boolean;
 	hero: IStoreSiteHero;

@@ -10,6 +10,7 @@ import { ProductItemsModule } from '../product-items/product-items.module';
 import { ProductsModule } from '../products/products.module';
 import { SalesModule } from '../sales/sales.module';
 import { StoresModule } from '../stores/stores.module';
+import { SiteChatTypingState } from './site-chat-typing';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
 import { SiteChatController } from './site-chat.controller';
 import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
@@ -50,6 +51,7 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 		StoreSitesPublicService,
 		SiteChatService,
 		SiteChatRateLimiter,
+		SiteChatTypingState,
 		SiteChatInboxAdapter,
 		// The files of the chat, in its private storage, as the store chat keeps them.
 		StoreChatMediaService,

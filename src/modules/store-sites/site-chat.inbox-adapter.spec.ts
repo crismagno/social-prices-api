@@ -32,12 +32,21 @@ const build = () => {
 		}),
 	};
 
+	const typing: any = { mark: jest.fn(), clear: jest.fn() };
+
 	return {
 		registry,
 		media,
 		conversations,
 		messages,
-		adapter: new SiteChatInboxAdapter(registry, conversations, messages, media),
+		typing,
+		adapter: new SiteChatInboxAdapter(
+			registry,
+			conversations,
+			messages,
+			media,
+			typing,
+		),
 	};
 };
 
@@ -124,5 +133,25 @@ describe('SiteChatInboxAdapter', () => {
 
 		expect(media.read).toHaveBeenCalledWith(message, 0);
 		expect(file.contentType).toBe('image/png');
+	});
+
+	it('lets the visitor see the store writing, and stops when it answers', async () => {
+		const { adapter, typing } = build();
+		const conversation: any = { _id: 'c1', channel: InboxEnum.Channel.SITE };
+
+		await adapter.sendTyping(
+			{ ownerUserId: 'owner', employeeId: null },
+			conversation,
+		);
+
+		expect(typing.mark).toHaveBeenCalledWith('c1');
+
+		await adapter.sendText(
+			{ ownerUserId: 'owner', employeeId: null },
+			conversation,
+			'Oi!',
+		);
+
+		expect(typing.clear).toHaveBeenCalledWith('c1');
 	});
 });

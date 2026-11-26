@@ -16,9 +16,13 @@ import { StoresService } from '../stores/stores.service';
 import { siteAboutOf } from './store-site-about';
 import { siteBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
+import { siteCartButtonOf } from './store-site-cart-button';
+import { siteImageStyleOf } from './store-site-image-style';
+import { siteCheckoutOf } from './store-site-checkout';
 import { siteHeaderOf } from './store-site-header';
+import { siteMarqueeStyleOf } from './store-site-marquee-style';
 import { siteFooterOf } from './store-site-footer';
-import { heroSlidesOf } from './store-site-hero';
+import { heroOptionsOf, heroSlidesOf } from './store-site-hero';
 import { sitePagesOf } from './store-site-pages';
 import { siteCatalogOf } from './store-site-catalog';
 import { siteSignInOf } from './store-site-sign-in';
@@ -138,9 +142,14 @@ export class StoreSitesService {
 						blocks: siteBlocksOf(saveStoreSiteDto.blocks),
 						isLayoutCustom: saveStoreSiteDto.isLayoutCustom === true,
 						header: siteHeaderOf(saveStoreSiteDto.header),
+						cartButton: siteCartButtonOf(saveStoreSiteDto.cartButton),
+						imageStyle: siteImageStyleOf(saveStoreSiteDto.imageStyle),
+						checkout: siteCheckoutOf(saveStoreSiteDto.checkout),
+						marqueeStyle: siteMarqueeStyleOf(saveStoreSiteDto.marqueeStyle),
 						hero: {
 							...saveStoreSiteDto.hero,
 							...heroSlidesOf(saveStoreSiteDto.hero),
+							options: heroOptionsOf(saveStoreSiteDto.hero?.options),
 						},
 						sections: saveStoreSiteDto.sections,
 						marquee: saveStoreSiteDto.marquee,
