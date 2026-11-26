@@ -207,6 +207,19 @@ namespace StoreSitesEnum {
 		NOTE = 'NOTE',
 	}
 
+	/** How wide the cart window opens. */
+	export enum CartWidth {
+		NARROW = 'NARROW',
+		NORMAL = 'NORMAL',
+		WIDE = 'WIDE',
+	}
+
+	/** The side of the screen the cart window comes from. */
+	export enum CartSide {
+		RIGHT = 'RIGHT',
+		LEFT = 'LEFT',
+	}
+
 	/** The kinds of content block an owner can add to the site. */
 	export enum BlockType {
 		TEAM = 'TEAM',

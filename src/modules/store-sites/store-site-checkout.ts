@@ -1,4 +1,7 @@
-import { IStoreSiteCheckout } from './interfaces/store-site.interface';
+import {
+	IStoreSiteCartLook,
+	IStoreSiteCheckout,
+} from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 
 const Field = StoreSitesEnum.CheckoutField;
@@ -13,6 +16,51 @@ const DEFAULT_MODES: Record<
 	[Field.PHONE]: Mode.REQUIRED,
 	[Field.ADDRESS]: Mode.REQUIRED,
 	[Field.NOTE]: Mode.OPTIONAL,
+};
+
+export const CART_TITLE_MAX = 40;
+export const CART_SHIPPING_NOTE_MAX = 200;
+export const CART_BUTTON_LABEL_MAX = 30;
+
+const textOf = (value: unknown, max: number): string | null =>
+	typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
+
+const oneOf = <T extends string>(
+	values: T[],
+	value: unknown,
+	fallback: T,
+): T => (values.includes(value as T) ? (value as T) : fallback);
+
+/** The cart window as the owner set it; whatever is missing shows as before. */
+export const cartLookOf = (look: unknown): IStoreSiteCartLook => {
+	const source: Record<string, unknown> =
+		look && typeof look === 'object' && !Array.isArray(look)
+			? (look as Record<string, unknown>)
+			: {};
+
+	const shownUnlessOff = (key: string): boolean => source[key] !== false;
+
+	return {
+		title: textOf(source.title, CART_TITLE_MAX),
+		width: oneOf(
+			Object.values(StoreSitesEnum.CartWidth),
+			source.width,
+			StoreSitesEnum.CartWidth.NORMAL,
+		),
+		side: oneOf(
+			Object.values(StoreSitesEnum.CartSide),
+			source.side,
+			StoreSitesEnum.CartSide.RIGHT,
+		),
+		isPhotoShown: shownUnlessOff('isPhotoShown'),
+		isBrandShown: shownUnlessOff('isBrandShown'),
+		isDescriptionShown: shownUnlessOff('isDescriptionShown'),
+		isTagsShown: shownUnlessOff('isTagsShown'),
+		isProductOpened: shownUnlessOff('isProductOpened'),
+		isShippingNoteShown: shownUnlessOff('isShippingNoteShown'),
+		shippingNote: textOf(source.shippingNote, CART_SHIPPING_NOTE_MAX),
+		buttonLabel: textOf(source.buttonLabel, CART_BUTTON_LABEL_MAX),
+	};
 };
 
 /**
@@ -45,5 +93,6 @@ export const siteCheckoutOf = (checkout: unknown): IStoreSiteCheckout => {
 			}),
 			{} as IStoreSiteCheckout['fields'],
 		),
+		look: cartLookOf(source.look),
 	};
 };

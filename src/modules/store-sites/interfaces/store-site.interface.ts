@@ -129,8 +129,29 @@ export interface IStoreSiteAbout {
  * What the bag asks before an order is sent, besides the name: each field
  * asked and needed, asked but free to skip, or not asked.
  */
+/** How the cart window looks and what it shows of each product. */
+export interface IStoreSiteCartLook {
+	/** Its own title; null keeps the default one. */
+	title: string | null;
+	width: StoreSitesEnum.CartWidth;
+	side: StoreSitesEnum.CartSide;
+	isPhotoShown: boolean;
+	isBrandShown: boolean;
+	isDescriptionShown: boolean;
+	/** Size and colors of the product. */
+	isTagsShown: boolean;
+	/** A click on a product shows it in full. */
+	isProductOpened: boolean;
+	isShippingNoteShown: boolean;
+	/** Its own words about shipping; null keeps the default ones. */
+	shippingNote: string | null;
+	/** Its own words on the button to go on; null keeps the default ones. */
+	buttonLabel: string | null;
+}
+
 export interface IStoreSiteCheckout {
 	fields: Record<StoreSitesEnum.CheckoutField, StoreSitesEnum.ChatFieldMode>;
+	look: IStoreSiteCartLook;
 }
 
 export interface IStoreSiteFaqItem {
