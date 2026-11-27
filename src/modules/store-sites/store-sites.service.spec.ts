@@ -138,7 +138,7 @@ describe('StoreSitesService', () => {
 				STORE,
 				dto({
 					footer: {
-						text: 'Oi',
+						itemsVersion: 2,
 						links: [
 							{
 								key: 'x',
@@ -167,13 +167,11 @@ describe('StoreSitesService', () => {
 					label: '',
 					url: 'https://instagram.com/a',
 					section: 'links',
+					imageUrl: null,
+					height: null,
 				},
 			]);
-			expect(footer).toMatchObject({
-				isActive: true,
-				isLoginVisible: true,
-				text: 'Oi',
-			});
+			expect(footer).toMatchObject({ isActive: true, itemsVersion: 2 });
 		});
 
 		it('stores the extra backgrounds of the entrance checked', async () => {

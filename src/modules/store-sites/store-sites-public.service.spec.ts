@@ -288,15 +288,14 @@ describe('StoreSitesPublicService', () => {
 			expect(older.site.sizes.logoWidth).toBeNull();
 		});
 
-		it('gives the footer, with the login button for a site saved before it existed', async () => {
+		it('gives the footer, with the name and the login button for a site saved before it existed', async () => {
 			const { site } = await build().findBySlugOrFail('atelie');
 
-			expect(site.footer).toMatchObject({
-				isActive: true,
-				text: null,
-				isLoginVisible: true,
-				links: [],
-			});
+			expect(site.footer.isActive).toBe(true);
+			expect(site.footer.links.map((link) => link.type)).toEqual([
+				'NAME',
+				'SIGN_IN',
+			]);
 			expect(site.footer.sections).toHaveLength(2);
 		});
 

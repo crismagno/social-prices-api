@@ -43,7 +43,27 @@ namespace StoreSitesEnum {
 		WEBSITE = 'WEBSITE',
 		/** Words of the owner's own, shown as plain text with no icon. */
 		TEXT = 'TEXT',
+		// What is not a link: the footer shows it as it is.
+		/** The name of the site, or words of the owner's in its place. */
+		NAME = 'NAME',
+		/** The logo of the site, or a picture of the owner's in its place. */
+		LOGO = 'LOGO',
+		/** A paragraph. */
+		NOTE = 'NOTE',
+		/** A picture, which can lead somewhere. */
+		IMAGE = 'IMAGE',
+		/** The button into the app. */
+		SIGN_IN = 'SIGN_IN',
 	}
+
+	/** The kinds of item of the footer that are not links. */
+	export const FOOTER_CONTENT_TYPES: FooterLinkType[] = [
+		FooterLinkType.NAME,
+		FooterLinkType.LOGO,
+		FooterLinkType.NOTE,
+		FooterLinkType.IMAGE,
+		FooterLinkType.SIGN_IN,
+	];
 
 	/** Background images of the entrance besides the first, shown in turn. */
 	export const MAX_HERO_EXTRA_IMAGES = 5;
@@ -51,7 +71,7 @@ namespace StoreSitesEnum {
 	export const MAX_SLIDE_SECONDS = 20;
 	export const DEFAULT_SLIDE_SECONDS = 6;
 
-	export const MAX_FOOTER_LINKS = 12;
+	export const MAX_FOOTER_LINKS = 30;
 	export const MAX_FOOTER_SECTIONS = 5;
 
 	/** Where the sign-in button of the site takes a customer, once signed in. */

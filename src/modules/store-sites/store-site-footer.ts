@@ -9,8 +9,8 @@ import StoreSitesEnum from './interfaces/store-sites.enum';
 
 const MAX_URL_LENGTH = 300;
 const MAX_LABEL_LENGTH = 40;
-const MAX_TEXT_LENGTH = 300;
 const MAX_SECTION_TITLE_LENGTH = 40;
+const DEFAULT_LOGO_HEIGHT = 48;
 
 /**
  * How the footer was before it had sections: the words on one side, the links
@@ -100,6 +100,32 @@ export const safeFooterUrl = (
 	}
 };
 
+const MAX_NOTE_LENGTH = 300;
+const MAX_IMAGE_KEY_LENGTH = 600;
+const IMAGE_HEIGHT_RANGE: [number, number] = [20, 240];
+
+const F = StoreSitesEnum.FooterLinkType;
+
+const isContent = (type: StoreSitesEnum.FooterLinkType): boolean =>
+	StoreSitesEnum.FOOTER_CONTENT_TYPES.includes(type);
+
+const heightOf = (value: unknown, fallback: number): number =>
+	typeof value === 'number' && Number.isFinite(value)
+		? Math.min(
+				IMAGE_HEIGHT_RANGE[1],
+				Math.max(IMAGE_HEIGHT_RANGE[0], Math.round(value)),
+		  )
+		: fallback;
+
+const imageKeyOf = (value: unknown): string | null =>
+	typeof value === 'string' && value.trim()
+		? value.trim().slice(0, MAX_IMAGE_KEY_LENGTH)
+		: null;
+
+/**
+ * One item of the footer, or null when it has nothing to show: a link without
+ * a safe address, a paragraph without words, an image without a picture.
+ */
 const toLink = (
 	link: unknown,
 	placeOf: (section: unknown, fallback: string) => string,
@@ -117,24 +143,130 @@ const toLink = (
 		? (source.type as StoreSitesEnum.FooterLinkType)
 		: StoreSitesEnum.FooterLinkType.WEBSITE;
 
-	const url: string | null = safeFooterUrl(type, source.url);
+	const typedLabel: string =
+		typeof source.label === 'string' ? source.label.trim() : '';
 
-	if (!url) {
-		return null;
-	}
-
-	return {
+	const base = {
 		key:
 			typeof source.key === 'string' && source.key.trim()
 				? source.key.trim().slice(0, 60)
 				: randomUUID(),
 		type,
-		label:
-			typeof source.label === 'string'
-				? source.label.trim().slice(0, MAX_LABEL_LENGTH)
-				: '',
-		url,
 		section: placeOf(source.section, linksSection),
+	};
+
+	if (!isContent(type)) {
+		const url: string | null = safeFooterUrl(type, source.url);
+
+		return url
+			? {
+					...base,
+					label: typedLabel.slice(0, MAX_LABEL_LENGTH),
+					url,
+					imageUrl: null,
+					height: null,
+			  }
+			: null;
+	}
+
+	switch (type) {
+		case F.NOTE:
+			return typedLabel
+				? {
+						...base,
+						label: typedLabel.slice(0, MAX_NOTE_LENGTH),
+						url: '',
+						imageUrl: null,
+						height: null,
+				  }
+				: null;
+		case F.IMAGE: {
+			const imageUrl: string | null = imageKeyOf(source.imageUrl);
+
+			return imageUrl
+				? {
+						...base,
+						label: typedLabel.slice(0, MAX_LABEL_LENGTH),
+						// Where the picture leads, when it leads somewhere safe.
+						url: safeFooterUrl(F.WEBSITE, source.url) ?? '',
+						imageUrl,
+						height: heightOf(source.height, 80),
+				  }
+				: null;
+		}
+		case F.LOGO:
+			return {
+				...base,
+				label: '',
+				url: '',
+				// Its own picture; empty, the logo of the site.
+				imageUrl: imageKeyOf(source.imageUrl),
+				height: heightOf(source.height, DEFAULT_LOGO_HEIGHT),
+			};
+		default:
+			// The name (the owner's words, or the site's) and the sign-in.
+			return {
+				...base,
+				label: type === F.NAME ? typedLabel.slice(0, MAX_LABEL_LENGTH) : '',
+				url: '',
+				imageUrl: null,
+				height: null,
+			};
+	}
+};
+
+/**
+ * What a footer saved before its items had kinds showed from its own fields,
+ * as items: the logo, the name and the text where the text was, and the
+ * sign-in where it was.
+ */
+const legacyItemsOf = (
+	source: Record<string, unknown>,
+	textSection: string,
+	loginSection: string,
+): { before: IStoreSiteFooterLink[]; after: IStoreSiteFooterLink[] } => {
+	const item = (
+		key: string,
+		type: StoreSitesEnum.FooterLinkType,
+		section: string,
+		patch: Partial<IStoreSiteFooterLink> = {},
+	): IStoreSiteFooterLink => ({
+		key,
+		type,
+		label: '',
+		url: '',
+		section,
+		imageUrl: null,
+		height: null,
+		...patch,
+	});
+
+	const text: string =
+		typeof source.text === 'string' ? source.text.trim() : '';
+
+	return {
+		before: [
+			...(source.isLogoVisible === true
+				? [
+						item('legacy-logo', F.LOGO, textSection, {
+							imageUrl: imageKeyOf(source.logoUrl),
+							height: heightOf(source.logoHeight, DEFAULT_LOGO_HEIGHT),
+						}),
+				  ]
+				: []),
+			item('legacy-name', F.NAME, textSection),
+			...(text
+				? [
+						item('legacy-note', F.NOTE, textSection, {
+							label: text.slice(0, MAX_NOTE_LENGTH),
+						}),
+				  ]
+				: []),
+		],
+		after:
+			source.isLoginVisible !== false
+				? [item('legacy-sign-in', F.SIGN_IN, loginSection)]
+				: [],
 	};
 };
 
@@ -175,17 +307,10 @@ const toSections = (sections: unknown): IStoreSiteFooterSection[] => {
 
 /**
  * The footer of a site, whatever was stored or sent. A site saved before the
- * footer existed gets one with the way into the app and nothing else.
+ * footer existed gets one with its name and the way into the app. One saved
+ * before its items had kinds has its name, logo, text and sign-in read into
+ * items, where they were.
  */
-const MAX_LOGO_URL_LENGTH = 600;
-const DEFAULT_LOGO_HEIGHT = 48;
-
-/** The height of the footer's logo: a whole number of pixels, 20 to 160. */
-const logoHeightOf = (value: unknown): number =>
-	typeof value === 'number' && Number.isFinite(value)
-		? Math.min(160, Math.max(20, Math.round(value)))
-		: DEFAULT_LOGO_HEIGHT;
-
 export const siteFooterOf = (footer: unknown): IStoreSiteFooter => {
 	const source: Record<string, unknown> =
 		footer && typeof footer === 'object' && !Array.isArray(footer)
@@ -212,27 +337,37 @@ export const siteFooterOf = (footer: unknown): IStoreSiteFooter => {
 	const hasOwnSections: boolean =
 		Array.isArray(source.sections) && source.sections.length > 0;
 
+	const textSection: string = placeOf(source.textSection, first);
+	const loginSection: string = placeOf(source.loginSection, first);
+
+	const own: IStoreSiteFooterLink[] = links
+		.map((link: unknown) =>
+			toLink(link, placeOf, hasOwnSections ? first : linksSection),
+		)
+		.filter((link: IStoreSiteFooterLink | null): link is IStoreSiteFooterLink =>
+			Boolean(link),
+		);
+
+	const legacy =
+		source.itemsVersion === 2
+			? { before: [], after: [] }
+			: legacyItemsOf(source, textSection, loginSection);
+
 	return {
 		isActive: source.isActive !== false,
-		text:
-			typeof source.text === 'string' && source.text.trim()
-				? source.text.trim().slice(0, MAX_TEXT_LENGTH)
-				: null,
-		isLoginVisible: source.isLoginVisible !== false,
-		isLogoVisible: source.isLogoVisible === true,
-		logoUrl:
-			typeof source.logoUrl === 'string' && source.logoUrl.trim()
-				? source.logoUrl.trim().slice(0, MAX_LOGO_URL_LENGTH)
-				: null,
-		logoHeight: logoHeightOf(source.logoHeight),
+		// Read into items above: the footer shows only its items.
+		text: null,
+		isLoginVisible: false,
+		isLogoVisible: false,
+		logoUrl: null,
+		logoHeight: DEFAULT_LOGO_HEIGHT,
 		sections,
-		textSection: placeOf(source.textSection, first),
-		loginSection: placeOf(source.loginSection, first),
-		links: links
-			.map((link: unknown) =>
-				toLink(link, placeOf, hasOwnSections ? first : linksSection),
-			)
-			.filter((link: IStoreSiteFooterLink | null) => !!link)
-			.slice(0, StoreSitesEnum.MAX_FOOTER_LINKS),
+		textSection,
+		loginSection,
+		links: [...legacy.before, ...own, ...legacy.after].slice(
+			0,
+			StoreSitesEnum.MAX_FOOTER_LINKS,
+		),
+		itemsVersion: 2,
 	};
 };

@@ -59,33 +59,106 @@ describe('safeFooterUrl', () => {
 	});
 });
 
+/** A footer already kept as items: only what its list says. */
+const footerOf = (patch: any = {}) =>
+	siteFooterOf({ itemsVersion: 2, ...patch });
+
+const item = (patch: any = {}) => ({
+	label: '',
+	url: '',
+	imageUrl: null,
+	height: null,
+	...patch,
+});
+
 describe('siteFooterOf', () => {
-	it('shows a footer with the login button for a site saved before it existed', () => {
-		expect(siteFooterOf(undefined)).toEqual({
+	it('shows the name and the way into the app for a site saved before the footer existed', () => {
+		expect(siteFooterOf(undefined)).toMatchObject({
 			isActive: true,
-			text: null,
-			isLoginVisible: true,
-			// No logo until the owner turns it on: older sites look the same.
-			isLogoVisible: false,
-			logoUrl: null,
-			logoHeight: 48,
 			// As it looked before sections existed: words on one side, links on the other.
 			sections: [
 				{ key: 'main', title: null },
 				{ key: 'links', title: null },
 			],
-			textSection: 'main',
-			loginSection: 'main',
-			links: [],
+			links: [
+				item({ key: 'legacy-name', type: Type.NAME, section: 'main' }),
+				item({ key: 'legacy-sign-in', type: Type.SIGN_IN, section: 'main' }),
+			],
+			itemsVersion: 2,
+		});
+	});
+
+	describe('a footer saved before its items had kinds', () => {
+		it('reads its logo, name, text and sign-in into items, where they were', () => {
+			const { links } = siteFooterOf({
+				text: '  Feito com carinho em Fortaleza  ',
+				isLogoVisible: true,
+				logoUrl: ' footer-logo.png ',
+				logoHeight: 72,
+				sections: [
+					{ key: 'a', title: null },
+					{ key: 'b', title: null },
+				],
+				textSection: 'b',
+				loginSection: 'a',
+				links: [
+					{
+						key: 'i',
+						type: Type.INSTAGRAM,
+						url: 'instagram.com/a',
+						section: 'a',
+					},
+				],
+			});
+
+			expect(links).toEqual([
+				item({
+					key: 'legacy-logo',
+					type: Type.LOGO,
+					section: 'b',
+					imageUrl: 'footer-logo.png',
+					height: 72,
+				}),
+				item({ key: 'legacy-name', type: Type.NAME, section: 'b' }),
+				item({
+					key: 'legacy-note',
+					type: Type.NOTE,
+					section: 'b',
+					label: 'Feito com carinho em Fortaleza',
+				}),
+				item({
+					key: 'i',
+					type: Type.INSTAGRAM,
+					url: 'https://instagram.com/a',
+					section: 'a',
+				}),
+				item({ key: 'legacy-sign-in', type: Type.SIGN_IN, section: 'a' }),
+			]);
+		});
+
+		it('leaves out the logo and the sign-in the owner had switched off', () => {
+			const { links } = siteFooterOf({ isLoginVisible: false });
+
+			expect(links.map((link) => link.type)).toEqual([Type.NAME]);
+		});
+
+		it('is read once: kept as items, its old fields say nothing more', () => {
+			const first = siteFooterOf({ text: 'Oi', isLogoVisible: true });
+			const again = siteFooterOf(first);
+
+			expect(again.links).toEqual(first.links);
+			expect(again).toMatchObject({
+				text: null,
+				isLoginVisible: false,
+				isLogoVisible: false,
+			});
 		});
 	});
 
 	it('keeps what the owner chose', () => {
 		expect(
-			siteFooterOf({
+			footerOf({
 				isActive: false,
-				text: '  Feito com carinho em Fortaleza  ',
-				isLoginVisible: false,
 				links: [
 					{
 						key: 'a',
@@ -95,33 +168,22 @@ describe('siteFooterOf', () => {
 					},
 				],
 			}),
-		).toEqual({
+		).toMatchObject({
 			isActive: false,
-			text: 'Feito com carinho em Fortaleza',
-			isLoginVisible: false,
-			isLogoVisible: false,
-			logoUrl: null,
-			logoHeight: 48,
-			sections: [
-				{ key: 'main', title: null },
-				{ key: 'links', title: null },
-			],
-			textSection: 'main',
-			loginSection: 'main',
 			links: [
-				{
+				item({
 					key: 'a',
 					type: Type.INSTAGRAM,
 					label: '@atelie',
 					url: 'https://instagram.com/atelie',
 					section: 'links',
-				},
+				}),
 			],
 		});
 	});
 
 	it('drops a link that leads nowhere safe, and keeps the others', () => {
-		const { links } = siteFooterOf({
+		const { links } = footerOf({
 			links: [
 				{
 					key: 'bad',
@@ -144,7 +206,7 @@ describe('siteFooterOf', () => {
 	});
 
 	it('treats an unknown kind of link as a plain site, and gives a key to one without', () => {
-		const { links } = siteFooterOf({
+		const { links } = footerOf({
 			links: [{ type: 'MYSPACE', label: 'Old', url: 'https://myspace.com/x' }],
 		});
 
@@ -154,7 +216,7 @@ describe('siteFooterOf', () => {
 	});
 
 	it('takes a link of free text, to any address a page may link to', () => {
-		const { links } = siteFooterOf({
+		const { links } = footerOf({
 			links: [
 				{
 					key: 't',
@@ -167,29 +229,117 @@ describe('siteFooterOf', () => {
 		});
 
 		expect(links).toEqual([
-			{
+			item({
 				key: 't',
 				type: Type.TEXT,
 				label: 'Política de trocas',
 				url: 'https://loja.com/trocas',
 				section: 'links',
-			},
+			}),
 		]);
 	});
 
-	it('keeps at most twelve links and trims long texts', () => {
-		const many = Array.from({ length: 30 }, (_, index) => ({
+	it('keeps at most thirty items and trims long texts', () => {
+		const many = Array.from({ length: 40 }, (_, index) => ({
 			key: `k${index}`,
 			type: Type.WEBSITE,
 			label: 'L'.repeat(100),
 			url: `https://site${index}.com`,
 		}));
 
-		const footer = siteFooterOf({ text: 'T'.repeat(900), links: many });
+		const footer = footerOf({ links: many });
 
-		expect(footer.links).toHaveLength(12);
+		expect(footer.links).toHaveLength(30);
 		expect(footer.links[0].label).toHaveLength(40);
-		expect(footer.text).toHaveLength(300);
+	});
+
+	describe('items that are not links', () => {
+		it('keeps a paragraph with its words, and drops an empty one', () => {
+			const { links } = footerOf({
+				links: [
+					{
+						key: 'n',
+						type: Type.NOTE,
+						label: ` ${'T'.repeat(900)} `,
+						url: 'x.com',
+					},
+					{ key: 'e', type: Type.NOTE, label: '   ' },
+				],
+			});
+
+			expect(links).toHaveLength(1);
+			expect(links[0]).toMatchObject({ key: 'n', type: Type.NOTE, url: '' });
+			expect(links[0].label).toHaveLength(300);
+		});
+
+		it('keeps an image with its picture, its height and where it leads when safe', () => {
+			const { links } = footerOf({
+				links: [
+					{
+						key: 'a',
+						type: Type.IMAGE,
+						imageUrl: ' selo.png ',
+						height: 999,
+						url: 'selo.com',
+					},
+					{
+						key: 'b',
+						type: Type.IMAGE,
+						imageUrl: 'pix.png',
+						url: 'javascript:alert(1)',
+					},
+					{ key: 'c', type: Type.IMAGE, imageUrl: '' },
+				],
+			});
+
+			expect(links).toEqual([
+				item({
+					key: 'a',
+					type: Type.IMAGE,
+					imageUrl: 'selo.png',
+					height: 240,
+					url: 'https://selo.com',
+					section: 'links',
+				}),
+				item({
+					key: 'b',
+					type: Type.IMAGE,
+					imageUrl: 'pix.png',
+					height: 80,
+					section: 'links',
+				}),
+			]);
+		});
+
+		it('keeps a logo with a picture of its own or none (the site logo), within its height', () => {
+			const { links } = footerOf({
+				links: [
+					{ key: 'a', type: Type.LOGO, imageUrl: '  ', height: 5 },
+					{ key: 'b', type: Type.LOGO, imageUrl: 'own.png', height: 63.6 },
+				],
+			});
+
+			expect(links.map((link) => [link.imageUrl, link.height])).toEqual([
+				[null, 20],
+				['own.png', 64],
+			]);
+		});
+
+		it('keeps the name (with words of the owner or not) and the sign-in as many times as wanted', () => {
+			const { links } = footerOf({
+				links: [
+					{ key: 'a', type: Type.NAME, label: ' Ateliê ', url: 'x.com' },
+					{ key: 'b', type: Type.SIGN_IN, label: 'ignored' },
+					{ key: 'c', type: Type.SIGN_IN },
+				],
+			});
+
+			expect(links).toEqual([
+				item({ key: 'a', type: Type.NAME, label: 'Ateliê', section: 'links' }),
+				item({ key: 'b', type: Type.SIGN_IN, section: 'links' }),
+				item({ key: 'c', type: Type.SIGN_IN, section: 'links' }),
+			]);
+		});
 	});
 
 	describe('sections', () => {
@@ -200,10 +350,8 @@ describe('siteFooterOf', () => {
 		];
 
 		it('keeps the sections chosen and where each thing was put', () => {
-			const footer = siteFooterOf({
+			const footer = footerOf({
 				sections: three,
-				textSection: 'a',
-				loginSection: 'c',
 				links: [
 					{
 						key: 'i',
@@ -227,16 +375,12 @@ describe('siteFooterOf', () => {
 				{ key: 'b', title: null },
 				{ key: 'c', title: 'Redes' },
 			]);
-			expect(footer.textSection).toBe('a');
-			expect(footer.loginSection).toBe('c');
 			expect(footer.links.map((link) => link.section)).toEqual(['c', 'b']);
 		});
 
 		it('puts in the first section whatever points to one that is gone', () => {
-			const footer = siteFooterOf({
+			const footer = footerOf({
 				sections: three,
-				textSection: 'removed',
-				loginSection: null,
 				links: [
 					{
 						key: 'i',
@@ -245,16 +389,15 @@ describe('siteFooterOf', () => {
 						url: 'instagram.com/a',
 						section: 'x',
 					},
+					{ key: 's', type: Type.SIGN_IN, section: null },
 				],
 			});
 
-			expect(footer.textSection).toBe('a');
-			expect(footer.loginSection).toBe('a');
-			expect(footer.links[0].section).toBe('a');
+			expect(footer.links.map((link) => link.section)).toEqual(['a', 'a']);
 		});
 
 		it('keeps at most five, drops repeated or nameless ones, trims titles', () => {
-			const footer = siteFooterOf({
+			const footer = footerOf({
 				sections: [
 					{ key: 'a', title: 'T'.repeat(90) },
 					{ key: 'a', title: 'again' },
@@ -278,43 +421,16 @@ describe('siteFooterOf', () => {
 		});
 
 		it('goes back to the default two when none is left', () => {
-			expect(siteFooterOf({ sections: [] }).sections).toHaveLength(2);
-			expect(siteFooterOf({ sections: 'x' } as any).sections).toHaveLength(2);
+			expect(footerOf({ sections: [] }).sections).toHaveLength(2);
+			expect(footerOf({ sections: 'x' }).sections).toHaveLength(2);
 		});
 	});
 
 	it('survives garbage', () => {
-		expect(siteFooterOf('x' as any).links).toEqual([]);
-		expect(siteFooterOf({ links: 'x' } as any).links).toEqual([]);
-	});
-
-	it('keeps the logo the owner turned on, its own image and its height', () => {
-		const footer = siteFooterOf({
-			isLogoVisible: true,
-			logoUrl: ' footer-logo.png ',
-			logoHeight: 72,
-		});
-
-		expect(footer.isLogoVisible).toBe(true);
-		expect(footer.logoUrl).toBe('footer-logo.png');
-		expect(footer.logoHeight).toBe(72);
-	});
-
-	it.each([
-		[5, 20],
-		[999, 160],
-		[63.6, 64],
-		['big', 48],
-	])(
-		'keeps the height of the logo between 20 and 160: %p gives %p',
-		(given, kept) => {
-			expect(siteFooterOf({ logoHeight: given }).logoHeight).toBe(kept);
-		},
-	);
-
-	it('uses the site logo when the footer has no image of its own', () => {
-		expect(
-			siteFooterOf({ isLogoVisible: true, logoUrl: '  ' }).logoUrl,
-		).toBeNull();
+		expect(footerOf({ links: 'x' }).links).toEqual([]);
+		expect(siteFooterOf('x' as any).links.map((link) => link.type)).toEqual([
+			Type.NAME,
+			Type.SIGN_IN,
+		]);
 	});
 });

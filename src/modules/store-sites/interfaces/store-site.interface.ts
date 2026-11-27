@@ -22,6 +22,10 @@ export interface IStoreSiteFooterLink {
 	url: string;
 	/** The key of the section of the footer it is shown in. */
 	section: string;
+	/** A logo or an image: the key of an uploaded picture. */
+	imageUrl: string | null;
+	/** A logo or an image: its height in pixels. */
+	height: number | null;
 }
 
 /** One column of the footer, with an optional title above what is in it. */
@@ -51,7 +55,16 @@ export interface IStoreSiteFooter {
 	textSection: string;
 	/** The section the login button is in. */
 	loginSection: string;
+	/**
+	 * Everything the footer shows, in order: links, and the name, the logo,
+	 * paragraphs, pictures and the way into the app, each in its section.
+	 */
 	links: IStoreSiteFooterLink[];
+	/**
+	 * 2 once the name, the logo, the text and the sign-in are items of `links`;
+	 * an older footer has them in its own fields, and is read into items.
+	 */
+	itemsVersion: number;
 }
 
 /** How the strip of phrases looks and runs; empty is the template's own. */
