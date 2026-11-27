@@ -237,6 +237,8 @@ export interface IStoreSitePage {
 	/** The name in the menu; empty, the site names it by its kind. */
 	label: string | null;
 	isInMenu: boolean;
+	/** The icon beside its name in the menu; empty, none. */
+	icon: StoreSitesEnum.FeatureIcon | null;
 	/** The title at the top of the page; empty, the name in the menu. */
 	title: string | null;
 	/** A line under the title. */

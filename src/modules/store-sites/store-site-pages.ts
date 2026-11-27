@@ -33,6 +33,14 @@ const READY_PAGES: {
 const textOf = (value: unknown, max: number): string | null =>
 	typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
 
+const ICONS: string[] = Object.values(StoreSitesEnum.FeatureIcon);
+
+/** One of the ready icons, or none. */
+const iconOf = (value: unknown): StoreSitesEnum.FeatureIcon | null =>
+	typeof value === 'string' && ICONS.includes(value)
+		? (value as StoreSitesEnum.FeatureIcon)
+		: null;
+
 export const slugifyPage = (value: unknown): string =>
 	String(value ?? '')
 		.normalize('NFD')
@@ -119,6 +127,7 @@ const pageOf = (
 			typeof source.isInMenu === 'boolean'
 				? source.isInMenu
 				: isInMenuByDefault,
+		icon: iconOf(source.icon),
 		title: textOf(source.title, MAX_TITLE_LENGTH),
 		intro: textOf(source.intro, MAX_INTRO_LENGTH),
 		content: { title: contentTitle, texts, media, mediaPosition },

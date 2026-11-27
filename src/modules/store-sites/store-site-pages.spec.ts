@@ -265,4 +265,24 @@ describe('sitePagesOf', () => {
 			sizes: {},
 		});
 	});
+
+	it('keeps the icon the owner gave a page for the menu', () => {
+		const [page] = sitePagesOf([
+			custom({ icon: StoreSitesEnum.FeatureIcon.HOME }),
+		]);
+
+		expect(page.icon).toBe(StoreSitesEnum.FeatureIcon.HOME);
+	});
+
+	it('leaves a page without an icon when none was given or it is not a ready one', () => {
+		expect(sitePagesOf([custom()])[0].icon).toBeNull();
+		expect(sitePagesOf([custom({ icon: 'ROCKET-SHIP' })])[0].icon).toBeNull();
+		expect(sitePagesOf([custom({ icon: 7 })])[0].icon).toBeNull();
+	});
+
+	it('starts the ready pages of a new site without icons', () => {
+		expect(sitePagesOf(undefined).every((page) => page.icon === null)).toBe(
+			true,
+		);
+	});
 });
