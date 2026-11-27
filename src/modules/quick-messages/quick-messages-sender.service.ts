@@ -59,6 +59,13 @@ type ReadyBlock =
  * person would. Everything that can be known beforehand is checked before the
  * first block goes, so the customer does not get half a message.
  */
+/** The channels that show *bold*, _italic_, ~struck~ and `code` from marks. */
+const MARKED_CHANNELS: Set<InboxEnum.Channel> = new Set([
+	InboxEnum.Channel.WHATSAPP,
+	InboxEnum.Channel.STORE,
+	InboxEnum.Channel.SITE,
+]);
+
 @Injectable()
 export class QuickMessagesSenderService {
 	//#region Constructor
@@ -115,12 +122,13 @@ export class QuickMessagesSenderService {
 			await this._fieldSource(ctx, target.conversation),
 		);
 
-		// WhatsApp shows bold, italic and strikethrough by its own marks; the
-		// other channels get the words without them.
-		const style: TChatTextStyle =
-			target.conversation.channel === InboxEnum.Channel.WHATSAPP
-				? 'whatsapp'
-				: 'plain';
+		// WhatsApp shows bold, italic and strikethrough by its own marks, and so
+		// do the store's own chats; the other channels get the words without them.
+		const style: TChatTextStyle = MARKED_CHANNELS.has(
+			target.conversation.channel,
+		)
+			? 'whatsapp'
+			: 'plain';
 
 		const ready: ReadyBlock[] = this._render(
 			message.blocks,
