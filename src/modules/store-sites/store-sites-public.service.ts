@@ -289,7 +289,9 @@ export class StoreSitesPublicService {
 				background: site.theme?.background,
 				text: site.theme?.text,
 			},
-			displayName: site.displayName?.trim() || null,
+			// Never set, the store's name; emptied on purpose, no name at the top.
+			displayName:
+				typeof site.displayName === 'string' ? site.displayName.trim() : null,
 			sizes: siteSizesOf(site.sizes),
 			footer: siteFooterOf(site.footer),
 			signIn: siteSignInOf(site.signIn),

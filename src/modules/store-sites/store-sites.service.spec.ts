@@ -96,11 +96,21 @@ describe('StoreSitesService', () => {
 		it('keeps no name when none is sent, so the site shows the store one', async () => {
 			const { service, storeSiteModel } = build();
 
-			await service.save(OWNER, STORE, dto({ displayName: '   ' }));
+			await service.save(OWNER, STORE, dto({ displayName: undefined }));
 
 			expect(
 				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.displayName,
 			).toBeNull();
+		});
+
+		it('keeps an emptied name empty, so the top of the site shows none', async () => {
+			const { service, storeSiteModel } = build();
+
+			await service.save(OWNER, STORE, dto({ displayName: '   ' }));
+
+			expect(
+				storeSiteModel.findOneAndUpdate.mock.calls[0][1].$set.displayName,
+			).toBe('');
 		});
 
 		it('stores the sizes checked, never as they were sent', async () => {

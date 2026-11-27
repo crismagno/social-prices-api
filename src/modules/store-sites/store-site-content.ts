@@ -23,7 +23,9 @@ import SaveStoreSiteDto from './interfaces/dto/saveStoreSite.dto';
 export const siteContentOf = (dto: SaveStoreSiteDto) => ({
 	templateId: dto.templateId,
 	theme: dto.theme,
-	displayName: dto.displayName?.trim() || null,
+	// Never set, the store's name; emptied on purpose, no name at the top.
+	displayName:
+		typeof dto.displayName === 'string' ? dto.displayName.trim() : null,
 	sizes: siteSizesOf(dto.sizes),
 	footer: siteFooterOf(dto.footer),
 	signIn: siteSignInOf(dto.signIn),

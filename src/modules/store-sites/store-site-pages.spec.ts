@@ -129,14 +129,54 @@ describe('sitePagesOf', () => {
 		expect(pages.filter((page) => page.type === Type.CUSTOM)).toHaveLength(1);
 	});
 
-	it('keeps at most seven pages of the owner', () => {
-		const pages = sitePagesOf(
-			Array.from({ length: 10 }, (_, index) =>
+	it('keeps at most twenty pages, the ready ones among them', () => {
+		const pages = sitePagesOf([
+			{ key: 'products', type: Type.PRODUCTS },
+			...Array.from({ length: 25 }, (_, index) =>
 				custom({ key: `k${index}`, slug: `pagina-${index}` }),
 			),
-		);
+		]);
 
-		expect(pages.filter((page) => page.type === Type.CUSTOM)).toHaveLength(7);
+		expect(pages).toHaveLength(20);
+		expect(pages.filter((page) => page.type === Type.CUSTOM)).toHaveLength(19);
+	});
+
+	it('keeps the pictures that take turns and the sizes of a page entrance', () => {
+		const [page] = sitePagesOf([
+			custom({
+				hero: {
+					backgroundImageUrl: 'bg1',
+					backgroundImageUrls: ['bg1', 'bg2', '', 'bg2', 'bg3'],
+					slideSeconds: 99,
+					featuredImageUrls: ['f1'],
+					sizes: { heroTitleSize: 5000, logoWidth: 40, heroTitleWidth: 600 },
+				},
+			}),
+		]);
+
+		expect(page.hero).toMatchObject({
+			backgroundImageUrls: ['bg2', 'bg3'],
+			slideSeconds: 20,
+			featuredImageUrls: ['f1'],
+			// Only the sizes of an entrance, within range.
+			sizes: { heroTitleSize: 200, heroTitleWidth: 600 },
+		});
+	});
+
+	it("keeps a page's own colours, only the valid ones", () => {
+		const [page] = sitePagesOf([
+			custom({
+				theme: { primary: '#112233', text: 'red', other: '#445566' },
+			}),
+		]);
+
+		expect(page.theme).toEqual({ primary: '#112233' });
+	});
+
+	it('says a page with no colour of its own has none', () => {
+		const [page] = sitePagesOf([custom({ theme: { primary: 'nope' } })]);
+
+		expect(page.theme).toBeNull();
 	});
 
 	it('keeps the questions of the support page, without empty ones, at most twelve', () => {
@@ -218,6 +258,11 @@ describe('sitePagesOf', () => {
 				secondButton: null,
 				colors: { background: '#abcdef', text: null, button: null },
 			}),
+			backgroundImageUrls: [],
+			slideSeconds: 6,
+			featuredImageUrls: [],
+			featuredSlideSeconds: 6,
+			sizes: {},
 		});
 	});
 });

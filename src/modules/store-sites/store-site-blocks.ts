@@ -8,7 +8,8 @@ import {
 	IStoreSiteBlockSettings,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
-import { embedUrlOf } from './store-site-about';
+import { aboutMediaOf, embedUrlOf } from './store-site-about';
+import { siteMarqueeStyleOf } from './store-site-marquee-style';
 import { safeFooterUrl } from './store-site-footer';
 
 const KEY = /^[a-z0-9-]{1,40}$/;
@@ -18,6 +19,8 @@ const MAX_SUBTITLE = 300;
 const MAX_ITEM_TITLE = 80;
 const MAX_ITEM_SUBTITLE = 80;
 const MAX_ITEM_TEXT = 600;
+// A paragraph of a text with media.
+const MAX_PARAGRAPH = 1500;
 const MAX_IMAGE_KEY = 600;
 const MAX_BUTTON_LABEL = 30;
 const MAX_BUTTON_VALUE = 300;
@@ -115,6 +118,11 @@ const WITH_ITEMS: StoreSitesEnum.BlockType[] = [
 	T.IMAGE,
 	T.BOX,
 	T.TABS,
+	// Components with content of their own: the phrases, the cards.
+	T.MARQUEE,
+	T.CARDS,
+	// A text with media: its paragraphs.
+	T.ABOUT,
 ];
 
 export const maxItemsOf = (type: StoreSitesEnum.BlockType): number => {
@@ -125,6 +133,8 @@ export const maxItemsOf = (type: StoreSitesEnum.BlockType): number => {
 			return StoreSitesEnum.MAX_BOX_COLUMNS;
 		case T.IMAGE:
 			return 1;
+		case T.ABOUT:
+			return StoreSitesEnum.MAX_ABOUT_TEXTS;
 		default:
 			return StoreSitesEnum.MAX_BLOCK_ITEMS;
 	}
@@ -149,7 +159,10 @@ const itemsOf = (
 				sectionKeys: type === T.TABS ? sectionKeysOf(source) : [],
 				title: textOf(source.title, MAX_ITEM_TITLE),
 				subtitle: textOf(source.subtitle, MAX_ITEM_SUBTITLE),
-				text: textOf(source.text, MAX_ITEM_TEXT),
+				text: textOf(
+					source.text,
+					type === T.ABOUT ? MAX_PARAGRAPH : MAX_ITEM_TEXT,
+				),
 				imageUrl: textOf(source.imageUrl, MAX_IMAGE_KEY),
 				icon:
 					type === StoreSitesEnum.BlockType.FEATURES
@@ -250,7 +263,11 @@ const settingsOf = (
 			? oneOf(source.divider, Object.values(StoreSitesEnum.DividerStyle)) ??
 			  StoreSitesEnum.DividerStyle.LINE
 			: null,
-		media: uses(T.VIDEO) ? mediaOf(source.media) : null,
+		media: uses(T.VIDEO)
+			? mediaOf(source.media)
+			: uses(T.ABOUT) && source.isOwn === true
+			? aboutMediaOf(source.media)
+			: null,
 		menuStyle: uses(T.TABS)
 			? oneOf(source.menuStyle, Object.values(StoreSitesEnum.MenuStyle)) ??
 			  StoreSitesEnum.MenuStyle.TABS
@@ -275,6 +292,17 @@ const settingsOf = (
 			? oneOf(source.menuPlace, Object.values(StoreSitesEnum.MenuPlace)) ??
 			  StoreSitesEnum.MenuPlace.FIXED
 			: null,
+		isOwn: uses(T.MARQUEE, T.CARDS, T.ABOUT) ? source.isOwn === true : null,
+		mediaPosition: uses(T.ABOUT)
+			? oneOf(
+					source.mediaPosition,
+					Object.values(StoreSitesEnum.AboutMediaPosition),
+			  ) ?? StoreSitesEnum.AboutMediaPosition.LEFT
+			: null,
+		marquee:
+			uses(T.MARQUEE) && source.isOwn === true
+				? siteMarqueeStyleOf(source.marquee)
+				: null,
 	};
 };
 
@@ -327,8 +355,9 @@ export const blockButtonHref = (
 
 /**
  * The sections of a site, whatever was stored or sent: known types only,
- * texts cut to size, at most 60 sections, the template's parts at most once
- * on a page (and the page's own content never on the home), and items
+ * texts cut to size, at most 60 sections, the entrance, the products, the
+ * about and the page's content at most once on a page (and the page's own
+ * content never on the home), and items
  * without what their type shows left out. Pieces still being filled stay.
  */
 export const siteBlocksOf = (blocks: unknown): IStoreSiteBlock[] => {
@@ -357,7 +386,9 @@ export const siteBlocksOf = (blocks: unknown): IStoreSiteBlock[] => {
 				isActive: source.isActive !== false,
 				pageKey: textOf(source.pageKey, 40),
 				kicker: part ? null : textOf(source.kicker, MAX_KICKER),
-				title: part ? null : textOf(source.title, MAX_TITLE),
+				// A text with media has a title of its own.
+				title:
+					part && type !== T.ABOUT ? null : textOf(source.title, MAX_TITLE),
 				subtitle: part
 					? null
 					: textOf(
@@ -372,7 +403,7 @@ export const siteBlocksOf = (blocks: unknown): IStoreSiteBlock[] => {
 		})
 		.filter((block: IStoreSiteBlock) => {
 			// A piece still being filled is kept: the site shows it once it is.
-			if (!isPart(block.type)) {
+			if (!StoreSitesEnum.UNIQUE_PART_TYPES.includes(block.type)) {
 				return true;
 			}
 

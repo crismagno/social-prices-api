@@ -79,6 +79,10 @@ export const embedUrlOf = (link: unknown): string | null => {
 	return null;
 };
 
+/** An image, a video file or a known player, or nothing. */
+export const aboutMediaOf = (media: unknown): IStoreSiteAboutMedia | null =>
+	toMedia(media);
+
 const toMedia = (media: unknown): IStoreSiteAboutMedia | null => {
 	if (!media || typeof media !== 'object') {
 		return null;

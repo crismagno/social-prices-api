@@ -82,6 +82,9 @@ describe('siteBlocksOf', () => {
 				menuLook: null,
 				menuEffect: null,
 				menuPlace: null,
+				isOwn: null,
+				marquee: null,
+				mediaPosition: null,
 			},
 		});
 	});
@@ -413,7 +416,100 @@ describe('sections of the page builder', () => {
 		).toEqual([T.PRODUCTS, T.PAGE_BODY]);
 	});
 
-	it('gives parts no content of their own', () => {
+	it('lets a page have as many strips and sets of cards as the owner wants', () => {
+		const kept = siteBlocksOf([
+			section({ type: T.MARQUEE }),
+			section({ type: T.MARQUEE }),
+			section({ type: T.CARDS }),
+			section({ type: T.CARDS }),
+		]);
+
+		expect(kept.map((each) => each.type)).toEqual([
+			T.MARQUEE,
+			T.MARQUEE,
+			T.CARDS,
+			T.CARDS,
+		]);
+	});
+
+	it('keeps the phrases and the look of a strip with content of its own', () => {
+		const [strip] = siteBlocksOf([
+			section({
+				type: T.MARQUEE,
+				items: [{ title: ' Feito à mão ' }, { title: '' }, { title: 'Único' }],
+				settings: {
+					isOwn: true,
+					marquee: { speed: 'FAST', background: '#112233', color: 'red' },
+				},
+			}),
+		]);
+
+		expect(strip.items.map((item) => item.title)).toEqual([
+			'Feito à mão',
+			'Único',
+		]);
+		expect(strip.settings.isOwn).toBe(true);
+		expect(strip.settings.marquee).toMatchObject({
+			speed: 'FAST',
+			background: '#112233',
+			color: null,
+		});
+	});
+
+	it('keeps the cards of a set with content of its own', () => {
+		const [cards] = siteBlocksOf([
+			section({
+				type: T.CARDS,
+				items: [
+					{ title: 'Você escolhe', text: 'Cores e nome', imageUrl: 'k1' },
+				],
+				settings: { isOwn: true },
+			}),
+		]);
+
+		expect(cards.items[0]).toMatchObject({
+			title: 'Você escolhe',
+			text: 'Cores e nome',
+			imageUrl: 'k1',
+		});
+		expect(cards.settings).toMatchObject({ isOwn: true, marquee: null });
+	});
+
+	it('keeps a text with media with its title, paragraphs, media and side', () => {
+		const [about, second] = siteBlocksOf([
+			section({
+				type: T.ABOUT,
+				title: ' Nossa história ',
+				items: [{ text: ' Começou em 2019. ' }, { text: '' }],
+				settings: {
+					isOwn: true,
+					media: { type: 'IMAGE', url: 'k1' },
+					mediaPosition: 'RIGHT',
+				},
+			}),
+			section({ type: T.ABOUT }),
+		]);
+
+		expect(about.title).toBe('Nossa história');
+		expect(about.items.map((item) => item.text)).toEqual(['Começou em 2019.']);
+		expect(about.settings).toMatchObject({
+			isOwn: true,
+			media: { type: 'IMAGE', url: 'k1' },
+			mediaPosition: 'RIGHT',
+		});
+		// A page can have more than one, and one without content of its own has none.
+		expect(second.settings).toMatchObject({ isOwn: false, media: null });
+	});
+
+	it('says a strip placed before strips had content of their own has none', () => {
+		const [strip] = siteBlocksOf([
+			section({ type: T.MARQUEE, settings: { marquee: { speed: 'FAST' } } }),
+		]);
+
+		expect(strip.settings).toMatchObject({ isOwn: false, marquee: null });
+	});
+
+	it('gives the other parts no content of their own', () => {
 		const [part] = siteBlocksOf([
 			section({
 				type: T.PRODUCTS,
@@ -453,6 +549,9 @@ describe('sections of the page builder', () => {
 			menuLook: null,
 			menuEffect: null,
 			menuPlace: null,
+			isOwn: null,
+			marquee: null,
+			mediaPosition: null,
 		});
 	});
 

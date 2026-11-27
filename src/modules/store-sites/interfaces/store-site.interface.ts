@@ -93,10 +93,39 @@ export interface IStoreSiteImageStyle {
 	block: IStoreSiteImageLook;
 }
 
-/** How the top of the site behaves. */
+/**
+ * The header of the site: its name, its menu, the sign-in and the cart. It is
+ * the site's own, the same on every page, apart from any entrance.
+ */
 export interface IStoreSiteHeader {
-	/** The menu stays at the top of the screen while the visitor scrolls. */
+	/** At the top only: it stays on screen while the visitor scrolls. */
 	isFixed: boolean;
+	/** The side of the screen it is at. */
+	position: StoreSitesEnum.HeaderPosition;
+	/** Its three parts in order: start, middle and end of the header. */
+	order: StoreSitesEnum.HeaderPart[];
+	/**
+	 * How clean its background is, from 0 (solid) to 100 (none at all). With
+	 * any, at the top it lies over the entrance instead of taking room.
+	 */
+	transparency: number;
+	/** The colour of its words; empty, the site's. */
+	color: string | null;
+	/** The colour of its background, when it has one; empty, the site's. */
+	background: string | null;
+	/** How tall it is at the top or at the bottom, in pixels; empty, as its content. */
+	height: number | null;
+	/** How wide it is down a side, in pixels; empty, the usual width. */
+	width: number | null;
+	/** Buttons the owner added, beside the sign-in and the cart. */
+	buttons: IStoreSiteBlockButton[];
+	/**
+	 * The order of its buttons, one by one: `SIGN_IN`, `CART` and each of the
+	 * owner's own as `BUTTON_<its place in buttons>`.
+	 */
+	actionsOrder: string[];
+	/** The size of the owner's own buttons and of the sign-in. */
+	buttonSize: StoreSitesEnum.CartButtonSize;
 }
 
 /** The sign-in button at the top of the site. */
@@ -189,6 +218,8 @@ export interface IStoreSitePage {
 	faq: IStoreSiteFaqItem[];
 	/** The page's own entrance; none, it follows the home's. */
 	hero: IStoreSitePageHero | null;
+	/** The page's own colours; one left out is the site's. */
+	theme: Partial<IStoreSiteTheme> | null;
 }
 
 /**
@@ -207,7 +238,26 @@ export interface IStoreSitePageHero {
 	/** How tall, in pixels; empty, the usual height of a page's top. */
 	height: number | null;
 	options: IStoreSiteHeroOptions;
+	/** More pictures behind: with any, the entrance changes from one to the next. */
+	backgroundImageUrls: string[];
+	/** Seconds each picture behind stays, when there is more than one. */
+	slideSeconds: number;
+	/** More pictures beside the words: with any, they take turns. */
+	featuredImageUrls: string[];
+	/** Seconds each picture beside the words stays, when there is more than one. */
+	featuredSlideSeconds: number;
+	/** Its own sizes of the title, the line under it and the picture; an empty one is the site's. */
+	sizes: Partial<Record<THeroSizeKey, number | null>>;
 }
+
+/** The sizes an entrance can have of its own. */
+export type THeroSizeKey =
+	| 'heroTitleWidth'
+	| 'heroTitleSize'
+	| 'heroSubtitleWidth'
+	| 'heroSubtitleSize'
+	| 'featuredImageWidth'
+	| 'featuredImageHeight';
 
 /**
  * The chat of the site: a button that opens a conversation with the store,
@@ -359,6 +409,15 @@ export interface IStoreSiteBlockSettings {
 	menuEffect: StoreSitesEnum.MenuEffect | null;
 	/** A menu of tabs: where it stays while the visitor scrolls its sections. */
 	menuPlace: StoreSitesEnum.MenuPlace | null;
+	/**
+	 * A strip, cards or a text with media: true once it has content of its own.
+	 * One placed before they had any still shows what the site had for all.
+	 */
+	isOwn: boolean | null;
+	/** A strip with content of its own: how it looks and runs. */
+	marquee: IStoreSiteMarqueeStyle | null;
+	/** A text with media: the side its image or video is on. */
+	mediaPosition: StoreSitesEnum.AboutMediaPosition | null;
 }
 
 /**

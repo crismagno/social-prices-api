@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import {
 	IStoreSiteFaqItem,
 	IStoreSitePage,
+	IStoreSiteTheme,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteAboutOf } from './store-site-about';
@@ -58,6 +59,39 @@ const faqOf = (faq: unknown): IStoreSiteFaqItem[] =>
 		.filter((item): item is IStoreSiteFaqItem => !!item.question)
 		.slice(0, StoreSitesEnum.MAX_FAQ_ITEMS);
 
+const THEME_KEYS: (keyof IStoreSiteTheme)[] = [
+	'primary',
+	'secondary',
+	'accent',
+	'background',
+	'text',
+];
+
+/** The colours a page changes; null when it changes none. */
+export const pageThemeOf = (
+	theme: unknown,
+): Partial<IStoreSiteTheme> | null => {
+	const source: Record<string, unknown> =
+		theme && typeof theme === 'object'
+			? (theme as Record<string, unknown>)
+			: {};
+
+	const own: Partial<IStoreSiteTheme> = {};
+
+	for (const key of THEME_KEYS) {
+		const color: unknown = source[key];
+
+		if (
+			typeof color === 'string' &&
+			StoreSitesEnum.HEX_COLOR_REGEX.test(color)
+		) {
+			own[key] = color;
+		}
+	}
+
+	return Object.keys(own).length ? own : null;
+};
+
 const pageOf = (
 	source: Record<string, unknown>,
 	type: StoreSitesEnum.SitePageType,
@@ -90,6 +124,7 @@ const pageOf = (
 		content: { title: contentTitle, texts, media, mediaPosition },
 		faq: type === StoreSitesEnum.SitePageType.SUPPORT ? faqOf(source.faq) : [],
 		hero: pageHeroOf(source.hero),
+		theme: pageThemeOf(source.theme),
 	};
 };
 
@@ -120,16 +155,18 @@ export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
 
 	const result: IStoreSitePage[] = [];
 	const usedSlugs: Set<string> = new Set();
-	let customCount: number = 0;
 
 	for (const source of sources) {
 		const type = source.type as StoreSitesEnum.SitePageType;
+
+		if (result.length >= StoreSitesEnum.MAX_PAGES) {
+			break;
+		}
 
 		if (type === StoreSitesEnum.SitePageType.CUSTOM) {
 			const slug: string = slugifyPage(source.slug);
 
 			if (
-				customCount >= StoreSitesEnum.MAX_CUSTOM_PAGES ||
 				!SLUG.test(slug) ||
 				readySlugs.includes(slug) ||
 				slug === StoreSitesEnum.CART_PAGE_SLUG ||
@@ -140,7 +177,6 @@ export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
 			}
 
 			usedSlugs.add(slug);
-			customCount++;
 			result.push(pageOf(source, type, slug, true));
 			continue;
 		}

@@ -2,9 +2,11 @@ import {
 	IStoreSiteBlockButton,
 	IStoreSiteHeroOptions,
 	IStoreSitePageHero,
+	THeroSizeKey,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { buttonOf } from './store-site-blocks';
+import { siteSizesOf } from './store-site-sizes';
 
 const MAX_EXTRA_TEXT_LENGTH = 400;
 
@@ -141,6 +143,28 @@ const heightOf = (value: unknown): number | null => {
  * The entrance of one page, whatever was stored or sent. A page that never
  * got its own has none, and follows the home's as it always did.
  */
+export const HERO_SIZE_KEYS: THeroSizeKey[] = [
+	'heroTitleWidth',
+	'heroTitleSize',
+	'heroSubtitleWidth',
+	'heroSubtitleSize',
+	'featuredImageWidth',
+	'featuredImageHeight',
+];
+
+/** The sizes an entrance has of its own: only the ones set, within range. */
+const heroSizesOf = (
+	sizes: unknown,
+): Partial<Record<THeroSizeKey, number | null>> => {
+	const all = siteSizesOf(sizes);
+
+	return HERO_SIZE_KEYS.reduce(
+		(own: Partial<Record<THeroSizeKey, number | null>>, key: THeroSizeKey) =>
+			all[key] === null ? own : { ...own, [key]: all[key] },
+		{},
+	);
+};
+
 export const pageHeroOf = (hero: unknown): IStoreSitePageHero | null => {
 	if (!hero || typeof hero !== 'object' || Array.isArray(hero)) {
 		return null;
@@ -155,5 +179,7 @@ export const pageHeroOf = (hero: unknown): IStoreSitePageHero | null => {
 		featuredImageUrl: imageKeyOf(source.featuredImageUrl),
 		height: heightOf(source.height),
 		options: heroOptionsOf(source.options),
+		...heroSlidesOf(source),
+		sizes: heroSizesOf(source.sizes),
 	};
 };
