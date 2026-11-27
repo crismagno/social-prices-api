@@ -9,6 +9,7 @@ import {
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { aboutMediaOf, embedUrlOf } from './store-site-about';
+import { siteCardLookOf, siteCardsStyleOf } from './store-site-cards-style';
 import { siteMarqueeStyleOf } from './store-site-marquee-style';
 import { safeFooterUrl } from './store-site-footer';
 
@@ -175,6 +176,7 @@ const itemsOf = (
 						: null,
 				button:
 					type === T.BOX && source.button ? buttonOf(source.button) : null,
+				card: type === T.CARDS ? siteCardLookOf(source.card) : null,
 			};
 
 			return { item, key: source.key };
@@ -302,6 +304,11 @@ const settingsOf = (
 		marquee:
 			uses(T.MARQUEE) && source.isOwn === true
 				? siteMarqueeStyleOf(source.marquee)
+				: null,
+		// The template draws the cards the site had before any of their own.
+		cards:
+			uses(T.CARDS) && source.isOwn === true
+				? siteCardsStyleOf(source.cards)
 				: null,
 	};
 };

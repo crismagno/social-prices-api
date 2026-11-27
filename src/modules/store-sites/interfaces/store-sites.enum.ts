@@ -345,6 +345,40 @@ namespace StoreSitesEnum {
 		BlockType.PAGE_BODY,
 	];
 
+	/** Who draws the cards: the template, its own way, or the owner's choices. */
+	export enum CardsLayout {
+		TEMPLATE = 'TEMPLATE',
+		CUSTOM = 'CUSTOM',
+	}
+
+	/** Where the image of one card sits, beside or around its words. */
+	export enum CardsImagePosition {
+		TOP = 'TOP',
+		BOTTOM = 'BOTTOM',
+		LEFT = 'LEFT',
+		RIGHT = 'RIGHT',
+	}
+
+	export enum CardsAlign {
+		LEFT = 'LEFT',
+		CENTER = 'CENTER',
+		RIGHT = 'RIGHT',
+	}
+
+	export enum CardsLook {
+		PLAIN = 'PLAIN',
+		BOXED = 'BOXED',
+	}
+
+	export enum CardsGap {
+		SMALL = 'SMALL',
+		MEDIUM = 'MEDIUM',
+		LARGE = 'LARGE',
+	}
+
+	/** How many cards go side by side before the next line. */
+	export const CARDS_COLUMNS_RANGE: [number, number] = [1, 4];
+
 	export enum SectionAlign {
 		LEFT = 'LEFT',
 		CENTER = 'CENTER',
@@ -462,7 +496,7 @@ namespace StoreSitesEnum {
 	export const MAX_BLOCKS = 60;
 	export const MAX_SECTION_BUTTONS = 20;
 	export const MAX_BOX_COLUMNS = 20;
-	export const MAX_BLOCK_ITEMS = 12;
+	export const MAX_BLOCK_ITEMS = 20;
 	export const MAX_FAQ_BLOCK_ITEMS = 20;
 
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */

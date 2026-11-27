@@ -75,6 +75,23 @@ export interface IStoreSiteFonts {
 	body: StoreSitesEnum.Font | null;
 }
 
+/** The line the cards with content of their own are laid out on. */
+export interface IStoreSiteCardsStyle {
+	layout: StoreSitesEnum.CardsLayout;
+	/** How many places a line has before the next one. */
+	columns: number;
+	gap: StoreSitesEnum.CardsGap;
+}
+
+/** How one card is drawn, each its own way. */
+export interface IStoreSiteCardLook {
+	imagePosition: StoreSitesEnum.CardsImagePosition;
+	textAlign: StoreSitesEnum.CardsAlign;
+	look: StoreSitesEnum.CardsLook;
+	/** How many places of the line it takes. */
+	span: number;
+}
+
 /** How the strip of phrases looks and runs; empty is the template's own. */
 export interface IStoreSiteMarqueeStyle {
 	speed: StoreSitesEnum.MarqueeSpeed;
@@ -417,6 +434,8 @@ export interface IStoreSiteBlockItem {
 	rating: number | null;
 	/** A column of a box only. */
 	button: IStoreSiteBlockButton | null;
+	/** A card only: how this one is drawn. */
+	card: IStoreSiteCardLook | null;
 }
 
 /** The button of a call-to-action block. */
@@ -459,6 +478,8 @@ export interface IStoreSiteBlockSettings {
 	isOwn: boolean | null;
 	/** A strip with content of its own: how it looks and runs. */
 	marquee: IStoreSiteMarqueeStyle | null;
+	/** Cards with content of their own: how they are laid out. */
+	cards: IStoreSiteCardsStyle | null;
 	/** A text with media: the side its image or video is on. */
 	mediaPosition: StoreSitesEnum.AboutMediaPosition | null;
 }

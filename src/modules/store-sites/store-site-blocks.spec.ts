@@ -65,6 +65,7 @@ describe('siteBlocksOf', () => {
 					icon: null,
 					rating: 5,
 					button: null,
+					card: null,
 				},
 			],
 			button: null,
@@ -84,6 +85,7 @@ describe('siteBlocksOf', () => {
 				menuPlace: null,
 				isOwn: null,
 				marquee: null,
+				cards: null,
 				mediaPosition: null,
 			},
 		});
@@ -130,7 +132,7 @@ describe('siteBlocksOf', () => {
 		expect(kept[1].items).toHaveLength(2);
 	});
 
-	it('cuts to 20 blocks and 12 items, 20 for the FAQ', () => {
+	it('cuts to 60 blocks and 20 items, the FAQ too', () => {
 		const many = (count: number) =>
 			Array.from({ length: count }, (_, index: number) => ({
 				title: `Q${index}`,
@@ -154,7 +156,7 @@ describe('siteBlocksOf', () => {
 			}),
 		]);
 
-		expect(features.items).toHaveLength(12);
+		expect(features.items).toHaveLength(20);
 		expect(faq.items).toHaveLength(20);
 	});
 
@@ -473,6 +475,18 @@ describe('sections of the page builder', () => {
 			imageUrl: 'k1',
 		});
 		expect(cards.settings).toMatchObject({ isOwn: true, marquee: null });
+		// Its own cards start as the template draws them.
+		expect(cards.settings.cards).toMatchObject({
+			layout: StoreSitesEnum.CardsLayout.TEMPLATE,
+			columns: 3,
+		});
+		// Each of its cards is drawn its own way, plain until chosen.
+		expect(cards.items[0].card).toEqual({
+			imagePosition: StoreSitesEnum.CardsImagePosition.TOP,
+			textAlign: StoreSitesEnum.CardsAlign.LEFT,
+			look: StoreSitesEnum.CardsLook.PLAIN,
+			span: 1,
+		});
 	});
 
 	it('keeps a text with media with its title, paragraphs, media and side', () => {
@@ -551,6 +565,7 @@ describe('sections of the page builder', () => {
 			menuPlace: null,
 			isOwn: null,
 			marquee: null,
+			cards: null,
 			mediaPosition: null,
 		});
 	});
