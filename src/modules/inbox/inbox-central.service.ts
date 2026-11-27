@@ -103,6 +103,13 @@ export class InboxCentralService {
 			conversations,
 		);
 
+		const answered: Set<string> = await this._messages.conversationsAnswered(
+			ownerUserId,
+			conversations.map((conversation: IInboxConversation) =>
+				String(conversation._id),
+			),
+		);
+
 		const rows: Map<string, IInboxConversation[]> = new Map();
 
 		for (const conversation of conversations) {
@@ -115,7 +122,7 @@ export class InboxCentralService {
 
 		return Array.from(rows.entries())
 			.map(([key, group]: [string, IInboxConversation[]]) =>
-				this._toChatView(key, group, customers),
+				this._toChatView(key, group, customers, answered),
 			)
 			.sort(
 				(a: IInboxChatView, b: IInboxChatView) =>
@@ -725,6 +732,7 @@ export class InboxCentralService {
 		key: string,
 		group: IInboxConversation[],
 		customers: Map<string, ICustomerCard>,
+		answered: Set<string> = new Set(),
 	): IInboxChatView {
 		// The group arrives most recent first, so the first one holds the last message.
 		const latest: IInboxConversation = group[0];
@@ -770,6 +778,9 @@ export class InboxCentralService {
 				(total: number, conversation: IInboxConversation) =>
 					total + (conversation.unreadCount ?? 0),
 				0,
+			),
+			hasReplied: group.some((conversation: IInboxConversation) =>
+				answered.has(String(conversation._id)),
 			),
 			// Only when every conversation of it was set aside.
 			isInLimbo: group.every(

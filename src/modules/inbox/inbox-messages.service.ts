@@ -282,6 +282,24 @@ export class InboxMessagesService {
 			.lean<IInboxMessage>();
 	}
 
+	/** Of the conversations given, those the store has already written in. */
+	public async conversationsAnswered(
+		ownerUserId: string,
+		conversationIds: string[],
+	): Promise<Set<string>> {
+		if (!conversationIds.length) {
+			return new Set();
+		}
+
+		const ids: unknown[] = await this._messageModel.distinct('conversationId', {
+			ownerUserId,
+			conversationId: { $in: conversationIds },
+			direction: InboxEnum.Direction.OUT,
+		});
+
+		return new Set(ids.map((id: unknown) => String(id)));
+	}
+
 	/** The newest message a conversation still has, if any. */
 	public async findLatest(
 		ownerUserId: string,

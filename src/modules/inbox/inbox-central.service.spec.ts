@@ -44,6 +44,7 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 	const messages: any = {
 		listTimeline: jest.fn().mockResolvedValue([]),
 		findById: jest.fn(),
+		conversationsAnswered: jest.fn().mockResolvedValue(new Set()),
 	};
 	const adapter: any = {
 		sendTyping: jest.fn().mockResolvedValue(undefined),
@@ -166,6 +167,27 @@ describe('InboxCentralService', () => {
 				lastMessageText: 'oi',
 			});
 			expect(rows[0].conversations.map((c) => c._id)).toEqual(['c1', 'c2']);
+			expect(rows[0].hasReplied).toBe(false);
+		});
+
+		it('says a chat was answered when the store wrote in any of its conversations', async () => {
+			const { service, messages } = build(
+				[
+					conv({ _id: 'c1', customerId: CU1 }),
+					conv({
+						_id: 'c2',
+						channel: 'INSTAGRAM',
+						contactKey: 'ig1',
+						customerId: CU1,
+					}),
+				],
+				[{ _id: CU1, name: 'Ana Cliente', avatar: null }],
+			);
+			messages.conversationsAnswered.mockResolvedValue(new Set(['c2']));
+
+			const rows = await service.listChats(OWNER);
+
+			expect(rows[0].hasReplied).toBe(true);
 		});
 
 		it('lists a person with no customer alone, named by what the channel says', async () => {
