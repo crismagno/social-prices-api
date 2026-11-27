@@ -460,8 +460,8 @@ namespace StoreSitesEnum {
 
 	/** Sections of the whole site, every page together. */
 	export const MAX_BLOCKS = 60;
-	export const MAX_SECTION_BUTTONS = 3;
-	export const MAX_BOX_COLUMNS = 3;
+	export const MAX_SECTION_BUTTONS = 20;
+	export const MAX_BOX_COLUMNS = 20;
 	export const MAX_BLOCK_ITEMS = 12;
 	export const MAX_FAQ_BLOCK_ITEMS = 20;
 

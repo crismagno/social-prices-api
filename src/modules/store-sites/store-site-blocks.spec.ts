@@ -555,11 +555,11 @@ describe('sections of the page builder', () => {
 		});
 	});
 
-	it('keeps 1 to 3 buttons, each with its variant', () => {
+	it('keeps 1 to 20 buttons, each with its variant', () => {
 		const [buttons] = siteBlocksOf([
 			section({
 				type: T.BUTTONS,
-				buttons: Array.from({ length: 5 }, (_, index: number) => ({
+				buttons: Array.from({ length: 25 }, (_, index: number) => ({
 					label: `B${index}`,
 					target: StoreSitesEnum.BlockButtonTarget.URL,
 					value: 'loja.com',
@@ -568,8 +568,8 @@ describe('sections of the page builder', () => {
 			}),
 		]);
 
-		expect(buttons.buttons).toHaveLength(3);
-		expect(buttons.buttons.map((each) => each.variant)).toEqual([
+		expect(buttons.buttons).toHaveLength(20);
+		expect(buttons.buttons.slice(0, 3).map((each) => each.variant)).toEqual([
 			'OUTLINE',
 			'PRIMARY',
 			'OUTLINE',
@@ -610,11 +610,11 @@ describe('sections of the page builder', () => {
 		);
 	});
 
-	it('keeps a box of 1 to 3 columns, each with its button', () => {
+	it('keeps a box of 1 to 20 boxes, each with its button', () => {
 		const [box] = siteBlocksOf([
 			section({
 				type: T.BOX,
-				items: Array.from({ length: 4 }, (_, index: number) => ({
+				items: Array.from({ length: 25 }, (_, index: number) => ({
 					title: `C${index}`,
 					button: {
 						label: 'Ver',
@@ -625,7 +625,7 @@ describe('sections of the page builder', () => {
 			}),
 		]);
 
-		expect(box.items).toHaveLength(3);
+		expect(box.items).toHaveLength(20);
 		expect(box.items[0].button).toMatchObject({
 			label: 'Ver',
 			value: 'loja.com',
