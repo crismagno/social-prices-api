@@ -79,6 +79,7 @@ describe('heroSlidesOf', () => {
 describe('heroOptionsOf', () => {
 	const untouched = {
 		isTaglineVisible: true,
+		isTitleVisible: true,
 		isSubtitleVisible: true,
 		isFeaturedVisible: true,
 		isButtonVisible: true,
@@ -97,6 +98,7 @@ describe('heroOptionsOf', () => {
 	it('keeps the pieces the owner hid and the extra paragraph, trimmed and cut', () => {
 		const options = heroOptionsOf({
 			isTaglineVisible: false,
+			isTitleVisible: false,
 			isSubtitleVisible: false,
 			isFeaturedVisible: false,
 			isButtonVisible: false,
@@ -105,6 +107,7 @@ describe('heroOptionsOf', () => {
 
 		expect(options).toMatchObject({
 			isTaglineVisible: false,
+			isTitleVisible: false,
 			isSubtitleVisible: false,
 			isFeaturedVisible: false,
 			isButtonVisible: false,

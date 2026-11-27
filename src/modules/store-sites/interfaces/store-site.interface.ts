@@ -374,6 +374,7 @@ export interface IStoreSiteHeroColors {
  */
 export interface IStoreSiteHeroOptions {
 	isTaglineVisible: boolean;
+	isTitleVisible: boolean;
 	isSubtitleVisible: boolean;
 	isFeaturedVisible: boolean;
 	isButtonVisible: boolean;

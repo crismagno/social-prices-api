@@ -101,6 +101,7 @@ export const heroOptionsOf = (options: unknown): IStoreSiteHeroOptions => {
 
 	return {
 		isTaglineVisible: source.isTaglineVisible !== false,
+		isTitleVisible: source.isTitleVisible !== false,
 		isSubtitleVisible: source.isSubtitleVisible !== false,
 		isFeaturedVisible: source.isFeaturedVisible !== false,
 		isButtonVisible: source.isButtonVisible !== false,
