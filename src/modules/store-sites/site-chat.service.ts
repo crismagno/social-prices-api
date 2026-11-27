@@ -18,6 +18,7 @@ import { IInboxUploadFile } from '../inbox/inbox-channel.adapter';
 import InboxEnum from '../inbox/interfaces/inbox.enum';
 import {
 	IInboxAttachment,
+	IInboxConversation,
 	IInboxMessage,
 	IInboxMessageInput,
 } from '../inbox/interfaces/inbox.types';
@@ -25,6 +26,8 @@ import {
 	IStoreChatFile,
 	StoreChatMediaService,
 } from '../store-chat/store-chat-media.service';
+import { StoreChatDeletionService } from '../store-chat/store-chat-deletion.service';
+import { StoreChatEditionService } from '../store-chat/store-chat-edition.service';
 import { SiteChatGuest } from './interfaces/site-chat-guest.schema';
 import {
 	ISiteChatAnswer,
@@ -73,6 +76,8 @@ export interface ISiteChatMessageView {
 	text: string | null;
 	attachments: ISiteChatAttachmentView[];
 	sentAt: Date;
+	/** When its words were last changed; null when they never were. */
+	editedAt: Date | null;
 }
 
 export interface ISiteChatVisitor {
@@ -129,6 +134,8 @@ export class SiteChatService {
 		private readonly _limiter: SiteChatRateLimiter,
 		private readonly _media: StoreChatMediaService,
 		private readonly _typing: SiteChatTypingState,
+		private readonly _edition: StoreChatEditionService,
+		private readonly _deletion: StoreChatDeletionService,
 	) {}
 
 	//#endregion
@@ -331,6 +338,52 @@ export class SiteChatService {
 		return await this._receive(guest, ownerUserId, caption, [attachment]);
 	}
 
+	/** New words for a message the visitor wrote (or for its file's caption). */
+	public async editMessage(
+		slug: string,
+		token: string,
+		messageId: string,
+		rawText: unknown,
+	): Promise<ISiteChatMessageView> {
+		const text: string = typeof rawText === 'string' ? rawText.trim() : '';
+
+		if (!text || text.length > MAX_MESSAGE_LENGTH) {
+			throw this._invalid('text');
+		}
+
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		this._limiter.assertAllowed(`message:${guest._id}`, MESSAGES_PER_VISITOR);
+
+		await this._touch(guest);
+
+		const edited: IInboxMessage = await this._edition.edit(
+			await this._conversationOf(guest, ownerUserId),
+			messageId,
+			InboxEnum.Direction.IN,
+			text,
+		);
+
+		return this._toView(edited);
+	}
+
+	/** Removes a message the visitor wrote; it is gone for the store too. */
+	public async deleteMessage(
+		slug: string,
+		token: string,
+		messageId: string,
+	): Promise<void> {
+		const { guest, ownerUserId } = await this._guestOrFail(slug, token);
+
+		await this._touch(guest);
+
+		await this._deletion.remove(
+			await this._conversationOf(guest, ownerUserId),
+			messageId,
+			InboxEnum.Direction.IN,
+		);
+	}
+
 	/** One file of a message, only of the visitor's own conversation. */
 	public async attachment(
 		slug: string,
@@ -466,13 +519,22 @@ export class SiteChatService {
 			conversationId,
 		);
 
+		// Its own id, as the list gives it: the one it is changed and removed by.
+		const saved: IInboxMessage | null =
+			await this._messages.findByChannelMessageId(
+				ownerUserId,
+				conversationId,
+				input.channelMessageId,
+			);
+
 		return {
-			id: input.channelMessageId,
+			id: saved ? String(saved._id) : input.channelMessageId,
 			fromStore: false,
 			kind,
 			text,
 			attachments: attachments.map(this._attachmentView),
 			sentAt: input.sentAt,
+			editedAt: null,
 		};
 	}
 
@@ -541,6 +603,24 @@ export class SiteChatService {
 		}
 
 		return { guest, ownerUserId: String(guest.ownerUserId) };
+	}
+
+	/** The visitor's own conversation: only its messages can be changed. */
+	private async _conversationOf(
+		guest: SiteChatGuest,
+		ownerUserId: string,
+	): Promise<IInboxConversation> {
+		const conversation: IInboxConversation | null =
+			await this._conversations.findById(
+				ownerUserId,
+				String(guest.conversationId),
+			);
+
+		if (!conversation) {
+			throw new NotFoundException('Message not found.');
+		}
+
+		return conversation;
 	}
 
 	/** The visitor wrote: the chat stays theirs for the owner's time again. */
@@ -652,6 +732,7 @@ export class SiteChatService {
 			text: message.text ?? null,
 			attachments: (message.attachments ?? []).map(this._attachmentView),
 			sentAt: message.sentAt,
+			editedAt: message.editedAt ?? null,
 		};
 	}
 

@@ -20,7 +20,10 @@ import {
 } from '../inbox/interfaces/inbox.types';
 import { SiteChatTypingState } from './site-chat-typing';
 import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
+import { StoreChatDeletionService } from '../store-chat/store-chat-deletion.service';
+import { StoreChatEditionService } from '../store-chat/store-chat-edition.service';
 import { STORE_CHAT_MAX_UPLOAD_BYTES } from '../store-chat/store-chat.constants';
+import { storeChatText } from '../store-chat/store-chat.service';
 
 /**
  * How the central inbox answers a visitor of a store's site: text, files and
@@ -38,8 +41,8 @@ export class SiteChatInboxAdapter
 		media: true,
 		voice: true,
 		maxUploadBytes: STORE_CHAT_MAX_UPLOAD_BYTES,
-		deleteMessage: false,
-		editMessage: false,
+		deleteMessage: true,
+		editMessage: true,
 		answerWindowMs: null,
 	};
 
@@ -49,6 +52,8 @@ export class SiteChatInboxAdapter
 		private readonly _messages: InboxMessagesService,
 		private readonly _media: StoreChatMediaService,
 		private readonly _typing: SiteChatTypingState,
+		private readonly _edition: StoreChatEditionService,
+		private readonly _deletion: StoreChatDeletionService,
 	) {}
 
 	public onModuleInit(): void {
@@ -89,6 +94,44 @@ export class SiteChatInboxAdapter
 		return await this._record(ctx, conversation, options.caption ?? null, [
 			attachment,
 		]);
+	}
+
+	/** Only what the store wrote: the visitor's messages are the visitor's. */
+	public canDeleteMessage(message: IInboxMessage): boolean {
+		return message.direction === InboxEnum.Direction.OUT;
+	}
+
+	/** Removed for the visitor too: there is one conversation. */
+	public async deleteMessage(
+		_ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+	): Promise<void> {
+		await this._deletion.remove(
+			conversation,
+			String(message._id),
+			InboxEnum.Direction.OUT,
+		);
+	}
+
+	public canEditMessage(message: IInboxMessage): boolean {
+		return (
+			message.direction === InboxEnum.Direction.OUT && !message.isUnsupported
+		);
+	}
+
+	public async editMessage(
+		_ownerUserId: string,
+		conversation: IInboxConversation,
+		message: IInboxMessage,
+		text: string,
+	): Promise<IInboxMessage> {
+		return await this._edition.edit(
+			conversation,
+			String(message._id),
+			InboxEnum.Direction.OUT,
+			storeChatText(text),
+		);
 	}
 
 	public async fetchAttachment(

@@ -34,18 +34,28 @@ const build = () => {
 
 	const typing: any = { mark: jest.fn(), clear: jest.fn() };
 
+	const edition: any = {
+		edit: jest.fn().mockResolvedValue({ _id: 'm1', text: 'novo' }),
+	};
+
+	const deletion: any = { remove: jest.fn().mockResolvedValue(undefined) };
+
 	return {
 		registry,
 		media,
 		conversations,
 		messages,
 		typing,
+		edition,
+		deletion,
 		adapter: new SiteChatInboxAdapter(
 			registry,
 			conversations,
 			messages,
 			media,
 			typing,
+			edition,
+			deletion,
 		),
 	};
 };
@@ -153,5 +163,53 @@ describe('SiteChatInboxAdapter', () => {
 		);
 
 		expect(typing.clear).toHaveBeenCalledWith('c1');
+	});
+
+	describe('editing and removing', () => {
+		const conversation: any = { _id: 'c1', ownerUserId: 'o1' };
+
+		it('lets the store change and remove only its own messages', () => {
+			const { adapter } = build();
+
+			expect(
+				adapter.canEditMessage({ direction: InboxEnum.Direction.OUT } as any),
+			).toBe(true);
+			expect(
+				adapter.canEditMessage({ direction: InboxEnum.Direction.IN } as any),
+			).toBe(false);
+			expect(
+				adapter.canDeleteMessage({ direction: InboxEnum.Direction.IN } as any),
+			).toBe(false);
+		});
+
+		it('changes the words as the store', async () => {
+			const { adapter, edition } = build();
+
+			await adapter.editMessage(
+				'o1',
+				conversation,
+				{ _id: 'm1' } as any,
+				' novo ',
+			);
+
+			expect(edition.edit).toHaveBeenCalledWith(
+				conversation,
+				'm1',
+				InboxEnum.Direction.OUT,
+				'novo',
+			);
+		});
+
+		it('removes as the store', async () => {
+			const { adapter, deletion } = build();
+
+			await adapter.deleteMessage('o1', conversation, { _id: 'm1' } as any);
+
+			expect(deletion.remove).toHaveBeenCalledWith(
+				conversation,
+				'm1',
+				InboxEnum.Direction.OUT,
+			);
+		});
 	});
 });

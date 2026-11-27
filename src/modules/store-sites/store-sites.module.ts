@@ -14,6 +14,8 @@ import { StoresModule } from '../stores/stores.module';
 import { SiteChatTypingState } from './site-chat-typing';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
 import { SiteChatController } from './site-chat.controller';
+import { StoreChatDeletionService } from '../store-chat/store-chat-deletion.service';
+import { StoreChatEditionService } from '../store-chat/store-chat-edition.service';
 import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
 import { SiteChatInboxAdapter } from './site-chat.inbox-adapter';
 import { SiteChatService } from './site-chat.service';
@@ -62,6 +64,9 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 		SiteChatInboxAdapter,
 		// The files of the chat, in its private storage, as the store chat keeps them.
 		StoreChatMediaService,
+		// Changing and removing messages, by the same rules as the store chat.
+		StoreChatEditionService,
+		StoreChatDeletionService,
 		StoreSiteOrdersService,
 		SiteOrderRateLimiter,
 		StoreSitesStatusProvider,

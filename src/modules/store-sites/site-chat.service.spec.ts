@@ -107,6 +107,8 @@ const build = ({
 		]),
 	};
 
+	messages.findByChannelMessageId = jest.fn().mockResolvedValue(null);
+
 	messages.findOwned = jest.fn().mockResolvedValue({
 		_id: 'm3',
 		attachments: [STORED],
@@ -131,6 +133,19 @@ const build = ({
 		}),
 	};
 
+	const edition: any = {
+		edit: jest.fn().mockResolvedValue({
+			_id: 'm1',
+			direction: InboxEnum.Direction.IN,
+			kind: InboxEnum.MessageKind.TEXT,
+			text: 'Tem em verde?',
+			sentAt: new Date('2026-01-01T10:00:00Z'),
+			editedAt: new Date('2026-01-01T10:05:00Z'),
+		}),
+	};
+
+	const deletion: any = { remove: jest.fn().mockResolvedValue(undefined) };
+
 	const limiter: any = {
 		assertAllowed: jest.fn(() => {
 			if (!allow) {
@@ -147,6 +162,8 @@ const build = ({
 		limiter,
 		media,
 		typing,
+		edition,
+		deletion,
 		service: new SiteChatService(
 			guestModel,
 			publicService,
@@ -156,6 +173,8 @@ const build = ({
 			limiter,
 			media,
 			typing,
+			edition,
+			deletion,
 		),
 	};
 };
@@ -498,6 +517,7 @@ describe('SiteChatService', () => {
 					text: 'Tem em azul?',
 					attachments: [],
 					sentAt: new Date('2026-01-01T10:00:00Z'),
+					editedAt: null,
 				},
 				{
 					id: 'm2',
@@ -506,6 +526,7 @@ describe('SiteChatService', () => {
 					text: 'Oi!',
 					attachments: [],
 					sentAt: new Date('2026-01-01T10:01:00Z'),
+					editedAt: null,
 				},
 			]);
 		});
@@ -763,6 +784,81 @@ describe('SiteChatService', () => {
 				service.contact('atelie', '1.1.1.1', FORM),
 			).rejects.toBeInstanceOf(HttpException);
 			expect(guestModel.create).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('editMessage', () => {
+		const known = () =>
+			build({
+				guest: {
+					_id: GUEST,
+					ownerUserId: OWNER,
+					storeId: STORE,
+					conversationId: CONVERSATION,
+					tokenHash: hash(TOKEN),
+					lastActiveAt: new Date(),
+				},
+			});
+
+		it("changes the visitor's own message, as written by the visitor", async () => {
+			const { service, edition } = known();
+
+			const view = await service.editMessage(
+				'atelie',
+				TOKEN,
+				'm1',
+				'  Tem em verde?  ',
+			);
+
+			expect(edition.edit).toHaveBeenCalledWith(
+				expect.objectContaining({ _id: CONVERSATION }),
+				'm1',
+				InboxEnum.Direction.IN,
+				'Tem em verde?',
+			);
+			expect(view).toMatchObject({ id: 'm1', text: 'Tem em verde?' });
+			expect(view.editedAt).toEqual(new Date('2026-01-01T10:05:00Z'));
+		});
+
+		it('refuses empty words', async () => {
+			const { service, edition } = known();
+
+			await expect(
+				service.editMessage('atelie', TOKEN, 'm1', '   '),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(edition.edit).not.toHaveBeenCalled();
+		});
+
+		it('refuses a visitor the site does not know', async () => {
+			const { service, edition } = build();
+
+			await expect(
+				service.editMessage('atelie', TOKEN, 'm1', 'oi'),
+			).rejects.toBeInstanceOf(UnauthorizedException);
+			expect(edition.edit).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('deleteMessage', () => {
+		it("removes the visitor's own message, as the visitor", async () => {
+			const { service, deletion } = build({
+				guest: {
+					_id: GUEST,
+					ownerUserId: OWNER,
+					storeId: STORE,
+					conversationId: CONVERSATION,
+					tokenHash: hash(TOKEN),
+					lastActiveAt: new Date(),
+				},
+			});
+
+			await service.deleteMessage('atelie', TOKEN, 'm1');
+
+			expect(deletion.remove).toHaveBeenCalledWith(
+				expect.objectContaining({ _id: CONVERSATION }),
+				'm1',
+				InboxEnum.Direction.IN,
+			);
 		});
 	});
 });

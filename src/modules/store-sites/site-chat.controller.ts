@@ -4,12 +4,14 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Headers,
 	HttpCode,
 	Ip,
 	Param,
 	ParseIntPipe,
+	Patch,
 	Post,
 	Res,
 	UploadedFile,
@@ -88,6 +90,34 @@ export class SiteChatController {
 	}
 
 	// The visitor is writing: the store's inbox shows it. Never fails the window.
+	// New words for a message the visitor wrote.
+	@Public()
+	@Patch('/messages/:messageId')
+	public async editMessage(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Param('messageId', ValidationParamsPipe) messageId: string,
+		@Headers(TOKEN_HEADER) token: string,
+		@Body() body: { text?: unknown },
+	): Promise<ISiteChatMessageView> {
+		return await this._siteChatService.editMessage(
+			slug,
+			token,
+			messageId,
+			body?.text,
+		);
+	}
+
+	@Public()
+	@Delete('/messages/:messageId')
+	@HttpCode(204)
+	public async deleteMessage(
+		@Param('slug', ValidationParamsPipe) slug: string,
+		@Param('messageId', ValidationParamsPipe) messageId: string,
+		@Headers(TOKEN_HEADER) token: string,
+	): Promise<void> {
+		await this._siteChatService.deleteMessage(slug, token, messageId);
+	}
+
 	@Public()
 	@Post('/typing')
 	@HttpCode(204)
