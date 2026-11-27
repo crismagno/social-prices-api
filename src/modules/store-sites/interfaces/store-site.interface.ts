@@ -67,6 +67,38 @@ export interface IStoreSiteFooter {
 	itemsVersion: number;
 }
 
+/** One thing the contact form asks. */
+export interface IStoreSiteContactField {
+	key: string;
+	type: StoreSitesEnum.ContactFieldType;
+	/** Its name over the field; empty, the usual one for its kind. */
+	label: string | null;
+	placeholder: string | null;
+	isRequired: boolean;
+	/** A choice among options only: what can be chosen. */
+	options: string[];
+}
+
+/**
+ * The form of the contact page: what it asks, its words, and where what a
+ * visitor writes goes. The addresses it goes to are the owner's alone: the
+ * public site never carries the e-mail or the webhook.
+ */
+export interface IStoreSiteContactForm {
+	/** The heading over the form; empty, the site's own. */
+	title: string | null;
+	/** The words of the button; empty, the site's own. */
+	buttonLabel: string | null;
+	/** What is said once it was sent; empty, the site's own. */
+	successMessage: string | null;
+	fields: IStoreSiteContactField[];
+	destination: StoreSitesEnum.ContactDestination;
+	email: string | null;
+	/** A number with its country code, digits only. */
+	whatsapp: string | null;
+	webhookUrl: string | null;
+}
+
 /**
  * What lies behind the whole site, from the entrance to the footer: the
  * site's colour as always, images that take turns, or a video.
@@ -290,6 +322,8 @@ export interface IStoreSitePage {
 	theme: Partial<IStoreSiteTheme> | null;
 	/** What lies behind this page alone; none, what lies behind the site. */
 	backdrop: IStoreSiteBackdrop | null;
+	/** The form of the contact page: only that page has one. */
+	contact: IStoreSiteContactForm | null;
 }
 
 /**

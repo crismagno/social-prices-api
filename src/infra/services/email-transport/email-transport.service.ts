@@ -69,6 +69,7 @@ export default class EmailTransportService {
 				subject: params.subject,
 				text: params.text,
 				html: params.html,
+				replyTo: params.replyTo,
 			});
 
 			return info.messageId;

@@ -5,6 +5,7 @@ import {
 	BadRequestException,
 	Injectable,
 	NotFoundException,
+	ServiceUnavailableException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -33,6 +34,7 @@ import {
 	ISiteChatAnswer,
 	ISiteChatExtraField,
 	IStoreSiteChat,
+	IStoreSiteContactForm,
 	IStoreSitePage,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
@@ -40,7 +42,18 @@ import { IPublishedSiteContext } from './interfaces/store-sites.type';
 import { SiteChatTypingState } from './site-chat-typing';
 import { CHAT_FIELD_RULES } from './store-site-chat-fields';
 import { SiteChatRateLimiter } from './site-chat-rate-limiter';
+import { SiteContactDeliveryService } from './site-contact-delivery.service';
 import { siteChatOf } from './store-site-chat';
+import {
+	contactAnswersOf,
+	ContactAnswerError,
+	contactDestinationOf,
+	contactIdentityOf,
+	contactMessageOf,
+	IContactAnswer,
+	siteContactFormOf,
+	USUAL_CONTACT_KEYS,
+} from './store-site-contact';
 import { sitePagesOf } from './store-site-pages';
 import { StoreSitesPublicService } from './store-sites-public.service';
 
@@ -50,6 +63,10 @@ const MAX_EMAIL_LENGTH = 160;
 const MAX_PHONE_LENGTH = 30;
 const MAX_MESSAGE_LENGTH = 2000;
 const MESSAGES_SHOWN = 100;
+// Every answer of a contact form together, as one message of the inbox.
+const MAX_CONTACT_TEXT_LENGTH = 4000;
+// Who wrote, when the form asked neither a name nor an e-mail.
+const VISITOR_NAME = 'Site visitor';
 
 // How many chats one address may start, and one site may receive, a minute;
 // how many messages one visitor may send.
@@ -136,6 +153,7 @@ export class SiteChatService {
 		private readonly _typing: SiteChatTypingState,
 		private readonly _edition: StoreChatEditionService,
 		private readonly _deletion: StoreChatDeletionService,
+		private readonly _delivery: SiteContactDeliveryService,
 	) {}
 
 	//#endregion
@@ -191,10 +209,12 @@ export class SiteChatService {
 	}
 
 	/**
-	 * The form of the contact page: a visitor says who they are and what they
-	 * want, in one go, and it lands in the store's inbox as a conversation of
-	 * the site. With the chat of the site on, the secret lets its window follow
-	 * the answer; without it, the store answers by the e-mail that was given.
+	 * The form of the contact page: a visitor answers what the owner's form
+	 * asks, in one go, and it goes where the owner chose. To the store's inbox
+	 * it lands as a conversation of the site: with the chat of the site on, the
+	 * secret lets its window follow the answer; without it, the store answers
+	 * by the e-mail that was given. To an e-mail or to the owner's own address
+	 * it leaves here, and there is no conversation to follow.
 	 */
 	public async contact(
 		slug: string,
@@ -204,47 +224,76 @@ export class SiteChatService {
 		const context: IPublishedSiteContext =
 			await this._storeSitesPublicService.resolvePublishedOrFail(slug);
 
-		const hasContactPage: boolean = sitePagesOf(context.site.pages).some(
+		const contactPage: IStoreSitePage | undefined = sitePagesOf(
+			context.site.pages,
+		).find(
 			(page: IStoreSitePage) =>
 				page.type === StoreSitesEnum.SitePageType.CONTACT,
 		);
 
-		if (!hasContactPage) {
+		if (!contactPage) {
 			throw new NotFoundException('Contact page not found!');
 		}
 
-		const name: string = textOf(form.name, MAX_NAME_LENGTH);
-		const email: string = textOf(form.email, MAX_EMAIL_LENGTH).toLowerCase();
-		const phone: string = textOf(form.phone, MAX_PHONE_LENGTH);
-		const message: string =
-			typeof form.message === 'string' ? form.message.trim() : '';
+		const settings: IStoreSiteContactForm = siteContactFormOf(
+			contactPage.contact,
+		);
 
-		if (!name) {
-			throw this._invalid('name');
+		const destination: StoreSitesEnum.ContactDestination =
+			contactDestinationOf(settings);
+
+		// WhatsApp is opened by the visitor: nothing is sent through here.
+		if (destination === StoreSitesEnum.ContactDestination.WHATSAPP) {
+			throw new BadRequestException(
+				'This contact form is not sent through the site.',
+			);
 		}
 
-		// Without the chat window, the e-mail is the only way back to the visitor.
-		if (!EMAIL.test(email)) {
-			throw this._invalid('email');
-		}
-
-		if (phone && !isPhone(phone)) {
-			throw this._invalid('phone');
-		}
-
-		if (!message || message.length > MAX_MESSAGE_LENGTH) {
-			throw this._invalid('text');
-		}
+		const answers: IContactAnswer[] = this._contactAnswers(settings, form);
 
 		this._assertMayStart(context.site.slug, visitorAddress);
 
+		const identity = contactIdentityOf(answers);
+
+		if (destination === StoreSitesEnum.ContactDestination.EMAIL) {
+			await this._deliverOrFail(
+				this._delivery.email(
+					settings.email,
+					context.store.name,
+					answers,
+					identity.email,
+				),
+			);
+
+			return { token: null };
+		}
+
+		if (destination === StoreSitesEnum.ContactDestination.WEBHOOK) {
+			await this._deliverOrFail(
+				this._delivery.webhook(settings.webhookUrl, {
+					site: context.site.slug,
+					store: context.store.name,
+					sentAt: new Date().toISOString(),
+					fields: answers,
+				}),
+			);
+
+			return { token: null };
+		}
+
 		const { token, guest } = await this._open(context, {
-			name,
-			email,
-			phone: phone || null,
+			// A form that asks no name still opens a conversation of someone.
+			name: identity.name ?? identity.email ?? VISITOR_NAME,
+			email: identity.email,
+			phone: identity.phone,
 		});
 
-		await this._receive(guest, String(context.owner._id), message, []);
+		await this._receive(
+			guest,
+			String(context.owner._id),
+			contactMessageOf(answers).slice(0, MAX_CONTACT_TEXT_LENGTH),
+			[],
+		);
 
 		return { token: siteChatOf(context.site.chat).isActive ? token : null };
 	}
@@ -714,6 +763,49 @@ export class SiteChatService {
 		}
 
 		return value;
+	}
+
+	/**
+	 * What the visitor answered, as the form asks it. The answers come by the
+	 * key of each field in `answers`; the four the form always sent by name are
+	 * taken as the answers to its usual fields.
+	 */
+	private _contactAnswers(
+		settings: IStoreSiteContactForm,
+		form: ISiteContactForm,
+	): IContactAnswer[] {
+		const sent: Record<string, unknown> = {
+			// As the form always sent them, before its fields could be changed.
+			[USUAL_CONTACT_KEYS.name]: form.name,
+			[USUAL_CONTACT_KEYS.email]: form.email,
+			[USUAL_CONTACT_KEYS.phone]: form.phone,
+			[USUAL_CONTACT_KEYS.message]: form.message,
+			...(form.answers &&
+			typeof form.answers === 'object' &&
+			!Array.isArray(form.answers)
+				? (form.answers as Record<string, unknown>)
+				: {}),
+		};
+
+		try {
+			return contactAnswersOf(settings, sent);
+		} catch (error: any) {
+			if (error instanceof ContactAnswerError) {
+				throw this._invalid(error.field);
+			}
+
+			throw error;
+		}
+	}
+
+	/** Out of here it either went or it did not: the visitor is told to try again. */
+	private async _deliverOrFail(delivery: Promise<boolean>): Promise<void> {
+		if (!(await delivery)) {
+			throw new ServiceUnavailableException({
+				code: 'SITE_CONTACT_NOT_DELIVERED',
+				message: 'The message could not be delivered.',
+			});
+		}
 	}
 
 	private _invalid(field: string): BadRequestException {

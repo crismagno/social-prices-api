@@ -506,6 +506,31 @@ namespace StoreSitesEnum {
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
+	/** What a field of the contact form asks for. */
+	export enum ContactFieldType {
+		NAME = 'NAME',
+		EMAIL = 'EMAIL',
+		PHONE = 'PHONE',
+		TEXT = 'TEXT',
+		TEXTAREA = 'TEXTAREA',
+		SELECT = 'SELECT',
+	}
+
+	/** Where what the contact form gathers goes. */
+	export enum ContactDestination {
+		/** The store's inbox here, as a conversation of the site. */
+		INBOX = 'INBOX',
+		/** An e-mail address of the owner's choice. */
+		EMAIL = 'EMAIL',
+		/** WhatsApp, opened by the visitor with the message written. */
+		WHATSAPP = 'WHATSAPP',
+		/** An address of the owner's that receives it as data. */
+		WEBHOOK = 'WEBHOOK',
+	}
+
+	export const MAX_CONTACT_FIELDS = 12;
+	export const MAX_CONTACT_OPTIONS = 12;
+
 	/** What lies behind the whole site: its colour, images in turn or a video. */
 	export enum BackdropType {
 		COLOR = 'COLOR',

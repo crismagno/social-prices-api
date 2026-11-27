@@ -8,6 +8,7 @@ import {
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteAboutOf } from './store-site-about';
 import { pageBackdropOf } from './store-site-backdrop';
+import { siteContactFormOf } from './store-site-contact';
 import { pageHeroOf } from './store-site-hero';
 
 const MAX_LABEL_LENGTH = 30;
@@ -136,6 +137,10 @@ const pageOf = (
 		hero: pageHeroOf(source.hero),
 		theme: pageThemeOf(source.theme),
 		backdrop: pageBackdropOf(source.backdrop),
+		contact:
+			type === StoreSitesEnum.SitePageType.CONTACT
+				? siteContactFormOf(source.contact)
+				: null,
 	};
 };
 

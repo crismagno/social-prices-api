@@ -2,6 +2,7 @@ import {
 	BadRequestException,
 	HttpException,
 	NotFoundException,
+	ServiceUnavailableException,
 	UnauthorizedException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
@@ -154,6 +155,12 @@ const build = ({
 		}),
 	};
 
+	// Where a contact form goes when not to the inbox: it gets there unless told.
+	const delivery = {
+		email: jest.fn().mockResolvedValue(true),
+		webhook: jest.fn().mockResolvedValue(true),
+	};
+
 	return {
 		guestModel,
 		conversations,
@@ -164,6 +171,7 @@ const build = ({
 		typing,
 		edition,
 		deletion,
+		delivery,
 		service: new SiteChatService(
 			guestModel,
 			publicService,
@@ -175,6 +183,7 @@ const build = ({
 			typing,
 			edition,
 			deletion,
+			delivery as any,
 		),
 	};
 };
@@ -772,6 +781,116 @@ describe('SiteChatService', () => {
 			).rejects.toBeInstanceOf(BadRequestException);
 			expect(guestModel.create).not.toHaveBeenCalled();
 			expect(messages.saveIncoming).not.toHaveBeenCalled();
+		});
+
+		const pageWith = (contact: any) => ({ ...CONTACT_PAGE, contact });
+
+		it("takes the answers of the owner's own fields, by their keys", async () => {
+			const { service, guestModel, messages } = withPage({}, [
+				pageWith({
+					fields: [
+						{ key: 'quem', type: 'NAME', isRequired: true },
+						{ key: 'tipo', type: 'SELECT', label: 'Tipo', options: ['Bolo'] },
+						{ key: 'obs', type: 'TEXTAREA', label: 'Obs' },
+					],
+				}),
+			]);
+
+			await service.contact('atelie', '1.1.1.1', {
+				answers: { quem: 'Ana', tipo: 'Bolo', obs: 'Sábado' },
+			});
+
+			// No e-mail asked: the conversation is still someone's.
+			expect(guestModel.create.mock.calls[0][0]).toMatchObject({
+				name: 'Ana',
+				email: null,
+			});
+			expect(messages.saveIncoming.mock.calls[0][2].text).toBe(
+				'Tipo: Bolo\nObs: Sábado',
+			);
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', {
+					answers: { quem: 'Ana', tipo: 'Pizza' },
+				}),
+			).rejects.toBeInstanceOf(BadRequestException);
+		});
+
+		it("sends to the owner's e-mail, with no conversation, when that is where it goes", async () => {
+			const { service, delivery, guestModel } = withPage({}, [
+				pageWith({ destination: 'EMAIL', email: 'dono@loja.com' }),
+			]);
+
+			await expect(service.contact('atelie', '1.1.1.1', FORM)).resolves.toEqual(
+				{ token: null },
+			);
+
+			expect(delivery.email).toHaveBeenCalledWith(
+				'dono@loja.com',
+				'Ateliê',
+				expect.arrayContaining([
+					expect.objectContaining({ value: 'Vocês entregam em Recife?' }),
+				]),
+				'ana@mail.com',
+			);
+			expect(guestModel.create).not.toHaveBeenCalled();
+		});
+
+		it("posts to the owner's address when that is where it goes", async () => {
+			const { service, delivery, guestModel } = withPage({}, [
+				pageWith({
+					destination: 'WEBHOOK',
+					webhookUrl: 'https://hooks.example.com/a',
+				}),
+			]);
+
+			await expect(service.contact('atelie', '1.1.1.1', FORM)).resolves.toEqual(
+				{ token: null },
+			);
+
+			expect(delivery.webhook).toHaveBeenCalledWith(
+				'https://hooks.example.com/a',
+				expect.objectContaining({
+					site: 'atelie',
+					store: 'Ateliê',
+					fields: expect.any(Array),
+				}),
+			);
+			expect(guestModel.create).not.toHaveBeenCalled();
+		});
+
+		it('tells the visitor to try again when it could not leave', async () => {
+			const { service, delivery } = withPage({}, [
+				pageWith({ destination: 'EMAIL', email: 'dono@loja.com' }),
+			]);
+			delivery.email.mockResolvedValue(false);
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', FORM),
+			).rejects.toBeInstanceOf(ServiceUnavailableException);
+		});
+
+		it('falls back to the inbox while the destination has no address yet', async () => {
+			const { service, delivery, guestModel } = withPage({}, [
+				pageWith({ destination: 'EMAIL' }),
+			]);
+
+			await service.contact('atelie', '1.1.1.1', FORM);
+
+			expect(delivery.email).not.toHaveBeenCalled();
+			expect(guestModel.create).toHaveBeenCalledTimes(1);
+		});
+
+		it('takes nothing for a form that opens WhatsApp', async () => {
+			const { service, guestModel, delivery } = withPage({}, [
+				pageWith({ destination: 'WHATSAPP', whatsapp: '5585999990000' }),
+			]);
+
+			await expect(
+				service.contact('atelie', '1.1.1.1', FORM),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(guestModel.create).not.toHaveBeenCalled();
+			expect(delivery.email).not.toHaveBeenCalled();
 		});
 
 		it('is limited like starting a chat', async () => {

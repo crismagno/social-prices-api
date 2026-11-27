@@ -13,7 +13,7 @@ import StoresEnum from '../stores/interfaces/stores.enum';
 import { StoresService } from '../stores/stores.service';
 import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
-import { IStoreSite } from './interfaces/store-site.interface';
+import { IStoreSite, IStoreSitePage } from './interfaces/store-site.interface';
 import {
 	IPublicSiteCard,
 	IPublicSiteProduct,
@@ -29,6 +29,7 @@ import { publicBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
 import { siteCartButtonOf } from './store-site-cart-button';
 import { siteBackdropOf } from './store-site-backdrop';
+import { publicContactFormOf } from './store-site-contact';
 import { siteFontsOf } from './store-site-fonts';
 import { siteImageStyleOf } from './store-site-image-style';
 import { siteCheckoutOf } from './store-site-checkout';
@@ -275,7 +276,19 @@ export class StoreSitesPublicService {
 	}
 
 	private _toPublicSite(site: IStoreSite): TPublicSite {
-		const pages = sitePagesOf(site.pages);
+		// The addresses a contact form goes to are the owner's alone.
+		const pages = sitePagesOf(site.pages).map(
+			(page: IStoreSitePage): IStoreSitePage =>
+				page.contact
+					? {
+							...page,
+							// Without them: the public form is not the stored one.
+							contact: publicContactFormOf(
+								page.contact,
+							) as IStoreSitePage['contact'],
+					  }
+					: page,
+		);
 
 		return {
 			_id: site._id,

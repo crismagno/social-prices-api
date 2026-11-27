@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
+import EmailTransportService from '../../infra/services/email-transport/email-transport.service';
 import { AppsCoreModule } from '../apps/core/apps-core.module';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
@@ -19,6 +20,7 @@ import { StoreChatEditionService } from '../store-chat/store-chat-edition.servic
 import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
 import { SiteChatInboxAdapter } from './site-chat.inbox-adapter';
 import { SiteChatService } from './site-chat.service';
+import { SiteContactDeliveryService } from './site-contact-delivery.service';
 import { SiteOrderRateLimiter } from './site-order-rate-limiter';
 import { StoreSiteMocksController } from './store-site-mocks.controller';
 import { StoreSiteMocksService } from './store-site-mocks.service';
@@ -59,6 +61,9 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 		StoreSiteMocksService,
 		StoreSitesPublicService,
 		SiteChatService,
+		// Where a contact form goes when not to the inbox: an e-mail, a webhook.
+		SiteContactDeliveryService,
+		EmailTransportService,
 		SiteChatRateLimiter,
 		SiteChatTypingState,
 		SiteChatInboxAdapter,
