@@ -18,7 +18,9 @@ export default class CreateNoteDto {
 
 	@IsString()
 	@IsNotEmpty()
-	@MaxLength(4000)
+	// Formatted text: its words are held to 4000 by the service, the tags take
+	// room of their own.
+	@MaxLength(4000 * 6)
 	text: string;
 
 	@IsDateString()

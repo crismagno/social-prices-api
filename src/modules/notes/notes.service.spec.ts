@@ -96,6 +96,44 @@ describe('NotesService', () => {
 			).rejects.toBeInstanceOf(BadRequestException);
 			expect(model.create).not.toHaveBeenCalled();
 		});
+
+		it('keeps the formatting of the text and drops what could run', async () => {
+			const { service, model } = buildService();
+
+			await service.create(owner, {
+				...validDto,
+				text: '<p><strong>Call</strong> <img src=x onerror="alert(1)"><script>alert(1)</script>back</p>',
+			});
+
+			const text: string = model.create.mock.calls[0][0].text;
+
+			expect(text).toContain('<strong>Call</strong>');
+			expect(text).not.toMatch(/script|onerror/);
+		});
+
+		it('rejects a formatted text with no words', async () => {
+			const { service, model } = buildService();
+
+			await expect(
+				service.create(owner, { ...validDto, text: '<p></p><p> </p>' }),
+			).rejects.toBeInstanceOf(BadRequestException);
+			expect(model.create).not.toHaveBeenCalled();
+		});
+
+		it('holds the words, not the tags, to 4000 characters', async () => {
+			const { service } = buildService();
+			const words: string = 'a'.repeat(4000);
+
+			await expect(
+				service.create(owner, {
+					...validDto,
+					text: `<p><strong>${words}</strong></p>`,
+				}),
+			).resolves.toBeDefined();
+			await expect(
+				service.create(owner, { ...validDto, text: `<p>${words}b</p>` }),
+			).rejects.toBeInstanceOf(BadRequestException);
+		});
 	});
 
 	describe('update', () => {

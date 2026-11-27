@@ -22,6 +22,10 @@ import {
 	INoteCalendarMarker,
 	INoteCalendarMarkersRequest,
 } from './interfaces/notes.types';
+import {
+	richTextToPlain,
+	sanitizeRichText,
+} from '../../shared/utils/rich-text/rich-text';
 import { shapeCalendarMarkers } from './notes-calendar';
 import { buildNoteFilter } from './notes-filter';
 
@@ -29,6 +33,9 @@ export interface INoteActor {
 	_id: string;
 	employeeId?: string;
 }
+
+/** How many characters a note's text holds, its formatting aside. */
+const MAX_TEXT_LENGTH: number = 4000;
 
 @Injectable()
 export class NotesService {
@@ -206,10 +213,18 @@ export class NotesService {
 		text: string;
 	} {
 		const title: string = dto.title.trim();
-		const text: string = dto.text.trim();
+		// The text may come formatted: kept without what could run on a page.
+		const text: string = sanitizeRichText(dto.text) ?? '';
+		const words: string = richTextToPlain(text).trim();
 
-		if (!title || !text) {
+		if (!title || !words) {
 			throw new BadRequestException('Title and text are required.');
+		}
+
+		if (words.length > MAX_TEXT_LENGTH) {
+			throw new BadRequestException(
+				`The text has more than ${MAX_TEXT_LENGTH} characters.`,
+			);
 		}
 
 		return { title, text };

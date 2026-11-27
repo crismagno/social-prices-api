@@ -37,7 +37,7 @@ describe('CreateNoteDto', () => {
 		['empty title', { title: '' }],
 		['title over 200', { title: 'a'.repeat(201) }],
 		['empty text', { text: '' }],
-		['text over 4000', { text: 'a'.repeat(4001) }],
+		['text over its formatted limit', { text: 'a'.repeat(4000 * 6 + 1) }],
 		['missing date', { date: undefined }],
 		['bad date', { date: 'not a date' }],
 		['unknown status', { status: 'DONE' }],
