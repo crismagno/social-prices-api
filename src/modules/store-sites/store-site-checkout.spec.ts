@@ -54,6 +54,7 @@ describe('cartLookOf', () => {
 	it('shows everything as before, for a site saved before the option', () => {
 		expect(cartLookOf(undefined)).toEqual({
 			title: null,
+			mode: StoreSitesEnum.CartMode.DRAWER,
 			width: StoreSitesEnum.CartWidth.NORMAL,
 			side: StoreSitesEnum.CartSide.RIGHT,
 			isPhotoShown: true,
@@ -70,6 +71,7 @@ describe('cartLookOf', () => {
 	it('keeps what the owner chose and trims the texts', () => {
 		const look = cartLookOf({
 			title: '  Minha sacola ',
+			mode: StoreSitesEnum.CartMode.PAGE,
 			width: StoreSitesEnum.CartWidth.WIDE,
 			side: StoreSitesEnum.CartSide.LEFT,
 			isPhotoShown: false,
@@ -80,6 +82,7 @@ describe('cartLookOf', () => {
 
 		expect(look).toMatchObject({
 			title: 'Minha sacola',
+			mode: StoreSitesEnum.CartMode.PAGE,
 			width: StoreSitesEnum.CartWidth.WIDE,
 			side: StoreSitesEnum.CartSide.LEFT,
 			isPhotoShown: false,
@@ -94,6 +97,7 @@ describe('cartLookOf', () => {
 		const look = cartLookOf({
 			title: '   ',
 			width: 'HUGE',
+			mode: 'POPUP',
 			side: 1,
 			buttonLabel: 'x'.repeat(80),
 			isTagsShown: 'no',
@@ -101,6 +105,7 @@ describe('cartLookOf', () => {
 
 		expect(look.title).toBeNull();
 		expect(look.width).toBe(StoreSitesEnum.CartWidth.NORMAL);
+		expect(look.mode).toBe(StoreSitesEnum.CartMode.DRAWER);
 		expect(look.side).toBe(StoreSitesEnum.CartSide.RIGHT);
 		expect(look.buttonLabel).toHaveLength(30);
 		expect(look.isTagsShown).toBe(true);

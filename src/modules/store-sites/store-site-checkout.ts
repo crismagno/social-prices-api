@@ -42,6 +42,11 @@ export const cartLookOf = (look: unknown): IStoreSiteCartLook => {
 
 	return {
 		title: textOf(source.title, CART_TITLE_MAX),
+		mode: oneOf(
+			Object.values(StoreSitesEnum.CartMode),
+			source.mode,
+			StoreSitesEnum.CartMode.DRAWER,
+		),
 		width: oneOf(
 			Object.values(StoreSitesEnum.CartWidth),
 			source.width,

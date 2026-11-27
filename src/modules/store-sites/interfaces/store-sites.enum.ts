@@ -214,6 +214,15 @@ namespace StoreSitesEnum {
 		WIDE = 'WIDE',
 	}
 
+	/** The address of the cart's own page: no page of the owner may take it. */
+	export const CART_PAGE_SLUG = 'carrinho';
+
+	/** Where the cart opens: a window over the page, or a page of its own. */
+	export enum CartMode {
+		DRAWER = 'DRAWER',
+		PAGE = 'PAGE',
+	}
+
 	/** The side of the screen the cart window comes from. */
 	export enum CartSide {
 		RIGHT = 'RIGHT',

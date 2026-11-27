@@ -130,6 +130,7 @@ export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
 				customCount >= StoreSitesEnum.MAX_CUSTOM_PAGES ||
 				!SLUG.test(slug) ||
 				readySlugs.includes(slug) ||
+				slug === StoreSitesEnum.CART_PAGE_SLUG ||
 				usedSlugs.has(slug)
 			) {
 				continue;

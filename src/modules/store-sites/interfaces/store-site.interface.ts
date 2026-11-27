@@ -133,6 +133,7 @@ export interface IStoreSiteAbout {
 export interface IStoreSiteCartLook {
 	/** Its own title; null keeps the default one. */
 	title: string | null;
+	mode: StoreSitesEnum.CartMode;
 	width: StoreSitesEnum.CartWidth;
 	side: StoreSitesEnum.CartSide;
 	isPhotoShown: boolean;
