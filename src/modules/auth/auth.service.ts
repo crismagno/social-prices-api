@@ -149,6 +149,8 @@ export class AuthService {
 				null,
 				{
 					about: createUserDto.about,
+					idNumber: null,
+					cpf: null,
 					addresses: [],
 					birthDate: null,
 					email: createUserDto.email,

@@ -21,6 +21,8 @@ export interface IEmployee extends ICreatedAtEntity, IUpdatedAtEntity {
 	phoneNumbers: IPhoneNumber[];
 	tagsIds: mongoose.Schema.Types.ObjectId[];
 	about: string | null;
+	idNumber: string | null;
+	cpf: string | null;
 	level: EmployeesEnum.Level;
 	status: EmployeesEnum.Status;
 	isMain: boolean;

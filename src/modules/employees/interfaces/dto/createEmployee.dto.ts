@@ -48,6 +48,14 @@ export default class CreateEmployeeDto {
 
 	@IsOptional()
 	@IsString()
+	idNumber: string | null;
+
+	@IsOptional()
+	@IsString()
+	cpf: string | null;
+
+	@IsOptional()
+	@IsString()
 	username: string | null;
 
 	@IsEnum(EmployeesEnum.Status)

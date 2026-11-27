@@ -57,6 +57,12 @@ export class Employee implements IEmployee {
 	@Prop({ type: String })
 	about: string | null;
 
+	@Prop({ type: String })
+	idNumber: string | null;
+
+	@Prop({ type: String })
+	cpf: string | null;
+
 	@Prop({ type: [AddressSchema] })
 	addresses: IAddress[];
 

@@ -201,6 +201,12 @@ export class EmployeesService {
 				{
 					username: search,
 				},
+				{
+					idNumber: search,
+				},
+				{
+					cpf: search,
+				},
 			];
 		}
 
@@ -308,6 +314,8 @@ export class EmployeesService {
 			phoneNumbers: createEmployeeDto.phoneNumbers,
 			tagsIds: createEmployeeDto.tagsIds,
 			about: createEmployeeDto.about,
+			idNumber: createEmployeeDto.idNumber || null,
+			cpf: createEmployeeDto.cpf || null,
 			level: createEmployeeDto.level,
 			status: createEmployeeDto.status ?? EmployeesEnum.Status.PENDING,
 			isMain: !!createEmployeeDto.isMain,
@@ -369,6 +377,8 @@ export class EmployeesService {
 			addresses: updateEmployeeDto.addresses,
 			gender: updateEmployeeDto.gender,
 			about: updateEmployeeDto.about,
+			idNumber: updateEmployeeDto.idNumber || null,
+			cpf: updateEmployeeDto.cpf || null,
 			phoneNumbers: updateEmployeeDto.phoneNumbers,
 			tagsIds: updateEmployeeDto.tagsIds,
 			level: updateEmployeeDto.level,
@@ -664,6 +674,12 @@ export class EmployeesService {
 				{
 					username: search,
 				},
+				{
+					idNumber: search,
+				},
+				{
+					cpf: search,
+				},
 			];
 		}
 
@@ -708,6 +724,8 @@ export class EmployeesService {
 			tags: 'Tags',
 			level: 'Level',
 			about: 'About',
+			idNumber: 'ID Number',
+			cpf: 'CPF',
 			addresses: 'Addresses',
 			phones: 'Phones',
 			createdAt: 'Created At',
@@ -771,6 +789,8 @@ export class EmployeesService {
 				tags: tagsNames,
 				level: EmployeesEnum.LevelLabels[employee.level],
 				about: employee.about,
+				idNumber: employee.idNumber,
+				cpf: employee.cpf,
 				addresses: addresses,
 				phones: phones,
 				createdAt: employee.createdAt,
@@ -1081,6 +1101,8 @@ export class EmployeesService {
 							? (employeeFileUploadTemplateRow.gender.toUpperCase() as PersonEnum.Gender)
 							: PersonEnum.Gender.OTHER,
 						about: employeeFileUploadTemplateRow.about,
+						idNumber: null,
+						cpf: null,
 						phoneNumbers,
 						tagsIds: tagsIds as any[],
 						userId: userId as any,
