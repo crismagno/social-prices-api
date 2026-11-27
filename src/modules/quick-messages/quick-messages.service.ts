@@ -37,6 +37,10 @@ import {
 	IQuickMessageActor,
 	IQuickMessageAvailable,
 } from './interfaces/quick-messages.type';
+import {
+	richTextToPlain,
+	sanitizeRichText,
+} from '../../shared/utils/rich-text/rich-text';
 
 const NOT_DELETED = { 'softDelete.isDeleted': { $ne: true } };
 
@@ -63,6 +67,10 @@ const kindOf = (mimeType: string): QuickMessagesEnum.MediaKind => {
 type PendingBlock =
 	| IQuickMessageBlock
 	| (Omit<IQuickMessageMediaBlock, 'fileKey'> & { fileIndex: number });
+
+// The formatting of a text takes room of its own: a text with every word
+// marked still fits, an endless one does not.
+const MAX_TEXT_HTML_LENGTH: number = QuickMessagesEnum.MAX_TEXT_LENGTH * 6;
 
 @Injectable()
 export class QuickMessagesService {
@@ -481,9 +489,16 @@ export class QuickMessagesService {
 		const blocks: PendingBlock[] = inputs.map(
 			(input: QuickMessageBlockInputDto): PendingBlock => {
 				if (input.type === QuickMessagesEnum.BlockType.TEXT) {
-					const text: string = (input.text ?? '').trim();
+					// Written in the editor: kept cleaned, and measured by its words,
+					// which is what the chat gets.
+					const text: string = sanitizeRichText(input.text) ?? '';
+					const words: string = richTextToPlain(text);
 
-					if (!text || text.length > QuickMessagesEnum.MAX_TEXT_LENGTH) {
+					if (
+						!words ||
+						words.length > QuickMessagesEnum.MAX_TEXT_LENGTH ||
+						text.length > MAX_TEXT_HTML_LENGTH
+					) {
 						throw new BadRequestException(
 							`Each text must have between 1 and ${QuickMessagesEnum.MAX_TEXT_LENGTH} characters.`,
 						);

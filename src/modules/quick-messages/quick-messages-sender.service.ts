@@ -38,6 +38,11 @@ import QuickMessagesEnum from './interfaces/quick-messages.enum';
 import { IQuickMessageSendResult } from './interfaces/quick-messages.type';
 import { buildFieldValues, renderTemplate } from './quick-messages-fields';
 import { QuickMessagesService } from './quick-messages.service';
+import {
+	richTextToChatText,
+	TChatTextStyle,
+} from '../../shared/utils/rich-text/rich-text';
+import InboxEnum from '../inbox/interfaces/inbox.enum';
 
 // A block ready to go: its text filled in, its file already read.
 type ReadyBlock =
@@ -110,7 +115,19 @@ export class QuickMessagesSenderService {
 			await this._fieldSource(ctx, target.conversation),
 		);
 
-		const ready: ReadyBlock[] = this._render(message.blocks, buffers, values);
+		// WhatsApp shows bold, italic and strikethrough by its own marks; the
+		// other channels get the words without them.
+		const style: TChatTextStyle =
+			target.conversation.channel === InboxEnum.Channel.WHATSAPP
+				? 'whatsapp'
+				: 'plain';
+
+		const ready: ReadyBlock[] = this._render(
+			message.blocks,
+			buffers,
+			values,
+			style,
+		);
 
 		const sent: IInboxMessageView[] = [];
 
@@ -194,12 +211,18 @@ export class QuickMessagesSenderService {
 		blocks: IQuickMessageBlock[],
 		buffers: Map<IQuickMessageBlock, Buffer>,
 		values: Record<string, string>,
+		style: TChatTextStyle,
 	): ReadyBlock[] {
 		const ready: ReadyBlock[] = [];
 
 		for (const block of blocks) {
 			if (block.type === QuickMessagesEnum.BlockType.TEXT) {
-				const text: string = renderTemplate(block.text, values).trim();
+				// Made chat text first, so what the fields bring is never read as
+				// formatting.
+				const text: string = renderTemplate(
+					richTextToChatText(block.text, style),
+					values,
+				).trim();
 
 				// The fields can make it longer than the channels take: refuse now,
 				// not halfway through.

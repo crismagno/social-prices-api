@@ -1,4 +1,9 @@
 import {
+	isRichText,
+	richTextToPlain,
+	sanitizeRichText,
+} from '../../shared/utils/rich-text/rich-text';
+import {
 	ISiteChatExtraField,
 	IStoreSiteChat,
 } from './interfaces/store-site.interface';
@@ -92,6 +97,30 @@ const modeIn = (
 const textOf = (value: unknown, max: number): string | null =>
 	typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
 
+/**
+ * The first message, written in the editor or typed plain. Formatted, it is
+ * cleaned and its words are what count; too long, it keeps only its words.
+ */
+const greetingOf = (value: unknown): string | null => {
+	const clean: string | null =
+		typeof value === 'string' ? sanitizeRichText(value) : null;
+
+	if (!clean) {
+		return null;
+	}
+
+	if (!isRichText(clean)) {
+		return clean.slice(0, MAX_GREETING_LENGTH);
+	}
+
+	const words: string = richTextToPlain(clean);
+
+	return words.length <= MAX_GREETING_LENGTH &&
+		clean.length <= MAX_GREETING_LENGTH * 6
+		? clean
+		: words.slice(0, MAX_GREETING_LENGTH);
+};
+
 const oneOf = <T extends string>(
 	value: unknown,
 	options: T[],
@@ -129,7 +158,7 @@ export const siteChatOf = (chat: unknown): IStoreSiteChat => {
 		),
 		buttonLabel: textOf(source.buttonLabel, MAX_LABEL_LENGTH),
 		title: textOf(source.title, MAX_TITLE_LENGTH),
-		greeting: textOf(source.greeting, MAX_GREETING_LENGTH),
+		greeting: greetingOf(source.greeting),
 		emailField: modeIn(extraFields, Customer.EMAIL),
 		phoneField: modeIn(extraFields, Customer.PHONE),
 		sessionMinutes: minutesOf(source.sessionMinutes),

@@ -75,6 +75,17 @@ import {
 	IProductFileUploadTemplateRow,
 } from './interfaces/products.type';
 import { ProductsValidationService } from './products-validation.service';
+import {
+	richTextToPlain,
+	sanitizeRichText,
+} from '../../shared/utils/rich-text/rich-text';
+
+/**
+ * A cell of the spreadsheet, checked like the editor: an empty one stays
+ * empty (it clears the field), a missing one stays missing (it keeps it).
+ */
+const richCellOf = (text: string | undefined): string | undefined =>
+	text === undefined ? undefined : sanitizeRichText(text) ?? '';
 
 @Injectable()
 export class ProductsService {
@@ -283,13 +294,13 @@ export class ProductsService {
 		const now: Date = new Date();
 
 		const product = new this._productModel({
-			description: createProductDto.description,
+			description: sanitizeRichText(createProductDto.description),
 			filesUrl,
 			isActive: createProductDto.isActive,
 			name: createProductDto.name,
 			price: createProductDto.price,
 			quantity: createProductDto.quantity,
-			details: createProductDto.details,
+			details: sanitizeRichText(createProductDto.details),
 			storeIds: createProductDto.storeIds,
 			categoriesIds: createProductDto.categoriesIds,
 			tagsIds: createProductDto.tagsIds,
@@ -411,12 +422,12 @@ export class ProductsService {
 			{
 				$set: {
 					filesUrl: product.filesUrl,
-					description: updateProductDto.description,
+					description: sanitizeRichText(updateProductDto.description),
 					isActive: updateProductDto.isActive,
 					name: updateProductDto.name,
 					price: updateProductDto.price,
 					quantity: updateProductDto.quantity,
-					details: updateProductDto.details,
+					details: sanitizeRichText(updateProductDto.details),
 					storeIds: updateProductDto.storeIds,
 					categoriesIds: updateProductDto.categoriesIds,
 					tagsIds: updateProductDto.tagsIds,
@@ -793,14 +804,15 @@ export class ProductsService {
 				name: product.name,
 				barcode: product.barcode,
 				sku: product.sku || '',
-				description: product.description,
+				// The spreadsheet gets the words, not the formatting.
+				description: richTextToPlain(product.description),
 				price: product.price,
 				quantity: product.quantity,
 				stores: storesNames,
 				categories: categoriesNames,
 				tags: tagsNames,
 				isActive: product.isActive ? 'YES' : 'NO',
-				details: product.details,
+				details: richTextToPlain(product.details),
 				brand: product.brand || '',
 				releaseDate: product.releaseDate || '',
 				expirationDate: product.expirationDate || '',
@@ -873,14 +885,15 @@ export class ProductsService {
 			const name: string = row.getCell('B')?.text?.trim();
 			const barcode: string = row.getCell('C')?.text?.trim();
 			const sku: string = row.getCell('D')?.text?.trim();
-			const description: string = row.getCell('E')?.text?.trim();
+			// A cell is checked like the editor: no markup of it can run.
+			const description: string = richCellOf(row.getCell('E')?.text);
 			const price: string = row.getCell('F')?.text?.trim();
 			const quantity: string = row.getCell('G')?.text?.trim();
 			const stores: string = row.getCell('H')?.text?.trim();
 			const categories: string = row.getCell('I')?.text?.trim();
 			const tags: string = row.getCell('J')?.text?.trim();
 			const isActive: string = row.getCell('K')?.text?.trim();
-			const details: string = row.getCell('L')?.text?.trim();
+			const details: string = richCellOf(row.getCell('L')?.text);
 			const brand: string = row.getCell('M')?.text?.trim();
 			const releaseDate: string = row.getCell('N')?.text?.trim();
 			const expirationDate: string = row.getCell('O')?.text?.trim();

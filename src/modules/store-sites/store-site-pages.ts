@@ -6,6 +6,7 @@ import {
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteAboutOf } from './store-site-about';
+import { pageHeroOf } from './store-site-hero';
 
 const MAX_LABEL_LENGTH = 30;
 const MAX_TITLE_LENGTH = 80;
@@ -88,6 +89,7 @@ const pageOf = (
 		intro: textOf(source.intro, MAX_INTRO_LENGTH),
 		content: { title: contentTitle, texts, media, mediaPosition },
 		faq: type === StoreSitesEnum.SitePageType.SUPPORT ? faqOf(source.faq) : [],
+		hero: pageHeroOf(source.hero),
 	};
 };
 

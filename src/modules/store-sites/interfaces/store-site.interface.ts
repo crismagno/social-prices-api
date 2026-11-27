@@ -187,6 +187,26 @@ export interface IStoreSitePage {
 	content: IStoreSitePageContent;
 	/** Questions and answers: only the support page has them. */
 	faq: IStoreSiteFaqItem[];
+	/** The page's own entrance; none, it follows the home's. */
+	hero: IStoreSitePageHero | null;
+}
+
+/**
+ * The entrance of one page, apart from the home's. Its title and the line
+ * under it are the page's own `title` and `intro`.
+ */
+export interface IStoreSitePageHero {
+	/** The line over the title; empty, none. */
+	tagline: string | null;
+	/** The words of the main button; empty, the home's. */
+	ctaLabel: string | null;
+	/** The picture behind; empty, the home's. */
+	backgroundImageUrl: string | null;
+	/** The picture beside the words; empty, none. */
+	featuredImageUrl: string | null;
+	/** How tall, in pixels; empty, the usual height of a page's top. */
+	height: number | null;
+	options: IStoreSiteHeroOptions;
 }
 
 /**

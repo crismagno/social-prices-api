@@ -40,6 +40,7 @@ import { siteSignInOf } from './store-site-sign-in';
 import { resolveSiteLogo, siteLogoOf } from './store-site-logo';
 import { siteSizesOf } from './store-site-sizes';
 import { StoreSitesService } from './store-sites.service';
+import { sanitizeRichText } from '../../shared/utils/rich-text/rich-text';
 
 /** The numeric measures of a product, in the order the site lists them. */
 const MEASURES = [
@@ -352,11 +353,12 @@ export class StoreSitesPublicService {
 		return {
 			_id: String(product._id),
 			name: product.name,
-			description: product.description ?? null,
+			// Cleaned again on the way out: what a visitor gets can never run.
+			description: sanitizeRichText(product.description),
 			price: item.price,
 			mainUrl: product.mainUrl ?? null,
 			filesUrl: [...(product.filesUrl ?? [])],
-			details: product.details?.trim() || null,
+			details: sanitizeRichText(product.details),
 			brand: product.brand?.trim() || null,
 			colors: (product.colors ?? []).filter(
 				(color: unknown) => typeof color === 'string' && !!color.trim(),

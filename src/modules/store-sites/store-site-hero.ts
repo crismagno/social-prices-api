@@ -1,6 +1,7 @@
 import {
 	IStoreSiteBlockButton,
 	IStoreSiteHeroOptions,
+	IStoreSitePageHero,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { buttonOf } from './store-site-blocks';
@@ -112,5 +113,47 @@ export const heroOptionsOf = (options: unknown): IStoreSiteHeroOptions => {
 			text: colorOf(colors.text),
 			button: colorOf(colors.button),
 		},
+	};
+};
+
+const MAX_PAGE_HERO_TEXT_LENGTH = 80;
+const MAX_IMAGE_KEY_LENGTH = 600;
+const PAGE_HERO_HEIGHT_RANGE: [number, number] = [120, 1600];
+
+const shortTextOf = (value: unknown): string | null =>
+	toText(value).slice(0, MAX_PAGE_HERO_TEXT_LENGTH) || null;
+
+const imageKeyOf = (value: unknown): string | null => {
+	const key: string = toText(value);
+
+	return key && key.length <= MAX_IMAGE_KEY_LENGTH ? key : null;
+};
+
+const heightOf = (value: unknown): number | null => {
+	const [min, max] = PAGE_HERO_HEIGHT_RANGE;
+
+	return typeof value === 'number' && Number.isFinite(value)
+		? Math.min(max, Math.max(min, Math.round(value)))
+		: null;
+};
+
+/**
+ * The entrance of one page, whatever was stored or sent. A page that never
+ * got its own has none, and follows the home's as it always did.
+ */
+export const pageHeroOf = (hero: unknown): IStoreSitePageHero | null => {
+	if (!hero || typeof hero !== 'object' || Array.isArray(hero)) {
+		return null;
+	}
+
+	const source: Record<string, unknown> = hero as Record<string, unknown>;
+
+	return {
+		tagline: shortTextOf(source.tagline),
+		ctaLabel: shortTextOf(source.ctaLabel),
+		backgroundImageUrl: imageKeyOf(source.backgroundImageUrl),
+		featuredImageUrl: imageKeyOf(source.featuredImageUrl),
+		height: heightOf(source.height),
+		options: heroOptionsOf(source.options),
 	};
 };

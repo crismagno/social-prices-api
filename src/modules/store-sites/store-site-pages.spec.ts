@@ -184,4 +184,40 @@ describe('sitePagesOf', () => {
 		expect(sitePagesOf('x')).toHaveLength(4);
 		expect(sitePagesOf([null, 'x', { type: 'NOPE' }])).toEqual([]);
 	});
+
+	it('leaves a page without its own entrance following the home', () => {
+		expect(sitePagesOf([custom()])[0].hero).toBeNull();
+	});
+
+	it('keeps the own entrance of a page, checked piece by piece', () => {
+		const [page] = sitePagesOf([
+			custom({
+				hero: {
+					tagline: '  Novidades ',
+					ctaLabel: '',
+					backgroundImageUrl: 'stores/1/bg.jpg',
+					featuredImageUrl: 42,
+					height: 5000,
+					options: {
+						isButtonVisible: false,
+						colors: { background: '#ABCDEF', text: 'red' },
+					},
+					other: 'x',
+				},
+			}),
+		]);
+
+		expect(page.hero).toEqual({
+			tagline: 'Novidades',
+			ctaLabel: null,
+			backgroundImageUrl: 'stores/1/bg.jpg',
+			featuredImageUrl: null,
+			height: 1600,
+			options: expect.objectContaining({
+				isButtonVisible: false,
+				secondButton: null,
+				colors: { background: '#abcdef', text: null, button: null },
+			}),
+		});
+	});
 });

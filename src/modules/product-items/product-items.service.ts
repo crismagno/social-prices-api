@@ -75,6 +75,17 @@ import {
 	IProductItemFileUploadTemplateRow,
 } from './interfaces/product-items.type';
 import { ProductItemsValidationService } from './product-items-validation.service';
+import {
+	richTextToPlain,
+	sanitizeRichText,
+} from '../../shared/utils/rich-text/rich-text';
+
+/**
+ * A cell of the spreadsheet, checked like the editor: an empty one stays
+ * empty (it clears the field), a missing one stays missing (it keeps it).
+ */
+const richCellOf = (text: string | undefined): string | undefined =>
+	text === undefined ? undefined : sanitizeRichText(text) ?? '';
 
 @Injectable()
 export class ProductItemsService {
@@ -309,14 +320,14 @@ export class ProductItemsService {
 		const now: Date = new Date();
 
 		const productItem = new this._productItemModel({
-			description: createProductItemDto.description,
+			description: sanitizeRichText(createProductItemDto.description),
 			filesUrl,
 			isActive: createProductItemDto.isActive,
 			isDefault: createProductItemDto.isDefault ?? false,
 			name: createProductItemDto.name,
 			price: createProductItemDto.price,
 			quantity: createProductItemDto.quantity,
-			details: createProductItemDto.details,
+			details: sanitizeRichText(createProductItemDto.details),
 			storeIds: createProductItemDto.storeIds,
 			categoriesIds: createProductItemDto.categoriesIds,
 			tagsIds: createProductItemDto.tagsIds,
@@ -485,13 +496,13 @@ export class ProductItemsService {
 		return await this._productItemModel.findByIdAndUpdate(productItem._id, {
 			$set: {
 				filesUrl: productItem.filesUrl,
-				description: updateProductItemDto.description,
+				description: sanitizeRichText(updateProductItemDto.description),
 				isActive: updateProductItemDto.isActive,
 				isDefault: updateProductItemDto.isDefault ?? productItem.isDefault,
 				name: updateProductItemDto.name,
 				price: updateProductItemDto.price,
 				quantity: updateProductItemDto.quantity,
-				details: updateProductItemDto.details,
+				details: sanitizeRichText(updateProductItemDto.details),
 				storeIds: updateProductItemDto.storeIds,
 				categoriesIds: updateProductItemDto.categoriesIds,
 				tagsIds: updateProductItemDto.tagsIds,
@@ -879,7 +890,8 @@ export class ProductItemsService {
 				name: productItem.name,
 				barcode: productItem.barcode,
 				sku: productItem.sku || '',
-				description: productItem.description,
+				// The spreadsheet gets the words, not the formatting.
+				description: richTextToPlain(productItem.description),
 				price: productItem.price,
 				quantity: productItem.quantity,
 				stores: storesNames,
@@ -887,7 +899,7 @@ export class ProductItemsService {
 				tags: tagsNames,
 				isActive: productItem.isActive ? 'YES' : 'NO',
 				isDefault: productItem.isDefault ? 'YES' : 'NO',
-				details: productItem.details,
+				details: richTextToPlain(productItem.details),
 				brand: productItem.brand || '',
 				releaseDate: productItem.releaseDate || '',
 				expirationDate: productItem.expirationDate || '',
@@ -963,14 +975,15 @@ export class ProductItemsService {
 			const name: string = row.getCell('B')?.text?.trim();
 			const barcode: string = row.getCell('C')?.text?.trim();
 			const sku: string = row.getCell('D')?.text?.trim();
-			const description: string = row.getCell('E')?.text?.trim();
+			// A cell is checked like the editor: no markup of it can run.
+			const description: string = richCellOf(row.getCell('E')?.text);
 			const price: string = row.getCell('F')?.text?.trim();
 			const quantity: string = row.getCell('G')?.text?.trim();
 			const stores: string = row.getCell('H')?.text?.trim();
 			const categories: string = row.getCell('I')?.text?.trim();
 			const tags: string = row.getCell('J')?.text?.trim();
 			const isActive: string = row.getCell('K')?.text?.trim();
-			const details: string = row.getCell('L')?.text?.trim();
+			const details: string = richCellOf(row.getCell('L')?.text);
 			const brand: string = row.getCell('M')?.text?.trim();
 			const releaseDate: string = row.getCell('N')?.text?.trim();
 			const expirationDate: string = row.getCell('O')?.text?.trim();

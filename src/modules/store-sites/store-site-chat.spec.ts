@@ -131,4 +131,20 @@ describe('siteChatOf', () => {
 		expect(siteChatOf('x').isActive).toBe(false);
 		expect(siteChatOf({ isActive: 'yes' }).isActive).toBe(false);
 	});
+
+	it('keeps a first message written in the editor, cleaned', () => {
+		expect(
+			siteChatOf({
+				greeting: '<p><strong>Oi!</strong> 😀<script>x()</script></p>',
+			}).greeting,
+		).toBe('<p><strong>Oi!</strong> 😀</p>');
+	});
+
+	it('keeps only the words of a formatted first message too long', () => {
+		const greeting: string = siteChatOf({
+			greeting: `<p><strong>${'a'.repeat(400)}</strong></p>`,
+		}).greeting;
+
+		expect(greeting).toBe('a'.repeat(300));
+	});
 });
