@@ -283,6 +283,9 @@ namespace StoreSitesEnum {
 		WAVE = 'WAVE',
 	}
 
+	/** The most sections one item of a menu of tabs shows. */
+	export const MAX_TAB_SECTIONS = 12;
+
 	/** How a menu of tabs lays its items: in a row on top, or down the side. */
 	export enum MenuStyle {
 		TABS = 'TABS',
@@ -314,6 +317,17 @@ namespace StoreSitesEnum {
 		FADE = 'FADE',
 		ZOOM = 'ZOOM',
 		NONE = 'NONE',
+	}
+
+	/**
+	 * Where a menu of tabs stays while the visitor scrolls what it shows: where
+	 * the page put it, stuck to the top (or the side), or as a small floating
+	 * button that brings its items back once the menu is out of sight.
+	 */
+	export enum MenuPlace {
+		INLINE = 'INLINE',
+		FIXED = 'FIXED',
+		FLOATING = 'FLOATING',
 	}
 
 	export enum ButtonVariant {

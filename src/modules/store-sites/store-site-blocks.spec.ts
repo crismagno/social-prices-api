@@ -57,7 +57,7 @@ describe('siteBlocksOf', () => {
 			items: [
 				{
 					key: 'i1',
-					sectionKey: null,
+					sectionKeys: [],
 					title: 'Ana',
 					subtitle: 'São Paulo',
 					text: 'Amei!',
@@ -81,6 +81,7 @@ describe('siteBlocksOf', () => {
 				menuSide: null,
 				menuLook: null,
 				menuEffect: null,
+				menuPlace: null,
 			},
 		});
 	});
@@ -451,6 +452,7 @@ describe('sections of the page builder', () => {
 			menuSide: null,
 			menuLook: null,
 			menuEffect: null,
+			menuPlace: null,
 		});
 	});
 
@@ -601,35 +603,66 @@ describe('sections of the page builder', () => {
 		).toEqual([]);
 	});
 
-	it('keeps the items of a menu of tabs with the section each one shows', () => {
+	it('keeps the items of a menu of tabs with the sections each one shows', () => {
 		const [tabs] = siteBlocksOf([
 			section({
 				key: 'tabs',
 				type: T.TABS,
 				items: [
-					{ key: 'aaaaaaaaaaa1', title: ' Entradas ', sectionKey: ' s1 ' },
-					{ key: 'aaaaaaaaaaa2', title: 'Pratos', sectionKey: 7 },
-					{ key: 'aaaaaaaaaaa3', title: '  ', sectionKey: 's3' },
+					{
+						key: 'aaaaaaaaaaa1',
+						title: ' Entradas ',
+						sectionKeys: [' s1 ', 's2', 's1', '', 7],
+					},
+					// Still being filled: kept, and the site waits for its sections.
+					{ key: 'aaaaaaaaaaa2', title: 'Pratos', sectionKeys: 'x' },
+					{ key: 'aaaaaaaaaaa3', title: '  ', sectionKeys: ['s3'] },
 				],
 			}),
 		]);
 
-		expect(tabs.items.map((item) => [item.title, item.sectionKey])).toEqual([
-			['Entradas', 's1'],
-			// Still being filled: kept, and the site waits for its section.
-			['Pratos', null],
+		expect(tabs.items.map((item) => [item.title, item.sectionKeys])).toEqual([
+			['Entradas', ['s1', 's2']],
+			['Pratos', []],
 		]);
 	});
 
-	it('gives the section of an item to a menu of tabs only', () => {
-		const [features] = siteBlocksOf([
+	it('reads the one section of an item saved before it could show several', () => {
+		const [tabs] = siteBlocksOf([
 			section({
-				type: T.FEATURES,
-				items: [{ title: 'Rápido', sectionKey: 's1' }],
+				type: T.TABS,
+				items: [{ title: 'Entradas', sectionKey: 's1' }],
 			}),
 		]);
 
-		expect(features.items[0].sectionKey).toBeNull();
+		expect(tabs.items[0].sectionKeys).toEqual(['s1']);
+	});
+
+	it('keeps at most twelve sections in one item of a menu of tabs', () => {
+		const [tabs] = siteBlocksOf([
+			section({
+				type: T.TABS,
+				items: [
+					{
+						title: 'Tudo',
+						sectionKeys: Array.from({ length: 20 }, (_, at) => `s${at}`),
+					},
+				],
+			}),
+		]);
+
+		expect(tabs.items[0].sectionKeys).toHaveLength(12);
+	});
+
+	it('gives sections to the items of a menu of tabs only', () => {
+		const [features] = siteBlocksOf([
+			section({
+				type: T.FEATURES,
+				items: [{ title: 'Rápido', sectionKeys: ['s1'] }],
+			}),
+		]);
+
+		expect(features.items[0].sectionKeys).toEqual([]);
 	});
 
 	it('lays a menu of tabs as tabs showing one section at a time, unless told otherwise', () => {
@@ -648,6 +681,7 @@ describe('sections of the page builder', () => {
 			menuSide: 'LEFT',
 			menuLook: 'PILL',
 			menuEffect: 'SLIDE',
+			menuPlace: 'FIXED',
 			align: 'CENTER',
 			tone: 'NONE',
 		});

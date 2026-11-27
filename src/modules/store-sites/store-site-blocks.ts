@@ -63,6 +63,23 @@ const ratingOf = (value: unknown): number =>
 		? Math.min(5, Math.max(1, Math.round(value)))
 		: 5;
 
+/**
+ * The sections an item of a menu of tabs shows: keys, no blanks, no repeats.
+ * An item saved when it showed one section only had it as `sectionKey`.
+ * Whether those sections are there, the site says when it draws.
+ */
+const sectionKeysOf = (source: TRecord): string[] => {
+	const given: unknown[] = Array.isArray(source.sectionKeys)
+		? source.sectionKeys
+		: [source.sectionKey];
+
+	const keys: string[] = given
+		.map((key: unknown) => textOf(key, 40))
+		.filter((key: string | null): key is string => !!key);
+
+	return [...new Set(keys)].slice(0, StoreSitesEnum.MAX_TAB_SECTIONS);
+};
+
 /** Whether an item has what its type shows; an item without it is dropped. */
 const isUsable = (
 	type: StoreSitesEnum.BlockType,
@@ -129,8 +146,7 @@ const itemsOf = (
 
 			const item: IStoreSiteBlockItem = {
 				key: '',
-				// Whether that section is there, the site says when it draws.
-				sectionKey: type === T.TABS ? textOf(source.sectionKey, 40) : null,
+				sectionKeys: type === T.TABS ? sectionKeysOf(source) : [],
 				title: textOf(source.title, MAX_ITEM_TITLE),
 				subtitle: textOf(source.subtitle, MAX_ITEM_SUBTITLE),
 				text: textOf(source.text, MAX_ITEM_TEXT),
@@ -254,6 +270,10 @@ const settingsOf = (
 		menuEffect: uses(T.TABS)
 			? oneOf(source.menuEffect, Object.values(StoreSitesEnum.MenuEffect)) ??
 			  StoreSitesEnum.MenuEffect.SLIDE
+			: null,
+		menuPlace: uses(T.TABS)
+			? oneOf(source.menuPlace, Object.values(StoreSitesEnum.MenuPlace)) ??
+			  StoreSitesEnum.MenuPlace.FIXED
 			: null,
 	};
 };

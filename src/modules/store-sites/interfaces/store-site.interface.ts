@@ -284,8 +284,11 @@ export interface IStoreSiteSection {
 /** One entry of a block; which fields count depends on the block's type. */
 export interface IStoreSiteBlockItem {
 	key: string;
-	/** An item of a menu of tabs only: the key of the section it shows. */
-	sectionKey: string | null;
+	/**
+	 * An item of a menu of tabs only: the keys of the sections of its page it
+	 * shows, one or several (a text, an image, a block...), in the page's order.
+	 */
+	sectionKeys: string[];
 	/** A name, a question, a number or a step. */
 	title: string | null;
 	/** A role, a place or a label. */
@@ -333,6 +336,8 @@ export interface IStoreSiteBlockSettings {
 	menuLook: StoreSitesEnum.MenuLook | null;
 	/** A menu of tabs: how a section comes in when its item is chosen. */
 	menuEffect: StoreSitesEnum.MenuEffect | null;
+	/** A menu of tabs: where it stays while the visitor scrolls its sections. */
+	menuPlace: StoreSitesEnum.MenuPlace | null;
 }
 
 /**
