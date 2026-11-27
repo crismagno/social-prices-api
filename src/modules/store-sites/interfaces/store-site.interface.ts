@@ -67,6 +67,14 @@ export interface IStoreSiteFooter {
 	itemsVersion: number;
 }
 
+/** The typefaces of the site; an empty one is the template's own. */
+export interface IStoreSiteFonts {
+	/** Titles and whatever the template writes in its display face. */
+	heading: StoreSitesEnum.Font | null;
+	/** Everything else. */
+	body: StoreSitesEnum.Font | null;
+}
+
 /** How the strip of phrases looks and runs; empty is the template's own. */
 export interface IStoreSiteMarqueeStyle {
 	speed: StoreSitesEnum.MarqueeSpeed;
@@ -539,6 +547,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	/** What the bag asks before an order is sent. */
 	checkout?: Partial<IStoreSiteCheckout>;
 	marqueeStyle?: Partial<IStoreSiteMarqueeStyle>;
+	fonts?: Partial<IStoreSiteFonts>;
 	/** The owner arranged the pages: only the blocks list says what shows where. */
 	isLayoutCustom?: boolean;
 	hero: IStoreSiteHero;

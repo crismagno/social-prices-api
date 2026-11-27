@@ -4,6 +4,7 @@ import { siteCartButtonOf } from './store-site-cart-button';
 import { siteCatalogOf } from './store-site-catalog';
 import { siteChatOf } from './store-site-chat';
 import { siteCheckoutOf } from './store-site-checkout';
+import { siteFontsOf } from './store-site-fonts';
 import { siteFooterOf } from './store-site-footer';
 import { siteHeaderOf } from './store-site-header';
 import { heroOptionsOf, heroSlidesOf } from './store-site-hero';
@@ -40,6 +41,7 @@ export const siteContentOf = (dto: SaveStoreSiteDto) => ({
 	imageStyle: siteImageStyleOf(dto.imageStyle),
 	checkout: siteCheckoutOf(dto.checkout),
 	marqueeStyle: siteMarqueeStyleOf(dto.marqueeStyle),
+	fonts: siteFontsOf(dto.fonts),
 	hero: {
 		...dto.hero,
 		...heroSlidesOf(dto.hero),

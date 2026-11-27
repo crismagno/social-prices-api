@@ -233,6 +233,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	marqueeStyle?: Record<string, unknown>;
 
+	// Checked when saved: see siteFontsOf.
+	@IsOptional()
+	@IsObject()
+	fonts?: Record<string, unknown>;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

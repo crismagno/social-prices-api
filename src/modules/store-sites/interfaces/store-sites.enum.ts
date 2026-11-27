@@ -460,6 +460,27 @@ namespace StoreSitesEnum {
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
+	/** The typefaces an owner may give the site in place of the template's. */
+	export enum Font {
+		INTER = 'INTER',
+		ROBOTO = 'ROBOTO',
+		POPPINS = 'POPPINS',
+		MONTSERRAT = 'MONTSERRAT',
+		OPEN_SANS = 'OPEN_SANS',
+		LATO = 'LATO',
+		NUNITO = 'NUNITO',
+		RALEWAY = 'RALEWAY',
+		DM_SANS = 'DM_SANS',
+		SPACE_GROTESK = 'SPACE_GROTESK',
+		QUICKSAND = 'QUICKSAND',
+		PLAYFAIR_DISPLAY = 'PLAYFAIR_DISPLAY',
+		LORA = 'LORA',
+		MERRIWEATHER = 'MERRIWEATHER',
+		CORMORANT_GARAMOND = 'CORMORANT_GARAMOND',
+		OSWALD = 'OSWALD',
+		BEBAS_NEUE = 'BEBAS_NEUE',
+	}
+
 	export const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 	export const MAX_SECTIONS = 6;
