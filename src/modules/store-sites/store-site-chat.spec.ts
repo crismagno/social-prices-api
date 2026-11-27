@@ -21,6 +21,7 @@ describe('siteChatOf', () => {
 				{ field: F.PHONE, isRequired: false },
 			],
 			fieldsVersion: 2,
+			colors: { primary: null, background: null, text: null },
 		});
 	});
 
@@ -49,12 +50,14 @@ describe('siteChatOf', () => {
 			sessionMinutes: 30,
 			extraFields: [{ field: F.PHONE, isRequired: true }],
 			fieldsVersion: 2,
+			colors: { primary: null, background: null, text: null },
 		});
 	});
 
 	it('keeps the customer fields the owner chose, each once, required or not', () => {
 		const chat = siteChatOf({
 			fieldsVersion: 2,
+			colors: { primary: null, background: null, text: null },
 			extraFields: [
 				{ field: F.CPF, isRequired: true },
 				{ field: F.BIRTH_DATE },
@@ -88,6 +91,7 @@ describe('siteChatOf', () => {
 	it('reads how the email and phone are asked from the list', () => {
 		const chat = siteChatOf({
 			fieldsVersion: 2,
+			colors: { primary: null, background: null, text: null },
 			emailField: Field.REQUIRED,
 			extraFields: [
 				{ field: F.CPF, isRequired: true },
@@ -146,5 +150,13 @@ describe('siteChatOf', () => {
 		}).greeting;
 
 		expect(greeting).toBe('a'.repeat(300));
+	});
+
+	it('keeps the colours of the chat, only plain hex ones', () => {
+		expect(
+			siteChatOf({
+				colors: { primary: '#112233', background: 'white', text: '#ffffff' },
+			}).colors,
+		).toEqual({ primary: '#112233', background: null, text: '#ffffff' });
 	});
 });

@@ -6,6 +6,7 @@ import {
 import {
 	ISiteChatExtraField,
 	IStoreSiteChat,
+	IStoreSiteChatColors,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 
@@ -164,5 +165,25 @@ export const siteChatOf = (chat: unknown): IStoreSiteChat => {
 		sessionMinutes: minutesOf(source.sessionMinutes),
 		extraFields,
 		fieldsVersion: FIELDS_VERSION,
+		colors: chatColorsOf(source.colors),
+	};
+};
+
+/** The colours of the chat: only plain hex ones, the others left to the site. */
+export const chatColorsOf = (colors: unknown): IStoreSiteChatColors => {
+	const source: Record<string, unknown> =
+		colors && typeof colors === 'object'
+			? (colors as Record<string, unknown>)
+			: {};
+
+	const hex = (value: unknown): string | null =>
+		typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value)
+			? value
+			: null;
+
+	return {
+		primary: hex(source.primary),
+		background: hex(source.background),
+		text: hex(source.text),
 	};
 };

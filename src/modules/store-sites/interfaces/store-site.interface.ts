@@ -297,6 +297,18 @@ export interface IStoreSiteChat {
 	extraFields: ISiteChatExtraField[];
 	/** 2 once email and phone live in `extraFields`; older chats are read from their modes. */
 	fieldsVersion: number;
+	/** Its own colours; an empty one is the site's. */
+	colors: IStoreSiteChatColors;
+}
+
+/** The colours of the chat alone; an empty one is the site's. */
+export interface IStoreSiteChatColors {
+	/** The button, the top of the window and the visitor's messages. */
+	primary: string | null;
+	/** The background of the window. */
+	background: string | null;
+	/** The words in the window. */
+	text: string | null;
 }
 
 /** A field of the customer record the owner asks in the chat's form. */
