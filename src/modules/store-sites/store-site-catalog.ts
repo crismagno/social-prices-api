@@ -1,3 +1,4 @@
+import StoreSitesEnum from './interfaces/store-sites.enum';
 import { IStoreSiteCatalog } from './interfaces/store-site.interface';
 
 /**
@@ -25,6 +26,11 @@ export const siteCatalogOf = (catalog: unknown): IStoreSiteCatalog => {
 		isSearchShown: source.isSearchShown !== false,
 		isAddButtonShown: source.isAddButtonShown !== false,
 		isDetailsOpened: source.isDetailsOpened !== false,
+		detailsMode: Object.values(StoreSitesEnum.ProductDetailsMode).includes(
+			source.detailsMode as StoreSitesEnum.ProductDetailsMode,
+		)
+			? (source.detailsMode as StoreSitesEnum.ProductDetailsMode)
+			: StoreSitesEnum.ProductDetailsMode.MODAL,
 		isTitleShown: source.isTitleShown !== false,
 		title: textOf(source.title, MAX_TITLE_LENGTH),
 		addLabel: textOf(source.addLabel, MAX_ADD_LABEL_LENGTH),

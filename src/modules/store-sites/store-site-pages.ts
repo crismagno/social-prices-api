@@ -131,6 +131,7 @@ export const sitePagesOf = (pages: unknown): IStoreSitePage[] => {
 				!SLUG.test(slug) ||
 				readySlugs.includes(slug) ||
 				slug === StoreSitesEnum.CART_PAGE_SLUG ||
+				slug === StoreSitesEnum.PRODUCT_PAGE_SLUG ||
 				usedSlugs.has(slug)
 			) {
 				continue;

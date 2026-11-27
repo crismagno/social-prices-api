@@ -392,6 +392,8 @@ export interface IStoreSiteCatalog {
 	isAddButtonShown: boolean;
 	/** A click on a product opens its details. */
 	isDetailsOpened: boolean;
+	/** A product opens in a window, or on a page of its own. */
+	detailsMode: StoreSitesEnum.ProductDetailsMode;
 	/** The heading of the products section. */
 	isTitleShown: boolean;
 	/** The owner's own heading; empty, the site says its own. */

@@ -217,6 +217,15 @@ namespace StoreSitesEnum {
 	/** The address of the cart's own page: no page of the owner may take it. */
 	export const CART_PAGE_SLUG = 'carrinho';
 
+	/** Where a product's own pages live: /<site>/produto/<id>. No page may take it. */
+	export const PRODUCT_PAGE_SLUG = 'produto';
+
+	/** Where a product opens: a window over the page, or a page of its own. */
+	export enum ProductDetailsMode {
+		MODAL = 'MODAL',
+		PAGE = 'PAGE',
+	}
+
 	/** Where the cart opens: a window over the page, or a page of its own. */
 	export enum CartMode {
 		DRAWER = 'DRAWER',

@@ -111,6 +111,7 @@ describe('sitePagesOf', () => {
 	it.each([
 		['the address of a ready page', 'produtos'],
 		['the address of the cart page', 'carrinho'],
+		['the address of the product pages', 'produto'],
 		['an address too short', 'a'],
 		['no address at all', ''],
 	])('drops a page of the owner with %s', (_label, slug) => {

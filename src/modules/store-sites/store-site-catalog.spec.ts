@@ -9,6 +9,7 @@ describe('siteCatalogOf', () => {
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
+			detailsMode: 'MODAL',
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
@@ -30,6 +31,7 @@ describe('siteCatalogOf', () => {
 			isSearchShown: false,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
+			detailsMode: 'MODAL',
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
@@ -51,6 +53,7 @@ describe('siteCatalogOf', () => {
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
+			detailsMode: 'MODAL',
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
@@ -65,6 +68,7 @@ describe('siteCatalogOf', () => {
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
+			detailsMode: 'MODAL',
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
@@ -98,5 +102,10 @@ describe('siteCatalogOf', () => {
 
 		expect(catalog.title).toHaveLength(60);
 		expect(catalog.addLabel).toBeNull();
+	});
+
+	it('opens a product on its own page when the owner chose it', () => {
+		expect(siteCatalogOf({ detailsMode: 'PAGE' }).detailsMode).toBe('PAGE');
+		expect(siteCatalogOf({ detailsMode: 'POPUP' }).detailsMode).toBe('MODAL');
 	});
 });
