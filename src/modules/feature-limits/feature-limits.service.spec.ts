@@ -32,6 +32,7 @@ const buildService = (
 		models[FeatureLimitsEnum.Feature.CATEGORIES],
 		models[FeatureLimitsEnum.Feature.TAGS],
 		models[FeatureLimitsEnum.Feature.QUICK_MESSAGES],
+		models[FeatureLimitsEnum.Feature.SITE_MOCKS],
 		usersService,
 	);
 
@@ -270,6 +271,40 @@ describe('FeatureLimitsService', () => {
 			expect(
 				models[QUICK_MESSAGES].countDocuments.mock.calls[0][0].ownerUserId,
 			).toBe(USER_ID);
+		});
+	});
+
+	describe('site mocks', () => {
+		const SITE_MOCKS = FeatureLimitsEnum.Feature.SITE_MOCKS;
+
+		it('limits to the default when no manager ever set it', async () => {
+			const { service } = buildService({ _id: USER_ID }, { [SITE_MOCKS]: 2 });
+
+			await expect(
+				service.assertCanCreate(USER_ID, SITE_MOCKS),
+			).rejects.toBeInstanceOf(FeatureLimitReachedException);
+		});
+
+		it('allows up to the default', async () => {
+			const { service } = buildService(userWithLimits({ products: 10 }), {
+				[SITE_MOCKS]: 1,
+			});
+
+			await expect(
+				service.assertCanCreate(USER_ID, SITE_MOCKS),
+			).resolves.toBeUndefined();
+		});
+
+		it('follows what a manager set', async () => {
+			const { service } = buildService(userWithLimits({ [SITE_MOCKS]: 5 }), {
+				[SITE_MOCKS]: 4,
+			});
+
+			await expect(service.usageOf(USER_ID, SITE_MOCKS)).resolves.toEqual({
+				limit: 5,
+				used: 4,
+				enabled: true,
+			});
 		});
 	});
 });

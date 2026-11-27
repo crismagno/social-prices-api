@@ -4,6 +4,7 @@ import { schemasModule } from '../../infra/database/mongo/schemas';
 import { AppsCoreModule } from '../apps/core/apps-core.module';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
+import { FeatureLimitsModule } from '../feature-limits/feature-limits.module';
 import { FilesModule } from '../files/files.module';
 import { InboxModule } from '../inbox/inbox.module';
 import { ProductItemsModule } from '../product-items/product-items.module';
@@ -17,6 +18,8 @@ import { StoreChatMediaService } from '../store-chat/store-chat-media.service';
 import { SiteChatInboxAdapter } from './site-chat.inbox-adapter';
 import { SiteChatService } from './site-chat.service';
 import { SiteOrderRateLimiter } from './site-order-rate-limiter';
+import { StoreSiteMocksController } from './store-site-mocks.controller';
+import { StoreSiteMocksService } from './store-site-mocks.service';
 import { StoreSiteOrdersService } from './store-site-orders.service';
 import { StoreSitesPublicController } from './store-sites-public.controller';
 import { StoreSitesPublicService } from './store-sites-public.service';
@@ -29,6 +32,8 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 @Module({
 	imports: [
 		schemasModule.storeSite,
+		schemasModule.storeSiteMock,
+		FeatureLimitsModule,
 		AppsCoreModule,
 		InboxModule,
 		schemasModule.siteChatGuest,
@@ -43,11 +48,13 @@ import { StoreSitesStatusProvider } from './store-sites.status.provider';
 	],
 	controllers: [
 		StoreSitesController,
+		StoreSiteMocksController,
 		StoreSitesPublicController,
 		SiteChatController,
 	],
 	providers: [
 		StoreSitesService,
+		StoreSiteMocksService,
 		StoreSitesPublicService,
 		SiteChatService,
 		SiteChatRateLimiter,

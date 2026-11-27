@@ -97,6 +97,7 @@ const WITH_ITEMS: StoreSitesEnum.BlockType[] = [
 	T.STEPS,
 	T.IMAGE,
 	T.BOX,
+	T.TABS,
 ];
 
 export const maxItemsOf = (type: StoreSitesEnum.BlockType): number => {
@@ -128,6 +129,8 @@ const itemsOf = (
 
 			const item: IStoreSiteBlockItem = {
 				key: '',
+				// Whether that section is there, the site says when it draws.
+				sectionKey: type === T.TABS ? textOf(source.sectionKey, 40) : null,
 				title: textOf(source.title, MAX_ITEM_TITLE),
 				subtitle: textOf(source.subtitle, MAX_ITEM_SUBTITLE),
 				text: textOf(source.text, MAX_ITEM_TEXT),
@@ -210,7 +213,7 @@ const settingsOf = (
 	const height: unknown = source.height;
 
 	return {
-		align: uses(T.TEXT, T.BUTTONS, T.IMAGE, T.BOX)
+		align: uses(T.TEXT, T.BUTTONS, T.IMAGE, T.BOX, T.TABS)
 			? oneOf(source.align, Object.values(StoreSitesEnum.SectionAlign)) ??
 			  StoreSitesEnum.SectionAlign.CENTER
 			: null,
@@ -218,7 +221,7 @@ const settingsOf = (
 			? oneOf(source.width, Object.values(StoreSitesEnum.SectionWidth)) ??
 			  StoreSitesEnum.SectionWidth.WIDE
 			: null,
-		tone: uses(T.TEXT, T.BOX)
+		tone: uses(T.TEXT, T.BOX, T.TABS)
 			? oneOf(source.tone, Object.values(StoreSitesEnum.SectionTone)) ??
 			  StoreSitesEnum.SectionTone.NONE
 			: null,
@@ -232,6 +235,26 @@ const settingsOf = (
 			  StoreSitesEnum.DividerStyle.LINE
 			: null,
 		media: uses(T.VIDEO) ? mediaOf(source.media) : null,
+		menuStyle: uses(T.TABS)
+			? oneOf(source.menuStyle, Object.values(StoreSitesEnum.MenuStyle)) ??
+			  StoreSitesEnum.MenuStyle.TABS
+			: null,
+		menuMode: uses(T.TABS)
+			? oneOf(source.menuMode, Object.values(StoreSitesEnum.MenuMode)) ??
+			  StoreSitesEnum.MenuMode.SWITCH
+			: null,
+		menuSide: uses(T.TABS)
+			? oneOf(source.menuSide, Object.values(StoreSitesEnum.MenuSide)) ??
+			  StoreSitesEnum.MenuSide.LEFT
+			: null,
+		menuLook: uses(T.TABS)
+			? oneOf(source.menuLook, Object.values(StoreSitesEnum.MenuLook)) ??
+			  StoreSitesEnum.MenuLook.PILL
+			: null,
+		menuEffect: uses(T.TABS)
+			? oneOf(source.menuEffect, Object.values(StoreSitesEnum.MenuEffect)) ??
+			  StoreSitesEnum.MenuEffect.SLIDE
+			: null,
 	};
 };
 
@@ -366,7 +389,10 @@ export const publicBlocksOf = (
 	siteBlocksOf(blocks)
 		.filter(
 			(block: IStoreSiteBlock) =>
-				block.isActive &&
+				// A hidden entrance is kept: without it in the list the site would
+				// take the page for one arranged before the entrance could be moved,
+				// and show it at the top.
+				(block.isActive || block.type === T.HERO) &&
 				(block.pageKey === null || pageKeys.includes(block.pageKey)) &&
 				(isPart(block.type) ||
 					!WITH_ITEMS.includes(block.type) ||

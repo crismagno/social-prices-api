@@ -245,6 +245,8 @@ namespace StoreSitesEnum {
 		SPACER = 'SPACER',
 		DIVIDER = 'DIVIDER',
 		BOX = 'BOX',
+		// A menu of tabs: each item shows one other section of its page.
+		TABS = 'TABS',
 	}
 
 	/** The template's own parts: each at most once on a page. */
@@ -279,6 +281,39 @@ namespace StoreSitesEnum {
 		LINE = 'LINE',
 		DOTS = 'DOTS',
 		WAVE = 'WAVE',
+	}
+
+	/** How a menu of tabs lays its items: in a row on top, or down the side. */
+	export enum MenuStyle {
+		TABS = 'TABS',
+		SIDE = 'SIDE',
+	}
+
+	/** What a menu of tabs does: shows one section at a time, or scrolls to it. */
+	export enum MenuMode {
+		SWITCH = 'SWITCH',
+		SCROLL = 'SCROLL',
+	}
+
+	/** Which side a menu down the side is on. */
+	export enum MenuSide {
+		LEFT = 'LEFT',
+		RIGHT = 'RIGHT',
+	}
+
+	/** How the items of a menu of tabs look. */
+	export enum MenuLook {
+		PILL = 'PILL',
+		UNDERLINE = 'UNDERLINE',
+		BOX = 'BOX',
+	}
+
+	/** How the section of a menu of tabs comes in when its item is chosen. */
+	export enum MenuEffect {
+		SLIDE = 'SLIDE',
+		FADE = 'FADE',
+		ZOOM = 'ZOOM',
+		NONE = 'NONE',
 	}
 
 	export enum ButtonVariant {
@@ -328,6 +363,9 @@ namespace StoreSitesEnum {
 	export const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 
 	export const MAX_SECTIONS = 6;
+
+	/** The name of a saved mock of the site. */
+	export const MAX_MOCK_NAME_LENGTH = 60;
 	export const MAX_MARQUEE_ITEMS = 8;
 	export const MAX_PRODUCTS = 60;
 

@@ -13,21 +13,7 @@ import { IProduct } from '../products/interfaces/product.interface';
 import { ProductsService } from '../products/products.service';
 import { IStore } from '../stores/interfaces/store.interface';
 import { StoresService } from '../stores/stores.service';
-import { siteAboutOf } from './store-site-about';
-import { siteBlocksOf } from './store-site-blocks';
-import { siteChatOf } from './store-site-chat';
-import { siteCartButtonOf } from './store-site-cart-button';
-import { siteImageStyleOf } from './store-site-image-style';
-import { siteCheckoutOf } from './store-site-checkout';
-import { siteHeaderOf } from './store-site-header';
-import { siteMarqueeStyleOf } from './store-site-marquee-style';
-import { siteFooterOf } from './store-site-footer';
-import { heroOptionsOf, heroSlidesOf } from './store-site-hero';
-import { sitePagesOf } from './store-site-pages';
-import { siteCatalogOf } from './store-site-catalog';
-import { siteSignInOf } from './store-site-sign-in';
-import { siteLogoOf } from './store-site-logo';
-import { siteSizesOf } from './store-site-sizes';
+import { siteContentOf } from './store-site-content';
 import SaveStoreSiteDto from './interfaces/dto/saveStoreSite.dto';
 import { IStoreSite } from './interfaces/store-site.interface';
 import { StoreSite } from './interfaces/store-site.schema';
@@ -129,31 +115,7 @@ export class StoreSitesService {
 					$set: {
 						userId: new Types.ObjectId(ownerUserId),
 						slug,
-						templateId: saveStoreSiteDto.templateId,
-						theme: saveStoreSiteDto.theme,
-						displayName: saveStoreSiteDto.displayName?.trim() || null,
-						sizes: siteSizesOf(saveStoreSiteDto.sizes),
-						footer: siteFooterOf(saveStoreSiteDto.footer),
-						signIn: siteSignInOf(saveStoreSiteDto.signIn),
-						catalog: siteCatalogOf(saveStoreSiteDto.catalog),
-						about: siteAboutOf(saveStoreSiteDto.about),
-						pages: sitePagesOf(saveStoreSiteDto.pages),
-						chat: siteChatOf(saveStoreSiteDto.chat),
-						blocks: siteBlocksOf(saveStoreSiteDto.blocks),
-						isLayoutCustom: saveStoreSiteDto.isLayoutCustom === true,
-						header: siteHeaderOf(saveStoreSiteDto.header),
-						cartButton: siteCartButtonOf(saveStoreSiteDto.cartButton),
-						imageStyle: siteImageStyleOf(saveStoreSiteDto.imageStyle),
-						checkout: siteCheckoutOf(saveStoreSiteDto.checkout),
-						marqueeStyle: siteMarqueeStyleOf(saveStoreSiteDto.marqueeStyle),
-						hero: {
-							...saveStoreSiteDto.hero,
-							...heroSlidesOf(saveStoreSiteDto.hero),
-							options: heroOptionsOf(saveStoreSiteDto.hero?.options),
-						},
-						sections: saveStoreSiteDto.sections,
-						marquee: saveStoreSiteDto.marquee,
-						logo: siteLogoOf(saveStoreSiteDto.logo),
+						...siteContentOf(saveStoreSiteDto),
 						productIds: productIds.map(
 							(productId: string) => new Types.ObjectId(productId),
 						),

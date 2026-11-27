@@ -284,6 +284,8 @@ export interface IStoreSiteSection {
 /** One entry of a block; which fields count depends on the block's type. */
 export interface IStoreSiteBlockItem {
 	key: string;
+	/** An item of a menu of tabs only: the key of the section it shows. */
+	sectionKey: string | null;
 	/** A name, a question, a number or a step. */
 	title: string | null;
 	/** A role, a place or a label. */
@@ -321,6 +323,16 @@ export interface IStoreSiteBlockSettings {
 	divider: StoreSitesEnum.DividerStyle | null;
 	/** A video piece: an uploaded video or a YouTube/Vimeo player. */
 	media: IStoreSiteAboutMedia | null;
+	/** A menu of tabs: in a row on top, or down the side. */
+	menuStyle: StoreSitesEnum.MenuStyle | null;
+	/** A menu of tabs: one section at a time, or all of them to scroll to. */
+	menuMode: StoreSitesEnum.MenuMode | null;
+	/** A menu down the side: on the left or on the right. */
+	menuSide: StoreSitesEnum.MenuSide | null;
+	/** A menu of tabs: how its items look. */
+	menuLook: StoreSitesEnum.MenuLook | null;
+	/** A menu of tabs: how a section comes in when its item is chosen. */
+	menuEffect: StoreSitesEnum.MenuEffect | null;
 }
 
 /**

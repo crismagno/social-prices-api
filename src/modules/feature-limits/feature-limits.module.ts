@@ -14,6 +14,7 @@ import { FeatureLimitsService } from './feature-limits.service';
 		schemasModule.category,
 		schemasModule.tag,
 		schemasModule.quickMessage,
+		schemasModule.storeSiteMock,
 		UsersModule,
 	],
 	providers: [FeatureLimitsService],

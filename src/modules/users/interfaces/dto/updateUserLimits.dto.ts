@@ -16,6 +16,7 @@ class FeatureLimitsDto {
 	@IsOptional() @IsInt() @Min(0) categories?: number;
 	@IsOptional() @IsInt() @Min(0) tags?: number;
 	@IsOptional() @IsInt() @Min(0) 'quick-messages'?: number;
+	@IsOptional() @IsInt() @Min(0) 'site-mocks'?: number;
 }
 
 class FeaturesEnabledDto {

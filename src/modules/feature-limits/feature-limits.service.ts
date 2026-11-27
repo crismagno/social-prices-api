@@ -8,7 +8,10 @@ import { UsersService } from '../users/users.service';
 import { FeatureDisabledException } from './feature-disabled.exception';
 import { FeatureLimitReachedException } from './feature-limit-reached.exception';
 import FeatureLimitsEnum from './interfaces/feature-limits.enum';
-import { IFeaturesUsage } from './interfaces/feature-limits.types';
+import {
+	IFeatureUsage,
+	IFeaturesUsage,
+} from './interfaces/feature-limits.types';
 
 const OWNER_USER_ID_FEATURES: FeatureLimitsEnum.Feature[] = [
 	FeatureLimitsEnum.Feature.CUSTOMERS,
@@ -38,6 +41,7 @@ export class FeatureLimitsService {
 		@InjectModel(schemasName.category) categoryModel: Model<any>,
 		@InjectModel(schemasName.tag) tagModel: Model<any>,
 		@InjectModel(schemasName.quickMessage) quickMessageModel: Model<any>,
+		@InjectModel(schemasName.storeSiteMock) storeSiteMockModel: Model<any>,
 		private readonly _usersService: UsersService,
 	) {
 		this._modelsByFeature = {
@@ -49,6 +53,7 @@ export class FeatureLimitsService {
 			[FeatureLimitsEnum.Feature.CATEGORIES]: categoryModel,
 			[FeatureLimitsEnum.Feature.TAGS]: tagModel,
 			[FeatureLimitsEnum.Feature.QUICK_MESSAGES]: quickMessageModel,
+			[FeatureLimitsEnum.Feature.SITE_MOCKS]: storeSiteMockModel,
 		};
 	}
 
@@ -94,6 +99,20 @@ export class FeatureLimitsService {
 		}
 	}
 
+	/** How much of one feature the account uses, and up to how much. */
+	public async usageOf(
+		userId: string,
+		feature: FeatureLimitsEnum.Feature,
+	): Promise<IFeatureUsage> {
+		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
+
+		return {
+			limit: this._resolveLimit(user, feature),
+			used: await this._count(userId, feature),
+			enabled: this._resolveEnabled(user, feature),
+		};
+	}
+
 	public async getUsage(userId: string): Promise<IFeaturesUsage> {
 		const user: IUser = await this._usersService.findOneByIdOrFail(userId);
 
@@ -128,7 +147,13 @@ export class FeatureLimitsService {
 	): number | null {
 		const limit: unknown = user.limits?.features?.[feature];
 
-		return typeof limit === 'number' ? limit : null;
+		if (typeof limit === 'number') {
+			return limit;
+		}
+
+		return FeatureLimitsEnum.LimitedWhenUnset.includes(feature)
+			? FeatureLimitsEnum.DefaultLimits[feature]
+			: null;
 	}
 
 	// Only an explicit `false` switches a feature off, so accounts saved before

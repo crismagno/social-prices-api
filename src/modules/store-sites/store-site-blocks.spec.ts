@@ -57,6 +57,7 @@ describe('siteBlocksOf', () => {
 			items: [
 				{
 					key: 'i1',
+					sectionKey: null,
 					title: 'Ana',
 					subtitle: 'São Paulo',
 					text: 'Amei!',
@@ -75,6 +76,11 @@ describe('siteBlocksOf', () => {
 				height: null,
 				divider: null,
 				media: null,
+				menuStyle: null,
+				menuMode: null,
+				menuSide: null,
+				menuLook: null,
+				menuEffect: null,
 			},
 		});
 	});
@@ -440,6 +446,11 @@ describe('sections of the page builder', () => {
 			height: null,
 			divider: null,
 			media: null,
+			menuStyle: null,
+			menuMode: null,
+			menuSide: null,
+			menuLook: null,
+			menuEffect: null,
 		});
 	});
 
@@ -573,5 +584,76 @@ describe('sections of the page builder', () => {
 			'txt',
 		]);
 		expect(publicBlocksOf(pieces, [])).toEqual([]);
+	});
+
+	it('keeps a hidden entrance publicly, so the site knows it is hidden', () => {
+		const [hero] = publicBlocksOf(
+			[
+				section({ key: 'hero', type: T.HERO, isActive: false }),
+				section({ key: 'about', type: T.ABOUT, isActive: false }),
+			],
+			[],
+		);
+
+		expect(hero).toMatchObject({ key: 'hero', isActive: false });
+		expect(
+			publicBlocksOf([section({ type: T.ABOUT, isActive: false })], []),
+		).toEqual([]);
+	});
+
+	it('keeps the items of a menu of tabs with the section each one shows', () => {
+		const [tabs] = siteBlocksOf([
+			section({
+				key: 'tabs',
+				type: T.TABS,
+				items: [
+					{ key: 'aaaaaaaaaaa1', title: ' Entradas ', sectionKey: ' s1 ' },
+					{ key: 'aaaaaaaaaaa2', title: 'Pratos', sectionKey: 7 },
+					{ key: 'aaaaaaaaaaa3', title: '  ', sectionKey: 's3' },
+				],
+			}),
+		]);
+
+		expect(tabs.items.map((item) => [item.title, item.sectionKey])).toEqual([
+			['Entradas', 's1'],
+			// Still being filled: kept, and the site waits for its section.
+			['Pratos', null],
+		]);
+	});
+
+	it('gives the section of an item to a menu of tabs only', () => {
+		const [features] = siteBlocksOf([
+			section({
+				type: T.FEATURES,
+				items: [{ title: 'Rápido', sectionKey: 's1' }],
+			}),
+		]);
+
+		expect(features.items[0].sectionKey).toBeNull();
+	});
+
+	it('lays a menu of tabs as tabs showing one section at a time, unless told otherwise', () => {
+		const [plain, side] = siteBlocksOf([
+			section({ key: 't1', type: T.TABS, settings: { menuStyle: 'x' } }),
+			section({
+				key: 't2',
+				type: T.TABS,
+				settings: { menuStyle: 'SIDE', menuMode: 'SCROLL' },
+			}),
+		]);
+
+		expect(plain.settings).toMatchObject({
+			menuStyle: 'TABS',
+			menuMode: 'SWITCH',
+			menuSide: 'LEFT',
+			menuLook: 'PILL',
+			menuEffect: 'SLIDE',
+			align: 'CENTER',
+			tone: 'NONE',
+		});
+		expect(side.settings).toMatchObject({
+			menuStyle: 'SIDE',
+			menuMode: 'SCROLL',
+		});
 	});
 });

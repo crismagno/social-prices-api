@@ -27,6 +27,7 @@ import { TransactionSchema } from '../../../modules/transactions/interfaces/tran
 import UserSchema from '../../../modules/users/interfaces/user.schema';
 import { QuickMessageSchema } from '../../../modules/quick-messages/interfaces/quick-message.schema';
 import { SiteChatGuestSchema } from '../../../modules/store-sites/interfaces/site-chat-guest.schema';
+import { StoreSiteMockSchema } from '../../../modules/store-sites/interfaces/store-site-mock.schema';
 import { StoreSiteSchema } from '../../../modules/store-sites/interfaces/store-site.schema';
 
 export const schemasName = {
@@ -57,6 +58,7 @@ export const schemasName = {
 	telegramConnection: 'TelegramConnection',
 	quickMessage: 'QuickMessage',
 	storeSite: 'StoreSite',
+	storeSiteMock: 'StoreSiteMock',
 	siteChatGuest: 'SiteChatGuest',
 };
 
@@ -157,6 +159,9 @@ export const schemasModule = {
 	]),
 	storeSite: MongooseModule.forFeature([
 		{ name: schemasName.storeSite, schema: StoreSiteSchema },
+	]),
+	storeSiteMock: MongooseModule.forFeature([
+		{ name: schemasName.storeSiteMock, schema: StoreSiteMockSchema },
 	]),
 	siteChatGuest: MongooseModule.forFeature([
 		{ name: schemasName.siteChatGuest, schema: SiteChatGuestSchema },
