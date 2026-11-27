@@ -29,6 +29,12 @@ export class InboxScopeQueryDto {
 	channel?: InboxEnum.Channel;
 }
 
+/** Sets a chat aside, or brings it back. */
+export class InboxLimboDto extends InboxScopeQueryDto {
+	@IsBoolean()
+	isInLimbo: boolean;
+}
+
 export class InboxChatsQueryDto {
 	@IsOptional()
 	@IsEnum(InboxEnum.Channel)

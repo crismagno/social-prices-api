@@ -15,6 +15,7 @@ import { IUser } from '../users/interfaces/user.interface';
 import { UsersService } from '../users/users.service';
 import { IStoreSite } from './interfaces/store-site.interface';
 import {
+	IPublicSiteCard,
 	IPublicSiteProduct,
 	IPublicSiteStore,
 	IPublicStoreSite,
@@ -51,6 +52,17 @@ const MEASURES = [
 	'volume',
 	'weight',
 ] as const;
+
+/** The most sites a list shows: each is checked before it is listed. */
+const MAX_LISTED_SITES = 100;
+
+/** Lower case and without accents, so "atelie" finds "Ateliê". */
+const normalize = (text: unknown): string =>
+	String(text ?? '')
+		.normalize('NFD')
+		.replace(/\p{Diacritic}/gu, '')
+		.toLowerCase()
+		.trim();
 
 /**
  * The site as anyone on the internet gets it. Every answer is built field by
@@ -115,6 +127,51 @@ export class StoreSitesPublicService {
 		}
 
 		return context;
+	}
+
+	/**
+	 * The sites a visitor can open now, newest first, as cards of a list. The
+	 * same check as opening one: a site whose owner or store no longer allows it
+	 * is not listed. `search` narrows by the name or by what the entrance says.
+	 */
+	public async findOnlineCards(search?: string): Promise<IPublicSiteCard[]> {
+		const sites: IStoreSite[] =
+			await this._storeSitesService.findPublished(MAX_LISTED_SITES);
+
+		const contexts: (IPublishedSiteContext | null)[] = await Promise.all(
+			sites.map((site: IStoreSite) => this._contextIfOnline(site)),
+		);
+
+		const typed: string = normalize(search);
+
+		return contexts
+			.filter(
+				(
+					context: IPublishedSiteContext | null,
+				): context is IPublishedSiteContext => !!context,
+			)
+			.map(
+				({ site, store }: IPublishedSiteContext): IPublicSiteCard => ({
+					slug: site.slug,
+					name: site.displayName?.trim() || store.name,
+					logo: resolveSiteLogo(site.logo, store.logo),
+					title: site.hero?.title ?? '',
+					subtitle: site.hero?.subtitle ?? null,
+					imageUrl:
+						site.hero?.backgroundImageUrl ||
+						site.hero?.featuredImageUrl ||
+						null,
+					color: site.theme?.primary ?? null,
+					sells: siteCartButtonOf(site.cartButton).isVisible,
+				}),
+			)
+			.filter(
+				(card: IPublicSiteCard) =>
+					!typed ||
+					[card.name, card.title, card.subtitle ?? ''].some((text: string) =>
+						normalize(text).includes(typed),
+					),
+			);
 	}
 
 	/**

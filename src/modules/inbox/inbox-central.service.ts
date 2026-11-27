@@ -160,6 +160,24 @@ export class InboxCentralService {
 		}
 	}
 
+	/**
+	 * Sets every conversation in scope aside, or brings them back. A chat in the
+	 * limbo comes back by itself when the person writes again.
+	 */
+	public async setLimbo(
+		ownerUserId: string,
+		scope: IInboxScope,
+		isInLimbo: boolean,
+	): Promise<void> {
+		for (const conversation of await this._scope(ownerUserId, scope)) {
+			await this._conversations.setLimbo(
+				ownerUserId,
+				String(conversation._id),
+				isInLimbo,
+			);
+		}
+	}
+
 	/** The conversations a customer has, for the buttons of their profile. */
 	public async summary(
 		ownerUserId: string,
@@ -752,6 +770,10 @@ export class InboxCentralService {
 				(total: number, conversation: IInboxConversation) =>
 					total + (conversation.unreadCount ?? 0),
 				0,
+			),
+			// Only when every conversation of it was set aside.
+			isInLimbo: group.every(
+				(conversation: IInboxConversation) => !!conversation.limboAt,
 			),
 		};
 	}

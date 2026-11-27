@@ -66,6 +66,10 @@ export class InboxConversation {
 
 	@Prop({ type: Number, default: 0 })
 	contactUnreadCount: number;
+
+	/** Set aside by the owner: out of the main list until someone writes again. */
+	@Prop({ type: Date, default: null })
+	limboAt: Date | null;
 }
 
 export const InboxConversationSchema =

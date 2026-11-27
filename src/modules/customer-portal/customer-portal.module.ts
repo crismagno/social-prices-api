@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 
 import { schemasModule } from '../../infra/database/mongo/schemas';
+import { StoreSitesModule } from '../store-sites/store-sites.module';
 import { CustomerOnlyGuard } from './customer-only.guard';
 import { CustomerPortalController } from './customer-portal.controller';
 import { CustomerPortalService } from './customer-portal.service';
 
 /** Where a CUSTOMER account sees the sales made for them. Read only. */
 @Module({
-	imports: [schemasModule.sale, schemasModule.store, schemasModule.product],
+	imports: [
+		schemasModule.sale,
+		schemasModule.store,
+		schemasModule.product,
+		StoreSitesModule,
+	],
 	controllers: [CustomerPortalController],
 	providers: [CustomerPortalService, CustomerOnlyGuard],
 })

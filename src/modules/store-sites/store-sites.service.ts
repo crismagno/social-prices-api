@@ -63,6 +63,14 @@ export class StoreSitesService {
 		});
 	}
 
+	/** The sites published last, newest first: a list of them is never the whole collection. */
+	public async findPublished(limit: number): Promise<IStoreSite[]> {
+		return this._storeSiteModel
+			.find({ isPublished: true })
+			.sort({ publishedAt: -1 })
+			.limit(limit);
+	}
+
 	public async findPublishedByStoreId(
 		storeId: string,
 	): Promise<IStoreSite | null> {

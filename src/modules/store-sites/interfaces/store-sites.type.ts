@@ -43,6 +43,23 @@ export interface IPublicSiteStore {
 
 export type TPublicSite = Omit<IStoreSite, 'userId'>;
 
+/** A site that is online, as a list of sites shows it: enough to recognise it and open it. */
+export interface IPublicSiteCard {
+	slug: string;
+	/** The name at its top: its own, else the store's. */
+	name: string;
+	logo: string | null;
+	/** What its entrance says. */
+	title: string;
+	subtitle: string | null;
+	/** A picture of its entrance, when it has one. */
+	imageUrl: string | null;
+	/** Its main colour, for a card with no picture. */
+	color: string | null;
+	/** Whether it has a bag: off, it only shows. */
+	sells: boolean;
+}
+
 export interface IPublicStoreSite {
 	site: TPublicSite;
 	store: IPublicSiteStore;

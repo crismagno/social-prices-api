@@ -40,6 +40,8 @@ export interface IInboxChatView {
 	lastMessageChannel: InboxEnum.Channel | null;
 	lastMessageDirection: InboxEnum.Direction | null;
 	unreadCount: number;
+	/** Set aside by the owner: shown apart, until the person writes again. */
+	isInLimbo: boolean;
 }
 
 export interface IInboxAttachmentView {

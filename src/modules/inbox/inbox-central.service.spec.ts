@@ -38,6 +38,7 @@ const build = (conversations: any[] = [], customers: any[] = []) => {
 		listByCustomer: jest.fn().mockResolvedValue(conversations),
 		findById: jest.fn().mockResolvedValue(conversations[0] ?? null),
 		markRead: jest.fn().mockResolvedValue(undefined),
+		setLimbo: jest.fn().mockResolvedValue(undefined),
 		setCustomer: jest.fn().mockResolvedValue(undefined),
 	};
 	const messages: any = {
@@ -294,6 +295,29 @@ describe('InboxCentralService', () => {
 
 		expect(convService.markRead).toHaveBeenCalledTimes(1);
 		expect(convService.markRead).toHaveBeenCalledWith(OWNER, 'c1');
+	});
+
+	it('setLimbo sets aside every conversation of the customer', async () => {
+		const { service, convService } = build([
+			conv({ _id: 'c1', customerId: CU1 }),
+			conv({ _id: 'c2', customerId: CU1 }),
+		]);
+
+		await service.setLimbo(OWNER, { customerId: CU1 }, true);
+
+		expect(convService.setLimbo).toHaveBeenCalledWith(OWNER, 'c1', true);
+		expect(convService.setLimbo).toHaveBeenCalledWith(OWNER, 'c2', true);
+	});
+
+	it('a chat is in the limbo only when all its conversations are', async () => {
+		const { service } = build([
+			conv({ _id: 'c1', customerId: CU1, limboAt: new Date() }),
+			conv({ _id: 'c2', customerId: CU1, limboAt: null }),
+		]);
+
+		const [row] = await service.listChats(OWNER);
+
+		expect(row.isInLimbo).toBe(false);
 	});
 
 	it("summary lists a customer's conversations", async () => {

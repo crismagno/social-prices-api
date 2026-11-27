@@ -69,6 +69,8 @@ export interface IInboxConversation {
 	contactUserId: mongoose.Schema.Types.ObjectId | null;
 	/** What that account has not read yet. */
 	contactUnreadCount: number;
+	/** Set aside by the owner; null while it is in the main list. */
+	limboAt?: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 }

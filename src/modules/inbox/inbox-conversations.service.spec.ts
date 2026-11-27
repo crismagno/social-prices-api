@@ -104,6 +104,7 @@ describe('InboxConversationsService', () => {
 				lastMessageChannelKind: 'TEXT',
 				lastMessageDirection: 'IN',
 				lastIncomingAt: preview().at,
+				limboAt: null,
 			});
 			expect(update.$inc).toEqual({ unreadCount: 1 });
 			expect(options).toEqual({ returnDocument: 'before' });
@@ -436,6 +437,30 @@ describe('InboxConversationsService.findByContact', () => {
 			contactUserId: '507f1f77bcf86cd799439033',
 			channel: 'TELEGRAM',
 			contactKey: '555',
+		});
+	});
+
+	describe('setLimbo', () => {
+		it('sets the conversation aside with nothing left to read', async () => {
+			const { service, model } = build();
+
+			await service.setLimbo(OWNER, CONV, true);
+
+			const [filter, update] = model.updateOne.mock.calls[0];
+
+			expect(filter).toEqual({ _id: CONV, ownerUserId: OWNER });
+			expect(update.$set.limboAt).toBeInstanceOf(Date);
+			expect(update.$set.unreadCount).toBe(0);
+		});
+
+		it('brings it back without touching what is unread', async () => {
+			const { service, model } = build();
+
+			await service.setLimbo(OWNER, CONV, false);
+
+			expect(model.updateOne.mock.calls[0][1]).toEqual({
+				$set: { limboAt: null },
+			});
 		});
 	});
 });

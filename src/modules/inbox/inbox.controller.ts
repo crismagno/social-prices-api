@@ -30,6 +30,7 @@ import {
 	InboxAssignCustomerDto,
 	InboxChatsQueryDto,
 	InboxEditMessageDto,
+	InboxLimboDto,
 	InboxMessagesQueryDto,
 	InboxReplyDto,
 	InboxSendMediaDto,
@@ -82,6 +83,24 @@ export class InboxController {
 		@Body() body: InboxScopeQueryDto,
 	): Promise<void> {
 		await this._central.markRead(authPayload._id, body);
+	}
+
+	@Post('limbo')
+	@HttpCode(204)
+	@UsePipes(validation)
+	public async setLimbo(
+		@AuthPayload() authPayload: IAuthPayload,
+		@Body() body: InboxLimboDto,
+	): Promise<void> {
+		await this._central.setLimbo(
+			authPayload._id,
+			{
+				customerId: body.customerId,
+				conversationId: body.conversationId,
+				channel: body.channel,
+			},
+			body.isInLimbo,
+		);
 	}
 
 	@Post('conversations/:conversationId/customer')

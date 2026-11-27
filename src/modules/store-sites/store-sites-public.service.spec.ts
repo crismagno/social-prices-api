@@ -82,6 +82,7 @@ const build = ({
 	return new StoreSitesPublicService(
 		{
 			findPublishedBySlug: jest.fn().mockResolvedValue(published),
+			findPublished: jest.fn().mockResolvedValue(published ? [published] : []),
 			findPublishedByStoreId: jest.fn().mockResolvedValue(published),
 		} as any,
 		{ findOneById: jest.fn().mockResolvedValue(owner) } as any,
@@ -423,6 +424,66 @@ describe('StoreSitesPublicService', () => {
 					store: { _id: STORE, status: StoresEnum.Status.INACTIVE },
 				}).findOnlineSlugByStoreId(STORE),
 			).resolves.toBeNull();
+		});
+	});
+
+	describe('the list of sites that are online', () => {
+		it('shows each site as a card: its name, its entrance and its address', async () => {
+			const cards = await build({
+				site: {
+					displayName: ' Ateliê da Ana ',
+					hero: {
+						title: 'Feito à mão',
+						subtitle: 'Peças únicas',
+						backgroundImageUrl: 'bg.png',
+					},
+					theme: { primary: '#112233' },
+				},
+			}).findOnlineCards();
+
+			expect(cards).toEqual([
+				{
+					slug: 'atelie',
+					name: 'Ateliê da Ana',
+					logo: 'logo.png',
+					title: 'Feito à mão',
+					subtitle: 'Peças únicas',
+					imageUrl: 'bg.png',
+					color: '#112233',
+					sells: true,
+				},
+			]);
+		});
+
+		it('names a site with no name of its own after its store', async () => {
+			const [card] = await build().findOnlineCards();
+
+			expect(card.name).toBe('Ateliê');
+			expect(card.imageUrl).toBeNull();
+		});
+
+		it('says when a site only shows and has no bag', async () => {
+			const [card] = await build({
+				site: { cartButton: { isVisible: false } },
+			}).findOnlineCards();
+
+			expect(card.sells).toBe(false);
+		});
+
+		it('leaves out a site whose owner lost the app', async () => {
+			expect(
+				await build({
+					owner: { _id: OWNER, enabledApps: [] },
+				}).findOnlineCards(),
+			).toEqual([]);
+		});
+
+		it('finds by the name or the entrance, whatever the accents and the case', async () => {
+			const service = build({ site: { hero: { title: 'Feito à mão' } } });
+
+			expect(await service.findOnlineCards('ATELIE')).toHaveLength(1);
+			expect(await service.findOnlineCards('a mao')).toHaveLength(1);
+			expect(await service.findOnlineCards('padaria')).toEqual([]);
 		});
 	});
 });

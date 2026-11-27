@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+	Body,
+	Controller,
+	Get,
+	Param,
+	Post,
+	Query,
+	UseGuards,
+} from '@nestjs/common';
 
 import { AllowCustomer } from '../../shared/decorators/custom.decorator';
 import {
@@ -8,6 +16,8 @@ import {
 import { AuthPayload } from '../auth/decorators/current-user.decorator';
 import { IAuthPayload } from '../auth/interfaces/auth.types';
 import { ISale } from '../sales/interfaces/sale.interface';
+import { IPublicSiteCard } from '../store-sites/interfaces/store-sites.type';
+import { StoreSitesPublicService } from '../store-sites/store-sites-public.service';
 import { CustomerOnlyGuard } from './customer-only.guard';
 import { CustomerPortalService } from './customer-portal.service';
 import {
@@ -27,7 +37,10 @@ const buyerOf = (payload: IAuthPayload): ICustomerPortalBuyer => ({
 @UseGuards(CustomerOnlyGuard)
 @Controller('api/v1/customer-portal')
 export class CustomerPortalController {
-	constructor(private readonly _customerPortalService: CustomerPortalService) {}
+	constructor(
+		private readonly _customerPortalService: CustomerPortalService,
+		private readonly _storeSitesPublicService: StoreSitesPublicService,
+	) {}
 
 	@Post('/sales/tableState')
 	public async findSales(
@@ -37,6 +50,16 @@ export class CustomerPortalController {
 		return await this._customerPortalService.findSales(
 			buyerOf(authPayload),
 			tableState,
+		);
+	}
+
+	/** The sites that are online, for the customer to visit and buy from. */
+	@Get('/sites')
+	public async findSites(
+		@Query('search') search?: string,
+	): Promise<IPublicSiteCard[]> {
+		return await this._storeSitesPublicService.findOnlineCards(
+			typeof search === 'string' ? search.slice(0, 80) : undefined,
 		);
 	}
 

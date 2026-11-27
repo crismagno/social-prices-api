@@ -101,6 +101,8 @@ export class InboxConversationsService {
 					...this._contactPatch(input.contact),
 					...this._previewFields(input.preview),
 					lastIncomingAt: input.preview.at,
+					// The person wrote again: the chat leaves the limbo by itself.
+					limboAt: null,
 				},
 				$inc: { unreadCount: 1 },
 			},
@@ -171,7 +173,25 @@ export class InboxConversationsService {
 		);
 	}
 
-	/** Ties the conversation to a customer, or to none. The messages go with it: nothing is copied. */
+	/**
+	 * Sets the conversation aside, or brings it back. Set aside, nothing of it is
+	 * waiting to be read: it no longer counts on the badges.
+	 */
+	public async setLimbo(
+		ownerUserId: string,
+		conversationId: string,
+		isInLimbo: boolean,
+	): Promise<void> {
+		await this._conversationModel.updateOne(
+			{ _id: conversationId, ownerUserId },
+			{
+				$set: isInLimbo
+					? { limboAt: new Date(), unreadCount: 0 }
+					: { limboAt: null },
+			},
+		);
+	}
+
 	/** The store answered: one more for the account on the other side to read. */
 	public async incContactUnread(
 		ownerUserId: string,
