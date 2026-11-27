@@ -11,6 +11,8 @@ namespace StoreSitesEnum {
 		BUDDY = 'BUDDY',
 		ARCADE = 'ARCADE',
 		ATLAS = 'ATLAS',
+		NEBULA = 'NEBULA',
+		LUMEN = 'LUMEN',
 	}
 
 	export const TemplateLabels = {
@@ -25,6 +27,8 @@ namespace StoreSitesEnum {
 		[Template.BUDDY]: 'Buddy',
 		[Template.ARCADE]: 'Arcade',
 		[Template.ATLAS]: 'Atlas',
+		[Template.NEBULA]: 'Nebula',
+		[Template.LUMEN]: 'Lumen',
 	};
 
 	/** What a link of the footer leads to: it decides its icon and how it opens. */
