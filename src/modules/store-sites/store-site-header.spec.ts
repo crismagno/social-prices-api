@@ -15,6 +15,7 @@ describe('siteHeaderOf', () => {
 			buttons: [],
 			actionsOrder: ['SIGN_IN', 'CART'],
 			buttonSize: 'MEDIUM',
+			aligns: {},
 		});
 	});
 
@@ -124,5 +125,13 @@ describe('siteHeaderOf', () => {
 	it('keeps the size of its buttons, a known one', () => {
 		expect(siteHeaderOf({ buttonSize: 'LARGE' }).buttonSize).toBe('LARGE');
 		expect(siteHeaderOf({ buttonSize: 'HUGE' }).buttonSize).toBe('MEDIUM');
+	});
+
+	it('keeps where each part sits, only for parts and sides that exist', () => {
+		expect(
+			siteHeaderOf({
+				aligns: { MENU: 'RIGHT', BRAND: 'MIDDLE', OTHER: 'LEFT' },
+			}).aligns,
+		).toEqual({ MENU: 'RIGHT' });
 	});
 });

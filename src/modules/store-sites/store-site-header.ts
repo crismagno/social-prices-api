@@ -69,6 +69,31 @@ export const actionsOrderOf = (
 	return [...kept, ...all.filter((each: string) => !kept.includes(each))];
 };
 
+/** Where each part sits: only the parts and the sides that exist. */
+const alignsOf = (
+	aligns: unknown,
+): Partial<Record<StoreSitesEnum.HeaderPart, StoreSitesEnum.HeaderAlign>> => {
+	const source: Record<string, unknown> =
+		aligns && typeof aligns === 'object' && !Array.isArray(aligns)
+			? (aligns as Record<string, unknown>)
+			: {};
+
+	return PARTS.reduce(
+		(
+			kept: Partial<
+				Record<StoreSitesEnum.HeaderPart, StoreSitesEnum.HeaderAlign>
+			>,
+			part: StoreSitesEnum.HeaderPart,
+		) =>
+			Object.values(StoreSitesEnum.HeaderAlign).includes(
+				source[part] as StoreSitesEnum.HeaderAlign,
+			)
+				? { ...kept, [part]: source[part] as StoreSitesEnum.HeaderAlign }
+				: kept,
+		{},
+	);
+};
+
 const hexOf = (value: unknown): string | null =>
 	typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value)
 		? value
@@ -122,5 +147,6 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 		)
 			? (source.buttonSize as StoreSitesEnum.CartButtonSize)
 			: StoreSitesEnum.CartButtonSize.MEDIUM,
+		aligns: alignsOf(source.aligns),
 	};
 };

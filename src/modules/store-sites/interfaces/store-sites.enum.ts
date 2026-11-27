@@ -90,6 +90,13 @@ namespace StoreSitesEnum {
 		ACTIONS = 'ACTIONS',
 	}
 
+	/** Where a part of the header sits within its place. */
+	export enum HeaderAlign {
+		LEFT = 'LEFT',
+		CENTER = 'CENTER',
+		RIGHT = 'RIGHT',
+	}
+
 	/** The buttons of the header: the owner's own, the sign-in and the cart. */
 	export enum HeaderAction {
 		/** Every button of the owner together: how the order was first kept. */

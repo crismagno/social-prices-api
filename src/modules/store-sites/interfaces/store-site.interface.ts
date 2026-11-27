@@ -139,6 +139,13 @@ export interface IStoreSiteHeader {
 	actionsOrder: string[];
 	/** The size of the owner's own buttons and of the sign-in. */
 	buttonSize: StoreSitesEnum.CartButtonSize;
+	/**
+	 * Where each part sits within its place; one left out sits as its place
+	 * says (the start to the left, the middle centred, the end to the right).
+	 */
+	aligns: Partial<
+		Record<StoreSitesEnum.HeaderPart, StoreSitesEnum.HeaderAlign>
+	>;
 }
 
 /** The sign-in button at the top of the site. */
