@@ -1,4 +1,5 @@
 import { siteAboutOf } from './store-site-about';
+import { siteBackdropOf } from './store-site-backdrop';
 import { siteBlocksOf } from './store-site-blocks';
 import { siteCartButtonOf } from './store-site-cart-button';
 import { siteCatalogOf } from './store-site-catalog';
@@ -42,6 +43,7 @@ export const siteContentOf = (dto: SaveStoreSiteDto) => ({
 	checkout: siteCheckoutOf(dto.checkout),
 	marqueeStyle: siteMarqueeStyleOf(dto.marqueeStyle),
 	fonts: siteFontsOf(dto.fonts),
+	backdrop: siteBackdropOf(dto.backdrop),
 	hero: {
 		...dto.hero,
 		...heroSlidesOf(dto.hero),

@@ -238,6 +238,11 @@ export default class SaveStoreSiteDto {
 	@IsObject()
 	fonts?: Record<string, unknown>;
 
+	// Checked when saved: see siteBackdropOf.
+	@IsOptional()
+	@IsObject()
+	backdrop?: Record<string, unknown>;
+
 	@ValidateNested()
 	@Type(() => StoreSiteHeroDto)
 	hero: StoreSiteHeroDto;

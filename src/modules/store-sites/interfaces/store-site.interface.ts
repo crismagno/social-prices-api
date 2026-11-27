@@ -67,6 +67,27 @@ export interface IStoreSiteFooter {
 	itemsVersion: number;
 }
 
+/**
+ * What lies behind the whole site, from the entrance to the footer: the
+ * site's colour as always, images that take turns, or a video.
+ */
+export interface IStoreSiteBackdrop {
+	type: StoreSitesEnum.BackdropType;
+	/** The images, in the order they are shown. */
+	imageUrls: string[];
+	/** Seconds each image stays, when there is more than one. */
+	slideSeconds: number;
+	/** An uploaded video: it plays in a loop, without sound. */
+	videoUrl: string | null;
+	/** The image shown on a phone and while the video loads. */
+	posterUrl: string | null;
+	/** How much of the site's colour lies over it, in percent: keeps words readable. */
+	veil: number;
+	blur: StoreSitesEnum.BackdropBlur;
+	/** Whether it moves slowly, closer and farther. */
+	isAnimated: boolean;
+}
+
 /** The typefaces of the site; an empty one is the template's own. */
 export interface IStoreSiteFonts {
 	/** Titles and whatever the template writes in its display face. */
@@ -267,6 +288,8 @@ export interface IStoreSitePage {
 	hero: IStoreSitePageHero | null;
 	/** The page's own colours; one left out is the site's. */
 	theme: Partial<IStoreSiteTheme> | null;
+	/** What lies behind this page alone; none, what lies behind the site. */
+	backdrop: IStoreSiteBackdrop | null;
 }
 
 /**
@@ -572,6 +595,7 @@ export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {
 	checkout?: Partial<IStoreSiteCheckout>;
 	marqueeStyle?: Partial<IStoreSiteMarqueeStyle>;
 	fonts?: Partial<IStoreSiteFonts>;
+	backdrop?: Partial<IStoreSiteBackdrop>;
 	/** The owner arranged the pages: only the blocks list says what shows where. */
 	isLayoutCustom?: boolean;
 	hero: IStoreSiteHero;

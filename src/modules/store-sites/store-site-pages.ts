@@ -7,6 +7,7 @@ import {
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteAboutOf } from './store-site-about';
+import { pageBackdropOf } from './store-site-backdrop';
 import { pageHeroOf } from './store-site-hero';
 
 const MAX_LABEL_LENGTH = 30;
@@ -134,6 +135,7 @@ const pageOf = (
 		faq: type === StoreSitesEnum.SitePageType.SUPPORT ? faqOf(source.faq) : [],
 		hero: pageHeroOf(source.hero),
 		theme: pageThemeOf(source.theme),
+		backdrop: pageBackdropOf(source.backdrop),
 	};
 };
 

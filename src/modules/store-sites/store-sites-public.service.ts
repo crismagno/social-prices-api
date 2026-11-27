@@ -28,6 +28,7 @@ import { siteAboutOf } from './store-site-about';
 import { publicBlocksOf } from './store-site-blocks';
 import { siteChatOf } from './store-site-chat';
 import { siteCartButtonOf } from './store-site-cart-button';
+import { siteBackdropOf } from './store-site-backdrop';
 import { siteFontsOf } from './store-site-fonts';
 import { siteImageStyleOf } from './store-site-image-style';
 import { siteCheckoutOf } from './store-site-checkout';
@@ -307,6 +308,7 @@ export class StoreSitesPublicService {
 			checkout: siteCheckoutOf(site.checkout),
 			marqueeStyle: siteMarqueeStyleOf(site.marqueeStyle),
 			fonts: siteFontsOf(site.fonts),
+			backdrop: siteBackdropOf(site.backdrop),
 			blocks: publicBlocksOf(
 				site.blocks,
 				pages.map((page) => page.key),

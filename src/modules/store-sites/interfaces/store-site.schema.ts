@@ -8,6 +8,7 @@ import {
 	IStoreSiteBlock,
 	IStoreSiteChat,
 	IStoreSiteCartButton,
+	IStoreSiteBackdrop,
 	IStoreSiteFonts,
 	IStoreSiteImageStyle,
 	IStoreSiteCheckout,
@@ -164,6 +165,9 @@ export class StoreSite implements IStoreSite {
 
 	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
 	fonts: Partial<IStoreSiteFonts>;
+
+	@Prop({ type: mongoose.Schema.Types.Mixed, default: () => ({}) })
+	backdrop: Partial<IStoreSiteBackdrop>;
 
 	// False on every site saved before the page builder: they keep the
 	// template's order until the owner arranges the pages.

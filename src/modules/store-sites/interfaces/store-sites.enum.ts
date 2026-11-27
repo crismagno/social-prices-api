@@ -506,6 +506,25 @@ namespace StoreSitesEnum {
 	/** Lowercase letters, digits and hyphens, 3 to 40 characters. */
 	export const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
 
+	/** What lies behind the whole site: its colour, images in turn or a video. */
+	export enum BackdropType {
+		COLOR = 'COLOR',
+		IMAGES = 'IMAGES',
+		VIDEO = 'VIDEO',
+	}
+
+	/** How out of focus what lies behind the site is. */
+	export enum BackdropBlur {
+		NONE = 'NONE',
+		SOFT = 'SOFT',
+		STRONG = 'STRONG',
+	}
+
+	export const MAX_BACKDROP_IMAGES = 6;
+	/** How much of the site's colour lies over the backdrop, in percent. */
+	export const BACKDROP_VEIL_RANGE: [number, number] = [0, 95];
+	export const DEFAULT_BACKDROP_VEIL = 65;
+
 	/** The typefaces an owner may give the site in place of the template's. */
 	export enum Font {
 		INTER = 'INTER',
