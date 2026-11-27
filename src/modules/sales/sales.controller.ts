@@ -83,6 +83,22 @@ export class SalesController {
 		return await this._salesService.countByUserId(authPayload._id);
 	}
 
+	@Get('/user/countPending')
+	@UsePipes(ValidationPipe)
+	public async countPendingByUserId(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<number> {
+		return await this._salesService.countPendingByUserId(authPayload._id);
+	}
+
+	@Get('/user/countProductsSold')
+	@UsePipes(ValidationPipe)
+	public async countProductsSoldByUserId(
+		@AuthPayload() authPayload: IAuthPayload,
+	): Promise<number> {
+		return await this._salesService.countProductsSoldByUserId(authPayload._id);
+	}
+
 	@Get('/:saleId')
 	@UsePipes(ValidationPipe)
 	public async findById(

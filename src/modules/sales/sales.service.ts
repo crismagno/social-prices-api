@@ -233,6 +233,59 @@ export class SalesService {
 		});
 	}
 
+	/** The sales still to finish: every one that is not completed, nor deleted. */
+	public async countPendingByUserId(userId: string): Promise<number> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		return this._saleModel.countDocuments({
+			status: { $ne: SalesEnum.Status.COMPLETED },
+			softDelete: null,
+			$or: [
+				{ createdByUserId: userId },
+				{
+					'stores.storeId': { $in: storesIds },
+				},
+			],
+		});
+	}
+
+	/**
+	 * How many units the stores of the account sold: every line of every sale
+	 * that counts in the charts (not cancelled, refunded or deleted).
+	 */
+	public async countProductsSoldByUserId(userId: string): Promise<number> {
+		const storesIds: string[] =
+			await this._storesService.findStoreIdsByUserId(userId);
+
+		// A sale spans several stores: the same filter runs again after the
+		// unwind to keep only the lines of this account's stores.
+		const saleStoreFilter = {
+			'stores.storeId': { $in: arrayStringToObjectId(storesIds) },
+		};
+
+		const [result] = await this._saleModel.aggregate<{ quantity: number }>([
+			{
+				$match: {
+					...saleStoreFilter,
+					status: { $in: SalesEnum.StatusToFilterCharts },
+					softDelete: null,
+				},
+			},
+			{ $unwind: '$stores' },
+			{ $match: saleStoreFilter },
+			{ $unwind: '$stores.products' },
+			{
+				$group: {
+					_id: null,
+					quantity: { $sum: '$stores.products.quantity' },
+				},
+			},
+		]);
+
+		return result?.quantity ?? 0;
+	}
+
 	public async findByIdOrFail(saleId: string): Promise<ISale> {
 		const sale: ISale | null = await this.findById(saleId);
 
