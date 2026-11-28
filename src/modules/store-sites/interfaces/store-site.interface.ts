@@ -456,6 +456,11 @@ export interface IStoreSiteHeroOptions {
 	isTitleVisible: boolean;
 	isSubtitleVisible: boolean;
 	isFeaturedVisible: boolean;
+	/**
+	 * How much of the template's wash of colour lies over the photo, with its
+	 * fading foot: 100 as the template draws it, 0 the photo as it is.
+	 */
+	veil: number;
 	isButtonVisible: boolean;
 	/** A paragraph under the subtitle. */
 	extraText: string | null;
@@ -509,6 +514,10 @@ export interface IStoreSiteBlockButton {
 	/** What the owner typed for the other targets: a number, an e-mail, an address. */
 	value: string | null;
 	variant: StoreSitesEnum.ButtonVariant;
+	/** A ready icon before its words; with no words, the icon is the button. */
+	icon: StoreSitesEnum.FeatureIcon | null;
+	/** Its own colour, as #rrggbb; empty, the site's main one. */
+	color: string | null;
 }
 
 /** The few options a piece of the page has; null where its type has none. */

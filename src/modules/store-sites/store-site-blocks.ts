@@ -46,6 +46,12 @@ const recordOf = (value: unknown): TRecord =>
 const textOf = (value: unknown, max: number): string | null =>
 	typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
 
+/** A plain #rrggbb colour, or nothing: no other text reaches the page's CSS. */
+const hexColorOf = (value: unknown): string | null =>
+	typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value.trim())
+		? value.trim().toLowerCase()
+		: null;
+
 const oneOf = <T extends string>(value: unknown, options: T[]): T | null =>
 	options.includes(value as T) ? (value as T) : null;
 
@@ -203,6 +209,8 @@ export const buttonOf = (button: unknown): IStoreSiteBlockButton => {
 		variant:
 			oneOf(source.variant, Object.values(StoreSitesEnum.ButtonVariant)) ??
 			StoreSitesEnum.ButtonVariant.PRIMARY,
+		icon: oneOf(source.icon, Object.values(StoreSitesEnum.FeatureIcon)),
+		color: hexColorOf(source.color),
 	};
 };
 

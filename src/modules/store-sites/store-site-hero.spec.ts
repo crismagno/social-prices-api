@@ -82,6 +82,7 @@ describe('heroOptionsOf', () => {
 		isTitleVisible: true,
 		isSubtitleVisible: true,
 		isFeaturedVisible: true,
+		veil: 100,
 		isButtonVisible: true,
 		extraText: null,
 		button: null,

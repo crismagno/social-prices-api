@@ -104,6 +104,10 @@ export const heroOptionsOf = (options: unknown): IStoreSiteHeroOptions => {
 		isTitleVisible: source.isTitleVisible !== false,
 		isSubtitleVisible: source.isSubtitleVisible !== false,
 		isFeaturedVisible: source.isFeaturedVisible !== false,
+		veil:
+			typeof source.veil === 'number' && Number.isFinite(source.veil)
+				? Math.min(100, Math.max(0, Math.round(source.veil)))
+				: 100,
 		isButtonVisible: source.isButtonVisible !== false,
 		extraText:
 			typeof source.extraText === 'string' && source.extraText.trim()

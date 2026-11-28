@@ -41,7 +41,8 @@ const StoreSiteThemeSchema = new mongoose.Schema(
 const StoreSiteHeroSchema = new mongoose.Schema(
 	{
 		tagline: { type: String, default: null },
-		title: { type: String, required: true },
+		// May be empty: an entrance does not have to say anything.
+		title: { type: String, default: '' },
 		subtitle: { type: String, default: null },
 		backgroundImageUrl: { type: String, default: null },
 		backgroundImageUrls: { type: [String], default: [] },

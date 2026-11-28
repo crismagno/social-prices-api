@@ -20,6 +20,18 @@ describe('siteHeaderOf', () => {
 		});
 	});
 
+	it('keeps the icon and the colour of a button, when they are good ones', () => {
+		const [good, bad] = siteHeaderOf({
+			buttons: [
+				{ label: 'Hi', icon: 'HEART', color: '#FF0055' },
+				{ label: 'Hi', icon: 'nope', color: 'red; x: url(evil)' },
+			],
+		}).buttons;
+
+		expect(good).toMatchObject({ icon: 'HEART', color: '#ff0055' });
+		expect(bad).toMatchObject({ icon: null, color: null });
+	});
+
 	it('keeps a shadow strength within 0 and 100, or the usual one', () => {
 		expect(siteHeaderOf({ shadow: 40.4 }).shadow).toBe(40);
 		expect(siteHeaderOf({ shadow: 500 }).shadow).toBe(100);

@@ -42,8 +42,8 @@ export class StoreSiteHeroDto {
 	@MaxLength(80)
 	tagline: string | null;
 
+	/** May be empty: an entrance does not have to say anything. */
 	@IsString()
-	@IsNotEmpty()
 	@MaxLength(120)
 	title: string;
 

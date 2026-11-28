@@ -240,6 +240,8 @@ describe('siteBlocksOf', () => {
 			pageKey: null,
 			value: '11 99999-0000',
 			variant: StoreSitesEnum.ButtonVariant.PRIMARY,
+			icon: null,
+			color: null,
 		});
 	});
 
@@ -254,6 +256,8 @@ describe('siteBlocksOf', () => {
 			pageKey: null,
 			value: null,
 			variant: StoreSitesEnum.ButtonVariant.PRIMARY,
+			icon: null,
+			color: null,
 		});
 	});
 });
@@ -352,6 +356,8 @@ describe('blockButtonHref', () => {
 					pageKey: null,
 					value,
 					variant: StoreSitesEnum.ButtonVariant.PRIMARY,
+					icon: null,
+					color: null,
 				},
 				[],
 			);
@@ -379,6 +385,8 @@ describe('blockButtonHref', () => {
 					pageKey,
 					value: null,
 					variant: StoreSitesEnum.ButtonVariant.PRIMARY,
+					icon: null,
+					color: null,
 				},
 				['p1'],
 			);
