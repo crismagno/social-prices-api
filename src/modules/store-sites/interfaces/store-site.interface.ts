@@ -243,6 +243,17 @@ export interface IStoreSiteHeader {
 	aligns: Partial<
 		Record<StoreSitesEnum.HeaderPart, StoreSitesEnum.HeaderAlign>
 	>;
+	/** The link to the first page, at the start of the menu. */
+	home: IStoreSiteHeaderHome;
+}
+
+/** The "home" of the menu: whether it is there and what it says. */
+export interface IStoreSiteHeaderHome {
+	isInMenu: boolean;
+	/** Its words; empty, the site says "Home" in the visitor's language. */
+	label: string | null;
+	/** Its place among the pages of the menu: 0 is before them all. */
+	position: number;
 }
 
 /** The sign-in button at the top of the site. */

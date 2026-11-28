@@ -2,6 +2,7 @@ import {
 	IStoreSiteBlockButton,
 	IStoreSiteHeader,
 	IStoreSiteHeaderBorder,
+	IStoreSiteHeaderHome,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { buttonOf } from './store-site-blocks';
@@ -128,6 +129,31 @@ const borderOf = (value: unknown): IStoreSiteHeaderBorder | null => {
 	};
 };
 
+export const MAX_HOME_LABEL: number = 40;
+
+/** The "home" of the menu: there unless the owner hid it, under its own name. */
+const homeOf = (value: unknown): IStoreSiteHeaderHome => {
+	const source: Record<string, unknown> =
+		value && typeof value === 'object'
+			? (value as Record<string, unknown>)
+			: {};
+
+	return {
+		isInMenu: source.isInMenu !== false,
+		label:
+			typeof source.label === 'string' && source.label.trim()
+				? source.label.trim().slice(0, MAX_HOME_LABEL)
+				: null,
+		position:
+			typeof source.position === 'number' && Number.isFinite(source.position)
+				? Math.min(
+						StoreSitesEnum.MAX_PAGES,
+						Math.max(0, Math.round(source.position)),
+				  )
+				: 0,
+	};
+};
+
 const hexOf = (value: unknown): string | null =>
 	typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value)
 		? value
@@ -184,5 +210,6 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 			? (source.buttonSize as StoreSitesEnum.CartButtonSize)
 			: StoreSitesEnum.CartButtonSize.MEDIUM,
 		aligns: alignsOf(source.aligns),
+		home: homeOf(source.home),
 	};
 };

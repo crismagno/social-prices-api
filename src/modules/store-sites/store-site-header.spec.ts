@@ -18,6 +18,7 @@ describe('siteHeaderOf', () => {
 			actionsOrder: ['SIGN_IN', 'CART'],
 			buttonSize: 'MEDIUM',
 			aligns: {},
+			home: { isInMenu: true, label: null, position: 0 },
 		});
 	});
 
@@ -44,6 +45,25 @@ describe('siteHeaderOf', () => {
 		).toEqual({ style: 'NONE', width: 1, color: null });
 		expect(siteHeaderOf({ border: { style: 'wavy' } }).border).toBeNull();
 		expect(siteHeaderOf({ border: 'solid' }).border).toBeNull();
+	});
+
+	it('keeps the home of the menu hidden or renamed, as the owner left it', () => {
+		expect(
+			siteHeaderOf({ home: { isInMenu: false, label: '  Start  ' } }).home,
+		).toEqual({ isInMenu: false, label: 'Start', position: 0 });
+		expect(siteHeaderOf({ home: { label: '   ' } }).home).toEqual({
+			isInMenu: true,
+			label: null,
+			position: 0,
+		});
+		expect(siteHeaderOf({ home: { position: 3.4 } }).home.position).toBe(3);
+		expect(siteHeaderOf({ home: { position: -2 } }).home.position).toBe(0);
+		expect(siteHeaderOf({ home: { position: 999 } }).home.position).toBe(
+			StoreSitesEnum.MAX_PAGES,
+		);
+		expect(
+			siteHeaderOf({ home: { label: 'x'.repeat(90) } }).home.label,
+		).toHaveLength(40);
 	});
 
 	it('keeps a shadow strength within 0 and 100, or the usual one', () => {
