@@ -8,6 +8,7 @@ describe('siteHeaderOf', () => {
 			position: StoreSitesEnum.HeaderPosition.TOP,
 			order: ['BRAND', 'MENU', 'ACTIONS'],
 			transparency: 0,
+			shadow: null,
 			color: null,
 			background: null,
 			height: null,
@@ -17,6 +18,14 @@ describe('siteHeaderOf', () => {
 			buttonSize: 'MEDIUM',
 			aligns: {},
 		});
+	});
+
+	it('keeps a shadow strength within 0 and 100, or the usual one', () => {
+		expect(siteHeaderOf({ shadow: 40.4 }).shadow).toBe(40);
+		expect(siteHeaderOf({ shadow: 500 }).shadow).toBe(100);
+		expect(siteHeaderOf({ shadow: -3 }).shadow).toBe(0);
+		expect(siteHeaderOf({ shadow: 0 }).shadow).toBe(0);
+		expect(siteHeaderOf({ shadow: 'strong' }).shadow).toBeNull();
 	});
 
 	it.each(Object.values(StoreSitesEnum.HeaderPosition))(

@@ -35,6 +35,12 @@ const transparencyOf = (source: Record<string, unknown>): number => {
 	return source.isTransparent === true ? 100 : 0;
 };
 
+/** How strong the shadow is, 0 to 100; anything else leaves the usual one. */
+const shadowOf = (value: unknown): number | null =>
+	typeof value === 'number' && Number.isFinite(value)
+		? Math.min(100, Math.max(0, Math.round(value)))
+		: null;
+
 /**
  * The buttons of the header one by one, in the order given: the sign-in, the
  * cart and each of the owner's own, every one once. An order kept when the
@@ -136,6 +142,7 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 			: StoreSitesEnum.HeaderPosition.TOP,
 		order: permutationOf(source.order, PARTS),
 		transparency: transparencyOf(source),
+		shadow: shadowOf(source.shadow),
 		color: hexOf(source.color),
 		background: hexOf(source.background),
 		height: pixelsOf(source.height, HEADER_HEIGHT_RANGE),

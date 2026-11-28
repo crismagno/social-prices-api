@@ -200,6 +200,11 @@ export interface IStoreSiteHeader {
 	 * any, at the top it lies over the entrance instead of taking room.
 	 */
 	transparency: number;
+	/**
+	 * How strong its shadow is, from 0 (none) to 100. Empty, the usual one: a
+	 * light shadow, and none on a clean header or down a side.
+	 */
+	shadow: number | null;
 	/** The colour of its words; empty, the site's. */
 	color: string | null;
 	/** The colour of its background, when it has one; empty, the site's. */
