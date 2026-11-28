@@ -55,6 +55,7 @@ import {
 	USUAL_CONTACT_KEYS,
 } from './store-site-contact';
 import { sitePagesOf } from './store-site-pages';
+import { pieceFormOf } from './store-site-form-pieces';
 import { StoreSitesPublicService } from './store-sites-public.service';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -105,9 +106,11 @@ export interface ISiteChatVisitor {
 	answers?: unknown;
 }
 
-/** What the form of the contact page sends. */
+/** What the form of the contact page, or a form section of the site, sends. */
 export interface ISiteContactForm extends ISiteChatVisitor {
 	message?: unknown;
+	/** A form section (or a form on a canvas); none, the contact page's. */
+	formKey?: unknown;
 }
 
 /** What of a visitor a message of theirs needs to reach the inbox. */
@@ -224,19 +227,9 @@ export class SiteChatService {
 		const context: IPublishedSiteContext =
 			await this._storeSitesPublicService.resolvePublishedOrFail(slug);
 
-		const contactPage: IStoreSitePage | undefined = sitePagesOf(
-			context.site.pages,
-		).find(
-			(page: IStoreSitePage) =>
-				page.type === StoreSitesEnum.SitePageType.CONTACT,
-		);
-
-		if (!contactPage) {
-			throw new NotFoundException('Contact page not found!');
-		}
-
-		const settings: IStoreSiteContactForm = siteContactFormOf(
-			contactPage.contact,
+		const settings: IStoreSiteContactForm = this._contactSettingsOf(
+			context,
+			form.formKey,
 		);
 
 		const destination: StoreSitesEnum.ContactDestination =
@@ -770,6 +763,41 @@ export class SiteChatService {
 	 * key of each field in `answers`; the four the form always sent by name are
 	 * taken as the answers to its usual fields.
 	 */
+	/**
+	 * The form that was sent: a form section of the site when a key names
+	 * one, otherwise the contact page's.
+	 */
+	private _contactSettingsOf(
+		context: IPublishedSiteContext,
+		formKey: unknown,
+	): IStoreSiteContactForm {
+		if (typeof formKey === 'string' && formKey) {
+			const piece: IStoreSiteContactForm | null = pieceFormOf(
+				context.site.blocks,
+				formKey.slice(0, 100),
+			);
+
+			if (!piece) {
+				throw new NotFoundException('Form not found!');
+			}
+
+			return piece;
+		}
+
+		const contactPage: IStoreSitePage | undefined = sitePagesOf(
+			context.site.pages,
+		).find(
+			(page: IStoreSitePage) =>
+				page.type === StoreSitesEnum.SitePageType.CONTACT,
+		);
+
+		if (!contactPage) {
+			throw new NotFoundException('Contact page not found!');
+		}
+
+		return siteContactFormOf(contactPage.contact);
+	}
+
 	private _contactAnswers(
 		settings: IStoreSiteContactForm,
 		form: ISiteContactForm,

@@ -1,6 +1,8 @@
 import { randomBytes } from 'crypto';
 
 import {
+	IStoreSiteContactBox,
+	IStoreSiteContactButton,
 	IStoreSiteContactField,
 	IStoreSiteContactForm,
 } from './interfaces/store-site.interface';
@@ -145,6 +147,84 @@ const fieldsOf = (value: unknown): IStoreSiteContactField[] => {
 	return kept.length ? kept : usualFields();
 };
 
+const colorOf = (value: unknown): string | null =>
+	typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value.trim())
+		? value.trim().toLowerCase()
+		: null;
+
+const oneOf = <T extends string>(
+	value: unknown,
+	options: T[],
+	fallback: T,
+): T => (options.includes(value as T) ? (value as T) : fallback);
+
+/** A whole number of pixels within its limits, or nothing. */
+const pixelsOf = (
+	value: unknown,
+	limits: { min: number; max: number },
+): number | null =>
+	typeof value === 'number' && Number.isFinite(value)
+		? Math.min(limits.max, Math.max(limits.min, Math.round(value)))
+		: null;
+
+/** The send button, also for a form saved before it could be styled. */
+const buttonOf = (value: unknown): IStoreSiteContactButton => {
+	const source: Record<string, unknown> = recordOf(value);
+
+	return {
+		color: colorOf(source.color),
+		textColor: colorOf(source.textColor),
+		icon: Object.values(StoreSitesEnum.FeatureIcon).includes(
+			source.icon as StoreSitesEnum.FeatureIcon,
+		)
+			? (source.icon as StoreSitesEnum.FeatureIcon)
+			: null,
+		iconPosition: oneOf(
+			source.iconPosition,
+			Object.values(StoreSitesEnum.ContactIconPosition),
+			StoreSitesEnum.ContactIconPosition.START,
+		),
+		size: oneOf(
+			source.size,
+			Object.values(StoreSitesEnum.ContactButtonSize),
+			StoreSitesEnum.ContactButtonSize.MEDIUM,
+		),
+		shape: oneOf(
+			source.shape,
+			Object.values(StoreSitesEnum.ContactButtonShape),
+			StoreSitesEnum.ContactButtonShape.PILL,
+		),
+		align: oneOf(
+			source.align,
+			Object.values(StoreSitesEnum.ContactButtonAlign),
+			StoreSitesEnum.ContactButtonAlign.START,
+		),
+		isFullWidth: source.isFullWidth === true,
+	};
+};
+
+/** The box around the form, also for a form saved before it could be styled. */
+const boxOf = (value: unknown): IStoreSiteContactBox => {
+	const source: Record<string, unknown> = recordOf(value);
+	const limits = StoreSitesEnum.CONTACT_BOX_LIMITS;
+
+	return {
+		width: pixelsOf(source.width, limits.width),
+		padding: pixelsOf(source.padding, limits.padding),
+		radius: pixelsOf(source.radius, limits.radius),
+		background: colorOf(source.background),
+		borderColor: colorOf(source.borderColor),
+		isBorderVisible: source.isBorderVisible !== false,
+		textColor: colorOf(source.textColor),
+		fieldBackground: colorOf(source.fieldBackground),
+		shadow: oneOf(
+			source.shadow,
+			Object.values(StoreSitesEnum.ContactBoxShadow),
+			StoreSitesEnum.ContactBoxShadow.NONE,
+		),
+	};
+};
+
 /** A number for WhatsApp, with its country code: digits only, or nothing. */
 const whatsappOf = (value: unknown): string | null => {
 	const digits: string =
@@ -222,6 +302,8 @@ export const siteContactFormOf = (form: unknown): IStoreSiteContactForm => {
 		email: emailOf(source.email),
 		whatsapp: whatsappOf(source.whatsapp),
 		webhookUrl: safeWebhookUrl(source.webhookUrl),
+		button: buttonOf(source.button),
+		box: boxOf(source.box),
 	};
 };
 
@@ -269,6 +351,8 @@ export const publicContactFormOf = (
 		fields: form.fields,
 		destination,
 		whatsapp: destination === Destination.WHATSAPP ? form.whatsapp : null,
+		button: form.button,
+		box: form.box,
 	};
 };
 

@@ -89,6 +89,7 @@ describe('siteBlocksOf', () => {
 				background: null,
 				canvas: null,
 				map: null,
+				form: null,
 				boxHeight: null,
 				mediaPosition: null,
 			},
@@ -581,6 +582,7 @@ describe('sections of the page builder', () => {
 			background: null,
 			canvas: null,
 			map: null,
+			form: null,
 			boxHeight: null,
 			mediaPosition: null,
 		});

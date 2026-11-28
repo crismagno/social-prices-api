@@ -124,6 +124,101 @@ describe('siteContactFormOf', () => {
 	});
 });
 
+describe('siteContactFormOf: the button and the box', () => {
+	it('gives the usual button and box to a form saved before they could be styled', () => {
+		const form = siteContactFormOf({});
+
+		expect(form.button).toEqual({
+			color: null,
+			textColor: null,
+			icon: null,
+			iconPosition: StoreSitesEnum.ContactIconPosition.START,
+			size: StoreSitesEnum.ContactButtonSize.MEDIUM,
+			shape: StoreSitesEnum.ContactButtonShape.PILL,
+			align: StoreSitesEnum.ContactButtonAlign.START,
+			isFullWidth: false,
+		});
+		expect(form.box).toEqual({
+			width: null,
+			padding: null,
+			radius: null,
+			background: null,
+			borderColor: null,
+			isBorderVisible: true,
+			textColor: null,
+			fieldBackground: null,
+			shadow: StoreSitesEnum.ContactBoxShadow.NONE,
+		});
+	});
+
+	it('keeps a styled button and box', () => {
+		const form = siteContactFormOf({
+			button: {
+				color: '#0B2545',
+				textColor: '#ffffff',
+				icon: StoreSitesEnum.FeatureIcon.SEND,
+				iconPosition: StoreSitesEnum.ContactIconPosition.END,
+				size: StoreSitesEnum.ContactButtonSize.LARGE,
+				shape: StoreSitesEnum.ContactButtonShape.SQUARE,
+				align: StoreSitesEnum.ContactButtonAlign.CENTER,
+				isFullWidth: true,
+			},
+			box: {
+				width: 640,
+				padding: 32,
+				radius: 8,
+				background: '#f5f5f5',
+				borderColor: '#cccccc',
+				isBorderVisible: false,
+				textColor: '#111111',
+				fieldBackground: '#ffffff',
+				shadow: StoreSitesEnum.ContactBoxShadow.SOFT,
+			},
+		});
+
+		expect(form.button).toMatchObject({
+			color: '#0b2545',
+			icon: StoreSitesEnum.FeatureIcon.SEND,
+			size: StoreSitesEnum.ContactButtonSize.LARGE,
+			isFullWidth: true,
+		});
+		expect(form.box).toMatchObject({
+			width: 640,
+			padding: 32,
+			radius: 8,
+			isBorderVisible: false,
+			shadow: StoreSitesEnum.ContactBoxShadow.SOFT,
+		});
+	});
+
+	it('drops what is not a colour or an option, and holds sizes to their limits', () => {
+		const form = siteContactFormOf({
+			button: { color: 'red', icon: 'NOPE', size: 'HUGE', shape: 1 },
+			box: { width: 99999, padding: -5, radius: '12', background: 'url(x)' },
+		});
+
+		expect(form.button).toMatchObject({
+			color: null,
+			icon: null,
+			size: StoreSitesEnum.ContactButtonSize.MEDIUM,
+			shape: StoreSitesEnum.ContactButtonShape.PILL,
+		});
+		expect(form.box).toMatchObject({
+			width: StoreSitesEnum.CONTACT_BOX_LIMITS.width.max,
+			padding: StoreSitesEnum.CONTACT_BOX_LIMITS.padding.min,
+			radius: null,
+			background: null,
+		});
+	});
+
+	it('carries the button and the box to the public site', () => {
+		const form = siteContactFormOf({ box: { width: 500 } });
+
+		expect(publicContactFormOf(form).box.width).toBe(500);
+		expect(publicContactFormOf(form).button).toEqual(form.button);
+	});
+});
+
 describe('safeWebhookUrl', () => {
 	it('takes an https address with a public name', () => {
 		expect(safeWebhookUrl(' https://hooks.example.com/a?b=1 ')).toBe(

@@ -1,9 +1,11 @@
 import {
 	IStoreSiteAboutMedia,
 	IStoreSiteBlockButton,
+	IStoreSiteContactForm,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { IStoreSiteMap, siteMapOf } from './store-site-map';
+import { siteContactFormOf } from './store-site-contact';
 import {
 	richTextToPlain,
 	sanitizeRichText,
@@ -43,6 +45,8 @@ export interface IStoreSiteCanvasElement {
 	button: IStoreSiteBlockButton | null;
 	/** The places of a map, and how it opens. */
 	map: IStoreSiteMap | null;
+	/** A form: what it asks, its button, its box and where it goes. */
+	form: IStoreSiteContactForm | null;
 }
 
 /** A free canvas: its height and what was placed on it, back to front. */
@@ -185,6 +189,7 @@ export const siteCanvasOf = (
 				media: type === Type.VIDEO ? mediaOf(element.media) : null,
 				button: type === Type.BUTTON ? buttonOf(element.button) : null,
 				map: type === Type.MAP ? siteMapOf(element.map) : null,
+				form: type === Type.FORM ? siteContactFormOf(element.form) : null,
 			};
 		});
 

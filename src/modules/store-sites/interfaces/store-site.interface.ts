@@ -88,6 +88,34 @@ export interface IStoreSiteContactField {
  * visitor writes goes. The addresses it goes to are the owner's alone: the
  * public site never carries the e-mail or the webhook.
  */
+/** The send button of the contact form; an empty colour is the site's own. */
+export interface IStoreSiteContactButton {
+	color: string | null;
+	textColor: string | null;
+	icon: StoreSitesEnum.FeatureIcon | null;
+	iconPosition: StoreSitesEnum.ContactIconPosition;
+	size: StoreSitesEnum.ContactButtonSize;
+	shape: StoreSitesEnum.ContactButtonShape;
+	align: StoreSitesEnum.ContactButtonAlign;
+	/** Across the whole width of the box. */
+	isFullWidth: boolean;
+}
+
+/** The box around the contact form; empty, the template's own. */
+export interface IStoreSiteContactBox {
+	/** The widest it gets, in pixels; empty, the page's width. */
+	width: number | null;
+	padding: number | null;
+	radius: number | null;
+	background: string | null;
+	borderColor: string | null;
+	isBorderVisible: boolean;
+	textColor: string | null;
+	/** The colour inside each field. */
+	fieldBackground: string | null;
+	shadow: StoreSitesEnum.ContactBoxShadow;
+}
+
 export interface IStoreSiteContactForm {
 	/** The heading over the form; empty, the site's own. */
 	title: string | null;
@@ -101,6 +129,8 @@ export interface IStoreSiteContactForm {
 	/** A number with its country code, digits only. */
 	whatsapp: string | null;
 	webhookUrl: string | null;
+	button: IStoreSiteContactButton;
+	box: IStoreSiteContactBox;
 }
 
 /**
@@ -613,6 +643,8 @@ export interface IStoreSiteBlockSettings {
 	canvas: IStoreSiteCanvas | null;
 	/** A map only: its pins and how it is shown. */
 	map: IStoreSiteMap | null;
+	/** A form only: what it asks, its button, its box and where it goes. */
+	form: IStoreSiteContactForm | null;
 	/**
 	 * The height the owner pulled the section to, in pixels: at least that
 	 * tall. Empty, as tall as it needs. A spacer, a canvas and a map have a

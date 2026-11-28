@@ -6,10 +6,12 @@ import {
 	IStoreSiteBlockButton,
 	IStoreSiteBlockItem,
 	IStoreSiteBlockSettings,
+	IStoreSiteContactForm,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteCanvasOf } from './store-site-canvas';
 import { siteMapOf } from './store-site-map';
+import { publicContactFormOf, siteContactFormOf } from './store-site-contact';
 import { sectionBackgroundOf } from './store-site-section-background';
 import { aboutMediaOf, embedUrlOf } from './store-site-about';
 import { siteCardLookOf, siteCardsStyleOf } from './store-site-cards-style';
@@ -330,6 +332,7 @@ const settingsOf = (
 			? siteCanvasOf(source.canvas, { buttonOf, mediaOf })
 			: null,
 		map: uses(T.MAP) ? siteMapOf(source.map) : null,
+		form: uses(T.FORM) ? siteContactFormOf(source.form) : null,
 		boxHeight:
 			!uses(T.SPACER, T.CANVAS, T.MAP) &&
 			typeof source.boxHeight === 'number' &&
@@ -473,6 +476,29 @@ const isSafe =
  * that have something to show. A button that goes nowhere safe is dropped,
  * the block stays.
  */
+/** A form as the public site carries it: without the owner's own addresses. */
+const publicFormOf = (
+	form: IStoreSiteContactForm | null,
+): IStoreSiteContactForm | null =>
+	form ? (publicContactFormOf(form) as IStoreSiteContactForm) : null;
+
+/** The forms of a section, its own and those on its canvas, made public. */
+const withPublicForms = (
+	settings: IStoreSiteBlockSettings,
+): IStoreSiteBlockSettings => ({
+	...settings,
+	form: publicFormOf(settings.form),
+	canvas: settings.canvas
+		? {
+				...settings.canvas,
+				elements: settings.canvas.elements.map((element) => ({
+					...element,
+					form: publicFormOf(element.form),
+				})),
+		  }
+		: null,
+});
+
 export const publicBlocksOf = (
 	blocks: unknown,
 	pageKeys: string[],
@@ -500,6 +526,7 @@ export const publicBlocksOf = (
 				...item,
 				button: isSafe(pageKeys)(item.button) ? item.button : null,
 			})),
+			settings: withPublicForms(block.settings),
 		}))
 		// A piece with nothing to show (no image yet, no safe button) stays out.
 		.filter((block: IStoreSiteBlock) => hasContent(block));
