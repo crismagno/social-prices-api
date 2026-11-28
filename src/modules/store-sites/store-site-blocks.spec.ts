@@ -86,6 +86,7 @@ describe('siteBlocksOf', () => {
 				isOwn: null,
 				marquee: null,
 				cards: null,
+				background: null,
 				mediaPosition: null,
 			},
 		});
@@ -574,6 +575,7 @@ describe('sections of the page builder', () => {
 			isOwn: null,
 			marquee: null,
 			cards: null,
+			background: null,
 			mediaPosition: null,
 		});
 	});

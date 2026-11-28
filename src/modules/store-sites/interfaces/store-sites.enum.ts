@@ -224,6 +224,14 @@ namespace StoreSitesEnum {
 		WIDE = 'WIDE',
 	}
 
+	/** What lies behind one section of a page. */
+	export enum SectionBackgroundType {
+		NONE = 'NONE',
+		COLOR = 'COLOR',
+		GRADIENT = 'GRADIENT',
+		IMAGE = 'IMAGE',
+	}
+
 	/** The line a border is drawn with. */
 	export enum BorderStyle {
 		NONE = 'NONE',

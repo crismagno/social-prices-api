@@ -1,3 +1,4 @@
+import { IStoreSiteSectionBackground } from '../store-site-section-background';
 import mongoose from 'mongoose';
 
 import { ICreatedAtEntity } from '../../../shared/common/global/created-at.interface';
@@ -576,6 +577,8 @@ export interface IStoreSiteBlockSettings {
 	cards: IStoreSiteCardsStyle | null;
 	/** A text with media: the side its image or video is on. */
 	mediaPosition: StoreSitesEnum.AboutMediaPosition | null;
+	/** What lies behind the section; none on the entrance, which has its own. */
+	background: IStoreSiteSectionBackground | null;
 }
 
 /**
