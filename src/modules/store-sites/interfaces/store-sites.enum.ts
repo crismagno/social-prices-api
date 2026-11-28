@@ -409,6 +409,8 @@ namespace StoreSitesEnum {
 		TABS = 'TABS',
 		// A free canvas: anything placed anywhere on it, one over the other.
 		CANVAS = 'CANVAS',
+		// A map with the places the owner marked on it.
+		MAP = 'MAP',
 	}
 
 	/** The template's own parts: each at most once on a page. */

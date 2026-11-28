@@ -88,6 +88,7 @@ describe('siteBlocksOf', () => {
 				cards: null,
 				background: null,
 				canvas: null,
+				map: null,
 				mediaPosition: null,
 			},
 		});
@@ -578,6 +579,7 @@ describe('sections of the page builder', () => {
 			cards: null,
 			background: null,
 			canvas: null,
+			map: null,
 			mediaPosition: null,
 		});
 	});

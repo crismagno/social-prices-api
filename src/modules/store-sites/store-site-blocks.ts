@@ -9,6 +9,7 @@ import {
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { siteCanvasOf } from './store-site-canvas';
+import { siteMapOf } from './store-site-map';
 import { sectionBackgroundOf } from './store-site-section-background';
 import { aboutMediaOf, embedUrlOf } from './store-site-about';
 import { siteCardLookOf, siteCardsStyleOf } from './store-site-cards-style';
@@ -325,6 +326,7 @@ const settingsOf = (
 		canvas: uses(T.CANVAS)
 			? siteCanvasOf(source.canvas, { buttonOf, mediaOf })
 			: null,
+		map: uses(T.MAP) ? siteMapOf(source.map) : null,
 	};
 };
 
@@ -342,6 +344,8 @@ const hasContent = (block: IStoreSiteBlock): boolean => {
 			return !!block.settings.media;
 		case T.CANVAS:
 			return (block.settings.canvas?.elements.length ?? 0) > 0;
+		case T.MAP:
+			return (block.settings.map?.pins.length ?? 0) > 0;
 		default:
 			return true;
 	}

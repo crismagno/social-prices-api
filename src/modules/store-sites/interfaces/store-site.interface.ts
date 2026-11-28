@@ -1,3 +1,4 @@
+import { IStoreSiteMap } from '../store-site-map';
 import { IStoreSiteCanvas } from '../store-site-canvas';
 import { IStoreSiteCatalogFilter } from '../store-site-catalog-filter';
 import { IStoreSiteSectionBackground } from '../store-site-section-background';
@@ -598,6 +599,8 @@ export interface IStoreSiteBlockSettings {
 	background: IStoreSiteSectionBackground | null;
 	/** A free canvas only: its height and what was placed on it. */
 	canvas: IStoreSiteCanvas | null;
+	/** A map only: its pins and how it is shown. */
+	map: IStoreSiteMap | null;
 }
 
 /**
