@@ -197,6 +197,10 @@ export interface IGetSalesSummaryByUserTableStateResponse {
 	tax: number;
 	shipping: number;
 	subtotal: number;
+	/** Sales per status, matching every table filter except the status one. */
+	statusCounts: Partial<Record<SalesEnum.Status, number>>;
+	/** Sales per type, matching every table filter except the type one. */
+	typeCounts: Partial<Record<SalesEnum.Type, number>>;
 }
 
 export interface ISalePdf {

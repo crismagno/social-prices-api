@@ -610,17 +610,47 @@ export class SalesService {
 			},
 		];
 
-		const [
-			salesSummary = {
-				subtotal: 0,
-				tax: 0,
-				discount: 0,
-				shipping: 0,
-				totalFinal: 0,
-			} as IGetSalesSummaryByUserTableStateResponse,
-		] = await this._saleModel.aggregate(pipeline).exec();
+		const { status: _status, ...filterWithoutStatus } = filter;
+		const { type: _type, ...filterWithoutType } = filter;
 
-		return salesSummary;
+		const [[salesSummary], statusCounts, typeCounts] = await Promise.all([
+			this._saleModel.aggregate(pipeline).exec(),
+			this._countSalesByField<SalesEnum.Status>(filterWithoutStatus, 'status'),
+			this._countSalesByField<SalesEnum.Type>(filterWithoutType, 'type'),
+		]);
+
+		return {
+			subtotal: salesSummary?.subtotal ?? 0,
+			tax: salesSummary?.tax ?? 0,
+			discount: salesSummary?.discount ?? 0,
+			shipping: salesSummary?.shipping ?? 0,
+			totalFinal: salesSummary?.totalFinal ?? 0,
+			statusCounts,
+			typeCounts,
+		};
+	}
+
+	/** How many sales match `filter`, grouped by the values of `field`. */
+	private async _countSalesByField<TKey extends string>(
+		filter: FilterQuery<ISale>,
+		field: keyof ISale,
+	): Promise<Partial<Record<TKey, number>>> {
+		const groups = await this._saleModel
+			.aggregate<{ _id: TKey; count: number }>([
+				{ $match: filter },
+				{ $group: { _id: `$${field}`, count: { $sum: 1 } } },
+			])
+			.exec();
+
+		const counts: Partial<Record<TKey, number>> = {};
+
+		for (const { _id, count } of groups) {
+			if (_id) {
+				counts[_id] = count;
+			}
+		}
+
+		return counts;
 	}
 
 	public async createManual(createSaleDto: CreateSaleDto): Promise<ISale> {
