@@ -203,6 +203,8 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 		transparency: transparencyOf(source),
 		shadow: shadowOf(source.shadow),
 		border: borderOf(source.border),
+		logoBorder: borderOf(source.logoBorder),
+		logoShadow: shadowOf(source.logoShadow),
 		color: hexOf(source.color),
 		background: hexOf(source.background),
 		height: pixelsOf(source.height, HEADER_HEIGHT_RANGE),

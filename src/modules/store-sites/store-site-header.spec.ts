@@ -11,6 +11,8 @@ describe('siteHeaderOf', () => {
 			transparency: 0,
 			shadow: null,
 			border: null,
+			logoBorder: null,
+			logoShadow: null,
 			color: null,
 			background: null,
 			height: null,
@@ -78,6 +80,20 @@ describe('siteHeaderOf', () => {
 		expect(siteHeaderOf({ shadow: -3 }).shadow).toBe(0);
 		expect(siteHeaderOf({ shadow: 0 }).shadow).toBe(0);
 		expect(siteHeaderOf({ shadow: 'strong' }).shadow).toBeNull();
+	});
+
+	it('keeps a border and a shadow on the logo, checked like the header ones', () => {
+		expect(
+			siteHeaderOf({
+				logoBorder: { style: 'SOLID', width: 3, color: '#112233' },
+			}).logoBorder,
+		).toEqual({ style: 'SOLID', width: 3, color: '#112233' });
+		expect(
+			siteHeaderOf({ logoBorder: { style: 'wavy' } }).logoBorder,
+		).toBeNull();
+		expect(siteHeaderOf({ logoShadow: 62.6 }).logoShadow).toBe(63);
+		expect(siteHeaderOf({ logoShadow: 900 }).logoShadow).toBe(100);
+		expect(siteHeaderOf({ logoShadow: 'big' }).logoShadow).toBeNull();
 	});
 
 	it.each(Object.values(StoreSitesEnum.HeaderPosition))(

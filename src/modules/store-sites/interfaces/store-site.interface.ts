@@ -224,6 +224,10 @@ export interface IStoreSiteHeader {
 	 * The border on its edge that faces the page; empty, the usual thin line.
 	 */
 	border: IStoreSiteHeaderBorder | null;
+	/** A border round the logo; empty, none. */
+	logoBorder: IStoreSiteHeaderBorder | null;
+	/** How strong the shadow under the logo is, 0 to 100; empty, none. */
+	logoShadow: number | null;
 	/** The colour of its words; empty, the site's. */
 	color: string | null;
 	/** The colour of its background, when it has one; empty, the site's. */
