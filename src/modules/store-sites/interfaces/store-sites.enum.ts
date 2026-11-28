@@ -1,5 +1,7 @@
 namespace StoreSitesEnum {
 	export enum Template {
+		// The clean start new sites get: plain, for building from scratch.
+		CLEAN = 'CLEAN',
 		AURORA = 'AURORA',
 		IMPACT = 'IMPACT',
 		ATELIER = 'ATELIER',
@@ -16,6 +18,7 @@ namespace StoreSitesEnum {
 	}
 
 	export const TemplateLabels = {
+		[Template.CLEAN]: 'Limpo',
 		[Template.AURORA]: 'Aurora',
 		[Template.IMPACT]: 'Impact',
 		[Template.ATELIER]: 'Atelier',
