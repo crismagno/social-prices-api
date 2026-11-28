@@ -25,6 +25,7 @@ import { schemasName } from '../../infra/database/mongo/schemas';
 import CommonEnum from '../../shared/common/global/common.enum';
 import { parseDynamicFields } from '../../shared/common/dynamic-field/dynamic-field.utils';
 import { parsePricing } from '../../shared/common/pricing/pricing.utils';
+import { parseYearRange } from './product-year-range';
 import { parseToDate } from '../../shared/utils/dates/dates.utils';
 import { valueOrCreateUniqueSuffix } from '../../shared/utils/global/global';
 import { unFreezeData } from '../../shared/utils/objects/objects';
@@ -325,6 +326,7 @@ export class ProductsService {
 			colors: createProductDto.colors,
 			dynamicFields: parseDynamicFields(createProductDto.dynamicFields),
 			dimensions: createProductDto.dimensions,
+			yearRange: parseYearRange(createProductDto.yearRange),
 			pricing: parsePricing(createProductDto.pricing),
 		});
 
@@ -449,6 +451,7 @@ export class ProductsService {
 					colors: updateProductDto.colors,
 					dynamicFields: parseDynamicFields(updateProductDto.dynamicFields),
 					dimensions: updateProductDto.dimensions,
+					yearRange: parseYearRange(updateProductDto.yearRange),
 					pricing: parsePricing(updateProductDto.pricing),
 				},
 			},
@@ -724,6 +727,8 @@ export class ProductsService {
 			releaseDate: 'Release Date',
 			expirationDate: 'Expiration Date',
 			colors: 'Colors',
+			yearFrom: 'Year From',
+			yearTo: 'Year To',
 			dimensionSize: 'Dimension Size',
 			dimensionHeight: 'Dimension Height',
 			dimensionWidth: 'Dimension Width',
@@ -817,6 +822,8 @@ export class ProductsService {
 				releaseDate: product.releaseDate || '',
 				expirationDate: product.expirationDate || '',
 				colors: product.colors?.join(', ') || '',
+				yearFrom: product.yearRange?.from ?? '',
+				yearTo: product.yearRange?.to ?? '',
 				dimensionSize: product.dimensions?.size || '',
 				dimensionHeight: product.dimensions?.height || '',
 				dimensionWidth: product.dimensions?.width || '',
@@ -1190,6 +1197,8 @@ export class ProductsService {
 									.map((c) => c.trim())
 									.filter((c) => c)
 							: [],
+						// The upload template has no years: set on the product itself.
+						yearRange: null,
 						dimensions: {
 							size: productFileUploadTemplateRow.dimensionSize || null,
 							height: productFileUploadTemplateRow.dimensionHeight

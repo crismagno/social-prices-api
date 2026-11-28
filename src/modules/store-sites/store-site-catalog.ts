@@ -1,5 +1,6 @@
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { IStoreSiteCatalog } from './interfaces/store-site.interface';
+import { catalogFilterOf } from './store-site-catalog-filter';
 
 /**
  * How a site shows its products, whatever was stored or sent. A site saved
@@ -23,6 +24,7 @@ export const siteCatalogOf = (catalog: unknown): IStoreSiteCatalog => {
 		isNameShown: source.isNameShown !== false,
 		isPriceShown: source.isPriceShown !== false,
 		isDescriptionShown: source.isDescriptionShown === true,
+		isYearsShown: source.isYearsShown !== false,
 		isSearchShown: source.isSearchShown !== false,
 		isAddButtonShown: source.isAddButtonShown !== false,
 		isDetailsOpened: source.isDetailsOpened !== false,
@@ -34,5 +36,6 @@ export const siteCatalogOf = (catalog: unknown): IStoreSiteCatalog => {
 		isTitleShown: source.isTitleShown !== false,
 		title: textOf(source.title, MAX_TITLE_LENGTH),
 		addLabel: textOf(source.addLabel, MAX_ADD_LABEL_LENGTH),
+		filter: catalogFilterOf(source.filter),
 	};
 };

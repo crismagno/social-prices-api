@@ -61,6 +61,7 @@ describe('cartLookOf', () => {
 			isBrandShown: true,
 			isDescriptionShown: true,
 			isTagsShown: true,
+			isYearsShown: true,
 			isProductOpened: true,
 			isShippingNoteShown: true,
 			shippingNote: null,

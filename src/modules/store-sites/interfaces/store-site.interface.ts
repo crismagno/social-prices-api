@@ -1,3 +1,4 @@
+import { IStoreSiteCatalogFilter } from '../store-site-catalog-filter';
 import { IStoreSiteSectionBackground } from '../store-site-section-background';
 import mongoose from 'mongoose';
 
@@ -298,6 +299,8 @@ export interface IStoreSiteCartLook {
 	isDescriptionShown: boolean;
 	/** Size and colors of the product. */
 	isTagsShown: boolean;
+	/** The years the product is for, when it is for some. */
+	isYearsShown: boolean;
 	/** A click on a product shows it in full. */
 	isProductOpened: boolean;
 	isShippingNoteShown: boolean;
@@ -637,6 +640,8 @@ export interface IStoreSiteCatalog {
 	isPriceShown: boolean;
 	/** The short description, under the name and the price. */
 	isDescriptionShown: boolean;
+	/** The years the product is for, when it is for some. */
+	isYearsShown: boolean;
 	/** A search box on the page of products. */
 	isSearchShown: boolean;
 	/** The "add" button of each product; off, products are only shown. */
@@ -651,6 +656,8 @@ export interface IStoreSiteCatalog {
 	title: string | null;
 	/** The owner's own text of the add button; empty, the site says its own. */
 	addLabel: string | null;
+	/** The floating filter of the page of products. */
+	filter: IStoreSiteCatalogFilter;
 }
 
 export interface IStoreSite extends ICreatedAtEntity, IUpdatedAtEntity {

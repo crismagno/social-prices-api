@@ -140,6 +140,16 @@ export class ProductItemsService {
 		});
 	}
 
+	/** Every item that can be sold of these products, the default one too. */
+	public async findActiveByProductIds(
+		productIds: string[],
+	): Promise<IProductItem[]> {
+		return this._productItemModel.find({
+			productId: { $in: productIds },
+			isActive: true,
+		});
+	}
+
 	public async findByIds(productItemIds: string[]): Promise<IProductItem[]> {
 		return this._productItemModel.find({ _id: { $in: productItemIds } });
 	}

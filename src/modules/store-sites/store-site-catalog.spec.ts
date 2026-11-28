@@ -6,6 +6,7 @@ describe('siteCatalogOf', () => {
 			isNameShown: true,
 			isPriceShown: true,
 			isDescriptionShown: false,
+			isYearsShown: true,
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
@@ -13,6 +14,7 @@ describe('siteCatalogOf', () => {
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
+			filter: expect.any(Object),
 		});
 	});
 
@@ -22,12 +24,14 @@ describe('siteCatalogOf', () => {
 				isNameShown: false,
 				isPriceShown: false,
 				isDescriptionShown: true,
+				isYearsShown: true,
 				isSearchShown: false,
 			}),
 		).toEqual({
 			isNameShown: false,
 			isPriceShown: false,
 			isDescriptionShown: true,
+			isYearsShown: true,
 			isSearchShown: false,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
@@ -35,6 +39,7 @@ describe('siteCatalogOf', () => {
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
+			filter: expect.any(Object),
 		});
 	});
 
@@ -50,6 +55,7 @@ describe('siteCatalogOf', () => {
 			isNameShown: true,
 			isPriceShown: true,
 			isDescriptionShown: false,
+			isYearsShown: true,
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
@@ -57,6 +63,7 @@ describe('siteCatalogOf', () => {
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
+			filter: expect.any(Object),
 		});
 	});
 
@@ -65,6 +72,7 @@ describe('siteCatalogOf', () => {
 			isNameShown: true,
 			isPriceShown: false,
 			isDescriptionShown: false,
+			isYearsShown: true,
 			isSearchShown: true,
 			isAddButtonShown: true,
 			isDetailsOpened: true,
@@ -72,6 +80,7 @@ describe('siteCatalogOf', () => {
 			isTitleShown: true,
 			title: null,
 			addLabel: null,
+			filter: expect.any(Object),
 		});
 	});
 
@@ -94,6 +103,7 @@ describe('siteCatalogOf', () => {
 			isTitleShown: false,
 			title: 'Nossos trabalhos',
 			addLabel: 'Quero este',
+			filter: expect.any(Object),
 		});
 	});
 

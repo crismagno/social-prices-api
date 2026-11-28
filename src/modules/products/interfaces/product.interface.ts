@@ -31,6 +31,8 @@ export interface IProduct extends ICreatedAtEntity, IUpdatedAtEntity {
 	releaseDate: Date | null;
 	expirationDate: Date | null;
 	dimensions: IProductDimensions | null;
+	/** The years the product is for, when it is for some: a part, a model. */
+	yearRange: IProductYearRange | null;
 	pricing?: IPricing | null;
 	colors: string[] | null;
 	dynamicFields: IDynamicField[];
@@ -41,6 +43,15 @@ export interface IProductHistoricPrice {
 	price: number;
 	barcode: string;
 	updatedAt: Date;
+}
+
+/**
+ * The years a product is for, first and last. One of them left out leaves
+ * that end open: only `from` is "since", only `to` is "until".
+ */
+export interface IProductYearRange {
+	from: number | null;
+	to: number | null;
 }
 
 export interface IProductDimensions {

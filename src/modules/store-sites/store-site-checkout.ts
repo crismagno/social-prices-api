@@ -61,6 +61,7 @@ export const cartLookOf = (look: unknown): IStoreSiteCartLook => {
 		isBrandShown: shownUnlessOff('isBrandShown'),
 		isDescriptionShown: shownUnlessOff('isDescriptionShown'),
 		isTagsShown: shownUnlessOff('isTagsShown'),
+		isYearsShown: shownUnlessOff('isYearsShown'),
 		isProductOpened: shownUnlessOff('isProductOpened'),
 		isShippingNoteShown: shownUnlessOff('isShippingNoteShown'),
 		shippingNote: textOf(source.shippingNote, CART_SHIPPING_NOTE_MAX),

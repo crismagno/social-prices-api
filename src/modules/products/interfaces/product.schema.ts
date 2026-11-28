@@ -10,6 +10,7 @@ import { PricingSchema } from '../../../shared/common/pricing/pricing.schema';
 import {
 	IProduct,
 	IProductDimensions,
+	IProductYearRange,
 	IProductHistoricPrice,
 } from './product.interface';
 
@@ -60,6 +61,18 @@ export class ProductDimensions implements IProductDimensions {
 
 export const ProductDimensionsSchema =
 	SchemaFactory.createForClass(ProductDimensions);
+
+@Schema()
+export class ProductYearRange implements IProductYearRange {
+	@Prop({ type: Number, default: null })
+	from: number | null;
+
+	@Prop({ type: Number, default: null })
+	to: number | null;
+}
+
+export const ProductYearRangeSchema =
+	SchemaFactory.createForClass(ProductYearRange);
 
 @Schema()
 export class Product implements IProduct {
@@ -133,6 +146,9 @@ export class Product implements IProduct {
 
 	@Prop({ type: ProductDimensionsSchema, _id: false })
 	dimensions: IProductDimensions | null;
+
+	@Prop({ type: ProductYearRangeSchema, _id: false, default: null })
+	yearRange: IProductYearRange | null;
 
 	@Prop({ type: PricingSchema, default: null })
 	pricing: IPricing | null;

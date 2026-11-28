@@ -224,6 +224,25 @@ namespace StoreSitesEnum {
 		WIDE = 'WIDE',
 	}
 
+	/** Each way a visitor can narrow the products. */
+	export enum CatalogFilterField {
+		TEXT = 'TEXT',
+		SORT = 'SORT',
+		PRICE = 'PRICE',
+		AVAILABILITY = 'AVAILABILITY',
+		BRAND = 'BRAND',
+		COLOR = 'COLOR',
+		SIZE = 'SIZE',
+		DIMENSIONS = 'DIMENSIONS',
+		YEAR = 'YEAR',
+	}
+
+	/** The side of the screen the filter of products floats on. */
+	export enum CatalogFilterSide {
+		LEFT = 'LEFT',
+		RIGHT = 'RIGHT',
+	}
+
 	/** What lies behind one section of a page. */
 	export enum SectionBackgroundType {
 		NONE = 'NONE',

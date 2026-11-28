@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import AppsEnum from '../apps/interfaces/apps.enum';
 import { IProductItem } from '../product-items/interfaces/product-item.interface';
 import { ProductItemsService } from '../product-items/product-items.service';
+import { parseYearRange } from '../products/product-year-range';
 import {
 	IProduct,
 	IProductDimensions,
@@ -17,6 +18,7 @@ import { IStoreSite, IStoreSitePage } from './interfaces/store-site.interface';
 import {
 	IPublicSiteCard,
 	IPublicSiteProduct,
+	IPublicSiteProductVariant,
 	IPublicSiteStore,
 	IPublicStoreSite,
 	IPublishedSiteContext,
@@ -46,6 +48,9 @@ import { StoreSitesService } from './store-sites.service';
 import { sanitizeRichText } from '../../shared/utils/rich-text/rich-text';
 
 /** The numeric measures of a product, in the order the site lists them. */
+/** The most items of one product the site is told about. */
+const MAX_PUBLIC_VARIANTS: number = 60;
+
 const MEASURES = [
 	'height',
 	'width',
@@ -207,10 +212,27 @@ export class StoreSitesPublicService {
 			return [];
 		}
 
-		const [products, items]: [IProduct[], IProductItem[]] = await Promise.all([
+		const [products, items, activeItems]: [
+			IProduct[],
+			IProductItem[],
+			IProductItem[],
+		] = await Promise.all([
 			this._productsService.findByIds(productIds),
 			this._productItemsService.findDefaultsByProductIds(productIds),
+			this._productItemsService.findActiveByProductIds(productIds),
 		]);
+
+		// Every active item of each product: what the filter of the site reads.
+		const itemsByProductId: Map<string, IProductItem[]> = new Map();
+
+		for (const activeItem of activeItems) {
+			const key: string = String(activeItem.productId);
+
+			itemsByProductId.set(key, [
+				...(itemsByProductId.get(key) ?? []),
+				activeItem,
+			]);
+		}
 
 		const storeId: string = String(site.storeId);
 		const ownerUserId: string = String(site.userId);
@@ -240,6 +262,7 @@ export class StoreSitesPublicService {
 						product,
 						item,
 						isAvailable: Number(item.quantity) > 0,
+						items: itemsByProductId.get(productId) ?? [],
 					});
 				}
 
@@ -368,6 +391,7 @@ export class StoreSitesPublicService {
 		product,
 		item,
 		isAvailable,
+		items,
 	}: ISiteSellable): IPublicSiteProduct {
 		return {
 			_id: String(product._id),
@@ -383,13 +407,46 @@ export class StoreSitesPublicService {
 				(color: unknown) => typeof color === 'string' && !!color.trim(),
 			),
 			dimensions: this._toPublicDimensions(product.dimensions),
+			// Checked again on the way out: whole years, in order, or nothing.
+			yearRange: parseYearRange(product.yearRange),
 			isAvailable,
+			variants: (items ?? [])
+				.slice(0, MAX_PUBLIC_VARIANTS)
+				.map((each: IProductItem) => this._toPublicVariant(product, each)),
+		};
+	}
+
+	/**
+	 * One item as the filter reads it: what the item says of itself, and the
+	 * product's own where the item says nothing.
+	 */
+	private _toPublicVariant(
+		product: IProduct,
+		item: IProductItem,
+	): IPublicSiteProductVariant {
+		const colors: string[] = (item.colors ?? []).filter(
+			(color: unknown) => typeof color === 'string' && !!color.trim(),
+		);
+
+		return {
+			name: item.name,
+			price: item.price,
+			brand: item.brand?.trim() || product.brand?.trim() || null,
+			colors: colors.length
+				? colors
+				: (product.colors ?? []).filter(
+						(color: unknown) => typeof color === 'string' && !!color.trim(),
+				  ),
+			dimensions:
+				this._toPublicDimensions(item.dimensions) ??
+				this._toPublicDimensions(product.dimensions),
+			isAvailable: Number(item.quantity) > 0,
 		};
 	}
 
 	/** The measures that were filled, in the order a visitor reads them. */
 	private _toPublicDimensions(
-		dimensions: IProductDimensions | null | undefined,
+		dimensions: Partial<IProductDimensions> | null | undefined,
 	): TPublicSiteProductDimensions | null {
 		const filled: TPublicSiteProductDimensions = {};
 

@@ -88,7 +88,13 @@ const build = ({
 		{ findOneById: jest.fn().mockResolvedValue(owner) } as any,
 		{ findById: jest.fn().mockResolvedValue(store) } as any,
 		{ findByIds: jest.fn().mockResolvedValue(products) } as any,
-		{ findDefaultsByProductIds: jest.fn().mockResolvedValue(items) } as any,
+		{
+			findDefaultsByProductIds: jest.fn().mockResolvedValue(items),
+			// The active items of the products: the default ones are among them.
+			findActiveByProductIds: jest
+				.fn()
+				.mockResolvedValue(items.filter((item: any) => item.isActive)),
+		} as any,
 	);
 };
 
@@ -171,7 +177,18 @@ describe('StoreSitesPublicService', () => {
 				brand: null,
 				colors: [],
 				dimensions: null,
+				yearRange: null,
 				isAvailable: true,
+				// The items it is kept as, for the filter: here, the default one.
+				variants: [
+					expect.objectContaining({
+						price: 50,
+						brand: null,
+						colors: [],
+						dimensions: null,
+						isAvailable: true,
+					}),
+				],
 			});
 		});
 
