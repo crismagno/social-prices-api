@@ -83,6 +83,7 @@ describe('heroOptionsOf', () => {
 		isSubtitleVisible: true,
 		isFeaturedVisible: true,
 		veil: 100,
+		spacing: { top: null, right: null, bottom: null, left: null },
 		isButtonVisible: true,
 		extraText: null,
 		button: null,

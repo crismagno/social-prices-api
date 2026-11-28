@@ -1,6 +1,7 @@
 import {
 	IStoreSiteBlockButton,
 	IStoreSiteHeroOptions,
+	IStoreSiteHeroSpacing,
 	IStoreSitePageHero,
 	THeroSizeKey,
 } from './interfaces/store-site.interface';
@@ -90,6 +91,25 @@ const heroButtonOf = (
 	return needsLabel && !checked.label ? null : checked;
 };
 
+export const MAX_HERO_SPACING: number = 400;
+
+/** Whole pixels from 1 to the most a side may take, or nothing. */
+const spaceOf = (value: unknown): number | null =>
+	typeof value === 'number' && Number.isFinite(value) && value >= 1
+		? Math.min(MAX_HERO_SPACING, Math.round(value))
+		: null;
+
+const spacingOf = (spacing: unknown): IStoreSiteHeroSpacing => {
+	const source: Record<string, unknown> = recordOf(spacing);
+
+	return {
+		top: spaceOf(source.top),
+		right: spaceOf(source.right),
+		bottom: spaceOf(source.bottom),
+		left: spaceOf(source.left),
+	};
+};
+
 /**
  * The owner's choices for the entrance, whatever was stored or sent. A site
  * saved before them shows the entrance as it always was: every piece, the
@@ -108,6 +128,7 @@ export const heroOptionsOf = (options: unknown): IStoreSiteHeroOptions => {
 			typeof source.veil === 'number' && Number.isFinite(source.veil)
 				? Math.min(100, Math.max(0, Math.round(source.veil)))
 				: 100,
+		spacing: spacingOf(source.spacing),
 		isButtonVisible: source.isButtonVisible !== false,
 		extraText:
 			typeof source.extraText === 'string' && source.extraText.trim()

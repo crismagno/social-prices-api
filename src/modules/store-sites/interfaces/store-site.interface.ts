@@ -464,6 +464,14 @@ export interface IStoreSiteHeroColors {
  * The owner's own choices for the entrance: which of its pieces show, one more
  * paragraph, where its button leads, a second button and its own colours.
  */
+/** Pixels of room on each side of the entrance; empty, none added. */
+export interface IStoreSiteHeroSpacing {
+	top: number | null;
+	right: number | null;
+	bottom: number | null;
+	left: number | null;
+}
+
 export interface IStoreSiteHeroOptions {
 	isTaglineVisible: boolean;
 	isTitleVisible: boolean;
@@ -474,6 +482,8 @@ export interface IStoreSiteHeroOptions {
 	 * fading foot: 100 as the template draws it, 0 the photo as it is.
 	 */
 	veil: number;
+	/** Room added around what the entrance holds, in pixels, side by side. */
+	spacing: IStoreSiteHeroSpacing;
 	isButtonVisible: boolean;
 	/** A paragraph under the subtitle. */
 	extraText: string | null;
