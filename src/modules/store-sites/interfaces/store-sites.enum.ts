@@ -175,6 +175,32 @@ namespace StoreSitesEnum {
 		LEFT = 'LEFT',
 	}
 
+	/** How big the chat button or window is; MEDIUM is the template's own. */
+	export enum ChatSize {
+		SMALL = 'SMALL',
+		MEDIUM = 'MEDIUM',
+		LARGE = 'LARGE',
+	}
+
+	/** How the closed chat button calls for attention; BOB is the template's own. */
+	export enum ChatButtonAnimation {
+		NONE = 'NONE',
+		BOB = 'BOB',
+		PULSE = 'PULSE',
+		BOUNCE = 'BOUNCE',
+		SHAKE = 'SHAKE',
+		GLOW = 'GLOW',
+	}
+
+	/** How the chat window opens; POP is the template's own. */
+	export enum ChatWindowAnimation {
+		POP = 'POP',
+		SLIDE = 'SLIDE',
+		FADE = 'FADE',
+		ZOOM = 'ZOOM',
+		NONE = 'NONE',
+	}
+
 	/** How fast the strip of phrases runs; NORMAL is the template's own. */
 	export enum MarqueeSpeed {
 		SLOW = 'SLOW',

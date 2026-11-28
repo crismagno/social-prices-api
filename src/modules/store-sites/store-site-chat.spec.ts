@@ -10,6 +10,10 @@ describe('siteChatOf', () => {
 			isActive: false,
 			position: StoreSitesEnum.ChatPosition.RIGHT,
 			icon: StoreSitesEnum.ChatIcon.MESSAGE,
+			buttonSize: StoreSitesEnum.ChatSize.MEDIUM,
+			windowSize: StoreSitesEnum.ChatSize.MEDIUM,
+			buttonAnimation: StoreSitesEnum.ChatButtonAnimation.BOB,
+			windowAnimation: StoreSitesEnum.ChatWindowAnimation.POP,
 			buttonLabel: null,
 			title: null,
 			greeting: null,
@@ -31,6 +35,10 @@ describe('siteChatOf', () => {
 				isActive: true,
 				position: StoreSitesEnum.ChatPosition.LEFT,
 				icon: StoreSitesEnum.ChatIcon.HEART,
+				buttonSize: StoreSitesEnum.ChatSize.LARGE,
+				windowSize: StoreSitesEnum.ChatSize.SMALL,
+				buttonAnimation: StoreSitesEnum.ChatButtonAnimation.PULSE,
+				windowAnimation: StoreSitesEnum.ChatWindowAnimation.SLIDE,
 				buttonLabel: ' Fale com a gente ',
 				title: ' Atendimento ',
 				greeting: ' Oi! Como podemos ajudar? ',
@@ -42,6 +50,10 @@ describe('siteChatOf', () => {
 			isActive: true,
 			position: StoreSitesEnum.ChatPosition.LEFT,
 			icon: StoreSitesEnum.ChatIcon.HEART,
+			buttonSize: StoreSitesEnum.ChatSize.LARGE,
+			windowSize: StoreSitesEnum.ChatSize.SMALL,
+			buttonAnimation: StoreSitesEnum.ChatButtonAnimation.PULSE,
+			windowAnimation: StoreSitesEnum.ChatWindowAnimation.SLIDE,
 			buttonLabel: 'Fale com a gente',
 			title: 'Atendimento',
 			greeting: 'Oi! Como podemos ajudar?',
@@ -122,6 +134,10 @@ describe('siteChatOf', () => {
 			position: 'TOP',
 			icon: 'ROCKET',
 			emailField: 'MAYBE',
+			buttonSize: 'HUGE',
+			windowSize: 42,
+			buttonAnimation: 'SPIN',
+			windowAnimation: 'FLIP',
 		});
 
 		expect(chat.buttonLabel).toHaveLength(30);
@@ -129,6 +145,10 @@ describe('siteChatOf', () => {
 		expect(chat.position).toBe(StoreSitesEnum.ChatPosition.RIGHT);
 		expect(chat.icon).toBe(StoreSitesEnum.ChatIcon.MESSAGE);
 		expect(chat.emailField).toBe(Field.REQUIRED);
+		expect(chat.buttonSize).toBe(StoreSitesEnum.ChatSize.MEDIUM);
+		expect(chat.windowSize).toBe(StoreSitesEnum.ChatSize.MEDIUM);
+		expect(chat.buttonAnimation).toBe(StoreSitesEnum.ChatButtonAnimation.BOB);
+		expect(chat.windowAnimation).toBe(StoreSitesEnum.ChatWindowAnimation.POP);
 	});
 
 	it('survives garbage', () => {

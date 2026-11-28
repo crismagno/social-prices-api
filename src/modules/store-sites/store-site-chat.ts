@@ -157,6 +157,26 @@ export const siteChatOf = (chat: unknown): IStoreSiteChat => {
 			Object.values(StoreSitesEnum.ChatIcon),
 			StoreSitesEnum.ChatIcon.MESSAGE,
 		),
+		buttonSize: oneOf(
+			source.buttonSize,
+			Object.values(StoreSitesEnum.ChatSize),
+			StoreSitesEnum.ChatSize.MEDIUM,
+		),
+		windowSize: oneOf(
+			source.windowSize,
+			Object.values(StoreSitesEnum.ChatSize),
+			StoreSitesEnum.ChatSize.MEDIUM,
+		),
+		buttonAnimation: oneOf(
+			source.buttonAnimation,
+			Object.values(StoreSitesEnum.ChatButtonAnimation),
+			StoreSitesEnum.ChatButtonAnimation.BOB,
+		),
+		windowAnimation: oneOf(
+			source.windowAnimation,
+			Object.values(StoreSitesEnum.ChatWindowAnimation),
+			StoreSitesEnum.ChatWindowAnimation.POP,
+		),
 		buttonLabel: textOf(source.buttonLabel, MAX_LABEL_LENGTH),
 		title: textOf(source.title, MAX_TITLE_LENGTH),
 		greeting: greetingOf(source.greeting),

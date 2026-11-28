@@ -409,6 +409,14 @@ export interface IStoreSiteChat {
 	isActive: boolean;
 	position: StoreSitesEnum.ChatPosition;
 	icon: StoreSitesEnum.ChatIcon;
+	/** How big the button in the corner is. */
+	buttonSize: StoreSitesEnum.ChatSize;
+	/** How big the conversation window is. */
+	windowSize: StoreSitesEnum.ChatSize;
+	/** How the closed button calls for attention. */
+	buttonAnimation: StoreSitesEnum.ChatButtonAnimation;
+	/** How the window opens. */
+	windowAnimation: StoreSitesEnum.ChatWindowAnimation;
 	/** What the button says; empty, the site says its own. */
 	buttonLabel: string | null;
 	/** The title of the chat window; empty, the name of the site. */
