@@ -8,6 +8,7 @@ import {
 	IStoreSiteBlockSettings,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
+import { siteCanvasOf } from './store-site-canvas';
 import { sectionBackgroundOf } from './store-site-section-background';
 import { aboutMediaOf, embedUrlOf } from './store-site-about';
 import { siteCardLookOf, siteCardsStyleOf } from './store-site-cards-style';
@@ -321,6 +322,9 @@ const settingsOf = (
 				: null,
 		// The entrance has a background of its own.
 		background: uses(T.HERO) ? null : sectionBackgroundOf(source.background),
+		canvas: uses(T.CANVAS)
+			? siteCanvasOf(source.canvas, { buttonOf, mediaOf })
+			: null,
 	};
 };
 
@@ -336,6 +340,8 @@ const hasContent = (block: IStoreSiteBlock): boolean => {
 			return block.items.length > 0;
 		case T.VIDEO:
 			return !!block.settings.media;
+		case T.CANVAS:
+			return (block.settings.canvas?.elements.length ?? 0) > 0;
 		default:
 			return true;
 	}

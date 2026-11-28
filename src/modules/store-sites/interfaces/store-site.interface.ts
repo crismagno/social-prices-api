@@ -1,3 +1,4 @@
+import { IStoreSiteCanvas } from '../store-site-canvas';
 import { IStoreSiteCatalogFilter } from '../store-site-catalog-filter';
 import { IStoreSiteSectionBackground } from '../store-site-section-background';
 import mongoose from 'mongoose';
@@ -593,6 +594,8 @@ export interface IStoreSiteBlockSettings {
 	mediaPosition: StoreSitesEnum.AboutMediaPosition | null;
 	/** What lies behind the section; none on the entrance, which has its own. */
 	background: IStoreSiteSectionBackground | null;
+	/** A free canvas only: its height and what was placed on it. */
+	canvas: IStoreSiteCanvas | null;
 }
 
 /**
