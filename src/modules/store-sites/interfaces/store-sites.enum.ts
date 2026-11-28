@@ -277,6 +277,8 @@ namespace StoreSitesEnum {
 		IMAGE = 'IMAGE',
 		VIDEO = 'VIDEO',
 		DIVIDER = 'DIVIDER',
+		// A map with the places the owner marked, like the map section.
+		MAP = 'MAP',
 	}
 
 	/** The side the words of a canvas element are written on. */

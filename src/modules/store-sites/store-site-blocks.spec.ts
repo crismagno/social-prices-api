@@ -89,6 +89,7 @@ describe('siteBlocksOf', () => {
 				background: null,
 				canvas: null,
 				map: null,
+				boxHeight: null,
 				mediaPosition: null,
 			},
 		});
@@ -580,6 +581,7 @@ describe('sections of the page builder', () => {
 			background: null,
 			canvas: null,
 			map: null,
+			boxHeight: null,
 			mediaPosition: null,
 		});
 	});
@@ -817,5 +819,24 @@ describe('sections of the page builder', () => {
 			menuStyle: 'SIDE',
 			menuMode: 'SCROLL',
 		});
+	});
+});
+
+describe('boxHeight', () => {
+	const settingsOf = (type: string, boxHeight: unknown) =>
+		siteBlocksOf([
+			{ key: 'a', type, isActive: true, settings: { boxHeight } },
+		])[0]?.settings;
+
+	it('keeps the height a section was pulled to, within its range', () => {
+		expect(settingsOf('FAQ', 420.4)?.boxHeight).toBe(420);
+		expect(settingsOf('FAQ', 5)?.boxHeight).toBe(80);
+		expect(settingsOf('FAQ', 99999)?.boxHeight).toBe(2000);
+		expect(settingsOf('FAQ', 'tall')?.boxHeight).toBeNull();
+		expect(settingsOf('HERO', 500)?.boxHeight).toBe(500);
+	});
+
+	it('gives none to the kinds with a height of their own', () => {
+		expect(settingsOf('SPACER', 300)?.boxHeight).toBeNull();
 	});
 });

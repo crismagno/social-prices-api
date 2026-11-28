@@ -34,6 +34,9 @@ const MIN_SPACER = 8;
 const MAX_SPACER = 240;
 const DEFAULT_SPACER = 48;
 
+/** The height, in pixels, a section can be pulled to in the builder. */
+export const SECTION_HEIGHT_RANGE: [number, number] = [80, 2000];
+
 const T = StoreSitesEnum.BlockType;
 
 const isPart = (type: StoreSitesEnum.BlockType): boolean =>
@@ -327,6 +330,15 @@ const settingsOf = (
 			? siteCanvasOf(source.canvas, { buttonOf, mediaOf })
 			: null,
 		map: uses(T.MAP) ? siteMapOf(source.map) : null,
+		boxHeight:
+			!uses(T.SPACER, T.CANVAS, T.MAP) &&
+			typeof source.boxHeight === 'number' &&
+			Number.isFinite(source.boxHeight)
+				? Math.min(
+						SECTION_HEIGHT_RANGE[1],
+						Math.max(SECTION_HEIGHT_RANGE[0], Math.round(source.boxHeight)),
+				  )
+				: null,
 	};
 };
 

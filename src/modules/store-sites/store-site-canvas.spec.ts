@@ -92,6 +92,33 @@ describe('siteCanvasOf', () => {
 		expect(button.button).toEqual({ checked: { label: 'Go' } });
 	});
 
+	it('gives a map only to a map, with its pins checked', () => {
+		const [text, map] = siteCanvasOf(
+			{
+				elements: [
+					{ type: 'TEXT', map: { pins: [{ lat: 1, lng: 2 }] } },
+					{
+						type: 'MAP',
+						map: {
+							isAutoFit: false,
+							zoom: 14,
+							pins: [
+								{ key: 'a', lat: -23.55, lng: -46.63, label: 'Loja' },
+								{ lat: 999, lng: 0 },
+							],
+						},
+					},
+				],
+			},
+			checks,
+		).elements;
+
+		expect(text.map).toBeNull();
+		expect(map.map).toMatchObject({ isAutoFit: false, zoom: 14 });
+		expect(map.map.pins).toHaveLength(1);
+		expect(map.map.pins[0]).toMatchObject({ key: 'a', label: 'Loja' });
+	});
+
 	it('cleans the words of the editor, and keeps the words of a button plain', () => {
 		const [text, button] = siteCanvasOf(
 			{

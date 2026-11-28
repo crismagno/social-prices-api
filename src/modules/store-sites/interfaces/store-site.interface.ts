@@ -613,6 +613,12 @@ export interface IStoreSiteBlockSettings {
 	canvas: IStoreSiteCanvas | null;
 	/** A map only: its pins and how it is shown. */
 	map: IStoreSiteMap | null;
+	/**
+	 * The height the owner pulled the section to, in pixels: at least that
+	 * tall. Empty, as tall as it needs. A spacer, a canvas and a map have a
+	 * height of their own instead.
+	 */
+	boxHeight: number | null;
 }
 
 /**
