@@ -13,6 +13,8 @@ namespace StoreSitesEnum {
 		BUDDY = 'BUDDY',
 		ARCADE = 'ARCADE',
 		ATLAS = 'ATLAS',
+		// Deep entrance, squared and numbered: the look of a large company.
+		CORPORATE = 'CORPORATE',
 		NEBULA = 'NEBULA',
 		LUMEN = 'LUMEN',
 	}
@@ -30,6 +32,7 @@ namespace StoreSitesEnum {
 		[Template.BUDDY]: 'Buddy',
 		[Template.ARCADE]: 'Arcade',
 		[Template.ATLAS]: 'Atlas',
+		[Template.CORPORATE]: 'Corporativo',
 		[Template.NEBULA]: 'Nebula',
 		[Template.LUMEN]: 'Lumen',
 	};
