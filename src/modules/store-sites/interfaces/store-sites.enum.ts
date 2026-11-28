@@ -268,6 +268,31 @@ namespace StoreSitesEnum {
 		IMAGE = 'IMAGE',
 	}
 
+	/** The ready looks of the header. */
+	export enum HeaderStyle {
+		CLASSIC = 'CLASSIC',
+		FLOATING = 'FLOATING',
+		GLASS = 'GLASS',
+		BOLD = 'BOLD',
+		MINIMAL = 'MINIMAL',
+		LINE = 'LINE',
+		BOXED = 'BOXED',
+		// In the character of each template, whichever template the site uses.
+		ATELIER = 'ATELIER',
+		GARDEN = 'GARDEN',
+		STUDIO = 'STUDIO',
+		AURORA = 'AURORA',
+		IMPACT = 'IMPACT',
+		RIVIERA = 'RIVIERA',
+		MARE = 'MARE',
+		SWELL = 'SWELL',
+		BUDDY = 'BUDDY',
+		ARCADE = 'ARCADE',
+		ATLAS = 'ATLAS',
+		NEBULA = 'NEBULA',
+		LUMEN = 'LUMEN',
+	}
+
 	/** The line a border is drawn with. */
 	export enum BorderStyle {
 		NONE = 'NONE',

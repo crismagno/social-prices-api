@@ -205,6 +205,8 @@ export interface IStoreSiteHeader {
 	isFixed: boolean;
 	/** The side of the screen it is at. */
 	position: StoreSitesEnum.HeaderPosition;
+	/** Its ready look; the colours, shadow and border chosen apply over it. */
+	style: StoreSitesEnum.HeaderStyle;
 	/** Its three parts in order: start, middle and end of the header. */
 	order: StoreSitesEnum.HeaderPart[];
 	/**

@@ -194,6 +194,11 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 		)
 			? (source.position as StoreSitesEnum.HeaderPosition)
 			: StoreSitesEnum.HeaderPosition.TOP,
+		style: Object.values(StoreSitesEnum.HeaderStyle).includes(
+			source.style as StoreSitesEnum.HeaderStyle,
+		)
+			? (source.style as StoreSitesEnum.HeaderStyle)
+			: StoreSitesEnum.HeaderStyle.CLASSIC,
 		order: permutationOf(source.order, PARTS),
 		transparency: transparencyOf(source),
 		shadow: shadowOf(source.shadow),

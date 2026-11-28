@@ -6,6 +6,7 @@ describe('siteHeaderOf', () => {
 		expect(siteHeaderOf(undefined)).toEqual({
 			isFixed: false,
 			position: StoreSitesEnum.HeaderPosition.TOP,
+			style: 'CLASSIC',
 			order: ['BRAND', 'MENU', 'ACTIONS'],
 			transparency: 0,
 			shadow: null,
@@ -64,6 +65,11 @@ describe('siteHeaderOf', () => {
 		expect(
 			siteHeaderOf({ home: { label: 'x'.repeat(90) } }).home.label,
 		).toHaveLength(40);
+	});
+
+	it('keeps a ready look, and takes an unknown one for the classic', () => {
+		expect(siteHeaderOf({ style: 'GLASS' }).style).toBe('GLASS');
+		expect(siteHeaderOf({ style: 'neon' }).style).toBe('CLASSIC');
 	});
 
 	it('keeps a shadow strength within 0 and 100, or the usual one', () => {
