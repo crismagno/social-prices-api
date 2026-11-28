@@ -9,6 +9,7 @@ describe('siteHeaderOf', () => {
 			order: ['BRAND', 'MENU', 'ACTIONS'],
 			transparency: 0,
 			shadow: null,
+			border: null,
 			color: null,
 			background: null,
 			height: null,
@@ -30,6 +31,19 @@ describe('siteHeaderOf', () => {
 
 		expect(good).toMatchObject({ icon: 'HEART', color: '#ff0055' });
 		expect(bad).toMatchObject({ icon: null, color: null });
+	});
+
+	it('keeps a border with a known line, a width in range and a plain colour', () => {
+		expect(
+			siteHeaderOf({ border: { style: 'DASHED', width: 99, color: '#AA0000' } })
+				.border,
+		).toEqual({ style: 'DASHED', width: 12, color: '#AA0000' });
+		expect(
+			siteHeaderOf({ border: { style: 'NONE', color: 'red; x: url(evil)' } })
+				.border,
+		).toEqual({ style: 'NONE', width: 1, color: null });
+		expect(siteHeaderOf({ border: { style: 'wavy' } }).border).toBeNull();
+		expect(siteHeaderOf({ border: 'solid' }).border).toBeNull();
 	});
 
 	it('keeps a shadow strength within 0 and 100, or the usual one', () => {

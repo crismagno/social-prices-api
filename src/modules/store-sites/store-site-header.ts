@@ -1,6 +1,7 @@
 import {
 	IStoreSiteBlockButton,
 	IStoreSiteHeader,
+	IStoreSiteHeaderBorder,
 } from './interfaces/store-site.interface';
 import StoreSitesEnum from './interfaces/store-sites.enum';
 import { buttonOf } from './store-site-blocks';
@@ -100,6 +101,33 @@ const alignsOf = (
 	);
 };
 
+/**
+ * The border the owner chose: a known line, a width within the range and a
+ * plain colour. Without a known line there is none chosen, and the usual
+ * thin one stays.
+ */
+const borderOf = (value: unknown): IStoreSiteHeaderBorder | null => {
+	const source: Record<string, unknown> =
+		value && typeof value === 'object'
+			? (value as Record<string, unknown>)
+			: {};
+
+	if (
+		!Object.values(StoreSitesEnum.BorderStyle).includes(
+			source.style as StoreSitesEnum.BorderStyle,
+		)
+	) {
+		return null;
+	}
+
+	return {
+		style: source.style as StoreSitesEnum.BorderStyle,
+		width:
+			pixelsOf(source.width, StoreSitesEnum.HEADER_BORDER_WIDTH_RANGE) ?? 1,
+		color: hexOf(source.color),
+	};
+};
+
 const hexOf = (value: unknown): string | null =>
 	typeof value === 'string' && StoreSitesEnum.HEX_COLOR_REGEX.test(value)
 		? value
@@ -143,6 +171,7 @@ export const siteHeaderOf = (header: unknown): IStoreSiteHeader => {
 		order: permutationOf(source.order, PARTS),
 		transparency: transparencyOf(source),
 		shadow: shadowOf(source.shadow),
+		border: borderOf(source.border),
 		color: hexOf(source.color),
 		background: hexOf(source.background),
 		height: pixelsOf(source.height, HEADER_HEIGHT_RANGE),

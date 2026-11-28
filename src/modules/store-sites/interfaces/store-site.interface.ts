@@ -188,6 +188,15 @@ export interface IStoreSiteImageStyle {
  * The header of the site: its name, its menu, the sign-in and the cart. It is
  * the site's own, the same on every page, apart from any entrance.
  */
+/** The border of the header: its line, how thick, and its colour. */
+export interface IStoreSiteHeaderBorder {
+	style: StoreSitesEnum.BorderStyle;
+	/** In pixels. */
+	width: number;
+	/** As #rrggbb; empty, the colour of the site's words. */
+	color: string | null;
+}
+
 export interface IStoreSiteHeader {
 	/** At the top only: it stays on screen while the visitor scrolls. */
 	isFixed: boolean;
@@ -205,6 +214,10 @@ export interface IStoreSiteHeader {
 	 * light shadow, and none on a clean header or down a side.
 	 */
 	shadow: number | null;
+	/**
+	 * The border on its edge that faces the page; empty, the usual thin line.
+	 */
+	border: IStoreSiteHeaderBorder | null;
 	/** The colour of its words; empty, the site's. */
 	color: string | null;
 	/** The colour of its background, when it has one; empty, the site's. */

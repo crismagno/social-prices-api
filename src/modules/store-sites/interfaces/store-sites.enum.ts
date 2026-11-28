@@ -224,6 +224,18 @@ namespace StoreSitesEnum {
 		WIDE = 'WIDE',
 	}
 
+	/** The line a border is drawn with. */
+	export enum BorderStyle {
+		NONE = 'NONE',
+		SOLID = 'SOLID',
+		DASHED = 'DASHED',
+		DOTTED = 'DOTTED',
+		DOUBLE = 'DOUBLE',
+	}
+
+	/** The thinnest and the thickest border of the header, in pixels. */
+	export const HEADER_BORDER_WIDTH_RANGE: [number, number] = [1, 12];
+
 	export enum CartButtonSize {
 		SMALL = 'SMALL',
 		MEDIUM = 'MEDIUM',
